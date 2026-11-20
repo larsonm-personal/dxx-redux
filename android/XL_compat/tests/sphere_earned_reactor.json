@@ -1,0 +1,356 @@
+[
+    {
+        "flight": {
+            "action": "fly_through_side",
+            "cruise_speed": 85,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        "inputs": [
+            [754, 2],
+            [760, 5]
+        ],
+        "expect": {
+            "current_level_num": 2,
+            "player.has_red_key": true,
+            "player.has_gold_key": true,
+            "player_dead": false,
+            "cheats_enabled": false,
+            "player.lives": 3,
+            "position.segment": 2910,
+            "reactor_countdown.active": false,
+            "reactor_countdown.timer": 0,
+            "level_scene.reactors": {
+                "contains_object": {
+                    "object": 433,
+                    "id": 1,
+                    "signature": 434,
+                    "segment": 2957,
+                    "shields": 300.0
+                }
+            },
+            "player.score": 51250,
+            "player.robots_killed_level": 38,
+            "player.primary_weapon": 3,
+            "player.primary_weapon_flags": 9,
+            "player.shields": 78.39752197265625,
+            "player.energy": 77.85009765625
+        }
+    },
+    {
+        "flight": {
+            "action": "fly_through_side",
+            "cruise_speed": 85,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        "inputs": [
+            [2910, 4],
+            [760, 4],
+            [2917, 4]
+        ],
+        "expect": {
+            "current_level_num": 2,
+            "player.has_red_key": true,
+            "player.has_gold_key": true,
+            "player_dead": false,
+            "cheats_enabled": false,
+            "player.lives": 3,
+            "position.segment": 3119,
+            "reactor_countdown.active": false,
+            "reactor_countdown.timer": 0,
+            "level_scene.reactors": {
+                "contains_object": {
+                    "object": 433,
+                    "id": 1,
+                    "signature": 434,
+                    "segment": 2957,
+                    "shields": 300.0
+                }
+            },
+            "player.score": 51250,
+            "player.robots_killed_level": 38,
+            "player.primary_weapon": 3,
+            "player.primary_weapon_flags": 9,
+            "player.shields": 78.39752197265625,
+            "player.energy": 77.85009765625
+        }
+    },
+    {
+        "flight": {
+            "action": "fly_through_side",
+            "cruise_speed": 85,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        "inputs": [[3119, 2]],
+        "expect": {
+            "current_level_num": 2,
+            "player.has_red_key": true,
+            "player.has_gold_key": true,
+            "player_dead": false,
+            "cheats_enabled": false,
+            "player.lives": 3,
+            "position.segment": 3117,
+            "reactor_countdown.active": false,
+            "reactor_countdown.timer": 0,
+            "level_scene.reactors": {
+                "contains_object": {
+                    "object": 433,
+                    "id": 1,
+                    "signature": 434,
+                    "segment": 2957,
+                    "shields": 300.0
+                }
+            },
+            "player.score": 53950,
+            "player.robots_killed_level": 42,
+            "player.primary_weapon": 3,
+            "player.primary_weapon_flags": 9,
+            "player.shields": 68.63427734375,
+            "player.energy": 67.10009765625
+        }
+    },
+    {
+        "flight": {
+            "action": "fly_through_side",
+            "cruise_speed": 85,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        "inputs": [
+            [3117, 2],
+            [2918, 4],
+            [2920, 4],
+            [2923, 0]
+        ],
+        "expect": {
+            "current_level_num": 2,
+            "player.has_red_key": true,
+            "player.has_gold_key": true,
+            "player_dead": false,
+            "cheats_enabled": false,
+            "player.lives": 3,
+            "position.segment": 2924,
+            "reactor_countdown.active": false,
+            "reactor_countdown.timer": 0,
+            "level_scene.reactors": {
+                "contains_object": {
+                    "object": 433,
+                    "id": 1,
+                    "signature": 434,
+                    "segment": 2957,
+                    "shields": 300.0
+                }
+            },
+            "player.score": 54300,
+            "player.robots_killed_level": 43,
+            "player.primary_weapon": 3,
+            "player.primary_weapon_flags": 9,
+            "player.shields": 68.63427734375,
+            "player.energy": 64.85009765625
+        }
+    },
+    {
+        "flight": {
+            "action": "fly_through_side",
+            "cruise_speed": 85,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        "inputs": [
+            [2924, 4],
+            [2926, 4],
+            [2927, 0],
+            [2933, 0]
+        ],
+        "expect": {
+            "current_level_num": 2,
+            "player.has_red_key": true,
+            "player.has_gold_key": true,
+            "player_dead": false,
+            "cheats_enabled": false,
+            "player.lives": 3,
+            "position.segment": 2936,
+            "reactor_countdown.active": false,
+            "reactor_countdown.timer": 0,
+            "level_scene.reactors": {
+                "contains_object": {
+                    "object": 433,
+                    "id": 1,
+                    "signature": 434,
+                    "segment": 2957,
+                    "shields": 300.0
+                }
+            },
+            "player.score": 54300,
+            "player.robots_killed_level": 43,
+            "player.primary_weapon": 3,
+            "player.primary_weapon_flags": 9,
+            "player.shields": 66.98786926269531,
+            "player.energy": 61.35009765625
+        }
+    },
+    {
+        "flight": {
+            "action": "fly_through_side",
+            "cruise_speed": 85,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        "inputs": [
+            [2936, 5],
+            [2950, 2],
+            [2949, 4],
+            [3130, 1]
+        ],
+        "expect": {
+            "current_level_num": 2,
+            "player.has_red_key": true,
+            "player.has_gold_key": true,
+            "player_dead": false,
+            "cheats_enabled": false,
+            "player.lives": 3,
+            "position.segment": 3127,
+            "reactor_countdown.active": false,
+            "reactor_countdown.timer": 0,
+            "level_scene.reactors": {
+                "contains_object": {
+                    "object": 433,
+                    "id": 1,
+                    "signature": 434,
+                    "segment": 2957,
+                    "shields": 300.0
+                }
+            },
+            "player.score": 55300,
+            "player.robots_killed_level": 44,
+            "player.primary_weapon": 3,
+            "player.primary_weapon_flags": 9,
+            "player.shields": 63.63386535644531,
+            "player.energy": 58.60009765625
+        }
+    },
+    {
+        "flight": {
+            "action": "fly_through_side",
+            "cruise_speed": 85,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        "inputs": [
+            [3127, 4],
+            [3129, 4],
+            [2952, 4]
+        ],
+        "expect": {
+            "current_level_num": 2,
+            "player.has_red_key": true,
+            "player.has_gold_key": true,
+            "player_dead": false,
+            "cheats_enabled": false,
+            "player.lives": 3,
+            "position.segment": 2956,
+            "reactor_countdown.active": false,
+            "reactor_countdown.timer": 0,
+            "level_scene.reactors": {
+                "contains_object": {
+                    "object": 433,
+                    "id": 1,
+                    "signature": 434,
+                    "segment": 2957,
+                    "shields": 278.0
+                }
+            },
+            "player.score": 56800,
+            "player.robots_killed_level": 46,
+            "player.primary_weapon": 3,
+            "player.primary_weapon_flags": 9,
+            "player.shields": 49.4298095703125,
+            "player.energy": 54.35009765625
+        }
+    },
+    {
+        "inputs": [
+            {
+                "action": "engage_visible_reactor",
+                "object": 433,
+                "reactor_id": 1,
+                "signature": 434,
+                "max_frames": 60,
+                "strafe": 0
+            }
+        ],
+        "expect": {
+            "player.lives": 3,
+            "player.shields": 49.4298095703125,
+            "player_dead": false,
+            "cheats_enabled": false,
+            "player.has_red_key": true,
+            "player.has_gold_key": true,
+            "current_level_num": 2,
+            "position.segment": 2956,
+            "reactor_countdown.active": false,
+            "reactor_countdown.timer": 0,
+            "level_scene.reactors": {
+                "contains_object": {
+                    "object": 433,
+                    "id": 1,
+                    "signature": 434,
+                    "segment": 2957,
+                    "shields": 234.0
+                }
+            },
+            "player.score": 56800,
+            "player.robots_killed_level": 46,
+            "player.primary_weapon": 3,
+            "player.primary_weapon_flags": 9,
+            "player.energy": 53.10009765625
+        }
+    },
+    {
+        "inputs": [
+            {
+                "action": "engage_visible_reactor",
+                "object": 433,
+                "reactor_id": 1,
+                "signature": 434,
+                "max_frames": 360,
+                "strafe": 0
+            }
+        ],
+        "expect": {
+            "player.lives": 3,
+            "player.shields": 27.668121337890625,
+            "player_dead": false,
+            "cheats_enabled": false,
+            "player.has_red_key": true,
+            "player.has_gold_key": true,
+            "current_level_num": 2,
+            "position.segment": 2952,
+            "reactor_countdown.active": true,
+            "reactor_countdown.timer": 1966080,
+            "level_scene.reactors": {
+                "contains_object": {
+                    "object": 433,
+                    "id": 1,
+                    "signature": 434,
+                    "segment": 2957,
+                    "shields": -8.0
+                }
+            },
+            "player.score": 61800,
+            "player.robots_killed_level": 46,
+            "player.primary_weapon": 3,
+            "player.primary_weapon_flags": 9,
+            "player.energy": 49.85009765625
+        }
+    }
+]

@@ -923,8 +923,21 @@ if(BUILD_TESTING)
                     -DSTAGE=respawn_extra_life
                     -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/sphere-respawn-extra-life -P
                     ${CMAKE_CURRENT_SOURCE_DIR}/tests/sphere_campaign.cmake)
-            set_tests_properties(xl_sphere_respawn_extra_life PROPERTIES TIMEOUT 1800 RUN_SERIAL
-                                                                         TRUE)
+            set_tests_properties(
+                xl_sphere_respawn_extra_life PROPERTIES TIMEOUT 1800 RUN_SERIAL TRUE FIXTURES_SETUP
+                                                        sphere_respawn_extra_life)
+            add_test(
+                NAME xl_sphere_earned_reactor
+                COMMAND
+                    ${CMAKE_COMMAND} -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA}
+                    -DRESOURCES=${XL_SPHERE_PLAYER_ROOT}
+                    -DENTRY=${CMAKE_CURRENT_BINARY_DIR}/sphere-respawn-extra-life
+                    -DSTAGE=earned_reactor
+                    -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/sphere-earned-reactor -P
+                    ${CMAKE_CURRENT_SOURCE_DIR}/tests/sphere_campaign.cmake)
+            set_tests_properties(
+                xl_sphere_earned_reactor PROPERTIES TIMEOUT 1800 RUN_SERIAL TRUE FIXTURES_REQUIRED
+                                                    sphere_respawn_extra_life)
         endif()
         add_test(
             NAME xl_sphere_reactor_aim
