@@ -1,0 +1,303 @@
+{
+    "mission": {
+        "filename": "sphere",
+        "descriptor_sha256": "7104fe4eada0804ed6b03ac4b2a68656ab5c15d3f8b1bec37b43c9a5fab0ac6b",
+        "hog_sha256": "a40bf59101fee991200e34984a45fdf209cee4d68d47d4d52996dfe875dbe253"
+    },
+    "initial_level": 1,
+    "simulation_fps": 60,
+    "checkpoint_expect": {},
+    "steps": [
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 1,
+                "cheats_enabled": false,
+                "player_dead": false
+            }
+        },
+        {
+            "action": "wait_ms",
+            "ms": 1000
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 1307,
+            "side": 0,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 1304,
+            "side": 0,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 1301,
+            "side": 0,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 1298,
+            "side": 0,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 1295,
+            "side": 0,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 1193,
+            "side": 4,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 1038,
+            "side": 4,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 1001,
+            "side": 4,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 1003,
+            "side": 4,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 1005,
+            "side": 4,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 1013,
+            "side": 4,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 1014,
+            "side": 4,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 1015,
+            "side": 4,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 1016,
+            "side": 4,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 1017,
+            "side": 4,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 904,
+            "side": 4,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 905,
+            "side": 2,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 906,
+            "side": 2,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 907,
+            "side": 1,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 933,
+            "side": 2,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 934,
+            "side": 4,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 1192,
+            "side": 4,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 1606,
+            "side": 4,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 1607,
+            "side": 4,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 1608,
+            "side": 4,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 1558,
+            "side": 0,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 1559,
+            "side": 0,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 1560,
+            "side": 0,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 1568,
+            "side": 1,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 1548,
+            "side": 0,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 1551,
+            "side": 5,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 1536,
+            "side": 5,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 1537,
+            "side": 5,
+            "max_frames": 800,
+            "fire_primary": true,
+            "engage_robots": true
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "position.segment": 1600,
+                "player.has_red_key": true,
+                "player_dead": false,
+                "player.lives": 3
+            }
+        },
+        {
+            "action": "set_debug",
+            "field": "android_game_request",
+            "value": "quick_save",
+            "export_android": true
+        }
+    ]
+}
