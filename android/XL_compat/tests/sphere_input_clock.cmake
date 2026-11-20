@@ -1,0 +1,43 @@
+find_program(PWSH pwsh REQUIRED)
+execute_process(
+    COMMAND
+        "${PWSH}" -NoProfile -File
+        "${CMAKE_CURRENT_LIST_DIR}/../../helpers/retain-recent-artifacts.ps1" -Artifacts
+        "${OUTPUT}" COMMAND_ERROR_IS_FATAL ANY)
+file(MAKE_DIRECTORY "${OUTPUT}/preview-user")
+include("${CMAKE_CURRENT_LIST_DIR}/pumo_player_phase.cmake")
+set(XL_PLAYER_MISSION sphere)
+file(READ "${CMAKE_CURRENT_LIST_DIR}/sphere_red_key.json" base)
+string(JSON base SET "${base}" initial_level 2)
+file(READ "${ENTRY}/morph-0-result.json" entry)
+string(JSON checkpoint GET "${entry}" checkpoint_history 0)
+string(JSON saved GET "${checkpoint}" file)
+get_filename_component(filename "${saved}" NAME)
+if(NOT saved STREQUAL filename OR saved STREQUAL "")
+    message(FATAL_ERROR "Invalid Sphere input-clock entry checkpoint name")
+endif()
+configure_file("${ENTRY}/preview-user/${saved}" "${OUTPUT}/preview-user/${saved}" COPYONLY)
+
+set(save [=[{"action":"set_debug","field":"android_game_request","value":"quick_save"}]=])
+set(advance [=[{"action":"wait_ms","ms":100}]=])
+# At 60 Hz, dividing 65,536 by 60 leaves a remainder of 16 after one frame.
+string(JSON plan SET "${base}" steps "[{\"action\":\"wait_ms\",\"ms\":1},${save},${advance}]")
+write_resume_plan(warm "${plan}" "${checkpoint}")
+run_pumo_player_phase(warm 2 2 3 0)
+string(JSON checkpoint GET "${warm_receipt}" checkpoint_history 0)
+string(JSON clock GET "${checkpoint}" input_clock)
+string(JSON remainder GET "${clock}" remainder)
+if(NOT remainder EQUAL 16)
+    message(FATAL_ERROR "Sphere input-clock fixture did not save between exact 60 Hz boundaries")
+endif()
+
+string(JSON plan SET "${base}" resume_input_clock "${clock}")
+string(JSON plan SET "${plan}" steps "[${advance}]")
+write_resume_plan(cold "${plan}" "${checkpoint}")
+run_pumo_player_phase(cold 2 2 1 0)
+file(READ "${OUTPUT}/warm-state.json" warm_state)
+file(READ "${OUTPUT}/cold-state.json" cold_state)
+string(JSON equal EQUAL "${warm_state}" "${cold_state}")
+if(NOT equal)
+    message(FATAL_ERROR "Sphere warm and cold player, world or RNG snapshots diverged")
+endif()
