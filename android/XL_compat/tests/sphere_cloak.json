@@ -1,0 +1,38 @@
+[
+    {
+        "portals": [
+            [66, 2],
+            [380, 2],
+            [549, 2],
+            [550, 2],
+            [551, 1],
+            [561, 2],
+            [562, 5]
+        ],
+        "expect": {
+            "current_level_num": 2,
+            "position.segment": 571,
+            "player.lives": 3,
+            "player.cloaked": true,
+            "player_dead": false,
+            "cheats_enabled": false
+        }
+    },
+    {
+        "portals": [
+            [571, 4],
+            [562, 4],
+            [566, 4],
+            [567, 4],
+            [623, 4]
+        ],
+        "expect": {
+            "current_level_num": 2,
+            "position.segment": 638,
+            "player.lives": 3,
+            "player.cloaked": true,
+            "player_dead": false,
+            "cheats_enabled": false
+        }
+    }
+]

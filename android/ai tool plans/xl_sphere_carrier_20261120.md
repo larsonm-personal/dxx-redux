@@ -1,0 +1,21 @@
+# Sphere level two carrier flight
+
+Continue from PR 661 and the standalone Sphere 1.51 pilot. The current gold-door approach starts from the earned segment 954 save. Protect each native save and keep the failed flights alongside their plans and engine receipts.
+
+1. Compare the direct flight through 969 with the detour to the authored cloak in 1132. Record shield loss, energy, cloak pickup and elapsed game time to the carrier. Use ordinary flight and weapon inputs and disclose navigation assistance.
+2. Earn the carrier drop, cross the keyed door and follow the signed campaign progression in the November 19 Sphere plan. Check save ancestry, cold continuation and the matching original at consequential transitions.
+3. Publish tested checkpoints on the fork. Reserve the closing third of the estimated overnight window for platform checks, final-tip CI and a dated handoff.
+
+The 131-shield pilot reached 969 with 116 shields and 86.77 energy. The next attempted flight died in 969 before it could save. The successful approach and failed continuation are in `temp/xl-sphere-campaign-20261119/continuation-nov19-gold-a` and `continuation-nov19-gold-b00`. The cloak detour starts at the earlier segment 954 ancestor with 82 shields and 87.02 energy.
+
+The separate cloak at 571 was reachable from the earned segment 561 save via 562. Normal collision activated it. Fresh processes restored the pilot's saves and carried the cloak through 646, 697, 866 and 927. It expired before 954. Object 432 killed the pilot in 1231. Checkpoint ancestry and SHA256 values are in `continuation-cloak-ancestry.json`. A second flight toward the cloak in 1132 lost the pilot in 976 to the same object. The original mine identifies object 432 as robot 75, a boss carrying one gold key. The active robot reports boss profile 27. The reference profile test records kinetic immunity and energy vulnerability.
+
+The optional Sphere cloak fixture branches from the registered storage flight's immutable segment 66 save. Its first process flew into 571 and earned the cloak. Its second process cold-loaded that save, then reached 638 with the cloak active and three lives. Receipts `continuation-cloak-fixture-01/cloak-0-result.json` and `cloak-1-result.json` passed on the November 19 Windows assertion binary. The earned 571 save has SHA256 8701db727347504aca13c840d1bd81666450b061937b931f69d04f7aec8a92e2.
+
+Compare portal times from the same segment 571 ancestor with a higher target cruise speed. The developer flight controller still uses ordinary thrust, steering and native collision. Keep its assistance explicit and compare shields, cloak expiry, time and arrival as well as survival.
+
+The optional integer `cruise_speed` on `fly_through_side` selects the controller's target speed in world units per second. Native thrust saturation and braking near the portal determine the actual speed. On the candidate Linux Debug binary, the default and explicit 25 produced identical complete terminal state in 646. The default flight took 10.133 simulated seconds and ended with 97.83 shields. A target of 75 took 8.167 seconds and ended with 105.84 shields. Windows reached the same room, time, cloak and shields for the faster flight.
+
+The faster pilot reached 954 cloaked, then earned the second cloak in 1132. Taking it before the shield stores left 19.67 shields and robot 24 killed the pilot in 1093. The surviving route turns from 1101 into 1130, collects shields to 104.03 and returns through 1093. The pilot then enters 1132 cloaked with 98.92 shields, 75.73 energy and three lives. The gold key remains aboard the carrier. The fourteen linked saves include their source hashes, elapsed game clocks and assistance counters. [Flight receipts](../XL_compat/evidence/sphere-carrier-approach-20261120.json)
+
+On Windows the registered red key, shaft exit, storage and new cloak fixture passed in 544.14 seconds using assertion binary 362c68eaa5adf8d8426008e00d4efc3289f8a57e99228f7cab1c74ff20d3079b. Linux assertion binary 625aa6413faafc6efa66e4a4ac6abb9772d040f48831f38f00bce5eb40242be5 passed the cloak fixture from the Windows-written segment 66 save. Its first wrapper invocation failed during output directory preparation. The second invocation ran both native processes and retained their receipts in `continuation-linux-cloak-fixture-02`.
