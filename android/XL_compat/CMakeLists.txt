@@ -914,6 +914,14 @@ if(BUILD_TESTING)
     set(XL_SPHERE_PLAYER_ROOT "" CACHE PATH "Original Sphere 1.51 staged mission root")
     if(XL_SPHERE_PLAYER_ROOT AND XL_PREVIEW_LIFECYCLE AND XL_RETAIL_DATA)
         add_test(
+            NAME xl_sphere_reactor_aim
+            COMMAND
+                ${CMAKE_COMMAND} -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA}
+                -DRESOURCES=${XL_SPHERE_PLAYER_ROOT}
+                -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/sphere-reactor-aim -P
+                ${CMAKE_CURRENT_SOURCE_DIR}/tests/sphere_reactor_aim.cmake)
+        set_tests_properties(xl_sphere_reactor_aim PROPERTIES TIMEOUT 180 RUN_SERIAL TRUE)
+        add_test(
             NAME xl_sphere_red_key
             COMMAND
                 ${CMAKE_COMMAND} -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA}

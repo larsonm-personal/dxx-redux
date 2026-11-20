@@ -1,0 +1,63 @@
+{
+    "mission": {
+        "filename": "sphere",
+        "descriptor_sha256": "7104fe4eada0804ed6b03ac4b2a68656ab5c15d3f8b1bec37b43c9a5fab0ac6b",
+        "hog_sha256": "a40bf59101fee991200e34984a45fdf209cee4d68d47d4d52996dfe875dbe253"
+    },
+    "initial_level": 2,
+    "new_pilot_defaults": true,
+    "simulation_fps": 60,
+    "checkpoint_expect": {},
+    "steps": [
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 2,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "reactor_countdown.active": false,
+                "level_scene.reactors": {
+                    "contains_object": {
+                        "object": 433,
+                        "id": 1,
+                        "signature": 434,
+                        "shields": 300
+                    }
+                }
+            }
+        },
+        {
+            "action": "pose_view",
+            "segment": 2956,
+            "position_fixed": [-13222849, 11065572, 39348603],
+            "heading": 16384
+        },
+        {
+            "action": "engage_visible_reactor",
+            "object": 433,
+            "reactor_id": 1,
+            "signature": 434,
+            "max_frames": 90
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 2,
+                "player_dead": false,
+                "cheats_enabled": false,
+                "player.shields": {
+                    "gt": 0
+                },
+                "level_scene.reactors": {
+                    "contains_object": {
+                        "object": 433,
+                        "shields": {
+                            "gt": 0,
+                            "lt": 300
+                        }
+                    }
+                }
+            }
+        }
+    ]
+}
