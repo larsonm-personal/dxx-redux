@@ -1,0 +1,127 @@
+{
+    "source": "27a340e72e7e927cb7eaec73c3def936cf52845a",
+    "mission": {
+        "filename": "sphere",
+        "descriptor_sha256": "7104fe4eada0804ed6b03ac4b2a68656ab5c15d3f8b1bec37b43c9a5fab0ac6b",
+        "hog_sha256": "a40bf59101fee991200e34984a45fdf209cee4d68d47d4d52996dfe875dbe253"
+    },
+    "owners": {
+        "windows": {
+            "comparator": {
+                "braking": {
+                    "frames": 207,
+                    "rooms": [1307, 1304, 1301, 1298, 1295],
+                    "endpoint": 1193,
+                    "lives": 3,
+                    "score": 0,
+                    "executable": "a1ec2fdccfe16621c1e6719ffaddbd3d8b1bdbbec477921958254e1aa3424d21",
+                    "plan": "12e68553a2196a3cfa33a35b7058d90f1055ed7160d6e240f5c3d93757ab64d3",
+                    "result": "2b3b9d11a72e8ed0bad9d23088c7df881ad68e4e1b7e7e55572f84434ab8e8a6",
+                    "state": "4b6a2e1673a6182bb0de4c641de082852e91550292b8b28924b11802352a9017",
+                    "trace": "c7c5ddd3fa2960e18c6e68646278595c148cb603aab6d4b5576077f2eec4eb39"
+                },
+                "cruising": {
+                    "frames": 122,
+                    "rooms": [1307, 1304, 1301, 1298, 1295],
+                    "endpoint": 1193,
+                    "lives": 3,
+                    "score": 0,
+                    "executable": "a1ec2fdccfe16621c1e6719ffaddbd3d8b1bdbbec477921958254e1aa3424d21",
+                    "plan": "066613babd58ed520588bc79ab3a534f57447b27b2bada3ca92dcad97612443b",
+                    "result": "a1a43daef5443acf5d296bdc8366c997cd9c1829a3591d54fd2b493ffc25f282",
+                    "state": "3debb00333b25e58e425e80ddbbfc573fbcf6f8219f22bff1814aced941dbd99",
+                    "trace": "7f27dca89b19557cef14ef0c175e49a2c751998d5af936351731f01b87d08ce8"
+                }
+            },
+            "comparison_sha256": "e78e9a490bd1a9ba796807359c17a1f18db08ce6198196cc151907d6c6231c42",
+            "ctest_seconds": 57.61,
+            "escape": {
+                "files": {
+                    "player-result.json": "b6006fa23e97b5564e47486b4793be646bd84c0e45fde41744e4bfd676f90e6e",
+                    "plan.json": "1523e94dcad041b68b1fb1522074aee872ce57996ebea16c105ba8797a450b64",
+                    "player-state.json": "d689e7acd587c8e9e8d5330a61d00503c42f4ae748d9988217d99743f4c04b03"
+                },
+                "incoming_save": "2e167a3ef6001bfeb796c20900b5f63f07de0002681129dc891f4826e4ad1604",
+                "exit_segment": 3834,
+                "timer_fixed": 229376,
+                "exit_shields": 17.15057373046875,
+                "exit_trigger": {
+                    "actor": 0,
+                    "attached": false,
+                    "delay_ms": -1,
+                    "flags": 4,
+                    "operated": true,
+                    "shot": 0,
+                    "type": 3,
+                    "value": 0
+                },
+                "destination": [3, 991],
+                "lives": 4,
+                "score": 68850,
+                "pose_events": 0,
+                "fixed_view_events": 0
+            }
+        },
+        "linux": {
+            "comparator": {
+                "braking": {
+                    "frames": 207,
+                    "rooms": [1307, 1304, 1301, 1298, 1295],
+                    "endpoint": 1193,
+                    "lives": 3,
+                    "score": 0,
+                    "executable": "7f3f253965d691934391539c2c8468725b05f477236f89e2724c6608dc54fe0d",
+                    "plan": "b3396cad666c42320cb9386037471937994694c76fcbd4cd0a886ee68961be85",
+                    "result": "e50f68bb5f1accd3f9f9ee0d5701ab90696d0d49cf7a5fec163102136be2f0b5",
+                    "state": "648bb1f8bd3e54b9def73be531bcb6b481603ac34c89e49db084b26fc3c10b41",
+                    "trace": "725be6a7e799ee4ffad13a29661d0ab116d67d8151aef078d7034522475a2775"
+                },
+                "cruising": {
+                    "frames": 122,
+                    "rooms": [1307, 1304, 1301, 1298, 1295],
+                    "endpoint": 1193,
+                    "lives": 3,
+                    "score": 0,
+                    "executable": "7f3f253965d691934391539c2c8468725b05f477236f89e2724c6608dc54fe0d",
+                    "plan": "b21116e1a99fbaed8565144f2275d0ff8369f84887c2caa5b3a7eb0d6a20d0b3",
+                    "result": "01abb17342ab4fcfd7046611f8f0a72642a8367af1796a459b40d58a4b4109d8",
+                    "state": "bf3d1d77f3be21f784077da879f8057f53514740878ac4d610c066e390dde0e3",
+                    "trace": "ac5f07a3b8c0ef1b2766812b384da0d6e145c0e25f0a10a451624ce58cbecb34"
+                }
+            },
+            "comparison_sha256": "eab4573b427193df3bc5a81b64a8baf2a3210e89f3bf26d8aeccd75a08ae7756",
+            "ctest_seconds": 47.32,
+            "escape": {
+                "files": {
+                    "player-result.json": "d57a6d13caab939bbf7203dd47d55a86adf5e3c8ee94b91772e401691d7a0441",
+                    "plan.json": "2e390d1b9836ec1ad297389d47596ed5e55123553abd73a213fc8821b17be7de",
+                    "player-state.json": "32e06d3324c2c297d6a21b6827d382ea5885afe9751d53fe11247cf7f82309fe"
+                },
+                "incoming_save": "2e167a3ef6001bfeb796c20900b5f63f07de0002681129dc891f4826e4ad1604",
+                "exit_segment": 3834,
+                "timer_fixed": 229376,
+                "exit_shields": 17.15057373046875,
+                "exit_trigger": {
+                    "actor": 0,
+                    "attached": false,
+                    "delay_ms": -1,
+                    "flags": 4,
+                    "operated": true,
+                    "shot": 0,
+                    "type": 3,
+                    "value": 0
+                },
+                "destination": [3, 991],
+                "lives": 4,
+                "score": 68850,
+                "pose_events": 0,
+                "fixed_view_events": 0
+            }
+        }
+    },
+    "negative_controls": [
+        "Parent with identical five portals consumed 207 frames in both modes. The comparative fixture rejected this result.",
+        "Both a non-boolean cruise value and cruise on a station approach were rejected."
+    ],
+    "assists": ["Portal steering", "Target aiming during the earned escape"]
+}
