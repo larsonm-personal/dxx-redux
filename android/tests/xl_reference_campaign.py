@@ -21,7 +21,7 @@ def digest(path):
         return hashlib.file_digest(stream, "sha256").hexdigest()
 
 
-def classify(code, events, descriptor, advertised, ordinal):
+def classify(code, events, descriptor, advertised, ordinal, frames=120):
     def values(key):
         return [fields[1:] for fields in events if fields[0] == key]
 
@@ -46,7 +46,7 @@ def classify(code, events, descriptor, advertised, ordinal):
     start = values("starting")
     if len(start) != 1 or len(start[0]) != 2 or start[0][0] != requested or start[0][1].casefold() != expected:
         return "level_start_unverified"
-    if code == 0 and values("started") == [["1", requested]] and values("frames") == [["120", requested, "0"]]:
+    if code == 0 and values("started") == [["1", requested]] and values("frames") == [[str(frames), requested, "0"]]:
         return "started_and_ran"
     if member[0][2] == "0":
         return "advertised_member_lookup_empty"
@@ -67,7 +67,24 @@ def main():
     )
     parser.add_argument("--work", required=True, type=Path, help="New output directory")
     parser.add_argument("--timeout", type=int, default=120)
+    bitmaps = parser.add_mutually_exclusive_group()
+    bitmaps.add_argument("--wall-bitmap", type=int, help="Read back every displayed frame of this wall bitmap")
+    bitmaps.add_argument("--object-bitmap", type=int, help="Read back every displayed frame of this object bitmap")
+    parser.add_argument(
+        "--hires-textures", action="store_true", help="Enable D2X-XL's original high-resolution texture option"
+    )
+    parser.add_argument(
+        "--texture-quality", type=int, choices=range(4), help="Set the original texture quality before level load"
+    )
+    parser.add_argument("--texture-observation-frames", type=int, help="Run a longer rendered bitmap observation")
     args = parser.parse_args()
+    bitmap = args.object_bitmap if args.object_bitmap is not None else args.wall_bitmap
+    if args.texture_observation_frames is not None and (
+        bitmap is None or not 120 <= args.texture_observation_frames <= 3600
+    ):
+        parser.error("Texture observation duration requires a bitmap and 120 through 3600 frames")
+    if bitmap is not None and (bitmap <= 0 or not args.level):
+        parser.error("A positive bitmap needs a gameplay ordinal")
     engine, install, work = (p.resolve() for p in (args.engine, args.installation, args.work))
     missions = install / "missions"
     descriptor = (missions / args.descriptor).resolve()
@@ -95,6 +112,13 @@ def main():
         XL_REFERENCE_LEVEL=str(args.level),
         XL_REFERENCE_OUT=str(receipt),
     )
+    env["XL_REFERENCE_WALL_BITMAP"] = str(bitmap or 0)
+    env.pop("XL_REFERENCE_TEXTURE_FRAMES", None)
+    if args.texture_observation_frames is not None:
+        env["XL_REFERENCE_TEXTURE_FRAMES"] = str(args.texture_observation_frames)
+    env.pop("XL_REFERENCE_TEXTURE_QUALITY", None)
+    if args.texture_quality is not None:
+        env["XL_REFERENCE_TEXTURE_QUALITY"] = str(args.texture_quality)
     command = [
         engine,
         "-datadir",
@@ -113,6 +137,8 @@ def main():
         "-progress_bars",
         "0",
     ]
+    if args.hires_textures:
+        command.extend(["-hires_textures", "1"])
     with (work / "console.log").open("wb") as log:
         try:
             code = subprocess.run(
@@ -126,7 +152,7 @@ def main():
         else []
     )
     advertised = case["level_file"] if case else ""
-    outcome = classify(code, events, descriptor, advertised, args.level)
+    outcome = classify(code, events, descriptor, advertised, args.level, args.texture_observation_frames or 120)
     result = dict(
         schema="xl-original-campaign-probe-v1",
         reference_revision=REVISION,
@@ -140,9 +166,34 @@ def main():
         timed_out=code is None,
         receipt_sha256=digest(receipt) if receipt.exists() else None,
     )
+    if bitmap:
+        if args.texture_observation_frames is not None:
+            result["requested_texture_observation_frames"] = args.texture_observation_frames
+        samples = [list(map(int, event[1:])) for event in events if event[0] == "wall_texture"]
+        complete = (
+            bool(samples)
+            and all(
+                len(row) == 6 and row[0] == bitmap and row[2] == len(samples) and row[3] > 0 and row[4] > 0
+                for row in samples
+            )
+            and sorted(row[1] for row in samples) == list(range(len(samples)))
+        )
+        result["object_texture" if args.object_bitmap is not None else "wall_texture"] = {
+            "bitmap": bitmap,
+            "complete": complete,
+            "samples": samples,
+        }
+    if args.hires_textures:
+        result["hires_textures_requested"] = True
+    quality = [row[1:] for row in events if row[0] == "texture_quality"]
+    if len(quality) == 1:
+        result["texture_quality"], result["maximum_texture_quality"] = map(int, quality[0])
+    if args.texture_quality is not None and result.get("texture_quality") != args.texture_quality:
+        result["observation"] = "requested_texture_quality_unverified"
+        outcome = result["observation"]
     (work / "result.json").write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
     print(outcome)
-    return 0 if outcome in ("started_and_ran", "mission_opened") else 1
+    return 0 if outcome in ("started_and_ran", "mission_opened") and (not bitmap or complete) else 1
 
 
 if __name__ == "__main__":

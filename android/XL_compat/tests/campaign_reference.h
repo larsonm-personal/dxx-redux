@@ -8,6 +8,40 @@
 
 static FILE *campaign_receipt;
 static int campaign_ordinal;
+static int campaign_bitmap;
+static int campaign_frames = 120;
+
+static void capture_wall_texture()
+{
+	if (campaign_bitmap <= 0 || campaign_bitmap >= gameData.pigData.tex.pBitmap.Length()) return;
+	CBitmap *strip = gameData.pigData.tex.pBitmap[campaign_bitmap].Override();
+	if (!strip || !strip->CurFrame() || !strip->CurFrame()->Texture()) return;
+	const int index = strip->FrameIndex(), count = strip->FrameCount();
+	static bool seen[128]{};
+	if (index < 0 || index >= count || count > 128 || seen[index]) return;
+	const int handle = strip->CurFrame()->Texture()->Handle();
+	if (handle <= 0) return;
+	GLint current = 0, width = 0, height = 0;
+	glGetIntegerv(GL_TEXTURE_BINDING_2D, &current);
+	glBindTexture(GL_TEXTURE_2D, handle);
+	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &width);
+	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &height);
+	if (width > 0 && height > 0 && width <= 4096 && height <= 4096) {
+		const std::size_t size = std::size_t(width) * height * 4;
+		auto *rgba = static_cast<unsigned char *>(std::malloc(size));
+		if (rgba) {
+			glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba);
+			if (glGetError() == GL_NO_ERROR) {
+				unsigned hash = 2166136261u;
+				for (std::size_t i = 0; i < size; ++i) hash = (hash ^ rgba[i]) * 16777619u;
+				std::fprintf(campaign_receipt, "wall_texture\t%d\t%d\t%d\t%d\t%d\t%u\n", campaign_bitmap, index, count, width, height, hash);
+				seen[index] = true;
+			}
+			std::free(rgba);
+		}
+	}
+	glBindTexture(GL_TEXTURE_2D, current);
+}
 
 static bool campaign_requested()
 {
@@ -25,10 +59,11 @@ void xl_reference_descriptor(const char *directory, const char *name)
 void xl_reference_frame()
 {
 	if (!campaign_receipt) return;
+	capture_wall_texture();
 	static int frames = 0;
 	++frames;
 	const bool failed = gameStates.app.bPlayerIsDead || missionManager.nCurrentLevel != campaign_ordinal;
-	if (!failed && frames < 120) return;
+	if (!failed && frames < campaign_frames) return;
 	std::fprintf(campaign_receipt, "frames\t%d\t%d\t%d\n", frames, missionManager.nCurrentLevel, int(gameStates.app.bPlayerIsDead));
 	std::fclose(campaign_receipt);
 	std::exit(failed ? 23 : 0);
@@ -40,9 +75,16 @@ static int campaign_reference()
 	const char *path = std::getenv("XL_REFERENCE_OUT");
 	const char *level = std::getenv("XL_REFERENCE_LEVEL");
 	const char *descriptor = std::getenv("XL_REFERENCE_DESCRIPTOR");
+	if (const char *duration = std::getenv("XL_REFERENCE_TEXTURE_FRAMES")) {
+		char *end = nullptr;
+		const long frames = std::strtol(duration, &end, 10);
+		if (end == duration || *end || frames < 120 || frames > 3600) return 80;
+		campaign_frames = int(frames);
+	}
 	if (!folder || !path || !level || !descriptor || std::strlen(folder) >= sizeof(gameFolders.missions.szSubFolder)) return 80;
 	campaign_receipt = std::fopen(path, "w");
 	if (!campaign_receipt) return 80;
+	if (const char *bitmap = std::getenv("XL_REFERENCE_WALL_BITMAP")) campaign_bitmap = std::atoi(bitmap);
 	std::fprintf(campaign_receipt, "initialized\n");
 	std::fflush(campaign_receipt);
 	// This selects the same directory and entry as the game's mission browser.
@@ -78,9 +120,14 @@ static int campaign_reference()
 	if (!campaign_ordinal) return 0;
 	if (campaign_ordinal > missionManager.LastLevel() || campaign_ordinal < missionManager.LastSecretLevel()) return 24;
 	gameStates.app.nDifficultyLevel = 2;
+	if (const char *quality = std::getenv("XL_REFERENCE_TEXTURE_QUALITY")) {
+		if (std::strlen(quality) != 1 || *quality < '0' || *quality > '3') return 80;
+		gameOpts->render.textures.nQuality = *quality - '0';
+	}
 	std::fprintf(campaign_receipt, "starting\t%d\t%s\n", campaign_ordinal, LevelName(campaign_ordinal));
 	std::fflush(campaign_receipt);
 	const int started = StartNewGame(campaign_ordinal);
+	std::fprintf(campaign_receipt, "texture_quality\t%d\t%d\n", int(gameOpts->render.textures.nQuality), int(gameStates.render.nMaxTextureQuality));
 	std::fprintf(campaign_receipt, "started\t%d\t%d\n", started, missionManager.nCurrentLevel);
 	std::fflush(campaign_receipt);
 	if (!started) return 22;

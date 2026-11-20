@@ -10,6 +10,20 @@ static void require(bool value)
 }
 static void image_controls()
 {
+	require(xl_compat::scoped_texture_factor(256, 2816, 0) == 1);
+	require(xl_compat::scoped_texture_factor(256, 2816, 256) == 1);
+	require(xl_compat::scoped_texture_factor(256, 2816, 64) == 4);
+	require(xl_compat::scoped_texture_factor(300, 600, 64) == 1);
+	require(xl_compat::scoped_texture_factor(0, 3, 64) == 1);
+	xl_compat::PogBitmap strip;
+	strip.width = 2;
+	strip.height = 4;
+	strip.frames = 2;
+	strip.pixels = { 120, 88, 128, 0, 120, 88, 128, 0, 9, 19, 29, 80, 21, 31, 41, 120,
+		             120, 88, 128, 0, 12, 24, 36, 48, 18, 30, 42, 54, 24, 36, 48, 60 };
+	xl_compat::shrink_scoped_texture(strip, 2);
+	require(strip.width == 1 && strip.height == 2 && strip.frames == 2);
+	require(strip.pixels == std::vector<unsigned char>{ 120, 88, 128, 0, 18, 30, 42, 54 });
 	unsigned cases = 0;
 	for (unsigned channels : { 3u, 4u })
 		for (unsigned descriptor : { 0u, 16u, 32u, 48u }) {

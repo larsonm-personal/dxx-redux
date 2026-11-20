@@ -1,6 +1,7 @@
 #ifndef DXX_XL_RETAINED_RESOURCE_H
 #define DXX_XL_RETAINED_RESOURCE_H
 #include <functional>
+#include <memory>
 #include <string>
 #include <vector>
 #include <optional>
@@ -16,4 +17,17 @@ void xl_read_retained_resource(const std::vector<unsigned char> &bytes, const st
 std::vector<unsigned char> xl_retain_origin_resource(const std::string &origin, const std::string &member);
 // Decode archive membership with PhysicsFS under a temporary private prefix
 std::optional<std::vector<unsigned char>> xl_find_archive_resource(const std::vector<unsigned char> &archive, const std::string &extension, const std::string &member, std::size_t limit);
+
+// Read an exact physical archive independently of the active PhysicsFS search path
+class XlPhysicalArchive
+{
+  public:
+	explicit XlPhysicalArchive(const std::string &path);
+	~XlPhysicalArchive();
+	std::optional<std::vector<unsigned char>> member(const std::string &name, std::size_t limit);
+
+  private:
+	struct State;
+	std::unique_ptr<State> state;
+};
 #endif

@@ -7,6 +7,7 @@ param(
     [string]$OriginalSurvey,
     [switch]$CheckOriginalRestores,
     [string]$LightingRuntime,
+    [switch]$WallAnimation,
     [string]$OutputDirectory
 )
 $ErrorActionPreference = 'Stop'
@@ -15,6 +16,7 @@ $expectedDescriptor = 'a4a1be94729745d47fb34b5b83beeff85ed4379f3126c30556a2351ea
 $mission = 'xhogs'
 $extension = '.mn2'
 $scenario = 'test_xl_hog_runtime.jsonc'
+if ($WallAnimation -and !$LightingRuntime) { throw 'Standoff requires the original Vignette distribution and its runtime data' }
 if ($LightingRuntime) {
     if ($OriginalSurvey -or $CheckOriginalRestores) { throw 'Select one original test scenario' }
     $addons = @{
@@ -100,6 +102,37 @@ if ($OriginalSurvey) {
         }
     )
     $scenario = Join-Path $output 'original.jsonc'
+    $steps | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $scenario -Encoding utf8
+}
+if ($WallAnimation) {
+    function Sample-Standoff {
+        foreach ($sample in 1..24) {
+            @{ action = 'set_debug'; field = 'xl_hog_probe'; value = 'standoff_frame'; post_delay_ms = 71 + ($sample % 7) * 17 }
+        }
+        @{ action = 'set_debug'; field = 'xl_hog_probe'; value = 'standoff_complete' }
+    }
+    $steps = @(
+        @{ _info = @{ _standalone = $false; _owner = 'test_xl_hog_runtime'; games = @('d2') } }
+        @{ action = 'enter_game'; game = 'd2' }
+        @{ action = 'skip_intro'; timeout_ms = 30000 }
+        @{ action = 'select'; text = 'player'; timeout_ms = 20000 }
+        @{ action = 'select'; text = 'New game'; timeout_ms = 20000 }
+        @{ action = 'select_mission'; text = 'Descent Vignettes-XL'; timeout_ms = 20000 }
+        @{ action = 'select'; text = 'Ok'; timeout_ms = 20000 }
+        @{ action = 'select'; text = 'Hotshot'; timeout_ms = 20000 }
+        @{ action = 'skip_briefing'; timeout_ms = 30000 }
+        @{ action = 'wait_for'; expect = @{ in_game = $true; time_paused = $false; current_level_num = 1 }; timeout_ms = 30000 }
+        Sample-Standoff
+        @{ action = 'set_debug'; field = 'xl_hog_probe'; value = 'remember_disk' }
+        @{ action = 'set_debug'; field = 'xl_hog_probe'; value = 'visit:2:initiati.rl2'; post_delay_ms = 0 }
+        @{ action = 'skip_briefing'; timeout_ms = 30000 }
+        @{ action = 'wait_for'; expect = @{ current_level_num = 2; 'xl_pilot.source_level_version' = 17 }; timeout_ms = 30000 }
+        @{ action = 'set_debug'; field = 'xl_hog_probe'; value = 'restore_disk' }
+        @{ action = 'wait_for'; expect = @{ in_game = $true; time_paused = $false; current_level_num = 1 }; timeout_ms = 30000 }
+        Sample-Standoff
+        @{ action = 'introspect' }
+    )
+    $scenario = Join-Path $output 'wall-animation.jsonc'
     $steps | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $scenario -Encoding utf8
 }
 function Invoke-HogAdb {

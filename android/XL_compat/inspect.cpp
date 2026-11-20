@@ -41,7 +41,28 @@ static std::string mission_features(const xl_compat::Inventory &level)
 		first = false;
 		out << xl_compat::json_string(entry.first) << ':' << entry.second;
 	}
-	out << "}}";
+	out << "},\"wall_exits\":[";
+	first = true;
+	for (const auto &wall : level.walls) {
+		if (wall.trigger == 255) continue;
+		const auto &action = level.triggers.at(wall.trigger);
+		if (action.type != 3 && action.type != 4) continue;
+		if (!first) out << ',';
+		first = false;
+		out << "{\"segment\":" << wall.segment << ",\"side\":" << wall.side << ",\"trigger\":" << wall.trigger
+		    << ",\"type\":" << action.type << ",\"flags\":" << action.flags << ",\"value\":" << action.value << '}';
+	}
+	out << "],\"object_exits\":[";
+	first = true;
+	for (std::size_t i = 0; i < level.object_trigger_records.size(); ++i) {
+		const auto &record = level.object_trigger_records[i];
+		if (record.action.type != 3 && record.action.type != 4) continue;
+		if (!first) out << ',';
+		first = false;
+		out << "{\"object\":" << record.object << ",\"trigger\":" << i << ",\"type\":" << record.action.type
+		    << ",\"flags\":" << record.action.flags << ",\"value\":" << record.action.value << '}';
+	}
+	out << "]}";
 	return out.str();
 }
 

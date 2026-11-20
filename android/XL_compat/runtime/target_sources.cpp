@@ -1,7 +1,9 @@
 #include "target_sources.h"
 #include "retained_resource.h"
 #include <SDL.h>
+#include <algorithm>
 #include <cctype>
+#include <limits>
 #include <filesystem>
 #include <fstream>
 #include <map>
@@ -33,12 +35,12 @@ void validate_name(const std::string &name)
 		begin = end + 1;
 	}
 }
-std::vector<unsigned char> physical_bytes(const std::filesystem::path &path, std::size_t limit)
+std::vector<unsigned char> physical_bytes(const std::filesystem::path &path, std::size_t limit, std::size_t prefix = (std::numeric_limits<std::size_t>::max)())
 {
 	std::ifstream file(path, std::ios::binary | std::ios::ate);
 	const auto length = file ? file.tellg() : std::streampos(-1);
 	if (length < 0 || static_cast<std::uintmax_t>(length) > limit) throw std::runtime_error("Incoming physical resource exceeds its bound: " + path.string());
-	std::vector<unsigned char> bytes(static_cast<std::size_t>(length));
+	std::vector<unsigned char> bytes((std::min) (static_cast<std::size_t>(length), prefix));
 	file.seekg(0);
 	if (!file.read(reinterpret_cast<char *>(bytes.data()), bytes.size())) throw std::runtime_error("Incomplete incoming physical resource: " + path.string());
 	return bytes;
@@ -51,7 +53,7 @@ struct TargetSources::State {
 	std::string archive, directory, installation;
 	using Entries = std::map<std::string, std::vector<std::filesystem::path>>;
 	std::map<std::string, Entries> directories;
-	std::optional<std::vector<unsigned char>> installation_archive, mission_archive;
+	std::optional<XlPhysicalArchive> installation_archive, mission_archive;
 	std::filesystem::path locate(const std::string &root, const std::string &name)
 	{
 		validate_name(name);
@@ -124,8 +126,8 @@ std::optional<std::vector<unsigned char>> TargetSources::archive_bytes(const std
 {
 	validate_name(name);
 	if (state->archive.empty()) return std::nullopt;
-	if (!state->mission_archive) state->mission_archive = physical_bytes(std::filesystem::u8path(state->archive), 64 * 1024 * 1024);
-	return xl_find_archive_resource(*state->mission_archive, std::filesystem::path(state->archive).extension().string(), name, limit);
+	if (!state->mission_archive) state->mission_archive.emplace(state->archive);
+	return state->mission_archive->member(name, limit);
 }
 
 bool TargetSources::archive_contains(const std::string &name)
@@ -137,13 +139,21 @@ std::optional<std::vector<unsigned char>> TargetSources::directory_bytes(const s
 {
 	validate_name(name);
 	if (installation && !state->installation.empty() && std::filesystem::is_regular_file(std::filesystem::u8path(state->installation))) {
-		if (!state->installation_archive) state->installation_archive = physical_bytes(std::filesystem::u8path(state->installation), 64 * 1024 * 1024);
-		return xl_find_archive_resource(*state->installation_archive, std::filesystem::path(state->installation).extension().string(), name, limit);
+		if (!state->installation_archive) state->installation_archive.emplace(state->installation);
+		return state->installation_archive->member(name, limit);
 	}
 	const auto path = state->locate(installation ? state->installation : state->directory, name);
 	if (path.empty()) return std::nullopt;
 	if (!std::filesystem::is_regular_file(path)) throw std::runtime_error("Incoming resource is not a regular file: " + name);
 	return physical_bytes(path, limit);
+}
+
+std::optional<std::vector<unsigned char>> TargetSources::directory_prefix(const std::string &name, std::size_t length, std::size_t file_limit)
+{
+	const auto path = state->locate(state->directory, name);
+	if (path.empty()) return std::nullopt;
+	if (!std::filesystem::is_regular_file(path)) throw std::runtime_error("Incoming resource is not a regular file: " + name);
+	return physical_bytes(path, file_limit, length);
 }
 
 bool TargetSources::directory_exists(const std::string &name)

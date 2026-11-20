@@ -1,0 +1,68 @@
+{
+    "distribution_descriptors": 625,
+    "single_ordinal": 513,
+    "multiple_ordinals": 112,
+    "negative_ordinals": 121,
+    "advertised_entries": 1654,
+    "with_mine_bytes": 1620,
+    "distinct_mines": 1236,
+    "distinct_mine_archive_descriptor_ordinal": 1342,
+    "types": {
+        "normal": 622,
+        "d2x-xl": 2,
+        "anarchy": 1
+    },
+    "declares_competitive_only": 74,
+    "source_reports": {
+        "feature-pinned-01": "511cac85629ce9978f95c792f808e995d942148f12caf4127cc8aa66606f3d63",
+        "feature-local-01": "648858a89698b17424a4aa612ff47bfecf477e9c2f996dc9d15bb7c0fc17b93a"
+    },
+    "distributions_report_sha256": "ff7e63193af60df23b50642c20c570895f2195c93627f5a7f12853e5db87b9c5",
+    "method": [
+        "Count each catalog archive and descriptor once as a distribution and each signed advertised ordinal once as an entry.",
+        "Read the original descriptor only after matching its catalog SHA-256. Ignore semicolon comments and trim ASCII keys and values. Report absent, empty and unsupported declarations independently of runtime behavior.",
+        "Count unique mine SHA-256 values across both inventories. Also count unique combinations of mine SHA-256, sibling archive or loose level SHA-256, descriptor SHA-256 and signed ordinal. An external addon or a different destination can still distinguish installations."
+    ],
+    "raw_mode_declarations_per_distribution": {
+        "normal": {
+            "absent": 229,
+            "empty": 4,
+            "no": 270,
+            "yes": 122
+        },
+        "coop": {
+            "absent": 229,
+            "empty": 4,
+            "no": 312,
+            "unsupported": 5,
+            "yes": 75
+        },
+        "anarchy": {
+            "absent": 230,
+            "empty": 4,
+            "no": 226,
+            "yes": 165
+        },
+        "robo_anarchy": {
+            "absent": 238,
+            "no": 343,
+            "yes": 44
+        },
+        "capture_flag": {
+            "absent": 230,
+            "empty": 4,
+            "no": 257,
+            "unsupported": 5,
+            "yes": 129
+        },
+        "hoard": {
+            "absent": 230,
+            "empty": 4,
+            "no": 269,
+            "unsupported": 5,
+            "yes": 117
+        }
+    },
+    "competitive_only_definition": "Explicit normal=no and coop=no and at least one explicit yes among anarchy, robo_anarchy, capture_flag or hoard",
+    "competitive_only_advertised_entries": 116
+}

@@ -1,0 +1,173 @@
+{
+    "parent": "ccee00043c59fb9d24736c4a5b221b7c4b86a964",
+    "mission": "Pumo Mines v1.1",
+    "descriptor_sha256": "45b4138e0a0d49ab8ee09334b7cfa97c0ec75ac6c6b6406b21eba28ddaa19cfd",
+    "hog_sha256": "6e3e723e549897188a8fdc19db8b04630de9d428d2b31f8e3f48af108915b043",
+    "texture": "eye02#0.tga",
+    "texture_sha256": "a3f1985201d33d96219ed76298ecf222f27a2deef050f9c41527a6c2bcd4b21d",
+    "effect": 49,
+    "object_texture": 33,
+    "bitmaps": [
+        1842,
+        1843,
+        1844,
+        1845,
+        1846,
+        1847,
+        1848,
+        1849,
+        1850,
+        1851,
+        1852
+    ],
+    "native_frame_time": 2978,
+    "full_resolution_object_gpu": {
+        "width": 256,
+        "height": 256,
+        "rgba_fnv1a_by_frame": [
+            1242514072,
+            349415803,
+            1992119576,
+            3061510161,
+            2139693118,
+            2538195079,
+            1366524638,
+            1580898482,
+            1107635973,
+            1448548215,
+            1343293750
+        ],
+        "matching_original_quality": 3,
+        "original": "2576a98b5de310e3ac7c9777df2677d1627b8bae",
+        "original_executable_sha256": "ab79abbf36aac303be8babd55255f2d21a20f42cbf0d8b13059801f07f7fb23a",
+        "redux_executable_sha256": "017589c5beaea43a63c1f7aa76a4f5083a14f501578ad87bb402b99e7bed58e9",
+        "redux_receipt_sha256": "d66e073e5f71d803b61f2c8ab78f5ee79c2dd228abefc416afd8971d8b8c36ec",
+        "reference_receipt_sha256": "6ca231b82813081af80fbffc0c0cae7e2d6ff416ba9b8d5f12f1d1c20436e678",
+        "rendered_steps": 120,
+        "matching_clock_samples": 121,
+        "resident_before_first_probe": true
+    },
+    "original_default": {
+        "width": 64,
+        "height": 64,
+        "source_box_reduction": 4,
+        "rgba_fnv1a_by_frame": [
+            2040196615,
+            1201695061,
+            4131742569,
+            1163767514,
+            2544252211,
+            670752323,
+            15992937,
+            1782502482,
+            2872524701,
+            17758367,
+            2136742604
+        ],
+        "reference_receipt_sha256": "d3abd9caf9c36c7eff0a03636dedff5ef0655024802643c86b9dee516ceffb6a"
+    },
+    "ordinary_headless": {
+        "engine_sha256": "1826e9840b5ccf53b3e37d8aa9ab70039b76542d0c3b01ba9aec1102fe021e2e",
+        "independent_starts": [
+            {
+                "level": 1,
+                "code": 0,
+                "phase": "loaded_ticked",
+                "frames": 120,
+                "reason": ""
+            },
+            {
+                "level": 2,
+                "code": 1,
+                "phase": "level_load",
+                "frames": null,
+                "reason": "Scoped texture decoded pixels exceed the resource bound"
+            },
+            {
+                "level": 3,
+                "code": 1,
+                "phase": "level_load",
+                "frames": null,
+                "reason": "Scoped texture decoded pixels exceed the resource bound"
+            },
+            {
+                "level": 4,
+                "code": 1,
+                "phase": "level_load",
+                "frames": null,
+                "reason": "Scoped texture decoded pixels exceed the resource bound"
+            },
+            {
+                "level": 5,
+                "code": 1,
+                "phase": "level_load",
+                "frames": null,
+                "reason": "Scoped texture decoded pixels exceed the resource bound"
+            },
+            {
+                "level": 6,
+                "code": 1,
+                "phase": "level_load",
+                "frames": null,
+                "reason": "Scoped texture decoded pixels exceed the resource bound"
+            },
+            {
+                "level": 7,
+                "code": 1,
+                "phase": "level_load",
+                "frames": null,
+                "reason": "Scoped texture decoded pixels exceed the resource bound"
+            },
+            {
+                "level": 8,
+                "code": 1,
+                "phase": "level_load",
+                "frames": null,
+                "reason": "Scoped texture decoded pixels exceed the resource bound"
+            },
+            {
+                "level": 9,
+                "code": 1,
+                "phase": "level_load",
+                "frames": null,
+                "reason": "Scoped texture decoded pixels exceed the resource bound"
+            },
+            {
+                "level": 10,
+                "code": 0,
+                "phase": "loaded_ticked",
+                "frames": 120,
+                "reason": ""
+            },
+            {
+                "level": 11,
+                "code": 1,
+                "phase": "level_load",
+                "frames": null,
+                "reason": "Scoped texture decoded pixels exceed the resource bound"
+            },
+            {
+                "level": 12,
+                "code": 1,
+                "phase": "level_load",
+                "frames": null,
+                "reason": "Scoped texture decoded pixels exceed the resource bound"
+            },
+            {
+                "level": 13,
+                "code": 1,
+                "phase": "level_load",
+                "frames": null,
+                "reason": "Scoped texture decoded pixels exceed the resource bound"
+            },
+            {
+                "level": 14,
+                "code": 1,
+                "phase": "level_load",
+                "frames": null,
+                "reason": "Scoped texture decoded pixels exceed the resource bound"
+            }
+        ]
+    },
+    "scope": "Independent level starts with authentic mission addons. Rendered observation explicitly binds the native object bitmap. These samples establish no earned exit or connected campaign."
+}

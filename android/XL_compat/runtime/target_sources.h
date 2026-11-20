@@ -21,6 +21,7 @@ class TargetSources
 	bool archive_contains(const std::string &name);
 	std::optional<std::vector<unsigned char>> archive_bytes(const std::string &name, std::size_t limit);
 	std::optional<std::vector<unsigned char>> directory_bytes(const std::string &name, std::size_t limit, bool installation = false);
+	std::optional<std::vector<unsigned char>> directory_prefix(const std::string &name, std::size_t length, std::size_t file_limit);
 	bool directory_exists(const std::string &name);
 
   private:

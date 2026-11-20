@@ -20,6 +20,8 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #ifndef _MULTI_H
 #define _MULTI_H
 
+#include "../../android/app/src/main/cpp/shared/net/net_udp_mission_filename.h"
+
 #include "gameseq.h"
 #include "piggy.h"
 #include "newmenu.h"
@@ -645,6 +647,7 @@ typedef struct netgame_info
 	char    					game_name[NETGAME_NAME_LEN+1];
 	char    					mission_title[MISSION_NAME_LEN+1];
 	char    					mission_name[9];
+	char received_mission_filename[NET_UDP_MISSION_NAME_CAPACITY];
 	int     					levelnum;
 	ubyte   					gamemode;
 	ubyte   					RefusePlayers;

@@ -1,0 +1,169 @@
+{
+    "original": "2576a98b5de310e3ac7c9777df2677d1627b8bae",
+    "ndk": "30.0.16248370",
+    "build_api": 28,
+    "emulator": {
+        "device": "emulator-5584",
+        "system_api": 34,
+        "abi": "x86_64",
+        "graphics": "SwiftShader",
+        "native_bridge": "libndk_translation.so"
+    },
+    "builds": {
+        "x86_64": {
+            "abi": "x86_64",
+            "original": "2576a98b5de310e3ac7c9777df2677d1627b8bae",
+            "gl4es": "8b1a3da5d2331d0f88b70be25963182d46eed857",
+            "dependencies": {
+                "dep-curl": "fdb8a789d2b446b77bd7cdd2eff95f6cbc814cf4",
+                "dep-glu": "a2b96c7bba8db8fec3e02fb4227a7f7b02cabad1",
+                "dep-SDL_image": "2ffb2e3e1eba037897164e3ac6c67570d8bccd79",
+                "dep-SDL_mixer": "1a14d94ed4271e45435ecb5512d61792e1a42932",
+                "dep-SDL_net": "7aa8ffae32fda6455792c5538a8b64a655dd0721"
+            },
+            "source_archives": {
+                "GLEW 2.2.0": "90733a013f8ba195f1c4e4f7433fc66b3225af1d82cd82e077738fb2c903c111",
+                "libpng 1.6.50": "0712efe1bdff7a1457abfc9177f4fe485d77010cc8204aba693eb49b87e8844c"
+            },
+            "binary_sha256": {
+                "xl_original": "648b34a153b61fecdae3a6aa23867827522ebb50e4deb8004dad4d7ba4d95302",
+                "libGL.so.1": "068422ba94c42dc74db1ef9bb69658c9d41d36370d8c64dbbad1cc6c00f7251a",
+                "libSDL12.so": "927fcef19348156d45204dbaa1f3928684ddb7925e8c65c733edcf30d680e7a0"
+            },
+            "source_lf_sha256": {
+                "android.patch": "729ee555243386e4996bab470c4c5daf056d4f7b0683c5c691e733087a68625e",
+                "CMakeLists.txt": "a00d3d39b44771d31dd95985542a660b1a095e8a4918b7a28037cd6c97ddcdf9",
+                "egl_sdl.cpp": "b4bbb8a7340aa1bf0e727c22ea1b77a8a100fb671f7b2cec2f8ce942aaa8445b",
+                "build.py": "1df8457242b5dff025d37eabc56ed50ad07c2c06354a06a5ee5be533e54611e0"
+            },
+            "headers_sha256": {
+                "glew.h": "d3a05edf0b6c45bdbdb5704cacfa68a4666ae682e09b7970bb7310d38cfc3d0e",
+                "png.h": "3c3b27f3e9b3030f7d234cb491b524fcc765345ced5a5dbce9e882cc35a1167f",
+                "SDL_config.h": "2203c480db7e50095933bf869c8a4eae9a1c196e60ef1916428d1032ac30aae9"
+            }
+        },
+        "arm64-v8a": {
+            "abi": "arm64-v8a",
+            "original": "2576a98b5de310e3ac7c9777df2677d1627b8bae",
+            "gl4es": "8b1a3da5d2331d0f88b70be25963182d46eed857",
+            "dependencies": {
+                "dep-curl": "fdb8a789d2b446b77bd7cdd2eff95f6cbc814cf4",
+                "dep-glu": "a2b96c7bba8db8fec3e02fb4227a7f7b02cabad1",
+                "dep-SDL_image": "2ffb2e3e1eba037897164e3ac6c67570d8bccd79",
+                "dep-SDL_mixer": "1a14d94ed4271e45435ecb5512d61792e1a42932",
+                "dep-SDL_net": "7aa8ffae32fda6455792c5538a8b64a655dd0721"
+            },
+            "source_archives": {
+                "GLEW 2.2.0": "90733a013f8ba195f1c4e4f7433fc66b3225af1d82cd82e077738fb2c903c111",
+                "libpng 1.6.50": "0712efe1bdff7a1457abfc9177f4fe485d77010cc8204aba693eb49b87e8844c"
+            },
+            "binary_sha256": {
+                "xl_original": "46d54d7500905db119a6ca850e470de41b5aad2f1239183856259e434688e6f1",
+                "libGL.so.1": "e3421ea9a080d5dc74021dbefa06bab37a33f9d4c8ad97b01da57cbe805bcd26",
+                "libSDL12.so": "fd1a99e315e465894f70bad27e615cee084af8169f913b5a61f47f6d60b53003"
+            },
+            "source_lf_sha256": {
+                "android.patch": "729ee555243386e4996bab470c4c5daf056d4f7b0683c5c691e733087a68625e",
+                "CMakeLists.txt": "a00d3d39b44771d31dd95985542a660b1a095e8a4918b7a28037cd6c97ddcdf9",
+                "egl_sdl.cpp": "b4bbb8a7340aa1bf0e727c22ea1b77a8a100fb671f7b2cec2f8ce942aaa8445b",
+                "build.py": "1df8457242b5dff025d37eabc56ed50ad07c2c06354a06a5ee5be533e54611e0"
+            },
+            "headers_sha256": {
+                "glew.h": "d3a05edf0b6c45bdbdb5704cacfa68a4666ae682e09b7970bb7310d38cfc3d0e",
+                "png.h": "3c3b27f3e9b3030f7d234cb491b524fcc765345ced5a5dbce9e882cc35a1167f",
+                "SDL_config.h": "2203c480db7e50095933bf869c8a4eae9a1c196e60ef1916428d1032ac30aae9"
+            }
+        }
+    },
+    "sessions": [
+        {
+            "scene": "Standoff",
+            "executable_abi": "x86_64",
+            "elapsed_seconds": 6.157,
+            "exit_code": 0,
+            "passed": true,
+            "mission_sha256": {
+                "game/missions/darkflamewolf/vignette-xl.mn2": "fd89030cc1a7cf40cdaf5730d14e0c19370b3bdd294af057c7f1fcd169f80d57",
+                "game/missions/darkflamewolf/vignette-xl.hog": "69d0d102c5551f164cefee6b7d79f576e5f0c314eb943e49902fe9dcb591f0e2"
+            },
+            "engine_log_sha256": "46be048ebcc0b659e70fbd6e1ff515d5578fca8c9d90eb4d58a530ab3b43b08f",
+            "frames": 120,
+            "ending_level": 1,
+            "player_dead": false,
+            "frame": {
+                "width": 800,
+                "height": 600,
+                "colors": 18064,
+                "sha256": "1472f4c25de737bc500d4f0f888464ecd9789d4f64680aaa8eea1f9fdd7c2dc7"
+            },
+            "reference_tsv_sha256": "394a491e02d8f59d468d6ec3aa4b670ab24912a824bf357587949bcf6040db67",
+            "presented_swap": 209
+        },
+        {
+            "scene": "Pumo hub",
+            "executable_abi": "x86_64",
+            "elapsed_seconds": 13.766,
+            "exit_code": 0,
+            "passed": true,
+            "mission_sha256": {
+                "game/missions/single/pmines.mn2": "45b4138e0a0d49ab8ee09334b7cfa97c0ec75ac6c6b6406b21eba28ddaa19cfd",
+                "game/missions/single/pmines.hog": "6e3e723e549897188a8fdc19db8b04630de9d428d2b31f8e3f48af108915b043"
+            },
+            "engine_log_sha256": "78a971dfeecd3f6a747583b1a03b8104ba82d7fec833508d2dc7ae9c0699213d",
+            "frames": 120,
+            "ending_level": 1,
+            "player_dead": false,
+            "frame": {
+                "width": 800,
+                "height": 600,
+                "colors": 58923,
+                "sha256": "7ac5f03ec3435cc8b275ad7d209b13025e6042fce95cc11bf86fd1874782b4f2"
+            },
+            "reference_tsv_sha256": "114ac97e23754bfd6e7e714479f57d2bf239f044c416995501f5c33d3c88ecac",
+            "presented_swap": 218
+        },
+        {
+            "scene": "Standoff",
+            "executable_abi": "arm64-v8a",
+            "elapsed_seconds": 0.781,
+            "exit_code": 139,
+            "passed": false,
+            "mission_sha256": {
+                "game/missions/darkflamewolf/vignette-xl.mn2": "fd89030cc1a7cf40cdaf5730d14e0c19370b3bdd294af057c7f1fcd169f80d57",
+                "game/missions/darkflamewolf/vignette-xl.hog": "69d0d102c5551f164cefee6b7d79f576e5f0c314eb943e49902fe9dcb591f0e2"
+            },
+            "engine_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stage": "Native bridge exited before the observer opened the mission receipt",
+            "crash": "SIGSEGV at 0 in the Android native bridge guest startup path",
+            "crash_log_sha256": "9b1d108b5d9b084189bb5eedade84489b053814ece5b88ddd3d64a87632c1c99"
+        }
+    ],
+    "private_input_trees": {
+        "mods/pmines": {
+            "host_files": 2667,
+            "device_files": 2667,
+            "host_tree": "b055215b10e4c78bc813800c827fd7db33173f72ac7224319dcffeb6d967cadd",
+            "device_tree": "b055215b10e4c78bc813800c827fd7db33173f72ac7224319dcffeb6d967cadd",
+            "common": 2667,
+            "different_shared_files": [],
+            "host_only": 0,
+            "device_only": 0
+        },
+        "data": {
+            "host_files": 15,
+            "device_files": 15,
+            "host_tree": "818f21de68360eaa6e380a3984b112f4908fa012faa7bafc37db896cdcc6a418",
+            "device_tree": "818f21de68360eaa6e380a3984b112f4908fa012faa7bafc37db896cdcc6a418",
+            "common": 15,
+            "different_shared_files": [],
+            "host_only": [],
+            "device_only": []
+        }
+    },
+    "scope": "Offscreen original-engine gameplay and presented frames, muted audio, scripted mission selection, no player input",
+    "observed_investigation": [
+        "Preserved the completed frame from an early run whose exit handler crashed while deleting textures. Explicit original game shutdown while EGL and the Android driver were live resolved the native x86_64 crash.",
+        "The original fixed-width highest-level table cannot represent the full Standoff mission key. The reference skips that profile entry while preserving mission selection and the game data.",
+        "Game starts and shows a frame without the optional Vertigo package in these two original-engine scenes. Redux qualification uses its separately provisioned private resources."
+    ]
+}
