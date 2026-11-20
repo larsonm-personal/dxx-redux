@@ -32,6 +32,8 @@ inline LayoutFixture layout_fixture(int version, int shape = 0, int producer = -
 	put(0x504c564c, 4);
 	put(version, 4);
 	b.resize(classic ? 16 : 23);
+	if (classic)
+		for (const char letter : std::string("groupa.256")) put(letter, 1);
 	put(0, 1);
 	put(30, 4);
 	put(0xffffffff, 4);

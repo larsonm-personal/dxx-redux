@@ -25,6 +25,32 @@ wifi = module("prepare_lan_wifi")
 
 
 class SdkWorkflowContractTests(unittest.TestCase):
+    def test_generated_audio_packages_use_the_trusted_ubuntu_sources(self):
+        workflow = (ROOT / ".github/workflows/android-nightly-tooling.yml").read_text()
+        step = workflow.split("- name: Require standard FFmpeg for generated preview fixture", 1)[1].split(
+            "- name:", 1
+        )[0]
+        self.assertIn("Dir::Etc::sourcelist=$GITHUB_WORKSPACE/control/.github/ffmpeg-noble.sources", step)
+        self.assertIn("Dir::Etc::sourceparts=-", step)
+        self.assertIn("APT::Get::List-Cleanup=0", step)
+        self.assertIn('sudo apt-get "${apt_options[@]}" -o APT::Update::Error-Mode=any update', step)
+        self.assertIn('sudo apt-get "${apt_options[@]}" install -y --no-install-recommends "ffmpeg=$expected"', step)
+        sources = (ROOT / ".github/ffmpeg-noble.sources").read_text().strip().split("\n\n")
+        archives = {}
+        for source in sources:
+            fields = dict(line.split(": ", 1) for line in source.splitlines())
+            self.assertEqual(fields["Signed-By"], "/usr/share/keyrings/ubuntu-archive-keyring.gpg")
+            self.assertEqual(fields["Architectures"], "amd64")
+            self.assertEqual(fields["Types"], "deb")
+            archives[fields["URIs"]] = fields["Suites"].split()
+        self.assertEqual(
+            archives,
+            {
+                "https://archive.ubuntu.com/ubuntu/": ["noble", "noble-updates"],
+                "https://security.ubuntu.com/ubuntu/": ["noble-security"],
+            },
+        )
+
     def test_emulator_runtime_is_provisioned_and_checked_before_build(self):
         source = (ROOT / ".github/workflows/android-nightly-tooling.yml").read_text()
         runtime = source.split("- name: Provision emulator host runtime", 1)[1].split(

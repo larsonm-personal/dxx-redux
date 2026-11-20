@@ -5,6 +5,7 @@ param(
     [Parameter(Mandatory)][string]$Hog,
     [Parameter(Mandatory)][string]$Descriptor,
     [string]$OriginalSurvey,
+    [switch]$CheckOriginalRestores,
     [string]$OutputDirectory
 )
 $ErrorActionPreference = 'Stop'
@@ -16,6 +17,7 @@ $scenario = 'test_xl_hog_runtime.jsonc'
 if ($OriginalSurvey) {
     # The original distributions include a classic, an XL and a D1 descriptor
     $originals = @{
+        'chaothry' = @('XL: Chaos Theory', 6, 'd5d0462d8849fe0518444d98822c36b423cefc97cf773be79632cdf734e8d155', '2792be916036170f7daa3dfdd1921b2cbf9911b87ce4097a8d304f3f58d240e2')
         'klassics' = @('Klassics', 4, 'f194685bd8630097df10ea4100b4cda9a5942e14731d1c60344858f1c78faa54', '9ba2a8637150d8ee4198a2268ff86ae46566a87ab91f715da421e8b892a93e4d')
         'belials' = @('belial system', 17, '83a2c63c8933bd8baadf0de3abd5e93f1eb09c0ba4ad15e136f04cf0726e2ceb', '87911b738857419908027570db1ad304278fdc02646fe92369f7ddb64f007f16')
         'belialsxl' = @('XL: Belial System (XL)', 17, 'b8057f14b8811ebd8fef8440b946242ce1a610c86d5cf7a77571178c333c4e83', 'c00ca97337fb1a7dfc2ee88306563966f643f163f2120e2e0451baf3dd242341')
@@ -27,6 +29,7 @@ if ($OriginalSurvey) {
     if ($mission -eq 'pluton') { $extension = '.msn' }
     $rows = @((Get-Content -Raw -LiteralPath $OriginalSurvey | ConvertFrom-Json).rows | Where-Object mission -eq $mission)
     if ($rows.Count -ne $count -or @($rows.level | Sort-Object -Unique).Count -ne $count) { throw 'Expected every original ordinal exactly once' }
+    if (@($rows | Where-Object outcome -ne 'loaded_ticked').Count) { throw 'The original survey must confirm entry for every requested device ordinal' }
 }
 if ((Get-FileHash -LiteralPath $Hog -Algorithm SHA256).Hash -ne $expectedHog -or
     (Get-FileHash -LiteralPath $Descriptor -Algorithm SHA256).Hash -ne $expectedDescriptor) {
@@ -41,6 +44,14 @@ if ($OutputDirectory) { $output = [IO.Path]::GetFullPath($OutputDirectory) }
 & "$PSScriptRoot/../helpers/retain-recent-artifacts.ps1" -Artifacts $output
 New-Item -ItemType Directory -Force -Path $output | Out-Null
 if ($OriginalSurvey) {
+    function Visit-Original($Row) {
+        @{ action = 'set_debug'; field = 'xl_hog_probe'; value = "visit:$($Row.level):$($Row.level_file)"; post_delay_ms = 0 }
+        @{ action = 'skip_briefing'; timeout_ms = 30000 }
+        @{ action = 'wait_for'; expect = @{ in_game = $true; current_level_num = $Row.level; time_paused = $false; 'xl_pilot.runtime_active' = [bool]$Row.xl_active }; timeout_ms = 30000 }
+    }
+    function Invoke-OriginalCheckpoint([string]$Operation) {
+        @{ action = 'set_debug'; field = 'xl_hog_probe'; value = $Operation; post_delay_ms = 0 }
+    }
     $steps = @(
         @{ _info = @{ _standalone = $false; _owner = 'test_xl_hog_runtime'; games = @('d2') } }
         @{ action = 'enter_game'; game = 'd2' }
@@ -53,13 +64,25 @@ if ($OriginalSurvey) {
         @{ action = 'skip_briefing'; timeout_ms = 30000 }
         @{ action = 'wait_for'; expect = @{ in_game = $true; current_level_num = 1; time_paused = $false }; timeout_ms = 30000 }
         foreach ($row in $rows) {
-            $reject = $mission -eq 'belialsxl' -and $row.level -eq -2
-            $op = if ($reject) { 'reject' } else { 'visit' }
-            @{ action = 'set_debug'; field = 'xl_hog_probe'; value = "${op}:$($row.level):$($row.level_file)"; post_delay_ms = 0 }
-            if (!$reject) {
-                @{ action = 'skip_briefing'; timeout_ms = 30000 }
-                @{ action = 'wait_for'; expect = @{ in_game = $true; current_level_num = $row.level; time_paused = $false }; timeout_ms = 30000 }
+            Visit-Original $row
+        }
+        if ($CheckOriginalRestores -and $mission -in @('chaothry', 'belialsxl')) {
+            $first = $rows | Where-Object level -eq 1
+            $second = $rows | Where-Object level -eq 2
+            Visit-Original $first
+            Invoke-OriginalCheckpoint 'remember_disk'
+            if ($mission -eq 'belialsxl') {
+                $secret = $rows | Where-Object level -eq -2
+                Invoke-OriginalCheckpoint 'remember_memory'
+                Visit-Original $secret
+                Invoke-OriginalCheckpoint 'restore_memory'
+                Visit-Original $secret
+                Invoke-OriginalCheckpoint 'remember_memory'
+                Visit-Original $first
+                Invoke-OriginalCheckpoint 'restore_memory'
             }
+            Visit-Original $second
+            Invoke-OriginalCheckpoint 'restore_disk'
         }
     )
     $scenario = Join-Path $output 'original.jsonc'
