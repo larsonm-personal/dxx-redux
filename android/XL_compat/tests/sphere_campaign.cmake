@@ -29,6 +29,9 @@ elseif(STAGE STREQUAL "red_carrier")
 elseif(STAGE STREQUAL "red_recovery")
     set(initial 2)
     set(entry_receipt red_carrier-14-result.json)
+elseif(STAGE STREQUAL "living_escape")
+    set(initial 2)
+    set(entry_receipt earned_reactor-4-result.json)
 elseif(STAGE STREQUAL "earned_reactor")
     set(initial 2)
     set(entry_receipt respawn_extra_life-19-result.json)
@@ -190,5 +193,41 @@ foreach(i RANGE 0 ${last} 1)
     write_resume_plan("${name}" "${plan}" "${checkpoint}")
     string(JSON destination GET "${expect}" current_level_num)
     run_pumo_player_phase("${name}" ${initial} ${destination} ${count} ${transitions})
+    if(STAGE STREQUAL "living_escape" AND transitions)
+        string(
+            JSON
+            activation
+            GET
+            "${${name}_receipt}"
+            transitions
+            0
+            last_activation)
+        string(JSON boundary GET "${activation}" observation_boundary)
+        string(JSON timer GET "${activation}" reactor_countdown timer)
+        string(JSON segment GET "${activation}" position segment)
+        string(JSON lives GET "${activation}" player lives)
+        string(JSON shields GET "${activation}" player shields)
+        string(
+            JSON
+            trigger
+            GET
+            "${activation}"
+            xl_pilot
+            wall_triggers
+            11)
+        string(JSON operated GET "${trigger}" operated)
+        string(JSON actor GET "${trigger}" actor)
+        string(JSON type GET "${trigger}" type)
+        if(NOT boundary STREQUAL "pre_exit"
+           OR NOT timer EQUAL 229376
+           OR NOT segment EQUAL 3834
+           OR NOT lives EQUAL 4
+           OR NOT shields GREATER 0
+           OR NOT operated
+           OR NOT actor EQUAL 0
+           OR NOT type EQUAL 3)
+            message(FATAL_ERROR "Sphere living escape lacked its earned player exit")
+        endif()
+    endif()
     string(JSON checkpoint GET "${${name}_receipt}" checkpoints ${destination})
 endforeach()

@@ -936,8 +936,26 @@ if(BUILD_TESTING)
                     -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/sphere-earned-reactor -P
                     ${CMAKE_CURRENT_SOURCE_DIR}/tests/sphere_campaign.cmake)
             set_tests_properties(
-                xl_sphere_earned_reactor PROPERTIES TIMEOUT 1800 RUN_SERIAL TRUE FIXTURES_REQUIRED
-                                                    sphere_respawn_extra_life)
+                xl_sphere_earned_reactor
+                PROPERTIES TIMEOUT
+                           1800
+                           RUN_SERIAL
+                           TRUE
+                           FIXTURES_REQUIRED
+                           sphere_respawn_extra_life
+                           FIXTURES_SETUP
+                           sphere_earned_reactor)
+            add_test(
+                NAME xl_sphere_living_escape
+                COMMAND
+                    ${CMAKE_COMMAND} -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA}
+                    -DRESOURCES=${XL_SPHERE_PLAYER_ROOT}
+                    -DENTRY=${CMAKE_CURRENT_BINARY_DIR}/sphere-earned-reactor -DSTAGE=living_escape
+                    -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/sphere-living-escape -P
+                    ${CMAKE_CURRENT_SOURCE_DIR}/tests/sphere_campaign.cmake)
+            set_tests_properties(
+                xl_sphere_living_escape PROPERTIES TIMEOUT 1800 RUN_SERIAL TRUE FIXTURES_REQUIRED
+                                                   sphere_earned_reactor)
         endif()
         add_test(
             NAME xl_sphere_portal_cruise
