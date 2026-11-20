@@ -1,0 +1,354 @@
+{
+    "mission": "Black Prophecy 1.31 beta / PROPHXL",
+    "original_archive_sha256": "b9c5f139ea6ab585636fda37fd4093f98f174433ed562a5bf182189a9b03673a",
+    "descriptor_sha256": "8a47df99aaa72d34366d8ae357f1303e2c82c631163b062636b19d20c878b62b",
+    "hog_sha256": "aead9b792e3dc6ff13cd53b68e727d8cd814e1b6480ea83f5e5c9843caf23880",
+    "host_profile": "Trainee, headless, fixed 60 Hz, developer navigation, native weapons and collisions. Starts at level 2.",
+    "host_flight": {
+        "result": "PASS",
+        "executable_sha256": "e7e09d0e37709e8a787e84bd4a0a867bf8c9dc1372b0d5bce01ea64ce58038ef",
+        "result_sha256": "e85acba1dd0f24a0bf6632f404c4866a5410194df3dc2b3f73335e17e1642514",
+        "state_sha256": "31f913ab496237aebd61d6251f28bbc5b6ccb507903caca0ef8eb464bd84b3dd",
+        "plan_sha256": "9808429deecfda3bb593a4fb0c3a781a426f77fd8f978b9615946db20d7f0927",
+        "continued_from": "901038ad4f02b3400fecf379c79c9ebb8a527ddc0f3011e17d442cf66eaf3664",
+        "steps": 39,
+        "position_assists": 0,
+        "fixed_view_aim": 0,
+        "rendered": false,
+        "transitions": [
+            [2, -1],
+            [-1, 2]
+        ],
+        "checkpoints": [
+            {
+                "sha256": "8c4c06b673b18235a01bbd767fae53797585a20c688a2f7b2357ff7b62f8ba5b",
+                "android_export": "4be9a4ca9161d6a92ec372cbe5907703eb47ec0767881126d6bdcd0130bab593"
+            }
+        ],
+        "outcome": {
+            "level": 2,
+            "segment": 386,
+            "cheats": false,
+            "dead": false,
+            "player": {
+                "has_blue_key": true,
+                "has_gold_key": true,
+                "has_red_key": true,
+                "hostages_on_board": 3,
+                "energy": 136.04989624023438,
+                "lives": 4,
+                "score": 59900,
+                "shields": 151.3959197998047
+            },
+            "operated": [0, 1, 2, 3, 4, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 25]
+        }
+    },
+    "host_cold": {
+        "result": "PASS",
+        "executable_sha256": "e7e09d0e37709e8a787e84bd4a0a867bf8c9dc1372b0d5bce01ea64ce58038ef",
+        "result_sha256": "668fbcef673fb8a72141a84f62c94508fe74a5bfc968df1b85a38c6c3ed6cc07",
+        "state_sha256": "a525b1590431cd0eb1772c4e42080113a4c983ef7274141945d0d34c69317de7",
+        "plan_sha256": "8a0757f2d44fa97dff5e77d14a6f00ec894604f996d9eee7931ff1c7f0f1ba1d",
+        "continued_from": "8c4c06b673b18235a01bbd767fae53797585a20c688a2f7b2357ff7b62f8ba5b",
+        "steps": 3,
+        "position_assists": 0,
+        "fixed_view_aim": 0,
+        "rendered": false,
+        "transitions": [],
+        "checkpoints": [],
+        "outcome": {
+            "level": 2,
+            "segment": 386,
+            "cheats": false,
+            "dead": false,
+            "player": {
+                "has_blue_key": true,
+                "has_gold_key": true,
+                "has_red_key": true,
+                "hostages_on_board": 3,
+                "energy": 136.04989624023438,
+                "lives": 4,
+                "score": 59900,
+                "shields": 151.3959197998047
+            },
+            "operated": [0, 1, 2, 3, 4, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 25]
+        }
+    },
+    "original_negative": {
+        "result": "failed",
+        "previous_return_preserved_segment": 386,
+        "lost_switch": 1,
+        "log_sha256": "7ed890d33f23582aed2da2cacd7b0b32aff88b34db84bebedb63d88bea9d12b5"
+    },
+    "android_profile": "Isolated API 34 x86_64 emulator, SwiftShader, normal controller bindings, test pilot xlnoon",
+    "android_cold_return": {
+        "automation": {
+            "result": "PASS",
+            "run_id": "8284c76d679445d796758ec24db923bf",
+            "steps_completed": 7,
+            "total_steps": 7,
+            "elapsed_ms": 10250
+        },
+        "result_sha256": "7537a743fc24afa0696726e6669ace96a5b0cbd894f737f024ceff1e8eff5699",
+        "state_sha256": "b97c91ed9eb9b0c83c30a9cb25ae4235492c296c3a12dccee739ed9054515f2a",
+        "script_sha256": "2f5dd840783d59b902da518baf61cfa3007eef8b5f2823162361a0159a57f75f",
+        "apk_sha256": "2035a118c44a395896cee200e47630976545096d8aeab12bde2e755034e09417",
+        "mission_owner": "mod/prophxl131beta.zip",
+        "viewport": {
+            "display_height": 1080,
+            "display_width": 1920,
+            "front_canvas": {
+                "height": 1080,
+                "width": 1920,
+                "x": 0,
+                "y": 0
+            },
+            "pixel_aspect": 65536,
+            "render_height": 1080,
+            "render_width": 1920
+        },
+        "audio": {
+            "rate": 48000,
+            "resources": 185,
+            "backend_ready": true,
+            "error": ""
+        },
+        "outcome": {
+            "level": 2,
+            "segment": 386,
+            "cheats": false,
+            "dead": false,
+            "player": {
+                "has_blue_key": true,
+                "has_gold_key": true,
+                "has_red_key": true,
+                "hostages_on_board": 3,
+                "energy": 136.04989624023438,
+                "lives": 4,
+                "score": 59900,
+                "shields": 151.3959197998047
+            },
+            "operated": [0, 1, 2, 3, 4, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 25]
+        }
+    },
+    "android_exports": {
+        "returned": {
+            "continued_from": "05402ad59da47a5585e38573b0be2746d1d35e35e0c9ac5679cfae82dc63c9f7",
+            "host_executable": "210e508f9fd4f3a176f5095084b8ef6bc77d01a1ba39a503e9097c0e163e0c3a",
+            "result_sha256": "5f23036ad0b50aba0e62ff3e2e5aa59847f313abcd1ab72c22c8f02eab8d6aa4",
+            "export_sha256": "a042778600d24aab5c7863c75529d534e2bb42780abcae11ed5883fa26d03921"
+        },
+        "prebranch": {
+            "continued_from": "901038ad4f02b3400fecf379c79c9ebb8a527ddc0f3011e17d442cf66eaf3664",
+            "host_executable": "210e508f9fd4f3a176f5095084b8ef6bc77d01a1ba39a503e9097c0e163e0c3a",
+            "result_sha256": "6d4d819f87f561f8700bf2f140c7a214bb971f2039a98e36bbfa9abecb922f5a",
+            "export_sha256": "a3a3d17dbfc239729080a9a52b110a8c0cdf1ff5ec7b53d65c2b8df8d74638ff"
+        }
+    },
+    "android_progress": [
+        {
+            "result": "NATIVE_ABORT",
+            "durable_automation_pass": false,
+            "last_event": {
+                "seq": 144,
+                "step": 19,
+                "total": 81,
+                "action": "fly_to",
+                "status": "collision",
+                "elapsed_ms": 80183,
+                "detail": "kind=1 wall_segment=12 wall_side=4 object=-1 type=-1 id=-1 radius=0.00000"
+            },
+            "render_assertion": "draw_polygon_object, pm->n_textures<=12",
+            "signal": "SIGABRT",
+            "retained_logcat_sha256": "f591140a3bd82c968e3151d53a38d03255ceebd11ae6f6f0f8b71aad0d172b4c"
+        },
+        {
+            "automation": {
+                "result": "FAIL",
+                "run_id": "5d03972c9bdc4ef88d04836856aae087",
+                "steps_completed": 44,
+                "total_steps": 81,
+                "reason": "fly_to timed out without crossing the waypoint",
+                "elapsed_ms": 111459
+            },
+            "result_sha256": "6cff90dedf826b0a1b30fe764db73a561042f1ffd6c159d3261ffcf6f8da0dc2",
+            "state_sha256": "43e00500247e22d09b9b844935bb972b57ddad2d3c6414127aed81cbf0ac4c7b",
+            "script_sha256": "4194ee8b4de181005efa7d3230b96b39c68ba582182d7ceca41bee3313149458",
+            "apk_sha256": "6d6a05f1c58275b90d10af6242a68ac0c7ecf358860f997566b9a826dc8a83a9",
+            "mission_owner": "mod/prophxl131beta.zip",
+            "viewport": {
+                "display_height": 1080,
+                "display_width": 1920,
+                "front_canvas": {
+                    "height": 1080,
+                    "width": 1920,
+                    "x": 0,
+                    "y": 0
+                },
+                "pixel_aspect": 65536,
+                "render_height": 1080,
+                "render_width": 1920
+            },
+            "audio": {
+                "rate": 48000,
+                "resources": 183,
+                "backend_ready": true,
+                "error": ""
+            },
+            "outcome": {
+                "level": -1,
+                "segment": 261,
+                "cheats": false,
+                "dead": false,
+                "player": {
+                    "has_blue_key": true,
+                    "has_gold_key": true,
+                    "has_red_key": true,
+                    "hostages_on_board": 0,
+                    "energy": 109.04989624023438,
+                    "lives": 4,
+                    "score": 59900,
+                    "shields": 92.1412353515625
+                },
+                "operated": [4]
+            }
+        },
+        {
+            "automation": {
+                "result": "FAIL",
+                "run_id": "3669a300f7764c848b059d08759e4dad",
+                "steps_completed": 34,
+                "total_steps": 77,
+                "reason": "fly_to timed out without crossing the waypoint",
+                "elapsed_ms": 83939
+            },
+            "result_sha256": "136b31bb4d96ace9795c8a8532f024406352504d680c7d85697b18ebc58a9956",
+            "state_sha256": "9c9d06c68520b1e09c5b75ceb25facd971b10566466005a135869afd2f22459b",
+            "script_sha256": "65fa9f29f1c07de1d7fafbcee957ec82e2349f1d4da880d4d168e51047bcf7a4",
+            "apk_sha256": "6d6a05f1c58275b90d10af6242a68ac0c7ecf358860f997566b9a826dc8a83a9",
+            "mission_owner": "mod/prophxl131beta.zip",
+            "viewport": {
+                "display_height": 1080,
+                "display_width": 1920,
+                "front_canvas": {
+                    "height": 1080,
+                    "width": 1920,
+                    "x": 0,
+                    "y": 0
+                },
+                "pixel_aspect": 65536,
+                "render_height": 1080,
+                "render_width": 1920
+            },
+            "audio": {
+                "rate": 48000,
+                "resources": 183,
+                "backend_ready": true,
+                "error": ""
+            },
+            "outcome": {
+                "level": -1,
+                "segment": 259,
+                "cheats": false,
+                "dead": false,
+                "player": {
+                    "has_blue_key": true,
+                    "has_gold_key": true,
+                    "has_red_key": true,
+                    "hostages_on_board": 0,
+                    "energy": 109.04989624023438,
+                    "lives": 4,
+                    "score": 59900,
+                    "shields": 138.83705139160156
+                },
+                "operated": [4]
+            }
+        }
+    ],
+    "native_campaign_runs": {
+        "exploratory_clock": {
+            "cases": 81,
+            "approach_steps": 613,
+            "executable_sha256": "cc3564b704c064bc9bd473d58bf3ce79560eccbc66657d92bb8bf1da50f5fbc2",
+            "assisted_positions": 0,
+            "fixed_view_aim": 0,
+            "first_plan": "9c9cbe320905fbde9d8905de38ede16930159d6de61b5cbe16c022713a8411dc",
+            "earned_entry": "871949773c367dd025bca2f03b95b84106b6774f1c14931ce03b1e215e40ded8",
+            "registered_tests": [
+                ["xl_phoenix_secret_approach", "4245.18"],
+                ["xl_phoenix_secret_return", "132.55"]
+            ],
+            "return_flight": {
+                "result": "PASS",
+                "executable_sha256": "cc3564b704c064bc9bd473d58bf3ce79560eccbc66657d92bb8bf1da50f5fbc2",
+                "result_sha256": "29cb8b205afbbbf922b89ee91cf5f1cd505860103163ce70ca972de276d8dcdd",
+                "state_sha256": "31f913ab496237aebd61d6251f28bbc5b6ccb507903caca0ef8eb464bd84b3dd",
+                "plan_sha256": "0b9127887b5f8c1982791f0142582336b739437259f11e26708f32ba915d3035",
+                "continued_from": "871949773c367dd025bca2f03b95b84106b6774f1c14931ce03b1e215e40ded8",
+                "steps": 39,
+                "position_assists": 0,
+                "fixed_view_aim": 0,
+                "rendered": false,
+                "transitions": [
+                    [2, -1],
+                    [-1, 2]
+                ],
+                "checkpoints": [
+                    {
+                        "sha256": "90b77af928d8d307983f85b6561e3c9b8dabd0a7b0b55d1fa3d84907c68aa469",
+                        "android_export": null
+                    }
+                ],
+                "outcome": {
+                    "level": 2,
+                    "segment": 386,
+                    "cheats": false,
+                    "dead": false,
+                    "player": {
+                        "has_blue_key": true,
+                        "has_gold_key": true,
+                        "has_red_key": true,
+                        "hostages_on_board": 3,
+                        "energy": 136.04989624023438,
+                        "lives": 4,
+                        "score": 59900,
+                        "shields": 151.3959197998047
+                    },
+                    "operated": [0, 1, 2, 3, 4, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 25]
+                }
+            },
+            "cold_return": {
+                "result": "PASS",
+                "executable_sha256": "cc3564b704c064bc9bd473d58bf3ce79560eccbc66657d92bb8bf1da50f5fbc2",
+                "result_sha256": "741be9a1d1d4a7ea61457f3d79c6163a45b7445ca53b9a8e9b080cb9e9238c37",
+                "state_sha256": "a525b1590431cd0eb1772c4e42080113a4c983ef7274141945d0d34c69317de7",
+                "plan_sha256": "460f3385a36a1ee2156d552d526f792af6b3ef6d480fa5b5bd25be95991bcf5c",
+                "continued_from": "90b77af928d8d307983f85b6561e3c9b8dabd0a7b0b55d1fa3d84907c68aa469",
+                "steps": 3,
+                "position_assists": 0,
+                "fixed_view_aim": 0,
+                "rendered": false,
+                "transitions": [],
+                "checkpoints": [],
+                "outcome": {
+                    "level": 2,
+                    "segment": 386,
+                    "cheats": false,
+                    "dead": false,
+                    "player": {
+                        "has_blue_key": true,
+                        "has_gold_key": true,
+                        "has_red_key": true,
+                        "hostages_on_board": 3,
+                        "energy": 136.04989624023438,
+                        "lives": 4,
+                        "score": 59900,
+                        "shields": 151.3959197998047
+                    },
+                    "operated": [0, 1, 2, 3, 4, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 25]
+                }
+            },
+            "log_sha256": "da04935345a86156f249029a3ca312b0f1610613ee94a47b567f6892bcbc8a74"
+        }
+    }
+}

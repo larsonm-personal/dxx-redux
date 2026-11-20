@@ -1,0 +1,9 @@
+# Replacement kickoff after the November 19 noon handoff
+
+Run one tranche on explicit invocation. Follow the user's new time bounds or completion target, including an explicit direction to work without a bound. Absent new timing instructions, ask for a window. For a bounded tranche reserve the closing third for validation, CI and committed handoff. Read AGENTS.md, .github/copilot-instructions.md, the [noon report](xl_gameplay_what_was_done_noon_20261119.md), [execution ledger](xl_gameplay_execution_noon_20261119.json), [ordered plan](xl_gameplay_next_window_noon_20261119.md) and the latest G2-G7 acceptance ledger.
+
+Work sequentially in C:/local/dxx-redux. Fetch the fork's cmake and inspect open stack heads, immediate parents, the worktree and stashes. Start from current cmake after a maintainer merge, or from the tested immediate parent on an open stack. Publish tested non-draft immediate-parent PRs to larsonm-personal/dxx-redux linked to #471. The maintainer handles merges.
+
+Follow the ordered player routes in xl_compat using the original as a behavior reference. Preserve the 4/8 frozen baseline, authentic 8/8, fixed 64 and 120-frame criterion. Keep the full 1,654-entry denominator. Use the private Vertigo and XL assets in trusted CI and authentic local releases. Protect existing saves, failed observations, unrelated worktrees, devices and input assets. Retain output first and follow android/CLEANUP.md under space pressure.
+
+Validate affected Windows and Linux assertion builds, ordinary startup cohorts, Android, original behavior and capture/clean replay at the applicable event. Record known save failures, FX offsets and detailed-state differences until independently resolved. Capture exact heads, merge and controller revisions, binaries, releases, saves, attempts, per-owner results and reasons for skips. Inspect CI on the final push, publish the dated report, ledger, plan and replacement kickoff, and end the bounded tranche at handoff.
