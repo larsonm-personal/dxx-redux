@@ -1,0 +1,733 @@
+{
+    "fixture_source": "a9c81c6a6e5d968a30b50e235f64d56ab7c0b807",
+    "entry": "Sphere earned reactor phase 4 following ordinary Android respawn and the extra-life route",
+    "mission": {
+        "filename": "sphere",
+        "descriptor_sha256": "7104fe4eada0804ed6b03ac4b2a68656ab5c15d3f8b1bec37b43c9a5fab0ac6b",
+        "hog_sha256": "a40bf59101fee991200e34984a45fdf209cee4d68d47d4d52996dfe875dbe253"
+    },
+    "assists": ["Portal steering", "Pickup approach", "Switch and target aiming", "Stationary reactor fire"],
+    "owners": {
+        "windows": {
+            "ctest_seconds": 710.74,
+            "ctest_log_sha256": "471a28fff1a441cbde650b105bb2d2d9e9c69cfab1ed1fce10097695613f7a0d",
+            "manifest_sha256": "13d594f71ad6e07be71798c96b3521233512d575a7de063674f4fb23dc0a39f5",
+            "owner": "windows",
+            "native_source": "27a340e72e7e927cb7eaec73c3def936cf52845a",
+            "binary": "a1ec2fdccfe16621c1e6719ffaddbd3d8b1bdbbec477921958254e1aa3424d21",
+            "route": "d5f4f6a160cfd138b89224e0655da958c9c30a3b7b39b1228aa9a6fee995f083",
+            "entry": "da0ef1c45b32e1db1eae84f4bc2b2e115204d4d0e9505d221cab1b620d6a0ed6",
+            "terminal": "f2238535e7274aec2e0d12162f2fac7b30208a4954af0e4702dec9847fd8fba3",
+            "phases": [
+                {
+                    "phase": 0,
+                    "resume": "da0ef1c45b32e1db1eae84f4bc2b2e115204d4d0e9505d221cab1b620d6a0ed6",
+                    "save": "95f61dff6c2384f1031aa63ea0c5b0dae597980b1502d55be8fef41620f83769",
+                    "android_export": "8cc993b297016cf03a8c10bb339da994fcc26da2d4292f19330dcf56e5b71dd5",
+                    "level": 2,
+                    "segment": 3094,
+                    "player": {
+                        "lives": 3,
+                        "score": 54300,
+                        "shields": 66.0665283203125,
+                        "energy": 58.60009765625,
+                        "primary_weapon_flags": 9
+                    },
+                    "timer": 0,
+                    "receipts": {
+                        "executed-plan.json": "95f9315ee97bd1ea4f06770e96a0d5502c80a3d3ef01cd3ce7c1e034c67366e7",
+                        "result.json": "98284121f88b72dbcae9bf4eaa9ddfac6bb62bf87926c9dd99441a50bd813995",
+                        "state.json": "49c90dde937a65393dcd93bbad079d3df112896dc252947a1e0b10343e73111c",
+                        "trace.jsonl": "223976cca7ce2004e77f785bc3a2467b150b0869dbefb0a3b39fafc7b441202a"
+                    }
+                },
+                {
+                    "phase": 1,
+                    "resume": "95f61dff6c2384f1031aa63ea0c5b0dae597980b1502d55be8fef41620f83769",
+                    "save": "ff5a6c877a8946fd4309bf33d8a3c488645ce88b3fcd743d697725ddc44755ba",
+                    "android_export": "e57a580a5aad5d8327584dab3c4d5db332c99a9112a14907b83cfc7ed9bb68cb",
+                    "level": 2,
+                    "segment": 3093,
+                    "player": {
+                        "lives": 3,
+                        "score": 54300,
+                        "shields": 93.0665283203125,
+                        "energy": 56.60009765625,
+                        "primary_weapon_flags": 9
+                    },
+                    "timer": 0,
+                    "receipts": {
+                        "executed-plan.json": "6ca4ddabcb71675e7c62a8cada9d6652ac7a5531906f504b025efcada4131c31",
+                        "result.json": "1a3a609121f3462baa24c1493ccfc5f4dee85e4a56139dfea1beee8a780d3d54",
+                        "state.json": "40fbee89bba0289575af1a84eacbf5bf6ae4b22f7826a7a2fabdc585e4e99667",
+                        "trace.jsonl": "77637a9f92416533174d8809dfd1584ded56b896fd920b9e11c8e2985b242d66"
+                    }
+                },
+                {
+                    "phase": 2,
+                    "resume": "ff5a6c877a8946fd4309bf33d8a3c488645ce88b3fcd743d697725ddc44755ba",
+                    "save": "06b6e9871a4cbb716c3d659d8b61da6987657dc8f19411ba29f4dbddc4ce1956",
+                    "android_export": "fff67c3b5589b45beef00f3b78ec425c150cd6389f963feea6506a58bdaa9ced",
+                    "level": 2,
+                    "segment": 2935,
+                    "player": {
+                        "lives": 3,
+                        "score": 54800,
+                        "shields": 91.89804077148438,
+                        "energy": 54.60009765625,
+                        "primary_weapon_flags": 9
+                    },
+                    "timer": 0,
+                    "receipts": {
+                        "executed-plan.json": "11dcada6886cab169d81c01223426a055a2ee889b3370d57c7bfa12c6f98577a",
+                        "result.json": "f46efcaac15109ea443f3b4e26617a285f1ac9fb8f0342ae648ec86ca9835aa5",
+                        "state.json": "0de6190ef695dcf417759774de9eab28c7aa03e508332a853201ae03835449e6",
+                        "trace.jsonl": "d68e29bf02e24550afbb77aeb02fef9908391fcf5e6874e345ec53c2d5fee0a7"
+                    }
+                },
+                {
+                    "phase": 3,
+                    "resume": "06b6e9871a4cbb716c3d659d8b61da6987657dc8f19411ba29f4dbddc4ce1956",
+                    "save": "df63eb5ba6d7d767e6e9b4dadf76a008b181ebd4da546691a52c0f350dace050",
+                    "android_export": "4e8ce57c63dffb5e976467e013627b60e56a6a7314c23fe4b275bac43b070e21",
+                    "level": 2,
+                    "segment": 3130,
+                    "player": {
+                        "lives": 3,
+                        "score": 57800,
+                        "shields": 89.11221313476562,
+                        "energy": 51.10009765625,
+                        "primary_weapon_flags": 9
+                    },
+                    "timer": 0,
+                    "receipts": {
+                        "executed-plan.json": "bcea2a9e50d9e6270b2e09888e9df0db97d54de06074d1db2e7f9208e8f0398f",
+                        "result.json": "586998579021147915ad6320fefa4be2923f131abc0894b474876dea23bc94d2",
+                        "state.json": "618928c9bff4e46f9a0857e4ca21e95012cd00dec2879a93ff7e93b9ae9fa7fa",
+                        "trace.jsonl": "cc7c3a171e5d7c0cef6956c1664a8b17847eb93e1640a755fa88fe7e9888d8f9"
+                    }
+                },
+                {
+                    "phase": 4,
+                    "resume": "df63eb5ba6d7d767e6e9b4dadf76a008b181ebd4da546691a52c0f350dace050",
+                    "save": "7d17b5ba0e920ddebbf3e843e5d95707515b7c1e2bed1bdc481c425beec22df7",
+                    "android_export": "9387739f8b4feb6b7c88b39bffc22a55e7c5aecf9be7aeb711d5e103b4e84d2f",
+                    "level": 2,
+                    "segment": 3127,
+                    "player": {
+                        "lives": 3,
+                        "score": 57800,
+                        "shields": 89.11221313476562,
+                        "energy": 51.10009765625,
+                        "primary_weapon_flags": 9
+                    },
+                    "timer": 0,
+                    "receipts": {
+                        "executed-plan.json": "5215558c691f1f1fd1daabd4348d0d96b7573ba378349267941d441d06140c80",
+                        "result.json": "7c52b29a697bc1924e9bf9b9a8c6560c804632914788703c5ea8aabfbe151db3",
+                        "state.json": "610d230c107d60f1be8813bf99b91460de0b6a342e4c1a580d2bf0b330917617",
+                        "trace.jsonl": "6549d4c92c6f7c3f29dbe0e1d200cc61a1c6d69a3b986453a6431f1a23cd1e5e"
+                    }
+                },
+                {
+                    "phase": 5,
+                    "resume": "7d17b5ba0e920ddebbf3e843e5d95707515b7c1e2bed1bdc481c425beec22df7",
+                    "save": "612b85c8971df11e34b20ffea15cb9830df1ee0b4a695474588c9c7ff0572509",
+                    "android_export": "9f8aa3505192c608baee4fc96693d0e9bffbebdab050b1f3f926a083c7a4ee44",
+                    "level": 2,
+                    "segment": 3136,
+                    "player": {
+                        "lives": 3,
+                        "score": 58800,
+                        "shields": 72.92559814453125,
+                        "energy": 48.10009765625,
+                        "primary_weapon_flags": 9
+                    },
+                    "timer": 0,
+                    "receipts": {
+                        "executed-plan.json": "3f3b255859b0d2552410e51757eb20d3a58d49e7225887e5e85c49a3c5b64510",
+                        "result.json": "2056367e9308487a311757a888378926063b570ff7ed21e3e84cbc3731e67c6f",
+                        "state.json": "60c59c1391ca064ebc9dec93144ef26b5aee8e6b38af02df4b5453b5f1cc3716",
+                        "trace.jsonl": "818ed19941ea317a157776e0abe45918c4c3dd5940825c139db64df0768cbe24"
+                    }
+                },
+                {
+                    "phase": 6,
+                    "resume": "612b85c8971df11e34b20ffea15cb9830df1ee0b4a695474588c9c7ff0572509",
+                    "save": "afff072bfc75d4bfb1e3d14f4be472a0c063890902726bdf8ad60fcd475393f2",
+                    "android_export": "357b97ff196b72f3a7e1a5a742cf5494563e574d130b6687f95b3285a821da93",
+                    "level": 2,
+                    "segment": 3136,
+                    "player": {
+                        "lives": 3,
+                        "score": 58800,
+                        "shields": 99.92559814453125,
+                        "energy": 48.10009765625,
+                        "primary_weapon_flags": 9
+                    },
+                    "timer": 0,
+                    "receipts": {
+                        "executed-plan.json": "3f66b23c3592be402682d3412b53680d1635d921294507089ce47de46c05e149",
+                        "result.json": "422b33e823da775404922b337f1eac35247be5617b6e12c827b25bf261c8350d",
+                        "state.json": "14ea29984e440a08ef8e6116adc03f075614aff317e3b853a8c74cea97f39f1e",
+                        "trace.jsonl": "1c868e0cd74b58b07c24a9c2c9df63712481d962b660a0eeb5ad7050a79e259d"
+                    }
+                },
+                {
+                    "phase": 7,
+                    "resume": "afff072bfc75d4bfb1e3d14f4be472a0c063890902726bdf8ad60fcd475393f2",
+                    "save": "26fa991e4267c450b57206d769eb861d189119ecb0e14b8ce1ca8f024923b4b0",
+                    "android_export": "1f417b2eef7399184175e4d18ff077cdc505ea2e8d735bd488b816101b6fdc44",
+                    "level": 2,
+                    "segment": 3137,
+                    "player": {
+                        "lives": 3,
+                        "score": 62150,
+                        "shields": 34.739013671875,
+                        "energy": 36.60009765625,
+                        "primary_weapon_flags": 9
+                    },
+                    "timer": 0,
+                    "receipts": {
+                        "executed-plan.json": "26a20f1a731141d49148e3afcebfa859012f33d23edae7059f76105f8c1d7547",
+                        "result.json": "3acfadba89cd624d50cc69008e8817cff070126fdfec090e3d2ac4aba677c1e2",
+                        "state.json": "61c8da61da5d628d834f742231f1271aee930809982bb223cd948cfafacba245",
+                        "trace.jsonl": "2f104a97e24e0e39ca88083ef7f3efcfc7ceae44643759bcf187b7ec6e6c8091"
+                    }
+                },
+                {
+                    "phase": 8,
+                    "resume": "26fa991e4267c450b57206d769eb861d189119ecb0e14b8ce1ca8f024923b4b0",
+                    "save": "90eb931f0590e028260cc53c6c06d9d17e8243ae259902071e406450e74b3676",
+                    "android_export": "be8d44cecaa8a46ec1fe20ef8138dfbae76090613fbed0210a969adc4b7bc9ee",
+                    "level": 2,
+                    "segment": 3137,
+                    "player": {
+                        "lives": 3,
+                        "score": 62150,
+                        "shields": 61.739013671875,
+                        "energy": 36.60009765625,
+                        "primary_weapon_flags": 9
+                    },
+                    "timer": 0,
+                    "receipts": {
+                        "executed-plan.json": "0b9bdf7588c857c54c7d0f72ab6e1a26c5f4c20040b1828a08536dfd894a53ef",
+                        "result.json": "39c79fdd0486d2e1670c63eb29204f88d0fa2bc3c6296c60582b07015e95d1da",
+                        "state.json": "8b62458c7ed03963d62c8f44f9ca09aa6e4cfc1abb2c3a8e3e76771cd1a27276",
+                        "trace.jsonl": "bc9ed37bbf46691ea3c6ff4b60c89371bb3a4a844c5e38255f21882f304420e6"
+                    }
+                },
+                {
+                    "phase": 9,
+                    "resume": "90eb931f0590e028260cc53c6c06d9d17e8243ae259902071e406450e74b3676",
+                    "save": "be2d420808e711369ff2c14a8b82129bca8e114794117f1a6ed52d4a53071d37",
+                    "android_export": "9550f1e3d84ecc9b7ab80e411a43e42ae6605c1c2a5466e51e527ee01f89830f",
+                    "level": 2,
+                    "segment": 2961,
+                    "player": {
+                        "lives": 4,
+                        "score": 63000,
+                        "shields": 61.739013671875,
+                        "energy": 33.10009765625,
+                        "primary_weapon_flags": 9
+                    },
+                    "timer": 0,
+                    "receipts": {
+                        "executed-plan.json": "7a95137cb05d9ce6aecf41299097f47fd46e413a87524738a0283dde30ab01dd",
+                        "result.json": "b4308213e31116f118428d191765f044bf0d1992ee46ddb5839144e4c225e997",
+                        "state.json": "bc2945faef32b32bee01e68a4d80d5c390adf2b7835df24ae841520eef9df926",
+                        "trace.jsonl": "17ef6c5210833158460b02acbc122014ab3f56b08133fdc1136cbb1fa29bb02d"
+                    }
+                },
+                {
+                    "phase": 10,
+                    "resume": "be2d420808e711369ff2c14a8b82129bca8e114794117f1a6ed52d4a53071d37",
+                    "save": "b06abf513eeef67b340b7b2dd7c11dd344ce9ecbe2e6e392d5a20de84aebc189",
+                    "android_export": "5a77a65bd9c9e898603f31367d8855eaecd82d2083812bfa999aa81e32dd1b99",
+                    "level": 2,
+                    "segment": 2961,
+                    "player": {
+                        "lives": 4,
+                        "score": 63000,
+                        "shields": 61.739013671875,
+                        "energy": 32.85009765625,
+                        "primary_weapon_flags": 9
+                    },
+                    "timer": 0,
+                    "receipts": {
+                        "executed-plan.json": "811fa0ef482c55c450c543cabcb60b8aa75137d5c2776325a676c7a97be83549",
+                        "result.json": "16fc268652be6f61c48e7503b82bfe10b6df57458442e2c6e7c9bfe5d736b88b",
+                        "state.json": "58f9b9ec07f8acb7543f06ae88907d6fbc08d50611ff149be07f4dbd0b914e7a",
+                        "trace.jsonl": "b513393b34a8ea1c89e64d15fc8a7cb1aa1bc382020849226115ca751f2d1941"
+                    }
+                },
+                {
+                    "phase": 11,
+                    "resume": "b06abf513eeef67b340b7b2dd7c11dd344ce9ecbe2e6e392d5a20de84aebc189",
+                    "save": "72967d80b0ca6c24c8b5149e28e862424e3f9deb85a59e3662a345a296775283",
+                    "android_export": "c2d2a1280ea07261e0511275395a177ed6547e5aa9b44cef7a1d1afd6ad305d2",
+                    "level": 2,
+                    "segment": 2956,
+                    "player": {
+                        "lives": 4,
+                        "score": 63500,
+                        "shields": 51.739013671875,
+                        "energy": 32.35009765625,
+                        "primary_weapon_flags": 9
+                    },
+                    "timer": 0,
+                    "receipts": {
+                        "executed-plan.json": "2cec82f3008af4c367ac294b3d8f6ba79ec03426ae7633ae34cac90e110fd9fa",
+                        "result.json": "adfcc1d6c54487ed686e7819dddd637d8e9a1e8c98437f9cf3f298bd20e12996",
+                        "state.json": "3f0cd1ebebe5f69eec75f4022ac39c1ca1199a6d4f6bc6412aec155b3eb08d0f",
+                        "trace.jsonl": "1e019c8b6540dc47a186b46fd50ad0a3825e670a807182f1cec6374ba5e9e3e4"
+                    }
+                },
+                {
+                    "phase": 12,
+                    "resume": "72967d80b0ca6c24c8b5149e28e862424e3f9deb85a59e3662a345a296775283",
+                    "save": "19381a93882e4b808069f1afafe206a011633dc4c0182d7ab905705483786d8d",
+                    "android_export": "42c9a1af71c38d8d650dd562a99a7db61aba664bcf45a15377dfd9fdc1b51cc5",
+                    "level": 2,
+                    "segment": 2956,
+                    "player": {
+                        "lives": 4,
+                        "score": 68500,
+                        "shields": 37.739013671875,
+                        "energy": 28.85009765625,
+                        "primary_weapon_flags": 9
+                    },
+                    "timer": 1966080,
+                    "receipts": {
+                        "executed-plan.json": "d668d96b45d608536489bb89e158a6108fa3e52f489ef45c816865d7729b8941",
+                        "result.json": "71902095daa713fbf2bb848816b42ae1301237bdbd7c66cabb438c7d409c3d46",
+                        "state.json": "f0f8cb8834514065c62430ff140b3f0b9e727e2a3450fb1376d96e4757161230",
+                        "trace.jsonl": "5730874d589c819bf0a29a5316c6ad7beedac6f7745841f8a3a75bdbc8b6014f"
+                    }
+                },
+                {
+                    "phase": 13,
+                    "resume": "19381a93882e4b808069f1afafe206a011633dc4c0182d7ab905705483786d8d",
+                    "save": "f2238535e7274aec2e0d12162f2fac7b30208a4954af0e4702dec9847fd8fba3",
+                    "android_export": "2bb2c993b30a3b67a85031975631a820fd44553ba2ce00170f7a1ee3eb32e02c",
+                    "level": 3,
+                    "segment": 991,
+                    "player": {
+                        "lives": 4,
+                        "score": 68850,
+                        "shields": 100.0,
+                        "energy": 100.0,
+                        "primary_weapon_flags": 9
+                    },
+                    "timer": 229376,
+                    "receipts": {
+                        "executed-plan.json": "b3c20a57fbb185ce238e2f3095d03130a6bff26cb3088795b52e2d48c9eb89cc",
+                        "result.json": "015b13807bc4cb7d300ddfa5e4c54ef9513dd7b7c59817a88b898ef12be52e7c",
+                        "state.json": "d689e7acd587c8e9e8d5330a61d00503c42f4ae748d9988217d99743f4c04b03",
+                        "trace.jsonl": "e43b8117fd4a25ead7ba40e4c07dccbdde28cd2d0f8275823f2a3250f2e5cf54"
+                    },
+                    "passages": 57,
+                    "exit": {
+                        "boundary": "pre_exit",
+                        "segment": 3834,
+                        "timer": 229376,
+                        "shields": 17.15057373046875,
+                        "trigger": {
+                            "actor": 0,
+                            "attached": false,
+                            "delay_ms": -1,
+                            "flags": 4,
+                            "operated": true,
+                            "shot": 0,
+                            "type": 3,
+                            "value": 0
+                        }
+                    }
+                }
+            ]
+        },
+        "linux": {
+            "ctest_seconds": 510.33,
+            "ctest_log_sha256": "9d1c28060206954a8342f641138a1965479b7cbb4122735b244fe0ac4d90cfb0",
+            "manifest_sha256": "abf85049d233e3643da59a51d0c01a7b6143100623f57e625225ae0459173429",
+            "owner": "linux",
+            "native_source": "27a340e72e7e927cb7eaec73c3def936cf52845a",
+            "binary": "7f3f253965d691934391539c2c8468725b05f477236f89e2724c6608dc54fe0d",
+            "route": "d5f4f6a160cfd138b89224e0655da958c9c30a3b7b39b1228aa9a6fee995f083",
+            "entry": "5a477e0f169b7a76d1efe5864667f483e76e38618ffd18d2606f6dd68dd4e475",
+            "terminal": "6e6d7643f82fe856e41148007ceafdeb9b513c89b14695a5275bafd32cf47f42",
+            "phases": [
+                {
+                    "phase": 0,
+                    "resume": "5a477e0f169b7a76d1efe5864667f483e76e38618ffd18d2606f6dd68dd4e475",
+                    "save": "4adcd621f3df8873e2f180b2b17d1be946f1a160329e929bbb5527d76a890b36",
+                    "android_export": "09e60e68ff97b5013e174041da293a457f104965e24d7de06ff7eff56e548830",
+                    "level": 2,
+                    "segment": 3094,
+                    "player": {
+                        "lives": 3,
+                        "score": 54300,
+                        "shields": 66.0665283203125,
+                        "energy": 58.60009765625,
+                        "primary_weapon_flags": 9
+                    },
+                    "timer": 0,
+                    "receipts": {
+                        "executed-plan.json": "b4e127fa1d23672c7d446ae0b84211535550361860fe63648ca50888bac7214b",
+                        "result.json": "c2863f62a41afec6714100772af1eb1572f6ba8c0d8a3b8568b87b9ef8da49ca",
+                        "state.json": "996af507d453009cfab54557710861214943ff94c359ffa61b0e3baa3bedc561",
+                        "trace.jsonl": "c4f8de02c0eee157387a3eb56c60abf410d6a534e2ab0a07b3ab82422c6aa0d9"
+                    }
+                },
+                {
+                    "phase": 1,
+                    "resume": "4adcd621f3df8873e2f180b2b17d1be946f1a160329e929bbb5527d76a890b36",
+                    "save": "618d91390cf33a43c228ff52ad1fa3f7ac7cc7eb86eee4414f8c3344e1498483",
+                    "android_export": "425ebe7de7ad72db1e560ecec834c8214f89be33117fcabc8d82f049763095b6",
+                    "level": 2,
+                    "segment": 3093,
+                    "player": {
+                        "lives": 3,
+                        "score": 54300,
+                        "shields": 93.0665283203125,
+                        "energy": 56.60009765625,
+                        "primary_weapon_flags": 9
+                    },
+                    "timer": 0,
+                    "receipts": {
+                        "executed-plan.json": "bd70cb0e12e0f09019082b901e1a6a9449a68ef4793dd99e6c566a6a898720fc",
+                        "result.json": "b4ffee470d9f78a721f74f45bb4a3da4778a0796ef5499d908966e916408b030",
+                        "state.json": "065ffee9dc032c8fca9ed3986d5fc32899bf5298b9797a8db4836ac647cd7ac1",
+                        "trace.jsonl": "a9aee47bf828c7c2fb84bb4ff45eeee58914bf7936bef63b8dd183323c54a96c"
+                    }
+                },
+                {
+                    "phase": 2,
+                    "resume": "618d91390cf33a43c228ff52ad1fa3f7ac7cc7eb86eee4414f8c3344e1498483",
+                    "save": "932ce8e92742d45dc0be2eeecb084d6947604ebe2687bf2aab88e4a24b87f26c",
+                    "android_export": "f3f1805f2b2a61b027642b5f7feeedcaf714e233f6a7276e4cc366181d2154c5",
+                    "level": 2,
+                    "segment": 2935,
+                    "player": {
+                        "lives": 3,
+                        "score": 54800,
+                        "shields": 91.89804077148438,
+                        "energy": 54.60009765625,
+                        "primary_weapon_flags": 9
+                    },
+                    "timer": 0,
+                    "receipts": {
+                        "executed-plan.json": "9c6e51511c7d9fac08494f243204f9f57a119753f7ae4d1bf839a5996b413491",
+                        "result.json": "28be67e7d1546762ed518b70aa4431a12c3f21eaaba6910da383d45870d53126",
+                        "state.json": "d964a1b2e36e3729e115d9eab53b735cd336656ecab73314ca5a938f2c9372f7",
+                        "trace.jsonl": "8d503eea2332d0898e93df5be4607ace057f89614bc74806a6e29037582ee291"
+                    }
+                },
+                {
+                    "phase": 3,
+                    "resume": "932ce8e92742d45dc0be2eeecb084d6947604ebe2687bf2aab88e4a24b87f26c",
+                    "save": "c49b4935c3c3e4e6d5c57f39bbeaa5516c5e3e832886a7f4544ffe2b832b8e82",
+                    "android_export": "5853ec4be087d2fb34269529ad159dd225065dc001e51909d41f37e31c6aef36",
+                    "level": 2,
+                    "segment": 3130,
+                    "player": {
+                        "lives": 3,
+                        "score": 57800,
+                        "shields": 89.11221313476562,
+                        "energy": 51.10009765625,
+                        "primary_weapon_flags": 9
+                    },
+                    "timer": 0,
+                    "receipts": {
+                        "executed-plan.json": "54fd342c42d5c1e5b8308eacbce03642371519f94dd66ea25d8af692d621accf",
+                        "result.json": "10c010c164665a3ecc9406d4bf2dea260c4b918031faa595c3cbd864afad4f6b",
+                        "state.json": "0972da6d6f008781399ecefd7636e1e054161aae86df2c814d05ac185020f529",
+                        "trace.jsonl": "08afde57f23a9dc06e6a8c28f1709dd3b4a6031c323b774c873457d82691c528"
+                    }
+                },
+                {
+                    "phase": 4,
+                    "resume": "c49b4935c3c3e4e6d5c57f39bbeaa5516c5e3e832886a7f4544ffe2b832b8e82",
+                    "save": "4c006aeec1d07dbf4b9fc28a319aae94468432f09d83b3e07bf687fa850934d3",
+                    "android_export": "a1eaa4204017d0e33cdc36f066d6445582b2abd8385c3bebd276e0981d5eaf3d",
+                    "level": 2,
+                    "segment": 3127,
+                    "player": {
+                        "lives": 3,
+                        "score": 57800,
+                        "shields": 89.11221313476562,
+                        "energy": 51.10009765625,
+                        "primary_weapon_flags": 9
+                    },
+                    "timer": 0,
+                    "receipts": {
+                        "executed-plan.json": "4b6dd0fec4c9bbae3413c761bf8fc1145f8b4339471f95af045deb291e2b11a8",
+                        "result.json": "deab2a12a0f7d23f9264950c749d1dc5f0ac2349991baf6f2f072c27f3095769",
+                        "state.json": "b585db2f17fccc65ee7fb8dec19474dc1a377e0e7eaca467765ba9e1de620012",
+                        "trace.jsonl": "527c3b6e0b7ebe91d94eca6364e71347664ce6c779bb4a4930d781ea5d49238f"
+                    }
+                },
+                {
+                    "phase": 5,
+                    "resume": "4c006aeec1d07dbf4b9fc28a319aae94468432f09d83b3e07bf687fa850934d3",
+                    "save": "54eee0a20cbbbeadb4ad1c32ebf312858e8672a2c13de27a1eeacfe836578c19",
+                    "android_export": "82101e8471061ae0fc843a882c406ae66bd8a008ab64a179af4de9db30fcec66",
+                    "level": 2,
+                    "segment": 3136,
+                    "player": {
+                        "lives": 3,
+                        "score": 58800,
+                        "shields": 72.92559814453125,
+                        "energy": 48.10009765625,
+                        "primary_weapon_flags": 9
+                    },
+                    "timer": 0,
+                    "receipts": {
+                        "executed-plan.json": "8c31678d5a1be0d914c77ba5d9a918de1f023a73ed8aa23c040625e34dd8ed98",
+                        "result.json": "0e20cc42ead2b72e196fe130f321f027e4dee73b2f71b5df75cd3ceadab9a027",
+                        "state.json": "3fb8c7e0fc5ee7ec482073c39c9876b1e17840cc5f38c5c37aafef2a1b1101f4",
+                        "trace.jsonl": "ae94fedb06e0c4b04d1c895552fd24296d7367ccf0527be4a2b0e7e721a84065"
+                    }
+                },
+                {
+                    "phase": 6,
+                    "resume": "54eee0a20cbbbeadb4ad1c32ebf312858e8672a2c13de27a1eeacfe836578c19",
+                    "save": "b44ca42513f2df34e2bcd95dc5bc64560be3ee1dfbbf734175c7958254d9f15d",
+                    "android_export": "3de1d0e1468fced25946093c62f77bf61a18e112b7d2cf5875b6ba22b0a2808d",
+                    "level": 2,
+                    "segment": 3136,
+                    "player": {
+                        "lives": 3,
+                        "score": 58800,
+                        "shields": 99.92559814453125,
+                        "energy": 48.10009765625,
+                        "primary_weapon_flags": 9
+                    },
+                    "timer": 0,
+                    "receipts": {
+                        "executed-plan.json": "e02889989ab497a33bffd2dfe2bd6d8491deacc583e7dd12301b992f942c8312",
+                        "result.json": "8eac062c49da5415dd1c6b59f6226533d6ab98eed76ad82d020687dfd084deae",
+                        "state.json": "e13c18b740f562831ad6bddbc9b19dc5bf639db67880b0a6167ce384e3879c20",
+                        "trace.jsonl": "203ae11c39074a76e0da838c88dd220bad70301bdcbebb597d7cbde1d8345406"
+                    }
+                },
+                {
+                    "phase": 7,
+                    "resume": "b44ca42513f2df34e2bcd95dc5bc64560be3ee1dfbbf734175c7958254d9f15d",
+                    "save": "f94907d0aee45dcca4a7b95a359f15c6c93009f9bab35052fe5d373937ecaf2e",
+                    "android_export": "810355200f0557184c9a3c52cdb3f83f96682b04ae1061a55430f97fb566f215",
+                    "level": 2,
+                    "segment": 3137,
+                    "player": {
+                        "lives": 3,
+                        "score": 62150,
+                        "shields": 34.739013671875,
+                        "energy": 36.60009765625,
+                        "primary_weapon_flags": 9
+                    },
+                    "timer": 0,
+                    "receipts": {
+                        "executed-plan.json": "174bca64452a24771e3d382a8a1b240e48b46ecb481bb664ed150c9571bacf28",
+                        "result.json": "37ccf7389c6d5e1d6ef451813ac43f03c17cc0b2f617cb99ad49774fd6f22a36",
+                        "state.json": "490aae81c8e21b8a32c8142cc9b6b5781f3402b4b3ef75a7e818f1185512d501",
+                        "trace.jsonl": "f67f039425a4fd65904e610eb037e29499f7e14b07fd1c656fc5b19c3ac27138"
+                    }
+                },
+                {
+                    "phase": 8,
+                    "resume": "f94907d0aee45dcca4a7b95a359f15c6c93009f9bab35052fe5d373937ecaf2e",
+                    "save": "e3fe5df3699362f0f376288a874ce3d60b394fab10f0884d1606a6d50bc563df",
+                    "android_export": "287c6607767c6c690e8499a1293c63186c20e2b2510ad18dcda1a8187c497d18",
+                    "level": 2,
+                    "segment": 3137,
+                    "player": {
+                        "lives": 3,
+                        "score": 62150,
+                        "shields": 61.739013671875,
+                        "energy": 36.60009765625,
+                        "primary_weapon_flags": 9
+                    },
+                    "timer": 0,
+                    "receipts": {
+                        "executed-plan.json": "beee7a439cabff7bc33aa6cc1558f9f7ad193b1ccc7aa3bd62d69da0d68fb018",
+                        "result.json": "9506f196cf2b01dfdd02993dc6dd8de6e6c31e3c045f0a68db9f366687526af7",
+                        "state.json": "b7f5f822deaf74bf1ba347e0bfea30f0d116e40db9db7710dd86370a51025005",
+                        "trace.jsonl": "425ea54e882b4ec737c2d3ee4e07924433b4103b1d6994eabdc058edd000a7de"
+                    }
+                },
+                {
+                    "phase": 9,
+                    "resume": "e3fe5df3699362f0f376288a874ce3d60b394fab10f0884d1606a6d50bc563df",
+                    "save": "614f2208385c764ea9cd8740aa75cddbe97d756f94bd319e33acce4cde40df3b",
+                    "android_export": "8397fc81eef46fd7f8172a73e24e325da829fe722674397250a5140b812a64ec",
+                    "level": 2,
+                    "segment": 2961,
+                    "player": {
+                        "lives": 4,
+                        "score": 63000,
+                        "shields": 61.739013671875,
+                        "energy": 33.10009765625,
+                        "primary_weapon_flags": 9
+                    },
+                    "timer": 0,
+                    "receipts": {
+                        "executed-plan.json": "d3173218f39e6fe40420d573ed387fe0acc9dff16bcac065bb6d5265200ed925",
+                        "result.json": "2aab282885cfedc67e1e908dcff82769cf168546381fc8e684e01785cae20956",
+                        "state.json": "36122fe315b12271346334e9de5109265cc1ffd1270f59dd2de10af6240df11a",
+                        "trace.jsonl": "aa22c77e6adc949d03bae8f76324e8c3f985cabe97e9c75f277b50194ee58995"
+                    }
+                },
+                {
+                    "phase": 10,
+                    "resume": "614f2208385c764ea9cd8740aa75cddbe97d756f94bd319e33acce4cde40df3b",
+                    "save": "8320ea73aa164ae2b35865a4bfc815c6cf3aa200a3ab38416e50fcb1169b3303",
+                    "android_export": "79d2432a35c9113f68c29db3f14706b90c7183d3e0daae902ca0b2c651419ef7",
+                    "level": 2,
+                    "segment": 2961,
+                    "player": {
+                        "lives": 4,
+                        "score": 63000,
+                        "shields": 61.739013671875,
+                        "energy": 32.85009765625,
+                        "primary_weapon_flags": 9
+                    },
+                    "timer": 0,
+                    "receipts": {
+                        "executed-plan.json": "4d339c48842a4f998ee0180a0b752bc5c0c87132f6e144a57a0705f3c56898cd",
+                        "result.json": "d6244c1fae625f35e7ffd5552ac0ec4d479e8b8a0bff217b2889dd0a189ed925",
+                        "state.json": "eac6b6c34ead1982f480910205de59357ed9e00b0a8fd59e2cf9556c17903f00",
+                        "trace.jsonl": "ea54e0fee4603d757bbbf259de284db9461efea016f1a81ee0d8362f7bec6770"
+                    }
+                },
+                {
+                    "phase": 11,
+                    "resume": "8320ea73aa164ae2b35865a4bfc815c6cf3aa200a3ab38416e50fcb1169b3303",
+                    "save": "14a5c2a90b1f74ee2ac93171883b16b1a8f4cf18afe590a9480d6e0fbdaa29c6",
+                    "android_export": "0a2f7369c4e9c0080f069f1c5253ca9aed5aa2a015c29957dfaf80a93ff7d035",
+                    "level": 2,
+                    "segment": 2956,
+                    "player": {
+                        "lives": 4,
+                        "score": 63500,
+                        "shields": 51.739013671875,
+                        "energy": 32.35009765625,
+                        "primary_weapon_flags": 9
+                    },
+                    "timer": 0,
+                    "receipts": {
+                        "executed-plan.json": "b7c2a3103023b535bcf2afbb76f7734ed7347296bbcbed726a77a5fa74454ccf",
+                        "result.json": "ad1feecc416ce546519a28446e314c0db565f6213abbdc0f792e122bf4f9d2d8",
+                        "state.json": "c5dc8080bfa4d59bc20b4c7cf846d22c74decc543abf21782b233b1fb942aa50",
+                        "trace.jsonl": "a184bf7e59541e0fad30ef91e915c51a6df68ade5d47a938af0b8e5175dcf99b"
+                    }
+                },
+                {
+                    "phase": 12,
+                    "resume": "14a5c2a90b1f74ee2ac93171883b16b1a8f4cf18afe590a9480d6e0fbdaa29c6",
+                    "save": "0fddb202076bb04966401c895a406f504acb89de4cb8e3a981339dea8bf509a9",
+                    "android_export": "d9a34b6f8cd5c91b6d4c7c4acc3d7eb46a93ed7281bf05a3b99be403a5d031ab",
+                    "level": 2,
+                    "segment": 2956,
+                    "player": {
+                        "lives": 4,
+                        "score": 68500,
+                        "shields": 37.739013671875,
+                        "energy": 28.85009765625,
+                        "primary_weapon_flags": 9
+                    },
+                    "timer": 1966080,
+                    "receipts": {
+                        "executed-plan.json": "8dfab38f1b0b93d25087823b37e1c7f4c5b92eb2c988fece79e704e19fef19df",
+                        "result.json": "3676d7d0f3975cf05b11de1a400c8e3256483f0e1357bdf2883fa7e3f6b922f2",
+                        "state.json": "717c8883dd28a664eb0e4cbdb4c427dc8650269d00c6277f7536a2077658e8c4",
+                        "trace.jsonl": "72bec16a732653872967727ac2de15fe5ba879d32635666b4d5c2814fc3ea774"
+                    }
+                },
+                {
+                    "phase": 13,
+                    "resume": "0fddb202076bb04966401c895a406f504acb89de4cb8e3a981339dea8bf509a9",
+                    "save": "6e6d7643f82fe856e41148007ceafdeb9b513c89b14695a5275bafd32cf47f42",
+                    "android_export": "d4472cb09c36725bc7f34c4c2a5f0440af3dac8ee06eb6174ac2479a933fe14a",
+                    "level": 3,
+                    "segment": 991,
+                    "player": {
+                        "lives": 4,
+                        "score": 68850,
+                        "shields": 100.0,
+                        "energy": 100.0,
+                        "primary_weapon_flags": 9
+                    },
+                    "timer": 229376,
+                    "receipts": {
+                        "executed-plan.json": "e8f6082cadaf3197fb828914c79e9d188dea25d3301d46eb436f6cdc4287d940",
+                        "result.json": "f3bf5b051d3d69bee5954df646fe1387384e36b8a93fe9fcfca71d23c0ea96ad",
+                        "state.json": "32e06d3324c2c297d6a21b6827d382ea5885afe9751d53fe11247cf7f82309fe",
+                        "trace.jsonl": "fa0c29306eae0fcaa1e31134b26e835a946b667a87b286133248afa2feb6a33a"
+                    },
+                    "passages": 57,
+                    "exit": {
+                        "boundary": "pre_exit",
+                        "segment": 3834,
+                        "timer": 229376,
+                        "shields": 17.15057373046875,
+                        "trigger": {
+                            "actor": 0,
+                            "attached": false,
+                            "delay_ms": -1,
+                            "flags": 4,
+                            "operated": true,
+                            "shot": 0,
+                            "type": 3,
+                            "value": 0
+                        }
+                    }
+                }
+            ]
+        }
+    },
+    "original_engine_level_3": {
+        "schema": "xl-original-campaign-probe-v1",
+        "reference_revision": "2576a98b5de310e3ac7c9777df2677d1627b8bae",
+        "engine_sha256": "2fb2cc81a694a526638cf978d98133b932b9f4fe9c1086dc568e13dd8b4de1d3",
+        "descriptor": "single/sphere.mn2",
+        "descriptor_sha256": "7104fe4eada0804ed6b03ac4b2a68656ab5c15d3f8b1bec37b43c9a5fab0ac6b",
+        "ordinal": 3,
+        "advertised_file": "sp-03.rl2",
+        "exit_code": 0,
+        "observation": "started_and_ran",
+        "timed_out": false,
+        "receipt_sha256": "7e574ec7e4b4adc13852b09092f03c36e899ef5668d74d467f5d26695069a6ba",
+        "texture_quality": 0,
+        "maximum_texture_quality": 3
+    },
+    "retained_attempts": [
+        {
+            "name": "shortcut-open-escape-65-1448",
+            "engine_result": "FAIL",
+            "reason": "ordinary player probe died or acquired assisted combat",
+            "plan": "898b8b0ee38d0b12b7ff8ec7576b7c739c127c615020eab5ab4b209308ef9294",
+            "result": "e6c5774f873b7abe06b6886ef2be8cfa6918020d95fb9f4a42bb8e47407e1fbc"
+        },
+        {
+            "name": "shortcut-open-escape-brake-1448",
+            "engine_result": "FAIL",
+            "reason": "ordinary player probe died or acquired assisted combat",
+            "plan": "6373142fe5aee5f5d70f3eb265068be360ce01dce1a1b99507caf780a6a7cd35",
+            "result": "e6c5774f873b7abe06b6886ef2be8cfa6918020d95fb9f4a42bb8e47407e1fbc"
+        },
+        {
+            "name": "shortcut-open-escape-braking",
+            "engine_result": "FAIL",
+            "reason": "ordinary player probe died or acquired assisted combat",
+            "plan": "2b4dd1f5fdb3fb08381a88f40012fbaa14593c54d989df601eedc095303ee817",
+            "result": "d7812f63ea975e6565034884e9cb14673c59a4cb6356d751a8f25200ec078b01"
+        },
+        {
+            "name": "shortcut-open-escape-cruising",
+            "engine_result": "FAIL",
+            "reason": "Ordinary flight failed at segment 1514 side 4, ended in level 2 segment 1448",
+            "plan": "8571af7850019906d4e41d001e3b37a894e2f9ae3d6b9e99f088c8dad6b63dc8",
+            "result": "03cb1c00c8f1da714ee6192b75d3eda4deb6d5eee2535c9c3422a4630ad16708"
+        }
+    ]
+}
