@@ -1,0 +1,183 @@
+{
+    "parent_pr": 680,
+    "mission": {
+        "sphere.mn2": "7104fe4eada0804ed6b03ac4b2a68656ab5c15d3f8b1bec37b43c9a5fab0ac6b",
+        "sphere.hog": "a40bf59101fee991200e34984a45fdf209cee4d68d47d4d52996dfe875dbe253"
+    },
+    "origin_device_save": "66816afebd74be797d6fdacec27ace53bbb93dadaf39a813363f42b5deb1b416",
+    "difficulty": "trainee",
+    "assist": "Developer planned connected flight, steering and visible-target aiming. No position edits or fixed-view events.",
+    "gate": {
+        "from": 141,
+        "side": 1,
+        "wall": 4,
+        "keys": 2,
+        "state": 1,
+        "to": 142
+    },
+    "owners": {
+        "blue_windows": {
+            "native_source": "27a340e72e7e927cb7eaec73c3def936cf52845a",
+            "fixture_source": "068c007c5ead5cf5a21bedb00817dc62236b6996",
+            "binary": "a1ec2fdccfe16621c1e6719ffaddbd3d8b1bdbbec477921958254e1aa3424d21",
+            "dgss": "66816afebd74be797d6fdacec27ace53bbb93dadaf39a813363f42b5deb1b416",
+            "terminal": "a0ca6072cf7e23eb1c705f679ac41be9b3f2f466543f3f57fb4072b2eb9ecec2",
+            "passages": 163,
+            "phases": 51,
+            "terminal_phase": {
+                "name": "level3_blue-9",
+                "segment": 1718,
+                "player": {
+                    "lives": 2,
+                    "score": 74350,
+                    "shields": 197.4039306640625,
+                    "energy": 73.530029296875,
+                    "primary_weapon_flags": 7,
+                    "laser_level": 3,
+                    "robots_killed_level": 20,
+                    "has_blue_key": true,
+                    "has_gold_key": false,
+                    "has_red_key": false
+                },
+                "resume": "974b225185ce03fcdbcc3ac50524e8ea2b1e2f9d6eb021fb49b27310ef0e9061",
+                "save": "a0ca6072cf7e23eb1c705f679ac41be9b3f2f466543f3f57fb4072b2eb9ecec2",
+                "android": "d0f82d07bf1efd64295948f0215e1935b14aadab33dcfe714e85d1e1e631dae9",
+                "receipts": {
+                    "executed-plan.json": "e63f4e3e2988e5af365bc4e0d65f934746cc71e37eabc8280803981fa7bccd59",
+                    "result.json": "2db862dd08297926eca90eac5c186a5a44204e36c83f8a5f3afa655e90ab09a9",
+                    "state.json": "c9b2094d6bbba84d40e8f7c134407b8b1342577f1c9e80cd58013a7c34a8682e",
+                    "trace.jsonl": "076b043234f5631dcc1eca45dcfc91ba897fe06efe76e38239857f2b49c251ab"
+                }
+            },
+            "manifest": "level3-blue-registered-windows-manifest.json",
+            "manifest_sha256": "7b67e3598355d09d05505e733df91d72d82c9baef8a294dc3331c35c5b7858d9"
+        },
+        "blue_linux": {
+            "native_source": "27a340e72e7e927cb7eaec73c3def936cf52845a",
+            "fixture_source": "068c007c5ead5cf5a21bedb00817dc62236b6996",
+            "binary": "7f3f253965d691934391539c2c8468725b05f477236f89e2724c6608dc54fe0d",
+            "dgss": "66816afebd74be797d6fdacec27ace53bbb93dadaf39a813363f42b5deb1b416",
+            "terminal": "ee821d8b8df76e1d789817e38a50758dcf347fbb38ad2911fdad9173c6fae467",
+            "passages": 163,
+            "phases": 51,
+            "terminal_phase": {
+                "name": "level3_blue-9",
+                "segment": 1718,
+                "player": {
+                    "lives": 2,
+                    "score": 74350,
+                    "shields": 197.4039306640625,
+                    "energy": 73.530029296875,
+                    "primary_weapon_flags": 7,
+                    "laser_level": 3,
+                    "robots_killed_level": 20,
+                    "has_blue_key": true,
+                    "has_gold_key": false,
+                    "has_red_key": false
+                },
+                "resume": "6506eab626b57b9a06a3db4e6c0cab663a28a1da28470696c7b422fc13c69518",
+                "save": "ee821d8b8df76e1d789817e38a50758dcf347fbb38ad2911fdad9173c6fae467",
+                "android": "9a45f25971733cd12f7db2f46feee3fa299645623b98e34282683eb650956c22",
+                "receipts": {
+                    "executed-plan.json": "c9230fe4bebb926e6f771a83d9879703ec67dc876f8c34d712324ad73d76c454",
+                    "result.json": "1492aaaf6a452a52e7e2cec1bf2902021088f631318f6e5cd7a7cbb980be22ff",
+                    "state.json": "7dd717a6d31237b096d97f4520f0f30bbce55768c44a4f40b93098c8f8c9bc8f",
+                    "trace.jsonl": "ec8a0e37538995942f02028818cec66643b16447fbc4a9fc55c203ad17ece1ce"
+                }
+            },
+            "manifest": "level3-blue-registered-linux-manifest.json",
+            "manifest_sha256": "efc9ca440098d247ea1e8234229b286cb8ecd78dc65b1877d06e31cb20693b5e"
+        },
+        "gate_linux": {
+            "native_source": "27a340e72e7e927cb7eaec73c3def936cf52845a",
+            "fixture_source": "91014d09c3ad2034e5875f15243f730c00cd2b95",
+            "binary": "7f3f253965d691934391539c2c8468725b05f477236f89e2724c6608dc54fe0d",
+            "entry_native_save": "ee821d8b8df76e1d789817e38a50758dcf347fbb38ad2911fdad9173c6fae467",
+            "terminal": "04768a84d797db30eb04a97f7e8755eb76c7ade06f0ded25a79cfc56ff9115a5",
+            "passages": 110,
+            "phases": 29,
+            "terminal_phase": {
+                "name": "level3_blue_door-14",
+                "segment": 142,
+                "player": {
+                    "lives": 2,
+                    "score": 79250,
+                    "shields": 54.51655578613281,
+                    "energy": 35.780029296875,
+                    "primary_weapon_flags": 7,
+                    "laser_level": 3,
+                    "robots_killed_level": 28,
+                    "has_blue_key": true,
+                    "has_gold_key": false,
+                    "has_red_key": false
+                },
+                "resume": "101f968266ddc79a1acbf43cbeaef607b5818497628a2743a91728675d7d200f",
+                "save": "04768a84d797db30eb04a97f7e8755eb76c7ade06f0ded25a79cfc56ff9115a5",
+                "android": "efacd49309600bc97f8c2f48068655b680546f0cf8f6df80dffaeba9ee4654c9",
+                "receipts": {
+                    "executed-plan.json": "2e7c94daa8f1494a41dad8a57a76af75790eb29e713c219fb060a0c478572e9b",
+                    "result.json": "f3a41c3854a6e5cf55d2b46b019a240ffe6dedb856946eb0f77f2108abff0d0a",
+                    "state.json": "23f2fd7cd2ca1e27d519212b47cd49a0da0505d761280036af5f13e9c0c9f608",
+                    "trace.jsonl": "edfb9c6466f2de2e2a564e8a054e0519079e888448026ad1432a6802c2ab6b5c"
+                }
+            },
+            "manifest": "level3-gate-registered-linux-manifest.json",
+            "manifest_sha256": "e564f16073449d75d81c30ec2360763347de03f793a393f63449bed59c8401de"
+        }
+    },
+    "linux_gate_seconds": [608.49, 557.82],
+    "windows_gate_at_publication": "running",
+    "open_android_blue": {
+        "attempts": [
+            {
+                "owner": "01",
+                "outcome": "failed_live_expectation",
+                "level": 3,
+                "segment": 1703,
+                "fields": {
+                    "lives": 2,
+                    "score": 74350,
+                    "shields": 123.4039306640625,
+                    "energy": 73.530029296875,
+                    "laser_level": 3,
+                    "primary_weapon": 9,
+                    "primary_weapon_flags": 519,
+                    "has_blue_key": true
+                },
+                "log": "9b218ac3d95cf1b886ea44a3859f11dea32e2b94e28ac8baff1214a0bff5f362",
+                "plan": "05215a7ab19bc00c6c853b55b80322de751879952fb3c005faf8a33bdf00c17c"
+            },
+            {
+                "owner": "02",
+                "outcome": "failed_live_expectation",
+                "level": 3,
+                "segment": 1703,
+                "fields": {
+                    "lives": 2,
+                    "score": 74350,
+                    "shields": 37.716217041015625,
+                    "energy": 73.530029296875,
+                    "laser_level": 3,
+                    "primary_weapon": 2,
+                    "primary_weapon_flags": 7,
+                    "has_blue_key": true
+                },
+                "log": "74126dc708de3e3d557572532c95535610d21f942b2e6e649b50d3eb501b2328",
+                "plan": "8c9a398cf377e3385b53f533f3fdaaccf51b1d250810c21b415bcc4293e9b88e"
+            }
+        ],
+        "scope": "Ordinary Android starts from the earned blue-key export with active enemies. These observations have different timing from the native passive owner.",
+        "origin": {
+            "native_save": "067f348311a5e5bbc2d2f95b3f07641af62ab213b7ad3b25f2b20468ffbd930e",
+            "android_export": "7b761b7e44ba41299cf23c46c68104d4575e2f74d1b7f2260365f86c202f7c56",
+            "plan": "156ee353ed18ede68a5421c4d2dc4fffaa40bf2ab16041555d306f0dd373b8f6",
+            "state": "c9b2094d6bbba84d40e8f7c134407b8b1342577f1c9e80cd58013a7c34a8682e"
+        },
+        "native_passive": {
+            "result": "FAIL",
+            "observed": "native wait: player.primary_weapon_flags actual=7 expected=519",
+            "plan": "8b258dbbd94a5cc28948bb1686d32fe930eed81a08e78a9220bd966083b237ac",
+            "engine_result": "72c6f320efa66fc9c9d325e42b7fb7de7d63cb7f5d34ee8cf76f60f4f7690f90"
+        }
+    }
+}
