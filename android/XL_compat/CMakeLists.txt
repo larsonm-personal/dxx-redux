@@ -955,8 +955,45 @@ if(BUILD_TESTING)
                     -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/sphere-level3-blue -P
                     ${CMAKE_CURRENT_SOURCE_DIR}/tests/sphere_campaign.cmake)
             set_tests_properties(
-                xl_sphere_level3_blue PROPERTIES TIMEOUT 1800 RUN_SERIAL TRUE FIXTURES_REQUIRED
-                                                 sphere_level3_approach)
+                xl_sphere_level3_blue
+                PROPERTIES TIMEOUT
+                           1800
+                           RUN_SERIAL
+                           TRUE
+                           FIXTURES_REQUIRED
+                           sphere_level3_approach
+                           FIXTURES_SETUP
+                           sphere_level3_blue)
+            add_test(
+                NAME xl_sphere_level3_return
+                COMMAND
+                    ${CMAKE_COMMAND} -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA}
+                    -DRESOURCES=${XL_SPHERE_PLAYER_ROOT}
+                    -DENTRY=${CMAKE_CURRENT_BINARY_DIR}/sphere-level3-blue -DSTAGE=level3_return
+                    -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/sphere-level3-return -P
+                    ${CMAKE_CURRENT_SOURCE_DIR}/tests/sphere_campaign.cmake)
+            set_tests_properties(
+                xl_sphere_level3_return
+                PROPERTIES TIMEOUT
+                           1800
+                           RUN_SERIAL
+                           TRUE
+                           FIXTURES_REQUIRED
+                           sphere_level3_blue
+                           FIXTURES_SETUP
+                           sphere_level3_return)
+            add_test(
+                NAME xl_sphere_level3_blue_door
+                COMMAND
+                    ${CMAKE_COMMAND} -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA}
+                    -DRESOURCES=${XL_SPHERE_PLAYER_ROOT}
+                    -DENTRY=${CMAKE_CURRENT_BINARY_DIR}/sphere-level3-return
+                    -DSTAGE=level3_blue_door
+                    -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/sphere-level3-blue-door -P
+                    ${CMAKE_CURRENT_SOURCE_DIR}/tests/sphere_campaign.cmake)
+            set_tests_properties(
+                xl_sphere_level3_blue_door PROPERTIES TIMEOUT 1800 RUN_SERIAL TRUE
+                                                      FIXTURES_REQUIRED sphere_level3_return)
         endif()
         if(XL_SPHERE_RESPAWN_SAVE)
             add_test(
