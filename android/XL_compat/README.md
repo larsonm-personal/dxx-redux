@@ -740,8 +740,8 @@ and pilot `player`; backs up and restores test-touched state; and checks startup
 render activity, quick-save/restore, the XL menu indicator, stock transitions and
 a controlled authored-light face with actual corona draws.
 It does not navigate the level or establish uninterrupted playthrough or visual
-equivalence with the reference engine. D2 CLR overrides and multiplayer remain
-rejected. See the [tranche record](../ai%20tool%20plans/mission%20metadata/xl_konflict_tranche_20261025.md).
+equivalence with the reference engine. The 17/36 loader uses the complete embedded
+texture colors after reading an owned CLR. Multiplayer remains unqualified. See the [tranche record](../ai%20tool%20plans/mission%20metadata/xl_konflict_tranche_20261025.md).
 
 # True-color POG acceptance
 

@@ -43,10 +43,17 @@ static int konflict_test(int argc, char **argv)
 		require(xl_prepared_texture_brightness(44, &brightness) && brightness == 3930, "authored brightness override missing");
 		require(xl_prepared_texture_brightness(275, &brightness) && brightness == 86460, "authored brightness replaced by default");
 		int emitter_count = 0, changed_emitters = 0;
+		int witness_segment = -1, witness_side = -1;
+		xl_texture_emitter witness{};
 		for (int segment = 0; segment < Num_segments; ++segment)
 			for (int side = 0; side < 6; ++side) {
 				xl_texture_emitter emitter{};
 				if (!xl_preview_texture_emitter(segment, side, &emitter)) continue;
+				if (witness_segment < 0 && (emitter.rgb[0] || emitter.rgb[1] || emitter.rgb[2])) {
+					witness_segment = segment;
+					witness_side = side;
+					witness = emitter;
+				}
 				++emitter_count;
 				int default_brightness = 0;
 				for (const auto &entry : xl_compat::texture_brightness)
@@ -120,7 +127,7 @@ static int konflict_test(int argc, char **argv)
 		// Remove only this test's loose controls left by an interrupted prior run.
 		std::filesystem::remove(root.parent_path() / "konflict.rl2");
 		std::filesystem::remove(root.parent_path() / "konflict.lgt");
-		for (int variant = 0; variant < 4; ++variant) {
+		for (int variant = 0; variant < 5; ++variant) {
 			// Derived controls, never substituted for the original acceptance fixture
 			xl_compat::Bytes hog{ 'D', 'H', 'F' };
 			auto member = [&](const char *name, const xl_compat::Bytes &bytes) {
@@ -132,18 +139,29 @@ static int konflict_test(int argc, char **argv)
 			};
 			member("konflict.rl2", original_bytes);
 			if (variant == 0) member("konflict.lgt", { 0 });
-			if (variant == 1) member("konflict.clr", xl_compat::Bytes(910 * 13, 0));
+			if (variant == 1) {
+				member("konflict.lgt", lgt);
+				member("konflict.clr", xl_compat::Bytes(910 * 13, 0));
+			}
 			if (variant == 3) member("konflict.lgt", xl_compat::Bytes(910 * 4, 0));
+			if (variant == 4) member("konflict.clr", { 0 });
 			write_bytes((root / "kfcheck.hog").string().c_str(), hog);
 			std::ofstream descriptor(root / "kfcheck.mn2");
 			descriptor << "d2x-name = Companion control\nnum_levels = 1\nkonflict.rl2\n";
 			descriptor.close();
 			require(bool(descriptor) && load_base_mission("kfcheck", error, sizeof(error)), error);
-			if (variant < 2) {
+			if (variant == 0 || variant == 4) {
 				require(!xl_level_supported("konflict.rl2", 0), "unsupported companion admitted");
 				const std::string reason = xl_level_rejection();
-				require(reason.find(variant == 0 ? "companion length" : "CLR companion overrides") != std::string::npos, "unsupported companion lacks helpful rejection");
+				require(reason.find("companion length") != std::string::npos, "invalid companion lacks length diagnostic");
 				require(load_level("konflict.rl2") != 0 && !xl_preview_pilot_active(), "unsupported companion reached runtime");
+			} else if (variant == 1) {
+				require(xl_level_supported("konflict.rl2", 0) && load_level("konflict.rl2") == 0, "complete 17/36 color table rejected");
+				xl_texture_emitter actual{};
+				require(witness_segment >= 0 && xl_preview_texture_emitter(witness_segment, witness_side, &actual), "lost embedded color emitter");
+				require(actual.texture == witness.texture && actual.intensity == witness.intensity && std::equal(std::begin(actual.rgb), std::end(actual.rgb), witness.rgb),
+				        "conflicting CLR replaced the original embedded emitter");
+				require(xl_prepared_texture_brightness(actual.texture, &brightness) && brightness == authored[actual.texture], "lost authored emitter brightness");
 			} else if (variant == 2) {
 				require(xl_level_supported("konflict.rl2", 0) && load_level("konflict.rl2") == 0, "absent LGT did not retain default fallback");
 				require(!xl_prepared_texture_brightness(275, &brightness), "absent LGT retained previous override");
@@ -158,7 +176,7 @@ static int konflict_test(int argc, char **argv)
 			}
 			require(load_base_mission("d2", error, sizeof(error)) && load_level("d2leva-1.rl2") == 0, "companion control stock recovery failed");
 		}
-		std::cout << "Konflict derived controls: malformed LGT and unsupported CLR rejected; absent LGT uses defaults; zero LGT disables emitters\n";
+		std::cout << "Konflict derived controls: malformed companions rejected, embedded emitter survives conflicting CLR, absent LGT uses defaults, zero LGT disables emitters\n";
 		const auto loose_root = root.parent_path();
 		write_bytes((loose_root / "konflict.rl2").string().c_str(), original_bytes);
 		write_bytes((loose_root / "konflict.lgt").string().c_str(), lgt);
