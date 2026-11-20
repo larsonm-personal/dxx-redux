@@ -912,7 +912,20 @@ if(BUILD_TESTING)
         endif()
     endif()
     set(XL_SPHERE_PLAYER_ROOT "" CACHE PATH "Original Sphere 1.51 staged mission root")
+    set(XL_SPHERE_RESPAWN_SAVE "" CACHE FILEPATH "Earned Sphere 1.51 Android respawn DGSS")
     if(XL_SPHERE_PLAYER_ROOT AND XL_PREVIEW_LIFECYCLE AND XL_RETAIL_DATA)
+        if(XL_SPHERE_RESPAWN_SAVE)
+            add_test(
+                NAME xl_sphere_respawn_extra_life
+                COMMAND
+                    ${CMAKE_COMMAND} -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA}
+                    -DRESOURCES=${XL_SPHERE_PLAYER_ROOT} -DRESPAWN_SAVE=${XL_SPHERE_RESPAWN_SAVE}
+                    -DSTAGE=respawn_extra_life
+                    -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/sphere-respawn-extra-life -P
+                    ${CMAKE_CURRENT_SOURCE_DIR}/tests/sphere_campaign.cmake)
+            set_tests_properties(xl_sphere_respawn_extra_life PROPERTIES TIMEOUT 1800 RUN_SERIAL
+                                                                         TRUE)
+        endif()
         add_test(
             NAME xl_sphere_reactor_aim
             COMMAND
