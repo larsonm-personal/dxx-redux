@@ -372,6 +372,11 @@ void do_physics_sim(object *obj)
 	int record_crossings = obj->type == OBJ_PLAYER;
 	int speed_boost = 0;
 #ifdef DXX_XL_RUNTIME
+	/* An authored modal can resume the current object loop with zero simulation time */
+	if (FrameTime == 0 && xl_level_extensions_active()) {
+		n_phys_segs = 0;
+		return;
+	}
 	record_crossings |= xl_wall_teleport_actor(obj - Objects);
 	speed_boost = xl_speed_boost_begin(obj - Objects);
 #endif

@@ -515,6 +515,24 @@ static int run(int argc, char **argv, const char *plan_argument, bool pumo)
 		std::ifstream input(plan_path);
 		Json plan;
 		input >> plan;
+#if defined(DXX_XL_DEVELOPER_PROBE) && defined(DXX_HEADLESS_CONSOLE)
+		const auto messages = plan.value("acknowledge_messages", Json::array());
+		require(messages.is_array(), "Expected an ordered list of authored message acknowledgements");
+		size_t acknowledged = 0;
+		struct ResetMessageAcknowledgement {
+			~ResetMessageAcknowledgement()
+			{
+				xl_compat::set_player_message_acknowledgement({});
+			}
+		} reset_message_acknowledgement;
+		xl_compat::set_player_message_acknowledgement([&](int id, const std::string &text) {
+			trace << Json{ { "event", "message_prompt" }, { "level", Current_level_num }, { "id", id }, { "text", text } }.dump() << std::endl;
+			require(acknowledged < messages.size(), "Unexpected authored message prompt during flight");
+			const auto &expected = messages.at(acknowledged);
+			require(expected.at("level") == Current_level_num && expected.at("id") == id && expected.at("text") == text, "Authored message differs from the expected acknowledgement");
+			++acknowledged;
+		});
+#endif
 		const std::string mission = pumo ? "pmines" : plan.at("mission").at("filename").get<std::string>();
 		if (pumo) {
 			for (const auto &[file, expected] : std::map<std::string, std::string>{
@@ -1161,6 +1179,9 @@ static int run(int argc, char **argv, const char *plan_argument, bool pumo)
 		const int process = _getpid();
 #else
 		const int process = getpid();
+#endif
+#if defined(DXX_XL_DEVELOPER_PROBE) && defined(DXX_HEADLESS_CONSOLE)
+		require(acknowledged == messages.size(), "Flight finished before all expected messages were acknowledged");
 #endif
 		std::ofstream(root / "player-result.json") << Json{ { "result", "PASS" }, { "mission", mission }, { "receipt_version", 2 }, { "run_id", run_id }, { "plan_sha256", plan_sha256 }, { "executable_sha256", executable_sha256 }, { "resume_sha256", resume_sha256 }, { "steps", completed }, { "process_id", process }, { "initial_level_setup", initial_level }, { "resumed_earned_checkpoint", plan.contains("resume_checkpoint") }, { "final_level", Current_level_num }, { "transitions", transitions }, { "checkpoints", checkpoints }, { "checkpoint_history", checkpoint_history }, { "rendered", bool{ false } }, { "fixed_view_aim_events", view_aim_events }, { "position_assist_events", position_assist_events }, { "operation_sequence", operation_sequence } }.dump(2) << '\n';
 		xl_wall_trigger_set_operation_observer(nullptr);

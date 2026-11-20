@@ -920,7 +920,18 @@ if(BUILD_TESTING)
                 -DRESOURCES=${XL_SPHERE_PLAYER_ROOT}
                 -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/sphere-red-key -P
                 ${CMAKE_CURRENT_SOURCE_DIR}/tests/sphere_red_key.cmake)
-        set_tests_properties(xl_sphere_red_key PROPERTIES TIMEOUT 600 RUN_SERIAL TRUE)
+        set_tests_properties(xl_sphere_red_key PROPERTIES TIMEOUT 600 RUN_SERIAL TRUE
+                                                          FIXTURES_SETUP sphere_key)
+        add_test(
+            NAME xl_sphere_shaft_exit
+            COMMAND
+                ${CMAKE_COMMAND} -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA}
+                -DRESOURCES=${XL_SPHERE_PLAYER_ROOT}
+                -DENTRY=${CMAKE_CURRENT_BINARY_DIR}/sphere-red-key
+                -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/sphere-shaft -P
+                ${CMAKE_CURRENT_SOURCE_DIR}/tests/sphere_shaft.cmake)
+        set_tests_properties(xl_sphere_shaft_exit PROPERTIES TIMEOUT 900 RUN_SERIAL TRUE
+                                                             FIXTURES_REQUIRED sphere_key)
     endif()
     set(XL_PHOENIX_PLAYER_ROOT "" CACHE PATH "Original Black Prophecy staged mission root")
     if(XL_PHOENIX_PLAYER_ROOT AND XL_PREVIEW_LIFECYCLE AND XL_RETAIL_DATA)
