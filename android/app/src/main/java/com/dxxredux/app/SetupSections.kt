@@ -4703,7 +4703,7 @@ internal fun MissingFilesHelp() {
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text =
-                    "Import your D1 or D2 game files using \"Select Game Files or Archive to Import\" above.\n" +
+                    "Import your D1 or D2 game files using \"Import files\".\n" +
                         "Choose files, an archive, or a folder. You can also download a demo below.\n" +
                         "Either Descent 2 or Descent 1 files are needed to launch.",
                 color = MaterialTheme.colorScheme.onErrorContainer,
