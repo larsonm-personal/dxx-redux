@@ -1,5 +1,6 @@
 // Developer-only ordinary-player simulation; initial level and local poses are setup
 #include "texture_pixels.h"
+#include "morph_save.h"
 #include "powerup.h"
 #include "pilot_target.h"
 #include "input_demo_recorder.h"
@@ -201,6 +202,9 @@ static Json snapshot()
 	unsigned int rng_state = 0;
 	const bool rng_available = d_rand_get_state(&rng_state) != 0;
 	state["simulation_rng"] = { { "state_available", rng_available }, { "state", rng_available ? Json(rng_state) : Json{} }, { "call_count", d_rand_get_call_count() } };
+	bool sparse_morphs;
+	state["morph_slots"] = xl_morph_slot_snapshot(sparse_morphs);
+	state["morph_slots_sparse"] = sparse_morphs;
 	state["level_scene"]["powerups"] = Json::array();
 	for (int index = 0; index <= Highest_object_index; ++index)
 		if (Objects[index].type == OBJ_POWERUP && !(Objects[index].flags & OF_SHOULD_BE_DEAD))

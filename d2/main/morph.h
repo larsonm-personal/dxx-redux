@@ -42,6 +42,16 @@ typedef struct morph_data {
 
 #define MAX_MORPH_OBJECTS 5
 
+typedef struct morph_slot_layout {
+	int count;
+	int objects[MAX_MORPH_OBJECTS], signatures[MAX_MORPH_OBJECTS], slots[MAX_MORPH_OBJECTS];
+} morph_slot_layout;
+
+static inline int morph_slot_is_active(const morph_data *md)
+{
+	return md->obj != NULL && md->obj->type != OBJ_NONE && md->obj->signature == md->Morph_sig;
+}
+
 extern morph_data morph_objects[];
 
 void morph_start(object *obj);
