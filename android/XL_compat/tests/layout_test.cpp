@@ -32,6 +32,14 @@ bool issue(const std::vector<xl_compat::Issue> &issues, const char *feature)
 }
 void contract()
 {
+	auto classic = xl_test::layout_fixture(7);
+	rejects(classic.bytes, "unsupported level version");
+	const auto native = xl_compat::inspect_mission_level(classic.bytes);
+	check(native.game_version == 31 && native.sections.size() == 9 && native.vertex_colors.empty() &&
+	          native.segments.front().owner == -1 && native.segments.front().group == -1 && native.segments.front().sides[0].wall == 0,
+	      "Classic descriptor member lost its native geometry or section boundaries");
+	classic.bytes.push_back(0);
+	check(issue(xl_compat::inspect_mission_level(classic.bytes).unknown, "object_trigger_tail"), "Classic trigger section accepted an unowned byte");
 	for (const int base : { 0, 909, 910, 911, 1820, 0x7fff }) {
 		auto fixture = xl_test::layout_fixture(26);
 		const auto index = fixture.corners[2] + 4;

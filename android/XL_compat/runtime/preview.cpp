@@ -276,8 +276,8 @@ bool mission_has_companion(const char *extension)
 void collect_dependencies(const xl_compat::Inventory &level, bool multiplayer, bool water_pilot,
                           xl_assets::ObjectDependencies &graph, bool incoming)
 {
-	graph.xl_boss_spawning = true;
-	graph.xl_time_equipment = true;
+	graph.xl_boss_spawning = level.level_version > 8;
+	graph.xl_time_equipment = level.level_version > 8;
 	const int robot_count = incoming ? graph.robot_count : N_robot_types;
 	const int clip_count = incoming ? graph.clip_count : Num_vclips;
 	const auto *clips = incoming ? graph.clip_data : Vclip;
@@ -464,13 +464,23 @@ void collect_dependencies(const xl_compat::Inventory &level, bool multiplayer, b
 void validate_requirements(const xl_compat::Inventory &level, bool multiplayer, bool water_pilot, xl_assets::ObjectDependencies &graph,
                            mission_preparation *incoming = nullptr, xl_compat::TargetSources *target = nullptr, bool owned_scoped_textures = false)
 {
-	graph.xl_boss_spawning = true;
-	graph.xl_time_equipment = true;
+	const bool classic = level.level_version <= 8;
 	// Selected-mission admission also checks the currently installed native tables
 	const int texture_count = incoming ? graph.texture_count : NumTextures;
 
-	auto blockers = xl_compat::runtime_blockers(level, water_pilot);
-	if (!blockers.empty()) throw std::runtime_error(xl_compat::blocker_message(blockers));
+	if (classic) {
+		if (!level.unknown.empty()) throw std::runtime_error(xl_compat::blocker_message(level.unknown));
+		if (!level.unsupported.empty()) throw std::runtime_error(xl_compat::blocker_message(level.unsupported));
+		if (level.objects.size() > DXX_CLASSIC_MAX_OBJECTS || level.walls.size() > DXX_CLASSIC_MAX_WALLS ||
+		    level.triggers.size() > DXX_CLASSIC_MAX_TRIGGERS || level.segments.size() > MAX_SEGMENTS || level.vertices.size() > MAX_VERTICES)
+			throw std::runtime_error("Classic mine exceeds native level capacity");
+		for (const auto &segment : level.segments)
+			for (const auto &side : segment.sides)
+				if (side.texture >= texture_count) throw std::runtime_error("Classic mine texture is outside the target bank");
+	} else {
+		auto blockers = xl_compat::runtime_blockers(level, water_pilot);
+		if (!blockers.empty()) throw std::runtime_error(xl_compat::blocker_message(blockers));
+	}
 	if (multiplayer) throw std::runtime_error("multiplayer: XL synchronization is not implemented; use singleplayer");
 	// Both callers checked mission context before reading or translating the level
 	const auto *mission = incoming ? mission_prepared_descriptor(incoming) : Current_mission;
@@ -542,6 +552,22 @@ void validate_requirements(const xl_compat::Inventory &level, bool multiplayer, 
 		throw std::runtime_error("lava volumes require the loaded D2 texture 404 damage definition");
 	collect_dependencies(level, multiplayer, water_pilot, graph, incoming != nullptr);
 }
+
+std::unique_ptr<XlPreparedResources> prepare_classic_member(const char *filename, int ordinal, bool multiplayer)
+{
+	if (!Current_mission || Current_mission->enhanced != MISSION_ENHANCED_XL) return {};
+	xl_compat::TargetSources target("");
+	if (!mission_owns_resource_archive(PHYSFS_getRealDir(filename)))
+		throw std::runtime_error("d2x-name mission resources: classic level must come from its selected mission archive");
+	ordinal = target.ordinal(filename, ordinal);
+	const auto bytes = target.archive_bytes(filename, 64 * 1024 * 1024);
+	if (!bytes) throw std::runtime_error("Classic level is absent from its mission archive");
+	const auto level = xl_compat::inspect_mission_level(*bytes);
+	if (level.level_version > 8) throw std::runtime_error("Selected level and mission archive disagree on level format");
+	auto resources = std::make_unique<XlPreparedResources>(filename, &level, ordinal);
+	validate_requirements(level, multiplayer, false, resources->dependencies(), nullptr, nullptr, resources->has_scoped_textures());
+	return resources;
+}
 } // namespace
 
 void xl_collect_incoming_dependencies(const xl_compat::Inventory &level, bool water_pilot,
@@ -591,8 +617,7 @@ extern "C" int xl_level_supported_at(const char *filename, int multiplayer, int 
 		validate_mission_context();
 		const auto bytes = read_extended_level(filename);
 		if (bytes.empty()) {
-			if (Current_mission && Current_mission->enhanced == MISSION_ENHANCED_XL)
-				throw std::runtime_error("d2x-name mission resources: stock-format levels in XL descriptors are not qualified");
+			prepare_classic_member(filename, ordinal, multiplayer != 0);
 			return 1;
 		}
 		const bool arena = water_profile(bytes, multiplayer != 0);
@@ -825,11 +850,13 @@ extern "C" int xl_preview_load_level_at(const char *filename, int ordinal)
 		auto bytes = read_extended_level(filename);
 		const bool original = !bytes.empty();
 		if (!original) {
-			if (Current_mission && Current_mission->enhanced == MISSION_ENHANCED_XL)
-				throw std::runtime_error("d2x-name mission resources: stock-format levels in XL descriptors are not qualified");
+			auto resources = prepare_classic_member(filename, ordinal, (Game_mode & GM_MULTI) != 0);
 			if (!translated_preview) {
+				committed = true;
 				xl_preview_clear_mission();
-				return xl_stock_load_level(filename);
+				const int loaded = xl_stock_load_level(filename);
+				if (!loaded && resources) xl_set_prepared_resources(filename, std::move(resources));
+				return loaded;
 			}
 #ifdef DXX_XL_DEVELOPER_PROBE
 			if (Game_mode & GM_MULTI) throw std::runtime_error("multiplayer: XL preview synchronization is not implemented");

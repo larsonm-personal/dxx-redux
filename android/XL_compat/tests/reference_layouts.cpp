@@ -16,7 +16,7 @@
 #define SEGMENT_VERTEX_COUNT    8
 #define MAX_WALL_TEXTURES       910
 #define GAME_COMPATIBLE_VERSION 22
-#define IS_WALL(wall)           ((wall) != 0xffff)
+#define IS_WALL(wall)           (uint16_t(wall) != (gameStates.app.bD2XLevel ? 2047 : 255) && uint16_t(wall) < gameFileInfo.walls.count)
 #define I2X(value)              ((value) * 65536)
 #define X2F(value)              (float(value) / 65536.0f)
 using fix = std::int32_t;
@@ -142,10 +142,7 @@ struct CSegment {
 	void ReadExtras(CFile &);
 	void Read(CFile &);
 	void RemapVertices();
-	void Upgrade()
-	{
-		throw std::runtime_error("Unexpected pre-v21 extras in modern oracle");
-	}
+	void Upgrade();
 	int FogType() const
 	{
 		return m_props & 1 ? 1 : m_props & 2 ? 2
@@ -168,6 +165,8 @@ struct {
 	char mineFilename[15]{};
 	Section player, objects, walls, doors, triggers, links, control, botGen, lightDeltaIndices, lightDeltas, equipGen;
 } gameFileInfo, gameTopFileInfo;
+#include "xl_reference_repair_types.h"
+#include "xl_reference_repair_upgrade.h"
 #include "xl_reference_layouts.h"
 namespace reactor_oracle
 {
@@ -199,11 +198,16 @@ void equal(bool ok, const char *message)
 }
 void compare(const xl_compat::Bytes &bytes, bool surfaces_only = false)
 {
-	const auto decoded = xl_compat::inspect_level(bytes);
+	const auto decoded = xl_compat::inspect_mission_level(bytes);
 	CFile header{ bytes, 4 };
 	gameData = {};
 	gameData.segData.nLevelVersion = header.ReadInt();
+	gameStates.app.bD2XLevel = gameData.segData.nLevelVersion >= 10;
 	const int mine = header.ReadInt(), game = header.ReadInt();
+	CFile game_reader{ bytes, std::size_t(game) };
+	gameFileInfo = {};
+	gameTopFileInfo = {};
+	equal(ReadGameFileInfo(game_reader, game) == 0, "Reference game header rejected");
 	CFile geometry{ bytes, std::size_t(mine) };
 	equal(geometry.ReadUByte() == 0, "Compiled version differs");
 	const int vertices = geometry.ReadShort(), count = geometry.ReadShort();
@@ -228,7 +232,7 @@ void compare(const xl_compat::Bytes &bytes, bool surfaces_only = false)
 		for (int side = 0; side < 6; ++side) {
 			const auto &rs = reference.m_sides[side];
 			const auto &ds = redux.sides[side];
-			equal(rs.m_nWall == (ds.wall < 0 ? 0xffff : ds.wall), "Wall number differs");
+			equal((IS_WALL(rs.m_nWall) ? rs.m_nWall : -1) == ds.wall, "Wall number differs");
 			const int corners = static_cast<int>(std::count_if(ds.corners.begin(), ds.corners.end(), [](int n) { return n != 255; }));
 			equal(rs.m_nCorners == corners, "Side shape differs");
 			for (int n = 0; n < corners; ++n) equal(reference.m_vertices[rs.m_corners[n]] == redux.vertices[ds.corners[n]], "Global side vertex differs after compaction");
@@ -261,11 +265,8 @@ void compare(const xl_compat::Bytes &bytes, bool surfaces_only = false)
 	}
 	// Colors follow the readers under test; their widths independently establish
 	// that no added corner or wide extras field was skipped or consumed twice
-	equal(geometry.position + (vertices + count * 6 + 910) * 13 == std::size_t(game), "Geometry record boundary differs");
-	CFile game_reader{ bytes, std::size_t(game) };
-	gameFileInfo = {};
-	gameTopFileInfo = {};
-	equal(ReadGameFileInfo(game_reader, game) == 0, "Reference game header rejected");
+	const auto color_bytes = gameStates.app.bD2XLevel ? (vertices + count * 6 + 910) * 13 : 0;
+	equal(geometry.position + color_bytes == std::size_t(game), "Geometry record boundary differs");
 	equal(gameFileInfo.fileinfoVersion == decoded.game_version, "Game version differs");
 	const Section sections[] = { gameFileInfo.objects, gameFileInfo.walls, gameFileInfo.doors, gameFileInfo.triggers, gameFileInfo.links, gameFileInfo.control, gameFileInfo.botGen, gameFileInfo.lightDeltaIndices, gameFileInfo.lightDeltas, gameFileInfo.equipGen };
 	for (std::size_t i = 0; i < decoded.sections.size(); ++i) equal(sections[i].offset == decoded.sections[i].offset && sections[i].count == decoded.sections[i].count && sections[i].size == decoded.sections[i].declared_size, "Game section descriptor differs");
@@ -286,10 +287,12 @@ void compare(const xl_compat::Bytes &bytes, bool surfaces_only = false)
 		if (decoded.level_version >= 27) {
 			const auto &fog = decoded.fog_settings.at(i);
 			equal(color.r == float(fog[0]) / 255.0f && color.g == float(fog[1]) / 255.0f && color.b == float(fog[2]) / 255.0f && color.a == float(fog[3]) * 20.0f, "Authored fog differs");
-		} else {
+		} else if (gameStates.app.bD2XLevel) {
 			equal(decoded.fog_settings.empty(), "Legacy file invented serialized fog");
 			const float defaults[4][4] = { { .2f, .4f, .6f, 160 }, { .8f, .4f, 0, 60 }, { .7f, .7f, .7f, 240 }, { .7f, .7f, .7f, 100 } };
 			equal(color.r == defaults[i][0] && color.g == defaults[i][1] && color.b == defaults[i][2] && color.a == defaults[i][3], "Reference default fog differs");
+		} else {
+			equal(decoded.fog_settings.empty() && !color.r && !color.g && !color.b && !color.a, "Classic header initialized XL fog");
 		}
 	}
 	std::string name;
@@ -341,6 +344,7 @@ int main(int argc, char **argv)
 		} else if (argc > 1)
 			for (int i = 1; i < argc; ++i) original(argv[i]);
 		else {
+			compare(xl_test::layout_fixture(7).bytes);
 			for (const int base : { 0, 909, 910, 911, 1820, 0x7fff }) {
 				auto fixture = xl_test::layout_fixture(26);
 				xl_test::layout_patch(fixture.bytes, fixture.corners[2] + 4, 0x8000 | base, 2);

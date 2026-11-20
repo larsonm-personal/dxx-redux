@@ -167,6 +167,8 @@ inline bool valid_light_delta(const Inventory &level, const std::array<int, 7> &
 // Inspection is not admission: even a decoded file is not approved for gameplay
 // Unsupported version combinations and malformed data throw std::runtime_error
 Inventory inspect_level(const Bytes &bytes);
+// Resource admission also inspects native D2 members advertised by XL missions
+Inventory inspect_mission_level(const Bytes &bytes);
 // ReadColor registration predicate used by method-0 ambient reconstruction
 bool has_registered_colors(const Inventory &inventory);
 std::string inventory_json(const Inventory &inventory);

@@ -23,14 +23,15 @@ inline void layout_patch(xl_compat::Bytes &bytes, std::size_t at, std::uint32_t 
 // portal, one wall, an oriented overlay, signed UVs, and nondefault fog values
 inline LayoutFixture layout_fixture(int version, int shape = 0, int producer = -1, int value = -1)
 {
-	if (!xl_compat::modern_level_version(version) || (version < 25 && shape))
-		throw std::runtime_error("Invalid modern layout fixture profile");
+	const bool classic = version == 7;
+	if ((!classic && !xl_compat::modern_level_version(version)) || (version < 25 && shape))
+		throw std::runtime_error("Invalid layout fixture profile");
 	LayoutFixture result;
 	auto &b = result.bytes;
 	auto put = [&](std::uint32_t n, int width) { layout_put(b, n, width); };
 	put(0x504c564c, 4);
 	put(version, 4);
-	b.resize(23);
+	b.resize(classic ? 16 : 23);
 	put(0, 1);
 	put(30, 4);
 	put(0xffffffff, 4);
@@ -42,14 +43,16 @@ inline LayoutFixture layout_fixture(int version, int shape = 0, int producer = -
 	put(8, 2);
 	put(1, 2);
 	for (int i = 0; i < 24; ++i) put(i * 65536, 4);
-	put(255, 1);
-	put(42, 1);
+	if (!classic) {
+		put(255, 1);
+		put(42, 1);
+	}
 	put(1 << 5, 1);
 	put(0, 2);
 	result.vertices = b.size();
 	for (int i = 0; i < 8; ++i) put(shape == 2 && i == 2 ? 0xfff8 : i, 2);
 	put(1, 1);
-	put(0, 2);
+	put(0, classic ? 1 : 2);
 	for (int side = 0; side < 6; ++side) {
 		result.corners[side] = b.size();
 		if (version >= 25) {
@@ -75,12 +78,14 @@ inline LayoutFixture layout_fixture(int version, int shape = 0, int producer = -
 	put(static_cast<std::uint32_t>(producer), version >= 25 ? 2 : 1);
 	put(static_cast<std::uint32_t>(value), version >= 25 ? 2 : 1);
 	put(3, 1);
-	put(32, 1);
-	put(0xffff, 2);
-	put(32767, 2);
+	if (!classic) {
+		put(32, 1);
+		put(0xffff, 2);
+		put(32767, 2);
+	}
 	put(65536, 4);
 	result.colors = b.size();
-	for (int i = 0; i < 8 + 6 + 910; ++i) {
+	for (int i = 0; !classic && i < 8 + 6 + 910; ++i) {
 		put(1, 1);
 		put(2147483647, 4);
 		put(1073741824, 4);
@@ -89,9 +94,9 @@ inline LayoutFixture layout_fixture(int version, int shape = 0, int producer = -
 	result.game = b.size();
 	layout_patch(b, 12, static_cast<std::uint32_t>(result.game));
 	put(0x6705, 2);
-	put(40, 2);
+	put(classic ? 31 : 40, 2);
 	b.resize(b.size() + 31);
-	for (int i = 0; i < 10; ++i) {
+	for (int i = 0; i < (classic ? 9 : 10); ++i) {
 		put(0xffffffff, 4);
 		put(0, 4);
 		put(0, 4);
@@ -105,13 +110,13 @@ inline LayoutFixture layout_fixture(int version, int shape = 0, int producer = -
 	result.walls = b.size();
 	layout_patch(b, result.game + 47, static_cast<std::uint32_t>(b.size()));
 	layout_patch(b, result.game + 51, 1);
-	layout_patch(b, result.game + 55, version == 21 ? 24 : 25);
+	layout_patch(b, result.game + 55, classic || version == 21 ? 24 : 25);
 	put(0, 4);
 	put(0, 4);
 	put(65536, 4);
 	put(0xffffffff, 4);
 	put(5, 1);
-	put(0, 2);
+	put(0, classic ? 1 : 2);
 	put(0, 1);
 	put(255, 1);
 	put(255, 1);
@@ -119,7 +124,7 @@ inline LayoutFixture layout_fixture(int version, int shape = 0, int producer = -
 	put(255, 1);
 	put(0, 1);
 	layout_patch(b, result.game + 71, static_cast<std::uint32_t>(b.size()));
-	put(0, 4);
+	if (!classic) put(0, 4);
 	return result;
 }
 } // namespace xl_test
