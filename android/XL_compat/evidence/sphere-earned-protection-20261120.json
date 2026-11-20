@@ -1,0 +1,433 @@
+{
+  "original_source": "f508ae9108b5afb88d4fffa34c768ea8cb444cc5",
+  "pickup_source": "5f2039b1d9fe9ca196abf84296a654c704fc6575",
+  "guard_source": "6311cb2a61873268b5a227956365a30c3ab0c936",
+  "runs": {
+    "earned-red-invul-cross": {
+      "result": "FAIL",
+      "error": "ordinary player probe died or acquired assisted combat",
+      "steps": 0,
+      "position_assist_events": 0,
+      "fixed_view_aim_events": 0,
+      "hashes": {
+        "plan.json": "0c02c1b07dbd3527f606d65906e270c4e85b360369c620a4d79ea41fe02b3114",
+        "engine.log": "1192b623261ec07cf01387e04c6ef98109aa820f939d68ffa83f883821749cbf",
+        "player-result.json": "480c2bb8cc9f33d9db7ed197035488b03ff86b318a8c8a528702d64f9c01d54b",
+        "player-state.json": "cfde1082d709c8b7df57bcb6c1d6393e01f60e26d0a6ca1a1784038f127af1cc",
+        "player-trace.jsonl": "572546a132ecd854f675592ef3696dcf81af98d0087467b64ad6058e3f71dc40"
+      },
+      "state": {
+        "cheats_enabled": false,
+        "player_dead": false,
+        "game_time_raw": 16877650,
+        "segment": 2380,
+        "lives": 3,
+        "score": 46850,
+        "shields": 0.8647918701171875,
+        "energy": 151.4752197265625,
+        "has_gold_key": true,
+        "has_red_key": true,
+        "invulnerable": true,
+        "robots_killed_level": 33
+      }
+    },
+    "earned-red-protected-shields": {
+      "result": "PASS",
+      "steps": 14,
+      "executable_sha256": "201401b5df2bde21df51ce640c0688a98eed493e036889d2b60a7f9d7578ca78",
+      "resume_sha256": "e95e1273c2cff78bffdbc7d8ec788bbd3743f017207402f634ac9d2b31d73e39",
+      "position_assist_events": 0,
+      "fixed_view_aim_events": 0,
+      "hashes": {
+        "plan.json": "ee828aa2dbec8817e3b219797a2afaef4d9777ffd542909478fe9fd8c4c71987",
+        "engine.log": "bf4a4fef387a94834b2cf3d18cd66785cab9752a873dd5fe5387fa8ce1cefd17",
+        "player-result.json": "4d266f76f95c45219c48c5a210c6a762a3bc114265eaa7b851b60edc331ebd71",
+        "player-state.json": "cbc65be1610c0d52677a96b384657e889b16e6d6d9d5550406b6b56431aba69b",
+        "player-trace.jsonl": "9d33613ce30836f82125e5fbed9d9ea5310222b5dfe2554a99e7aac0c336fcfb"
+      },
+      "state": {
+        "cheats_enabled": false,
+        "player_dead": false,
+        "game_time_raw": 17721972,
+        "segment": 2603,
+        "lives": 3,
+        "score": 46850,
+        "shields": 27.864791870117188,
+        "energy": 151.4752197265625,
+        "has_gold_key": true,
+        "has_red_key": true,
+        "invulnerable": true,
+        "robots_killed_level": 33
+      }
+    },
+    "earned-red-upper-hall-combat": {
+      "result": "PASS",
+      "steps": 37,
+      "executable_sha256": "201401b5df2bde21df51ce640c0688a98eed493e036889d2b60a7f9d7578ca78",
+      "resume_sha256": "e95e1273c2cff78bffdbc7d8ec788bbd3743f017207402f634ac9d2b31d73e39",
+      "position_assist_events": 0,
+      "fixed_view_aim_events": 0,
+      "hashes": {
+        "plan.json": "5434cd942654fc92dccee02ae1178f1c52a1590c687afae5fd167675ddf43bc0",
+        "engine.log": "dabad7d437e6a5b87233b37752c0501310e385f9840687ea00e6031c2fcdfb19",
+        "player-result.json": "3292990c1bf7c530978cd43804fe08b4066e2befced8b91f5fb75a37c004fb59",
+        "player-state.json": "8f20ee8ec07f9b3e36b7795d68739095b9d29ec9779fe9f0432a0a700ae82559",
+        "player-trace.jsonl": "32c070bc67bdd10c16c45fae79445cf18eb331ea3c2f8a3905c228d3f1373176"
+      },
+      "state": {
+        "cheats_enabled": false,
+        "player_dead": false,
+        "game_time_raw": 18855745,
+        "segment": 2198,
+        "lives": 3,
+        "score": 48250,
+        "shields": 27.864791870117188,
+        "energy": 177.7252197265625,
+        "has_gold_key": true,
+        "has_red_key": true,
+        "invulnerable": false,
+        "robots_killed_level": 35
+      }
+    },
+    "final-earned-red-invul-verified": {
+      "result": "PASS",
+      "steps": 3,
+      "executable_sha256": "684b8cf213dd79fafdb402333ef401156296f79547c33b072c800765a2c9d96e",
+      "resume_sha256": "e95e1273c2cff78bffdbc7d8ec788bbd3743f017207402f634ac9d2b31d73e39",
+      "position_assist_events": 0,
+      "fixed_view_aim_events": 0,
+      "hashes": {
+        "plan.json": "0c02c1b07dbd3527f606d65906e270c4e85b360369c620a4d79ea41fe02b3114",
+        "engine.log": "696fdc777bbee2c8a071a4dcfde1979eb9902b6233df71e6c4c496557a156e6f",
+        "player-result.json": "dcd9debceabb4a58f5d7baa3e3279115f3feed10fe8c88f82024d2c459e62ef6",
+        "player-state.json": "495538300189b8cf72f0da74633722d40a9d28dd0feb23b6d1a42fab0778e247",
+        "player-trace.jsonl": "3f6941d1e78b316094a6b311099eac6e01ee2e8eecaf6db423a55a36b91ac050"
+      },
+      "state": {
+        "cheats_enabled": false,
+        "player_dead": false,
+        "game_time_raw": 16927895,
+        "segment": 3052,
+        "lives": 3,
+        "score": 46850,
+        "shields": 0.8647918701171875,
+        "energy": 151.4752197265625,
+        "has_gold_key": true,
+        "has_red_key": true,
+        "invulnerable": true,
+        "robots_killed_level": 33
+      }
+    },
+    "final-linux-earned-invul": {
+      "result": "PASS",
+      "steps": 3,
+      "executable_sha256": "d0c97a7bf2f77c725dc4177884b590d023fea891ac00a263a225878408fe49f1",
+      "resume_sha256": "e95e1273c2cff78bffdbc7d8ec788bbd3743f017207402f634ac9d2b31d73e39",
+      "position_assist_events": 0,
+      "fixed_view_aim_events": 0,
+      "hashes": {
+        "plan.json": "69a7df069ec34ccfa745b44f37c5f8fbd0f36d97e53b15ff12ac2d9af7ffa348",
+        "engine.log": "ce304b90a990dfd0228011eb5e34d3746cdc9efd4c9fd0a65fa84417692c5374",
+        "player-result.json": "b23a1b82490e9041d1f2588eb5d602d2fd5c0b340164678c8b34d7fa5a5b2839",
+        "player-state.json": "708a4a14719e4c7bcfd2d040154e7d2348e8e9152832e2e12870ff851bb56434",
+        "player-trace.jsonl": "4adf2028e06eac497e053f98be25f87682f7a18adef48483bd35e68d3a6a1577"
+      },
+      "state": {
+        "cheats_enabled": false,
+        "player_dead": false,
+        "game_time_raw": 16927895,
+        "segment": 3052,
+        "lives": 3,
+        "score": 46850,
+        "shields": 0.8647918701171875,
+        "energy": 151.4752197265625,
+        "has_gold_key": true,
+        "has_red_key": true,
+        "invulnerable": true,
+        "robots_killed_level": 33
+      }
+    },
+    "final-linux-earned-invul-reject-unwitnessed": {
+      "result": "FAIL",
+      "error": "ordinary player probe died or acquired assisted combat",
+      "steps": 0,
+      "position_assist_events": 0,
+      "fixed_view_aim_events": 0,
+      "hashes": {
+        "plan.json": "5ec27bbba3e73206121efb34ea00ce8184c52716b90439b537a70cf1cfd51685",
+        "engine.log": "5b706917ea0003bad39d63179a8d45ab133cdb1a4b92433d66a5911307339439",
+        "player-result.json": "6297d5397044277ec2cf17b0b7392185c53668dd7971a56976081d6c7886853d",
+        "player-state.json": "708a4a14719e4c7bcfd2d040154e7d2348e8e9152832e2e12870ff851bb56434",
+        "player-trace.jsonl": "459ffd6838b3771ac2b17397e2a129ee29a636dbaed63419418e622696f2c5c3"
+      },
+      "state": {
+        "cheats_enabled": false,
+        "player_dead": false,
+        "game_time_raw": 16927895,
+        "segment": 3052,
+        "lives": 3,
+        "score": 46850,
+        "shields": 0.8647918701171875,
+        "energy": 151.4752197265625,
+        "has_gold_key": true,
+        "has_red_key": true,
+        "invulnerable": true,
+        "robots_killed_level": 33
+      }
+    },
+    "final-earned-red-invul-control-cold": {
+      "result": "FAIL",
+      "error": "ordinary player probe died or acquired assisted combat",
+      "steps": 0,
+      "position_assist_events": 0,
+      "fixed_view_aim_events": 0,
+      "hashes": {
+        "plan.json": "29a2fc5b7efddcb5342ee79f1e4b13f1fa5c94d388f9e5ba4e7fbdd226e9278d",
+        "engine.log": "0c88642b91a947c0341518858b7aacd68f05e6d7e9fbd01717a1cb588838f1a8",
+        "player-result.json": "480c2bb8cc9f33d9db7ed197035488b03ff86b318a8c8a528702d64f9c01d54b",
+        "player-state.json": "495538300189b8cf72f0da74633722d40a9d28dd0feb23b6d1a42fab0778e247",
+        "player-trace.jsonl": "17f923ab0531d26f785cb78982256edd4708b1c00988d3b6fd99fa1f24ebcf0d"
+      },
+      "state": {
+        "cheats_enabled": false,
+        "player_dead": false,
+        "game_time_raw": 16927895,
+        "segment": 3052,
+        "lives": 3,
+        "score": 46850,
+        "shields": 0.8647918701171875,
+        "energy": 151.4752197265625,
+        "has_gold_key": true,
+        "has_red_key": true,
+        "invulnerable": true,
+        "robots_killed_level": 33
+      }
+    },
+    "final-earned-red-invul-control-reload": {
+      "result": "FAIL",
+      "error": "ordinary player probe died or acquired assisted combat",
+      "steps": 4,
+      "position_assist_events": 0,
+      "fixed_view_aim_events": 0,
+      "hashes": {
+        "plan.json": "e1e4a442fa85b86de662f507e8284bfee838745781e2dc6226af1b74d11ba723",
+        "engine.log": "cf5752a4d4a3e4763ed100d8f4b17886d41b9570cbe26a30467b4fad19261abc",
+        "player-result.json": "d7812f63ea975e6565034884e9cb14673c59a4cb6356d751a8f25200ec078b01",
+        "player-state.json": "8149b02ab3c0c7eb35b0ce9b27f1bc97202e1cfeb2301ee78563ebc223034095",
+        "player-trace.jsonl": "3d6422490e834533f040bc7890705b02799f7a2b2903ea848af42101625b22cd"
+      },
+      "state": {
+        "cheats_enabled": false,
+        "player_dead": false,
+        "game_time_raw": 16927895,
+        "segment": 3052,
+        "lives": 3,
+        "score": 46850,
+        "shields": 0.8647918701171875,
+        "energy": 151.4752197265625,
+        "has_gold_key": true,
+        "has_red_key": true,
+        "invulnerable": true,
+        "robots_killed_level": 33
+      }
+    },
+    "final-earned-red-invul-control-pose": {
+      "result": "FAIL",
+      "error": "Protection requires a native pickup in unassisted flight",
+      "steps": 1,
+      "position_assist_events": 1,
+      "fixed_view_aim_events": 0,
+      "hashes": {
+        "plan.json": "b88fdddf410592cca1f4a9c4c4b153e72b67310bd3bee43965e0f94f9836b3cb",
+        "engine.log": "14da2f5f3ac4746f3ba5efef5636017c6476cdf24a43900eb8954cdc3ecadef8",
+        "player-result.json": "1734f0dee1ba52214afc1f3b4cd20dee7b3da062d8222f525e2a592c5ee06490",
+        "player-state.json": "4310038d5b1dce4764a9e768dad901e04f9dd1ab4a8b3cca002e5035db7ea6af",
+        "player-trace.jsonl": "49eedb1cd0d4fa8c7adc4cbd132ac8d5b74d4a55f8b8bc747d998998c59c22ee"
+      },
+      "state": {
+        "cheats_enabled": false,
+        "player_dead": false,
+        "game_time_raw": 16859082,
+        "segment": 2380,
+        "lives": 3,
+        "score": 46850,
+        "shields": 0.8647918701171875,
+        "energy": 151.4752197265625,
+        "has_gold_key": true,
+        "has_red_key": true,
+        "invulnerable": true,
+        "robots_killed_level": 33
+      }
+    },
+    "final-earned-red-invul-control-pose-after": {
+      "result": "FAIL",
+      "error": "ordinary player probe died or acquired assisted combat",
+      "steps": 4,
+      "position_assist_events": 1,
+      "fixed_view_aim_events": 0,
+      "hashes": {
+        "plan.json": "8d310fbfa4814a9cb18dcdf1325e536daf5ff56af97d71c4ad119e0953165b7a",
+        "engine.log": "53615e5dc64d6b1d804f18c5d661f2fdaf6233f8dd378985ef23ba030d3abbd9",
+        "player-result.json": "9cca7a9d038f58c99cb7fcd4c4d4ea9d344b434781d36810dd46bc05c60b3dec",
+        "player-state.json": "716c96e66fae959b41d15bca0f4139cf1da3fdde46ef076e5603f2b816d1f6c2",
+        "player-trace.jsonl": "8f775b473a758e618be9ae395bf10d1549c8b79cdc09d91dadf15c7657050a2b"
+      },
+      "state": {
+        "cheats_enabled": false,
+        "player_dead": false,
+        "game_time_raw": 16927895,
+        "segment": 3052,
+        "lives": 3,
+        "score": 46850,
+        "shields": 0.8647918701171875,
+        "energy": 151.4752197265625,
+        "has_gold_key": true,
+        "has_red_key": true,
+        "invulnerable": true,
+        "robots_killed_level": 33
+      }
+    }
+  },
+  "android": {
+    "original_apk": "93d3d2afdf1b5a4450cb24bd742978b18712b6c449a8412d893dc0327c319bc5",
+    "apk": "7e2d4da6be7e3845e872633fa5ddb17391b06b9b0265d3b9e35855c457cfda20",
+    "export": "8196a57c1eec7a3b24c3a9f4a7eed4cda1b498d585cae99db1a2791606816ab9",
+    "written": "d6692081fbd138fed98e6e29ba27bdf18e403d4eadb8db9f67bbdca618040467",
+    "assets": [
+      {
+        "path": "files/imported/sets/default/missions/sphere.hog",
+        "sha256": "a40bf59101fee991200e34984a45fdf209cee4d68d47d4d52996dfe875dbe253",
+        "added": true
+      },
+      {
+        "path": "files/imported/sets/default/missions/sphere.mn2",
+        "sha256": "7104fe4eada0804ed6b03ac4b2a68656ab5c15d3f8b1bec37b43c9a5fab0ac6b",
+        "added": true
+      },
+      {
+        "path": "files/imported/sets/default/d2x.hog",
+        "sha256": "97a4433833ec1f2fbdd2becc144a1e9726ca78b1210a71a49ddbec6182665fe6",
+        "added": true
+      },
+      {
+        "path": "files/imported/sets/default/d2x-xl.hog",
+        "sha256": "e7351d66d534c3fdb400f03b91b771ad2d0c0d2b0100cf48718d504008ada7e6",
+        "added": true
+      }
+    ],
+    "expect": {
+      "current_level_num": 2,
+      "in_game": true,
+      "cheats_enabled": false,
+      "player.lives": 3,
+      "player.score": 46850,
+      "player.has_gold_key": true,
+      "player.has_red_key": true,
+      "player_dead": false,
+      "player.invulnerable": true,
+      "position.segment": 2603
+    },
+    "logs": {
+      "write": "e6fac8c55fca20e8e6052f767d9799f1f551ab286130f9fa06985232877dc968",
+      "cold": "eaf0eb51034e2b8fa106a30d224183811a94f2f37ad938acb88c1a7cf513ed27"
+    }
+  },
+  "capture": [
+    {
+      "file": "d2_sphere_level2_20261120_033309.dximdemo",
+      "bytes": 2511101,
+      "sha256": "418cd76a01cf01baf43c9e86de5f445d11bae756b894b246265a2b8c3092acf9"
+    },
+    {
+      "file": "d2_sphere_level2_20261120_033309.dximdemo.rngtrace.jsonl",
+      "bytes": 7725087,
+      "sha256": "9f18866540616ebf44d4ed3c42c1cc12d856a60fb831146383ce02c3dfdb09bb"
+    },
+    {
+      "file": "live-15522.jsonl.gz",
+      "bytes": 4537717,
+      "sha256": "46c9737c0f657f83ebb32a1ea2adc4a09060833bd2ba64bd76c849001bf87ba9"
+    }
+  ],
+  "capture_apk_sha256": "e6e6ea8c3c6d7e19a132468c3b3ee9198931f1f9eac243c5f0053429098105f1",
+  "playback": {
+    "windows": {
+      "binary_sha256": "e8aa8eaed3ee217d0258de7b3dbd4a426e6ea6a49a2351e22eb72ce0a0ec64a3",
+      "exit": 0,
+      "comparison_sha256": "1edc3c0072ca0491444d417890e09b7ce98e1abc4c0eb694e2f00a2c6736cb09",
+      "owners": {
+        "frames": {
+          "frames_compared": 25,
+          "status": "pass"
+        },
+        "objects": {
+          "status": "pass",
+          "frames_compared": 25
+        },
+        "world": {
+          "status": "pass",
+          "records_compared": 29
+        },
+        "sim_rng": {
+          "status": "pass",
+          "simulation_events_compared": 15569
+        },
+        "fx_rng": {
+          "status": "pass",
+          "effects_events_compared": 15
+        },
+        "trailer": {
+          "status": "pass"
+        }
+      }
+    },
+    "linux": {
+      "binary_sha256": "2ab9c897449e8ca63593aecf7d9bf17838a85928f45048e32f8b0b8afaadfa72",
+      "code": 0,
+      "comparison_sha256": "59ddf828d5f1d5efa57c801c2b3c9324db8670c89913b15aa729822d77d24ab9",
+      "owners": {
+        "frames": {
+          "frames_compared": 25,
+          "status": "pass"
+        },
+        "objects": {
+          "status": "pass",
+          "frames_compared": 25
+        },
+        "world": {
+          "status": "pass",
+          "records_compared": 29
+        },
+        "sim_rng": {
+          "status": "pass",
+          "simulation_events_compared": 15569
+        },
+        "fx_rng": {
+          "status": "pass",
+          "effects_events_compared": 15
+        },
+        "trailer": {
+          "status": "pass"
+        }
+      }
+    }
+  },
+  "ordinary_build_source": "d93dbe6e701b1131c3a46bfc181345f8a9380a5f",
+  "data": {
+    "alien1.pig": "811fc58caa3e2a72cdfa07d7530b2bb0ca71836a6a2d8a3cb401e4284949c233",
+    "alien2.pig": "75ef8fa0cba03410c61ad1b58f57dcb1481f1f302985828aab0af90639926055",
+    "d2x-xl.hog": "e7351d66d534c3fdb400f03b91b771ad2d0c0d2b0100cf48718d504008ada7e6",
+    "d2x.hog": "97a4433833ec1f2fbdd2becc144a1e9726ca78b1210a71a49ddbec6182665fe6",
+    "descent.hog": "83d76ff0c46bb2e7348a49bdd287ad764abeda0d851bfb16b42c1ede93b21052",
+    "descent.pig": "093f9cc029200e9d71d5e14f2f06e5e876a658dd64dc664d6911c5d24d7b64fe",
+    "descent2.ham": "5233242206c677d65db7f075dd61f2b0a1b7bbe8cd65f56d769efaee1cc38b4d",
+    "descent2.hog": "f1abf516512739c97b43e2e93611a2398fc9f8bc7a014095ebc2b6b2fd21b703",
+    "descent2.s22": "4f10632dd4efcbffe532c35b6763edd22817135442bbcc4171381706f3893728",
+    "fire.pig": "26a5a5f4e91456abf31f79578d0922e7bc3348b6aa92489a84033de83f358156",
+    "groupa.pig": "facdde6cf8a2cab99ea39ba06931872a1fe5636fe211e61fb58c57d706bf627b",
+    "ice.pig": "ae6152ef69502b00e51a98d8f04b21f2855a332cd2988ecceb3b909a49fa26a1",
+    "water.pig": "de88ead87dcb32f16936b3e2a08b81a2248440f29e6f8be0c4c3a5f9fe4b63c1",
+    "missions/sphere.hog": "a40bf59101fee991200e34984a45fdf209cee4d68d47d4d52996dfe875dbe253",
+    "missions/sphere.mn2": "7104fe4eada0804ed6b03ac4b2a68656ab5c15d3f8b1bec37b43c9a5fab0ac6b"
+  }
+}

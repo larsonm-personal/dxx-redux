@@ -1,0 +1,9 @@
+# Sphere level 2 earned protection, 2026-11-20
+
+In Sphere 1.51 the ordinary pilot entered segment 2380 with both earned keys, three lives and 0.8648 shields. At frame 18 player 0 collected authored powerup 156 (signature 157). The previous pilot guard then rejected the run. The native acquisition callback now binds the grant to the live player, level generation and protection timer. Windows and Linux repeated the crossing into 3052. The guard rejected an already-protected cold start and an in-process reload. Windows also rejected a position assist before or after acquisition.
+
+The continued pilot flew nine portals to a shield boost in segment 2603, recovered to 27.8648 shields and exported a checkpoint at score 46850. Held Mercury and aimed plasma subsequently defeated robot 423. The pilot reached 2198 with score 48250, three lives and naturally expired protection. Portal steering and visible-target aiming are developer assists. The private failed passive route remains available for comparison.
+
+The x86_64 emulator loaded the protected export, wrote a native DGSS quicksave and restored it after a process restart. A developer recording from that save includes 25 rendered frames and a flare. Fresh ordinary Windows and Linux playback matched the capture across frames, objects, 29 world records including XL state, 15569 simulation RNG events, 15 effects RNG events and the terminal result. The capture covers this short interval. The separate Android startup FX discrepancy and physical ARM coverage remain open.
+
+The [receipt](../XL_compat/evidence/sphere-earned-protection-20261120.json) identifies source revisions, binaries, assets, captures, controls, private logs and owner comparisons by SHA-256. The protected route and Android APKs use the initial pickup callback revision. Both desktop owners repeated the pickup on the subsequent guard revision. Sampled load/tick readiness remains 4/8 on the restricted input set.
