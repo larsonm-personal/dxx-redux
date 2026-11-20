@@ -927,11 +927,30 @@ if(BUILD_TESTING)
             COMMAND
                 ${CMAKE_COMMAND} -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA}
                 -DRESOURCES=${XL_SPHERE_PLAYER_ROOT}
-                -DENTRY=${CMAKE_CURRENT_BINARY_DIR}/sphere-red-key
+                -DENTRY=${CMAKE_CURRENT_BINARY_DIR}/sphere-red-key -DSTAGE=shaft
                 -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/sphere-shaft -P
-                ${CMAKE_CURRENT_SOURCE_DIR}/tests/sphere_shaft.cmake)
-        set_tests_properties(xl_sphere_shaft_exit PROPERTIES TIMEOUT 900 RUN_SERIAL TRUE
-                                                             FIXTURES_REQUIRED sphere_key)
+                ${CMAKE_CURRENT_SOURCE_DIR}/tests/sphere_campaign.cmake)
+        set_tests_properties(
+            xl_sphere_shaft_exit
+            PROPERTIES TIMEOUT
+                       900
+                       RUN_SERIAL
+                       TRUE
+                       FIXTURES_REQUIRED
+                       sphere_key
+                       FIXTURES_SETUP
+                       sphere_storage_entrance)
+        add_test(
+            NAME xl_sphere_storage_approach
+            COMMAND
+                ${CMAKE_COMMAND} -DENGINE=${XL_PREVIEW_LIFECYCLE} -DDATA=${XL_RETAIL_DATA}
+                -DRESOURCES=${XL_SPHERE_PLAYER_ROOT}
+                -DENTRY=${CMAKE_CURRENT_BINARY_DIR}/sphere-shaft -DSTAGE=storage
+                -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/sphere-storage -P
+                ${CMAKE_CURRENT_SOURCE_DIR}/tests/sphere_campaign.cmake)
+        set_tests_properties(
+            xl_sphere_storage_approach PROPERTIES TIMEOUT 1200 RUN_SERIAL TRUE FIXTURES_REQUIRED
+                                                  sphere_storage_entrance)
     endif()
     set(XL_PHOENIX_PLAYER_ROOT "" CACHE PATH "Original Black Prophecy staged mission root")
     if(XL_PHOENIX_PLAYER_ROOT AND XL_PREVIEW_LIFECYCLE AND XL_RETAIL_DATA)
