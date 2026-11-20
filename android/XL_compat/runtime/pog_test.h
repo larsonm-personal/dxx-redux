@@ -1,4 +1,6 @@
 #include "pog_resources.h"
+#include "scoped_texture_playback.h"
+#include "retained_resource.h"
 #include "texture_pixels.h"
 #include "../pog.h"
 #include "prepared_ham.h"
@@ -13,6 +15,50 @@ int check_transparency(segment *, int);
 namespace pog_control
 {
 using Resources = std::unique_ptr<xl_pog_resources, decltype(&xl_pog_free)>;
+
+static void shared_wall_loops()
+{
+	std::array<eclip, 3> definitions{};
+	for (int i = 0; i < 3; ++i) {
+		auto &effect = definitions[i];
+		effect.changing_wall_texture = static_cast<short>(i);
+		effect.changing_object_texture = -1;
+		effect.crit_clip = effect.dest_eclip = -1;
+		effect.vc.frame_time = 6554;
+		effect.vc.num_frames = 2;
+		effect.vc.frames[0].index = 3;
+		effect.vc.frames[1].index = 4;
+	}
+	xl_assets::ObjectDependencies graph{};
+	graph.effect_data = definitions.data();
+	graph.effect_count = graph.texture_count = 3;
+	const auto prepare = [&]() {
+		std::map<int, int> owners;
+		return xl_compat::ScopedTexturePlayback::texture_effects(graph, 8, { { 3, 0 } }, {}, [](std::size_t) { return 32; }, owners);
+	};
+	const auto clocks = prepare();
+	require(clocks.size() == 3 && clocks[0].effect == 0 && clocks[1].effect == 1 && clocks[2].effect == 2 &&
+	            clocks[0].bitmaps == clocks[1].bitmaps && clocks[0].bitmaps == clocks[2].bitmaps,
+	        "Identical looping walls must keep all three clocks and the same image aliases");
+	const auto original = definitions;
+	const auto reject = [&](auto change) {
+		definitions = original;
+		change(definitions[1]);
+		try {
+			prepare();
+		} catch (const std::runtime_error &error) {
+			require(std::string(error.what()).find("conflicting effects") != std::string::npos, "Unexpected shared effect rejection");
+			return;
+		}
+		throw std::runtime_error("Independently mutable wall clocks shared a strip");
+	};
+	reject([](eclip &effect) { ++effect.vc.frame_time; });
+	reject([](eclip &effect) { ++effect.frame_count; });
+	reject([](eclip &effect) { effect.vc.frames[1].index = 5; });
+	reject([](eclip &effect) { effect.crit_clip = 2; });
+	reject([](eclip &effect) { effect.flags |= EF_STOPPED; });
+	reject([](eclip &effect) { effect.dest_eclip = 0; });
+}
 
 static xl_compat::Bytes read(const char *name)
 {
@@ -285,11 +331,11 @@ static void incoming(const std::filesystem::path &root)
 		std::unique_ptr<PHYSFS_file, decltype(&PHYSFS_close)> file(PHYSFSX_openReadBuffered("incoming.pog"), PHYSFS_close);
 		resources.prepare_pog(file.get());
 	};
-	{
+	for (const bool object_clock : { false, true }) {
 		auto target = ham();
 		auto &effect = target.tables().Effects[0];
-		effect.changing_wall_texture = 1;
-		effect.changing_object_texture = -1;
+		effect.changing_wall_texture = object_clock ? -1 : 1;
+		effect.changing_object_texture = object_clock ? 1 : -1;
 		effect.vc.frame_time = F1_0 / 8;
 		effect.vc.num_frames = 1;
 		effect.vc.frames[0].index = unclocked;
@@ -301,14 +347,14 @@ static void incoming(const std::filesystem::path &root)
 		incoming.prepare_banks(Current_level_palette);
 		prepare(incoming);
 		XlPreparedResources moved(std::move(incoming));
-		require(moved.effect_frame_counts().at(0) == 2, "Incoming save validation lost the packed wall strip");
+		require(moved.effect_frame_counts().at(0) == 2, "Incoming save validation lost the packed effect strip");
 		bool rejected = false;
 		try {
 			moved.install_pog();
 		} catch (const std::runtime_error &) {
 			rejected = true;
 		}
-		require(rejected, "POG published a wall clock against different live definitions");
+		require(rejected, "POG published a texture clock against different live definitions");
 		unchanged();
 	}
 	for (int mode = 0; mode < 4; ++mode) {
@@ -407,6 +453,7 @@ static int pog_test(int argc, char **argv)
 	std::setvbuf(stdout, nullptr, _IONBF, 0);
 	try {
 		using namespace pog_control;
+		shared_wall_loops();
 		char error[256]{};
 		require(init_headless_metadata_runtime(argc, argv, error, sizeof(error)), error);
 		require(mount_extra_dir(find_arg_value(argc, argv, "-extra-dir"), error, sizeof(error)), error);
@@ -456,6 +503,18 @@ static int pog_test(int argc, char **argv)
 		require(PHYSFS_removeFromSearchPath(root.string().c_str()), "Cannot unmount private POG controls");
 		if (const auto hog = find_arg_value(argc, argv, "-pumo-hog")) {
 			require(PHYSFS_addToSearchPath(hog, 0), "Cannot mount read-only original Pumo resources");
+			XlPhysicalArchive archive(hog);
+			const auto native_hub = read("pm-hub.rl2");
+			const auto retained_hub = archive.member("PM-HUB.RL2", native_hub.size());
+			require(retained_hub && *retained_hub == native_hub && !archive.member("absent.rl2", 1),
+			        "Large Pumo HOG member lookup differs from the native mount");
+			bool rejected = false;
+			try {
+				archive.member("pm-hub.rl2", native_hub.size() - 1);
+			} catch (const std::runtime_error &error) {
+				rejected = std::string(error.what()).find("member exceeds its bound") != std::string::npos;
+			}
+			require(rejected, "Large Pumo HOG bypassed the requested member limit");
 			unsigned count = 0;
 			for (const char *name : { "pmlev1.pog", "pmlev2.pog", "pmlev3.pog", "pm-hub.pog", "tulev2.pog" }) {
 				const unsigned expected = !std::strcmp(name, "pm-hub.pog") ? 6 : 5;

@@ -473,8 +473,10 @@ int mod_save_prepare(rewind_file *file, int level, int version, int swap)
 		if (legacy) return 1;
 #if defined(DXX_XL_RUNTIME) && defined(DXX_BUILD_DESCENT_II)
 		const auto saved_xl_sources = saved.value("xl_mod_sources", json::object());
-		const json current_xl_sources = xl_resource_sources_for_level(level, &scoped_effect_frames);
-		if (saved_xl_sources != current_xl_sources) {
+		const auto incoming = xl_resource_sources_for_level(level, &scoped_effect_frames);
+		const bool same_sources = saved_xl_sources.is_object() && xl_resource_same_mod_sources(saved_xl_sources.get<std::map<std::string, std::string>>(), incoming);
+		if (!same_sources) {
+			const json current_xl_sources = incoming;
 			debug_log_force(DLOG_GAME, "XL mod save source mismatch: saved=%zu current=%zu", saved_xl_sources.size(), current_xl_sources.size());
 			if (saved_xl_sources.is_object()) {
 				for (auto it = saved_xl_sources.begin(); it != saved_xl_sources.end(); ++it)
@@ -485,7 +487,7 @@ int mod_save_prepare(rewind_file *file, int level, int version, int swap)
 						debug_log_force(DLOG_GAME, "XL current source difference: %.180s = %.100s", it.key().c_str(), it.value().dump().c_str());
 			}
 		}
-		check(saved_xl_sources == current_xl_sources,
+		check(same_sources,
 		      "XL mission definitions or models changed; restore the original mission assets");
 #endif
 		// D1-in-D2 publishes its own source identity at level entry

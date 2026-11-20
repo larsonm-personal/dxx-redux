@@ -1,0 +1,107 @@
+{
+    "initial_level": 1,
+    "simulation_fps": 60,
+    "steps": [
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 1,
+                "position.segment": 115,
+                "cheats_enabled": false,
+                "player_dead": false
+            }
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 115,
+            "side": 5,
+            "max_frames": 900
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 110,
+            "side": 4,
+            "max_frames": 900
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 106,
+            "side": 0,
+            "max_frames": 900
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 104,
+            "side": 2,
+            "max_frames": 900
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 24,
+            "side": 4,
+            "max_frames": 900
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 25,
+            "side": 2,
+            "max_frames": 900
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 337,
+            "side": 2,
+            "max_frames": 900
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 64,
+            "side": 2,
+            "max_frames": 900
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 65,
+            "side": 2,
+            "max_frames": 900,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 70,
+            "side": 2,
+            "max_frames": 900,
+            "fire_primary": true
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 71,
+            "side": 2,
+            "max_frames": 900
+        },
+        {
+            "action": "fly_through_side",
+            "segment": 76,
+            "side": 2,
+            "max_frames": 900,
+            "destination_level": 11
+        },
+        {
+            "action": "assert",
+            "expect": {
+                "current_level_num": 11,
+                "cheats_enabled": false,
+                "player_dead": false
+            }
+        },
+        {
+            "action": "set_debug",
+            "field": "android_game_request",
+            "value": "quick_save"
+        },
+        {
+            "action": "wait_ms",
+            "ms": 500
+        }
+    ]
+}

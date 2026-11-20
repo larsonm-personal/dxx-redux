@@ -1,0 +1,183 @@
+{
+    "parent": "5802bf3bb0c8e5021af526cb9be76346d5b65469",
+    "mission": "Pumo Mines v1.1",
+    "descriptor_sha256": "45b4138e0a0d49ab8ee09334b7cfa97c0ec75ac6c6b6406b21eba28ddaa19cfd",
+    "hog_sha256": "6e3e723e549897188a8fdc19db8b04630de9d428d2b31f8e3f48af108915b043",
+    "private_archive_sha256": "82c8cc4cfc740c8169f9d21a961c9ac5d2518342b3e27ac3ac438c91ca8f2ddf",
+    "ordinary_engine_sha256": "4bdba96b660493dafcf0156ce8bef330909f9d60bbf24d2e763e8cef1a20d06c",
+    "unassisted_starts": [
+        {
+            "level": 1,
+            "file": "pm-hub.rl2",
+            "frames": 120,
+            "receipt_sha256": "6ffbd11cde2a5b5d3f53f07c610a5e264826ecc0c011c6d26d5f0cf8efb97834"
+        },
+        {
+            "level": 2,
+            "file": "mvlev1.rl2",
+            "frames": 120,
+            "receipt_sha256": "2ad9eadabba6ae311a3cb492c98d22748688b993ed7e9dbe3a7c2c2c7ee81245"
+        },
+        {
+            "level": 3,
+            "file": "mvlev2.rl2",
+            "frames": 120,
+            "receipt_sha256": "222128bf6ebb2aa42823e6e743a0c410b2ba53b766148cb44bf3de38476ff01e"
+        },
+        {
+            "level": 4,
+            "file": "mvlev3.rl2",
+            "frames": 120,
+            "receipt_sha256": "fb18256a79c6cacd0af5ea6ed13383dbcca80b33e2797acb349416499b26d6fa"
+        },
+        {
+            "level": 5,
+            "file": "mvlev4.rl2",
+            "frames": 120,
+            "receipt_sha256": "9b41b13b79615054e0a92c3f8b1573134af125f11b82c10f31f726ab8d604d74"
+        },
+        {
+            "level": 6,
+            "file": "mvlev6.rl2",
+            "frames": 120,
+            "receipt_sha256": "50a09cdc46951283d8ef92accc19625a27664ff4754e3e5e8008bfc1db714fa5"
+        },
+        {
+            "level": 7,
+            "file": "tulev1.rl2",
+            "frames": 120,
+            "receipt_sha256": "d7da39d9447717ca61a42a541aaaf0105efc48689f82ff5c7979e8fa2b875a78"
+        },
+        {
+            "level": 8,
+            "file": "tulev2.rl2",
+            "frames": 120,
+            "receipt_sha256": "50309b2f306561848305dc3aaef94ef836e19e6032898c2ca9b58595b85110dd"
+        },
+        {
+            "level": 9,
+            "file": "tulev4.rl2",
+            "frames": 120,
+            "receipt_sha256": "8f76512fa459897462ba048845f3cd08f4af027d8ed2873bab5f14a9e34b382c"
+        },
+        {
+            "level": 10,
+            "file": "mvend.rl2",
+            "frames": 120,
+            "receipt_sha256": "d77d6cf49903f0c0913405d79cbf22ba665f5dd4a2fff810db4648cb4dc1740f"
+        },
+        {
+            "level": 11,
+            "file": "pmlev1.rl2",
+            "frames": 120,
+            "receipt_sha256": "cbb0994167698bdb4a392f2eb4631351229c339588352b66baa0771da58045bb"
+        },
+        {
+            "level": 12,
+            "file": "pmlev2.rl2",
+            "frames": 120,
+            "receipt_sha256": "751c8fbd86234218eb44a863123f0f91fc9f2afb8033a5bcf5d639931d4d5701"
+        },
+        {
+            "level": 13,
+            "file": "pmlev3.rl2",
+            "frames": 120,
+            "receipt_sha256": "bca7bcfe5a56bbcb26f4c6d1c166fb68528e29956460e095d41a5a38ce35604b"
+        },
+        {
+            "level": 14,
+            "file": "mvlev5.rl2",
+            "frames": 120,
+            "receipt_sha256": "05ec51cbc36c7b02952cc65fb4ec01fb5c99cb60112a1e2f547d75a2a81f412d"
+        }
+    ],
+    "render_groups": [
+        {
+            "level": 8,
+            "bitmap": 1894,
+            "effects": [55, 59, 60],
+            "period_fixed": 6554,
+            "aliases": 9,
+            "strip_frames": 32,
+            "frame_size": [128, 128],
+            "original_quality": 1,
+            "original_updates_with_all_clocks_equal": 120,
+            "original_clock_trace_sha256": "e7105cee0a905cf0c952b04a4dfd8b933d060e4c99a8d4a9ce7e4eacae7900fb",
+            "original_render_result_sha256": "a5036c9dc29daa6c17a93ab32ddda980949121141e17e9e49d2b3d5d714b8ec1",
+            "original_observer_sha256": "2fb2cc81a694a526638cf978d98133b932b9f4fe9c1086dc568e13dd8b4de1d3",
+            "original_revision": "2576a98b5de310e3ac7c9777df2677d1627b8bae",
+            "gpu_rgba_fnv1a": [
+                189692363, 1903398235, 670246622, 4064702322, 1763409037, 3717294171, 2073198296, 3543702975,
+                1481537902, 3329063439, 630619963, 3432416945, 3344522308, 1145857498, 828549194, 538792769, 3087594774,
+                1445573616, 2713049553, 3567215276, 3190096431, 245557565, 2112797547, 848819092, 3701358140,
+                3717346938, 891057265, 3016980992, 36680958, 3461342160, 1005866769, 2275823790
+            ],
+            "redux": [
+                {
+                    "effect": 55,
+                    "fixed_samples": 301,
+                    "unique_frames": 32,
+                    "executable_sha256": "a7af08501728dd92670b1c9e7396f5ceb45c0658f3d2f232f379dc04e0fe47d5",
+                    "receipt_sha256": "336300fdff8a9f0e3b1e07bff24840df06a3d8949828a3f0cca4ac821b131506"
+                },
+                {
+                    "effect": 59,
+                    "fixed_samples": 301,
+                    "unique_frames": 32,
+                    "executable_sha256": "a7af08501728dd92670b1c9e7396f5ceb45c0658f3d2f232f379dc04e0fe47d5",
+                    "receipt_sha256": "dde8ede311a1c6a134cc262daadb296c31a737dedf4550ae1b8747627fa1cba4"
+                },
+                {
+                    "effect": 60,
+                    "fixed_samples": 301,
+                    "unique_frames": 32,
+                    "executable_sha256": "a7af08501728dd92670b1c9e7396f5ceb45c0658f3d2f232f379dc04e0fe47d5",
+                    "receipt_sha256": "8cb47a2149fbd57547b4671d20d40d3e21e6ea7cb6d9330022887d51c1c7bc09"
+                }
+            ]
+        },
+        {
+            "level": 14,
+            "bitmap": 1913,
+            "effects": [61, 62, 63],
+            "period_fixed": 8009,
+            "aliases": 9,
+            "strip_frames": 12,
+            "frame_size": [128, 128],
+            "original_quality": 1,
+            "original_updates_with_all_clocks_equal": 120,
+            "original_clock_trace_sha256": "056a7effc17e6dd15fdd778a5bc8d7e66fa462948a7b186e62a7bc4a895f3ea9",
+            "original_render_result_sha256": "45e29f20b79c6b7c80e81609a49b23868eb36c238104ce9291fddc3fb4c10134",
+            "original_observer_sha256": "2fb2cc81a694a526638cf978d98133b932b9f4fe9c1086dc568e13dd8b4de1d3",
+            "original_revision": "2576a98b5de310e3ac7c9777df2677d1627b8bae",
+            "gpu_rgba_fnv1a": [
+                3990329873, 2538473305, 2073009755, 1896512163, 783929314, 369022646, 3742602486, 2329172417,
+                2410961460, 368010417, 648379646, 3215096780
+            ],
+            "redux": [
+                {
+                    "effect": 61,
+                    "fixed_samples": 301,
+                    "unique_frames": 12,
+                    "executable_sha256": "a7af08501728dd92670b1c9e7396f5ceb45c0658f3d2f232f379dc04e0fe47d5",
+                    "receipt_sha256": "bba9b7365d61df637b42f485f41b436c19888c324899fea95dadc933cd43e28a"
+                },
+                {
+                    "effect": 62,
+                    "fixed_samples": 301,
+                    "unique_frames": 12,
+                    "executable_sha256": "a7af08501728dd92670b1c9e7396f5ceb45c0658f3d2f232f379dc04e0fe47d5",
+                    "receipt_sha256": "30c1e52e56bda4ef32713b7732885cff9071457b268d818dc4cdff7a88c4e153"
+                },
+                {
+                    "effect": 63,
+                    "fixed_samples": 301,
+                    "unique_frames": 12,
+                    "executable_sha256": "a7af08501728dd92670b1c9e7396f5ceb45c0658f3d2f232f379dc04e0fe47d5",
+                    "receipt_sha256": "5dadf5455fecf886c56d1286ffb94394e1f36de62ee69b3e9ad373a7263e39cc"
+                }
+            ]
+        }
+    ],
+    "scope": "Individual ordinals selected directly in ordinary Windows builds. Render observer explicitly binds the chosen bitmap. Original GPU samples span 900 original loop iterations, Redux samples 300 fixed ticks. The separate original clock traces cover 120 iterations. These observations do not qualify completed campaign levels."
+}

@@ -6209,3 +6209,7 @@ The 120-frame ordinary probe improved from 1,358 to 1,418 of 1,654 original case
 ## November 17-18 original HOG distributions
 
 The ordinary census reached 1,475 of 1,654. All five distributions now resolve their source-selected members. Of their 58 previously blocked ordinals, 57 completed 120 frames and one reached the classic-in-XL admission check. The [outcome](xl_hog_outcome_20261117.md), [case changes](../XL_compat/evidence/hog-readiness-20261117.json), [execution ledger](xl_hog_execution_20261117.json) and [next plan](xl_hog_next_window_20261117.md) distinguish the Android transitions, cold replays, same-process differences and hosted results.
+
+## November 19 campaign and architecture tranche
+
+The ordinary survey reached 1,513 of 1,654. A connected Pumo flight earned level 4, and a rendered Android Kritical Mass flight activated an authored switch and preserved both open walls through a fresh-process load. The original-engine Android trial reached the desktop GL dependency during NDK configuration. The [dated outcome](xl_gameplay_what_was_done_20261119.md), [exact CI execution ledger](xl_gameplay_execution_20261119.json), [next window](xl_gameplay_next_window_20261119.md) and [replacement kickoff](xl_gameplay_kickoff_20261119.md) record the evidence and remaining work.

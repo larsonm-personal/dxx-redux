@@ -1582,8 +1582,12 @@ static int d1_save_translate_read_morph_state(d1_save_translate_reader *reader,
 		for (j = 0; j < MAX_SUBMODELS; ++j) {
 			int active = morph->submodel_active[j], count = morph->n_morphing_points[j], start = morph->submodel_startpoints[j];
 			if (active < 0 || active > 2 || count < 0 || start < 0 || start > MAX_VECS ||
-			    count > MAX_VECS - start || (j >= Polygon_models[model].n_models && (active || count)))
+			    count > MAX_VECS - start || (j >= Polygon_models[model].n_models && active))
 				return 0;
+			if (j >= Polygon_models[model].n_models) {
+				morph->n_morphing_points[j] = 0;
+				morph->submodel_startpoints[j] = 0;
+			}
 			if (active == 1) ++active_count;
 		}
 		if (active_count != morph->n_submodels_active ||

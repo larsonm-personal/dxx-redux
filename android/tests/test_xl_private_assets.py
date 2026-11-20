@@ -2245,6 +2245,11 @@ class ReadinessTests(unittest.TestCase):
         workflow = Path(__file__).resolve().parents[2] / ".github/workflows/xl-pr-assets.yml"
         jobs = workflow.read_text()
         builder = jobs.split("\n  readiness-engine:", 1)[1].split("\n  readiness:", 1)[0]
+        runtime = jobs.split("\n  readiness-runtime:\n", 1)[1].split("\n  readiness-engine:\n", 1)[0]
+        self.assertIn("ref: ${{ github.workflow_sha }}", runtime)
+        self.assertIn("install_xl_survey_runtime.sh prepare runtime.tar", runtime)
+        for private in ("retail-ci", "secrets.", "CANDIDATE_SHA", "target/"):
+            self.assertNotIn(private, runtime)
         self.assertIn("git -C target rev-parse HEAD", builder)
         self.assertIn("-DDXX_XL_DEVELOPER_TESTS=OFF", builder)
         self.assertIn("path: build/main/dxx-redux-d2-headless-route", builder)
@@ -2255,7 +2260,7 @@ class ReadinessTests(unittest.TestCase):
         self.assertLess(shared.index("rm -rf readiness-resources"), shared.index("sha256sum --check --strict"))
         for name in ("readiness", "readiness-expanded", "readiness-full"):
             lane = jobs.split(f"\n  {name}:\n", 1)[1].split(f"\n  {name}-report:\n", 1)[0]
-            self.assertIn("needs: [admit, readiness-engine]", lane)
+            self.assertIn("needs: [admit, readiness-engine, readiness-runtime]", lane)
             self.assertIn("if: needs.admit.outputs.eligible == 'true'", lane)
             if name == "readiness":
                 self.assertLess(lane.index("Revalidate pinned candidate"), lane.index("Check out pinned uploaded"))
@@ -2265,6 +2270,12 @@ class ReadinessTests(unittest.TestCase):
                 stage = lane.index("uses: ./control/.github/actions/xl-survey-inputs")
                 self.assertLess(lane.index("Revalidate pinned candidate"), stage)
                 self.assertLess(stage, lane.index("--engine engine/"))
+            self.assertIn("needs.readiness-runtime.outputs.sha256", lane)
+            self.assertIn("uses: ./control/.github/actions/xl-survey-runtime", lane)
+            self.assertLess(
+                lane.index("Revalidate pinned candidate"), lane.index("Install the verified survey runtime")
+            )
+            self.assertLess(lane.index("Install the verified survey runtime"), lane.index("--engine engine/"))
             self.assertIn("needs.readiness-engine.outputs.sha256", lane)
             self.assertNotIn("cmake --build", lane)
             if name == "readiness-expanded":

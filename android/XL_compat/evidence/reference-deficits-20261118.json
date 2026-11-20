@@ -1,0 +1,1188 @@
+{
+    "archive": {
+        "path": "missions/d2xxl_downloads/levelpack.7z",
+        "sha256": "b4b519dc5755b795fd49cc3786a0421b96cd099dcc8f002925ddfd7c038b2719",
+        "size": 102161128
+    },
+    "by_source_blocker": {
+        "Advertised level file missing": {
+            "advertised_member_lookup_empty": 1,
+            "mission_rejected": 30
+        },
+        "Animated replacement textures": {
+            "started_and_ran": 3
+        },
+        "Custom base definitions": {
+            "started_and_ran": 1
+        },
+        "Fluid behavior": {
+            "started_and_ran": 1
+        },
+        "Light index bounds": {
+            "started_and_ran": 15
+        },
+        "Lightning effects": {
+            "started_and_ran": 1
+        },
+        "Mission selection": {
+            "started_and_ran": 3
+        },
+        "Object placement": {
+            "started_and_ran": 1
+        },
+        "Object trigger actions": {
+            "started_and_ran": 1
+        },
+        "Reactor triggers": {
+            "started_and_ran": 1
+        },
+        "Replacement bitmap directory": {
+            "started_and_ran": 3
+        },
+        "Resolved level filename differs": {
+            "started_and_ran": 1
+        },
+        "Robot definitions": {
+            "started_and_ran": 2
+        },
+        "Segment functions": {
+            "started_and_ran": 7
+        },
+        "Simulation stopped": {
+            "started_and_ran": 2
+        },
+        "Trigger targets": {
+            "started_and_ran": 1
+        },
+        "Unsupported level format": {
+            "simulation_unverified": 1,
+            "started_and_ran": 3
+        },
+        "Wall types": {
+            "started_and_ran": 1
+        }
+    },
+    "inventory_sha256": "bf4356a7a5fbe64832a40d7065ea02d8b81276ebd8bbba6874012f7851fa0cf8",
+    "original_engine": "2fb2cc81a694a526638cf978d98133b932b9f4fe9c1086dc568e13dd8b4de1d3",
+    "original_outcomes": {
+        "advertised_member_lookup_empty": 1,
+        "mission_rejected": 30,
+        "simulation_unverified": 1,
+        "started_and_ran": 47
+    },
+    "original_revision": "2576a98b5de310e3ac7c9777df2677d1627b8bae",
+    "redux_rerun_engine": "19c09fb9906b209d6eb5bb7423e6680f7b26c33508c18e937ea551597b734c93",
+    "redux_rerun_target": "5484a75fc2621d66d4edcbcca32807e2c9ba9d9c",
+    "rows": [
+        {
+            "first_blocker": "Segment functions",
+            "frames": 0,
+            "id": "levelpack.7z/missions/aus-red/mb-arena.mn2:1",
+            "level_file": "mb-arena.rl2",
+            "original": {
+                "exit_code": 0,
+                "observation": "started_and_ran",
+                "receipt_sha256": "4f64245c3c1ee16ac38fc385195dfabd4733ea47b33e209476c7699a566fa660"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Segment functions"
+        },
+        {
+            "first_blocker": "Unsupported level format",
+            "frames": 0,
+            "id": "levelpack.7z/missions/d1fsxl/d1fs-xl.mn2:1",
+            "level_file": "d1fs01xl.rl2",
+            "original": {
+                "exit_code": null,
+                "observation": "simulation_unverified",
+                "receipt_sha256": "8fca71caf8bf3182d2cf2fb3be6326212b8b853500152bee11d01b7d17550443"
+            },
+            "outcome": "unsupported_format",
+            "redux_rerun": "unsupported_format",
+            "rerun_blocker": "Unsupported level format"
+        },
+        {
+            "first_blocker": "Advertised level file missing",
+            "frames": 0,
+            "id": "levelpack.7z/missions/danwentz/dffusion.mn2:1",
+            "level_file": "dffusion.rl2",
+            "original": {
+                "exit_code": 21,
+                "observation": "mission_rejected",
+                "receipt_sha256": "b78bd3cb775dd14bdc718eea5b8c82b4335f25d9ecf0a3c681faf631d2befd70"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Advertised level file missing"
+        },
+        {
+            "first_blocker": "Custom base definitions",
+            "frames": 0,
+            "id": "levelpack.7z/missions/darkflamewolf/acat-xl.mn2:1",
+            "level_file": "acat-xl.rl2",
+            "original": {
+                "exit_code": 0,
+                "observation": "started_and_ran",
+                "receipt_sha256": "ae36c30395bfad776e99937addfccd448517131dc850d50c76ee3207ffe0ec1d"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Custom base definitions"
+        },
+        {
+            "first_blocker": "Unsupported level format",
+            "frames": 0,
+            "id": "levelpack.7z/missions/darkflamewolf/ctheo-xl.mn2:1",
+            "level_file": "catalyst.rl2",
+            "original": {
+                "exit_code": 0,
+                "observation": "started_and_ran",
+                "receipt_sha256": "6e723ec96b489f0c90a78da76b19f27fc2ca9595d4095c1b79d1043abd2cc8df"
+            },
+            "outcome": "unsupported_format",
+            "redux_rerun": "unsupported_format",
+            "rerun_blocker": "Unsupported level format"
+        },
+        {
+            "first_blocker": "Segment functions",
+            "frames": 0,
+            "id": "levelpack.7z/missions/darkflamewolf/ctheo-xl.mn2:2",
+            "level_file": "initiati.rl2",
+            "original": {
+                "exit_code": 0,
+                "observation": "started_and_ran",
+                "receipt_sha256": "7610dec95fd1105cda76f3d667ec3762f439f118dadd2e43e4c0b7a3298c63a1"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Segment functions"
+        },
+        {
+            "first_blocker": "Animated replacement textures",
+            "frames": 0,
+            "id": "levelpack.7z/missions/darkflamewolf/ctheo-xl.mn2:4",
+            "level_file": "standoff.rl2",
+            "original": {
+                "exit_code": 0,
+                "observation": "started_and_ran",
+                "receipt_sha256": "7dd785fc8697401b61f064dd2fc1c65074fa39f6cf7ddf5869de0dcea1431d03"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Animated replacement textures"
+        },
+        {
+            "first_blocker": "Segment functions",
+            "frames": 0,
+            "id": "levelpack.7z/missions/darkflamewolf/ctheo-xl.mn2:5",
+            "level_file": "brekthru.rl2",
+            "original": {
+                "exit_code": 0,
+                "observation": "started_and_ran",
+                "receipt_sha256": "b57b6ab05bd0c2c30b51348aa7239d8b9f53c158b65ca7ea41f71766c500b07f"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Segment functions"
+        },
+        {
+            "first_blocker": "Animated replacement textures",
+            "frames": 0,
+            "id": "levelpack.7z/missions/darkflamewolf/ctheo-xl.mn2:6",
+            "level_file": "clminate.rl2",
+            "original": {
+                "exit_code": 0,
+                "observation": "started_and_ran",
+                "receipt_sha256": "2bc8f911726d736b65247563ac8ce860cd3a7790f6b3e705853194b576b85bfc"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Animated replacement textures"
+        },
+        {
+            "first_blocker": "Simulation stopped",
+            "frames": 82,
+            "id": "levelpack.7z/missions/darkflamewolf/wolfpak3.mn2:6",
+            "level_file": "wolf0006.rl2",
+            "original": {
+                "exit_code": 0,
+                "observation": "started_and_ran",
+                "receipt_sha256": "3bbcb2c703d2a33e3b345cca0d84ae87230266577bf0e0fb7f3b9b99f602dd51"
+            },
+            "outcome": "simulation_failed",
+            "redux_rerun": "simulation_failed",
+            "rerun_blocker": "Simulation stopped"
+        },
+        {
+            "first_blocker": "Segment functions",
+            "frames": 0,
+            "id": "levelpack.7z/missions/diedel/biohzrd.mn2:1",
+            "level_file": "biohzrd.rl2",
+            "original": {
+                "exit_code": 0,
+                "observation": "started_and_ran",
+                "receipt_sha256": "9d56e4ef198c8310ce9d29ceb3e655840df4743d1bbd4f6aaa02831e0cea0fd8"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Segment functions"
+        },
+        {
+            "first_blocker": "Replacement bitmap directory",
+            "frames": 0,
+            "id": "levelpack.7z/missions/diedel/dogfight.mn2:1",
+            "level_file": "dogfight.rl2",
+            "original": {
+                "exit_code": 0,
+                "observation": "started_and_ran",
+                "receipt_sha256": "fa87fe95fa4d9e6b7117ea03e8a74fd66bcdfadf01a73403f02374e03af7751c"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Replacement bitmap directory"
+        },
+        {
+            "first_blocker": "Segment functions",
+            "frames": 0,
+            "id": "levelpack.7z/missions/diedel/emtombz.mn2:1",
+            "level_file": "emtombz.rl2",
+            "original": {
+                "exit_code": 0,
+                "observation": "started_and_ran",
+                "receipt_sha256": "a4a552d8f9bb300b6c31750f346b2757213f07ee16686c6278568020d6d46c3a"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Segment functions"
+        },
+        {
+            "first_blocker": "Mission selection",
+            "frames": 0,
+            "id": "levelpack.7z/missions/diedel/etombz.mn2:1",
+            "level_file": "etombz.rl2",
+            "original": {
+                "exit_code": 0,
+                "observation": "started_and_ran",
+                "receipt_sha256": "f17634173127314cc1b16c19569c1a97ceaf9d087599cc69554c0d94797df918"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Mission selection"
+        },
+        {
+            "first_blocker": "Robot definitions",
+            "frames": 0,
+            "id": "levelpack.7z/missions/diedel/forest.mn2:1",
+            "level_file": "forest.rl2",
+            "original": {
+                "exit_code": 0,
+                "observation": "started_and_ran",
+                "receipt_sha256": "ddf3c51d6ffd871a7c277ec35e2aa7d4aca2a30209c8b36550511955eea4ebbe"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Robot definitions"
+        },
+        {
+            "first_blocker": "Wall types",
+            "frames": 0,
+            "id": "levelpack.7z/missions/diedel/g-house.mn2:1",
+            "level_file": "g-house.rl2",
+            "original": {
+                "exit_code": 0,
+                "observation": "started_and_ran",
+                "receipt_sha256": "a5773d3e959221ee5a4a807bd15d9f1a1fc83a0d13a1c8f9def1e3c9a61444aa"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Wall types"
+        },
+        {
+            "first_blocker": "Object placement",
+            "frames": 0,
+            "id": "levelpack.7z/missions/diedel/playgdxl.mn2:1",
+            "level_file": "playgdxl.rl2",
+            "original": {
+                "exit_code": 0,
+                "observation": "started_and_ran",
+                "receipt_sha256": "7046f1e50fc5ef3e8766268d0c41bfcee8ed6a41251e9dabefe15ee06907324b"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Object placement"
+        },
+        {
+            "first_blocker": "Animated replacement textures",
+            "frames": 0,
+            "id": "levelpack.7z/missions/diedel/ptech-d3.mn2:1",
+            "level_file": "ptech-d3.rl2",
+            "original": {
+                "exit_code": 0,
+                "observation": "started_and_ran",
+                "receipt_sha256": "7ef9e456fe6b83e807357dfc53b5d3a3c87ee37dd9151cab372b70585a0b2f15"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Animated replacement textures"
+        },
+        {
+            "first_blocker": "Simulation stopped",
+            "frames": 104,
+            "id": "levelpack.7z/missions/diedel/pyrotech.mn2:1",
+            "level_file": "pyrotech.rl2",
+            "original": {
+                "exit_code": 0,
+                "observation": "started_and_ran",
+                "receipt_sha256": "4e9141607ad89c6202e0dd4400d10e59e1247aa4746c0ebb93d4fa90f4de0c03"
+            },
+            "outcome": "simulation_failed",
+            "redux_rerun": "simulation_failed",
+            "rerun_blocker": "Simulation stopped"
+        },
+        {
+            "first_blocker": "Replacement bitmap directory",
+            "frames": 0,
+            "id": "levelpack.7z/missions/diedel/qtoxic.mn2:1",
+            "level_file": "qtoxic.rl2",
+            "original": {
+                "exit_code": 0,
+                "observation": "started_and_ran",
+                "receipt_sha256": "0084e8149e809d540594e17e22f9e1af7ef67e41763213e37db22211342477a7"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Replacement bitmap directory"
+        },
+        {
+            "first_blocker": "Reactor triggers",
+            "frames": 0,
+            "id": "levelpack.7z/missions/diedel/speed.mn2:1",
+            "level_file": "speed.rl2",
+            "original": {
+                "exit_code": 0,
+                "observation": "started_and_ran",
+                "receipt_sha256": "61d919f3422a76e25bd9f29de081ced0d642a987b5607f14b499f344fa5eb1f1"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Reactor triggers"
+        },
+        {
+            "first_blocker": "Lightning effects",
+            "frames": 0,
+            "id": "levelpack.7z/missions/diedel/steel-xl.mn2:1",
+            "level_file": "steel-xl.rl2",
+            "original": {
+                "exit_code": 0,
+                "observation": "started_and_ran",
+                "receipt_sha256": "d99200a3bc21119f01a991e402d2c8626b9c4111eda290f3272515d8903d2eee"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Lightning effects"
+        },
+        {
+            "first_blocker": "Replacement bitmap directory",
+            "frames": 0,
+            "id": "levelpack.7z/missions/diedel/toxic-d3.mn2:1",
+            "level_file": "toxic-d3.rl2",
+            "original": {
+                "exit_code": 0,
+                "observation": "started_and_ran",
+                "receipt_sha256": "8673f0647264d7fb16e06dfd271eea48962251634005ac418a52757fe82d52f7"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Replacement bitmap directory"
+        },
+        {
+            "first_blocker": "Advertised level file missing",
+            "frames": 0,
+            "id": "levelpack.7z/missions/diedel/wfc.mn2:1",
+            "level_file": "wfc.rl2",
+            "original": {
+                "exit_code": 21,
+                "observation": "mission_rejected",
+                "receipt_sha256": "5b8ab88a98df1d9b808800e90d13f89934541bfc41247223ee20fd7fd8ec5be0"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Advertised level file missing"
+        },
+        {
+            "first_blocker": "Segment functions",
+            "frames": 0,
+            "id": "levelpack.7z/missions/diedel/wfc20.mn2:1",
+            "level_file": "wfc20.rl2",
+            "original": {
+                "exit_code": 0,
+                "observation": "started_and_ran",
+                "receipt_sha256": "e0ccd4af40766c540651be8990917a1b6152ee0d5051136411bc3acf55d05181"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Segment functions"
+        },
+        {
+            "first_blocker": "Mission selection",
+            "frames": 0,
+            "id": "levelpack.7z/missions/kruel/kmtl-xl.mn2:1",
+            "level_file": "kmtl-xl.rl2",
+            "original": {
+                "exit_code": 0,
+                "observation": "started_and_ran",
+                "receipt_sha256": "c905ba69a271a45784d569dd4d63a8f3fcf51a1bc5c3ea59b2eb4d46408211a5"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Mission selection"
+        },
+        {
+            "first_blocker": "Resolved level filename differs",
+            "frames": 120,
+            "id": "levelpack.7z/missions/lotw/bay32.msn:1",
+            "level_file": "bay32.rdl",
+            "original": {
+                "exit_code": 0,
+                "observation": "started_and_ran",
+                "receipt_sha256": "0e683e0135f03fba65c41797421d510000983e17999ae50c24f5ee7b18c2b857"
+            },
+            "outcome": "simulation_failed",
+            "redux_rerun": "simulation_failed",
+            "rerun_blocker": "Resolved level filename differs"
+        },
+        {
+            "first_blocker": "Advertised level file missing",
+            "frames": 0,
+            "id": "levelpack.7z/missions/sidewinder/picasso.mn2:1",
+            "level_file": "picasso.rl2",
+            "original": {
+                "exit_code": null,
+                "observation": "advertised_member_lookup_empty",
+                "receipt_sha256": "3b00f293c511b635f9e2d09f750ae3f9f6db5eeb5dc521b9ba43838b907f92b5"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Advertised level file missing"
+        },
+        {
+            "first_blocker": "Light index bounds",
+            "frames": 0,
+            "id": "levelpack.7z/missions/single/af-xl.mn2:1",
+            "level_file": "sdg22.rl2",
+            "original": {
+                "exit_code": 0,
+                "observation": "started_and_ran",
+                "receipt_sha256": "b81eb7437cb0e446af4a70846ea3d72a6b475f0d6a532f436d9ff0a742551e2c"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Light index bounds"
+        },
+        {
+            "first_blocker": "Light index bounds",
+            "frames": 0,
+            "id": "levelpack.7z/missions/single/af-xl.mn2:2",
+            "level_file": "esonapri.rl2",
+            "original": {
+                "exit_code": 0,
+                "observation": "started_and_ran",
+                "receipt_sha256": "b86dfb55bc62415aba5a817222f62d85a55222bf6f847660c9c16f93c603af86"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Light index bounds"
+        },
+        {
+            "first_blocker": "Light index bounds",
+            "frames": 0,
+            "id": "levelpack.7z/missions/single/af-xl.mn2:3",
+            "level_file": "serduta.rl2",
+            "original": {
+                "exit_code": 0,
+                "observation": "started_and_ran",
+                "receipt_sha256": "bcfd4fac300386480a462cecac6587cc668d4e74f6dc7e5d46ae4769d24aec33"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Light index bounds"
+        },
+        {
+            "first_blocker": "Light index bounds",
+            "frames": 0,
+            "id": "levelpack.7z/missions/single/af-xl.mn2:4",
+            "level_file": "chacshir.rl2",
+            "original": {
+                "exit_code": 0,
+                "observation": "started_and_ran",
+                "receipt_sha256": "39cf55eb8a83e180e55579ceecd0e92253cf0f869701b24374af3c0d5ad90720"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Light index bounds"
+        },
+        {
+            "first_blocker": "Light index bounds",
+            "frames": 0,
+            "id": "levelpack.7z/missions/single/af-xl.mn2:5",
+            "level_file": "tefoleg.rl2",
+            "original": {
+                "exit_code": 0,
+                "observation": "started_and_ran",
+                "receipt_sha256": "84c16c335c9b780e4e9a1aa1d81ef12cd7b29fe38c09e1b62f5fee929f7a1f0c"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Light index bounds"
+        },
+        {
+            "first_blocker": "Light index bounds",
+            "frames": 0,
+            "id": "levelpack.7z/missions/single/af-xl.mn2:7",
+            "level_file": "cefispar.rl2",
+            "original": {
+                "exit_code": 0,
+                "observation": "started_and_ran",
+                "receipt_sha256": "3992248001aecda3967bf845c5af25335560b343d6c3c7caf4b6ba691442ac91"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Light index bounds"
+        },
+        {
+            "first_blocker": "Light index bounds",
+            "frames": 0,
+            "id": "levelpack.7z/missions/single/af-xl.mn2:8",
+            "level_file": "ganeshd.rl2",
+            "original": {
+                "exit_code": 0,
+                "observation": "started_and_ran",
+                "receipt_sha256": "cc367908c769307d3a76e9a3b45d68eacf78b20b5d2614daf0c84834ff329fde"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Light index bounds"
+        },
+        {
+            "first_blocker": "Light index bounds",
+            "frames": 0,
+            "id": "levelpack.7z/missions/single/af-xl.mn2:9",
+            "level_file": "lakshmid.rl2",
+            "original": {
+                "exit_code": 0,
+                "observation": "started_and_ran",
+                "receipt_sha256": "50518c336acff70040ee505fbbe52c97e631318cc11f43228aa259a59a1ea473"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Light index bounds"
+        },
+        {
+            "first_blocker": "Light index bounds",
+            "frames": 0,
+            "id": "levelpack.7z/missions/single/af-xl.mn2:10",
+            "level_file": "fbasin.rl2",
+            "original": {
+                "exit_code": 0,
+                "observation": "started_and_ran",
+                "receipt_sha256": "26c3958732a3e1734532975f3b6f9480b0f30c65186fc59dc39d334b6448d423"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Light index bounds"
+        },
+        {
+            "first_blocker": "Light index bounds",
+            "frames": 0,
+            "id": "levelpack.7z/missions/single/af-xl.mn2:11",
+            "level_file": "aurabyss.rl2",
+            "original": {
+                "exit_code": 0,
+                "observation": "started_and_ran",
+                "receipt_sha256": "47e2e6e6546afaa4203c79a43c9ab79cea30de0267b2623dd7e03fa857710dbe"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Light index bounds"
+        },
+        {
+            "first_blocker": "Light index bounds",
+            "frames": 0,
+            "id": "levelpack.7z/missions/single/af-xl.mn2:12",
+            "level_file": "ursula.rl2",
+            "original": {
+                "exit_code": 0,
+                "observation": "started_and_ran",
+                "receipt_sha256": "114b85f25506c28ba8b8f8ab50e8bfe4fce8dff510e33388a562ec2076801223"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Light index bounds"
+        },
+        {
+            "first_blocker": "Light index bounds",
+            "frames": 0,
+            "id": "levelpack.7z/missions/single/af-xl.mn2:13",
+            "level_file": "lvoxonbt.rl2",
+            "original": {
+                "exit_code": 0,
+                "observation": "started_and_ran",
+                "receipt_sha256": "467932f4f9c008006bf35cc040befbbfbb3a1320c8309835dc188e2c73fda888"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Light index bounds"
+        },
+        {
+            "first_blocker": "Light index bounds",
+            "frames": 0,
+            "id": "levelpack.7z/missions/single/af-xl.mn2:14",
+            "level_file": "laradhes.rl2",
+            "original": {
+                "exit_code": 0,
+                "observation": "started_and_ran",
+                "receipt_sha256": "267c4cdcc04089f0f971108b55a2476b34ec34694321a673233ee4ef78da7e48"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Light index bounds"
+        },
+        {
+            "first_blocker": "Light index bounds",
+            "frames": 0,
+            "id": "levelpack.7z/missions/single/af-xl.mn2:15",
+            "level_file": "thorium.rl2",
+            "original": {
+                "exit_code": 0,
+                "observation": "started_and_ran",
+                "receipt_sha256": "08a9f18f693671aad19a583c197d66b2310a8971c923b328e2be483585b58d6c"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Light index bounds"
+        },
+        {
+            "first_blocker": "Light index bounds",
+            "frames": 0,
+            "id": "levelpack.7z/missions/single/boilpnt.mn2:2",
+            "level_file": "control.rl2",
+            "original": {
+                "exit_code": 0,
+                "observation": "started_and_ran",
+                "receipt_sha256": "de36ebc3a671c5e4e471d5c110176d25692fa8a164114de4965bc64e7b11d7fe"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Light index bounds"
+        },
+        {
+            "first_blocker": "Advertised level file missing",
+            "frames": 0,
+            "id": "levelpack.7z/missions/single/ffyl.mn2:1",
+            "level_file": "pdl8.rl2",
+            "original": {
+                "exit_code": 21,
+                "observation": "mission_rejected",
+                "receipt_sha256": "897721fc0c89a3ef8a0221e28e27e65586ce465007a8afa3c6df1fd416320945"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Advertised level file missing"
+        },
+        {
+            "first_blocker": "Advertised level file missing",
+            "frames": 0,
+            "id": "levelpack.7z/missions/single/ffyl.mn2:2",
+            "level_file": "pdl9.rl2",
+            "original": {
+                "exit_code": 21,
+                "observation": "mission_rejected",
+                "receipt_sha256": "897721fc0c89a3ef8a0221e28e27e65586ce465007a8afa3c6df1fd416320945"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Advertised level file missing"
+        },
+        {
+            "first_blocker": "Advertised level file missing",
+            "frames": 0,
+            "id": "levelpack.7z/missions/single/ffyl.mn2:3",
+            "level_file": "pdl10.rl2",
+            "original": {
+                "exit_code": 21,
+                "observation": "mission_rejected",
+                "receipt_sha256": "897721fc0c89a3ef8a0221e28e27e65586ce465007a8afa3c6df1fd416320945"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Advertised level file missing"
+        },
+        {
+            "first_blocker": "Advertised level file missing",
+            "frames": 0,
+            "id": "levelpack.7z/missions/single/ffyl.mn2:4",
+            "level_file": "pdl11.rl2",
+            "original": {
+                "exit_code": 21,
+                "observation": "mission_rejected",
+                "receipt_sha256": "897721fc0c89a3ef8a0221e28e27e65586ce465007a8afa3c6df1fd416320945"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Advertised level file missing"
+        },
+        {
+            "first_blocker": "Advertised level file missing",
+            "frames": 0,
+            "id": "levelpack.7z/missions/single/ffyl.mn2:5",
+            "level_file": "pdl12.rl2",
+            "original": {
+                "exit_code": 21,
+                "observation": "mission_rejected",
+                "receipt_sha256": "897721fc0c89a3ef8a0221e28e27e65586ce465007a8afa3c6df1fd416320945"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Advertised level file missing"
+        },
+        {
+            "first_blocker": "Advertised level file missing",
+            "frames": 0,
+            "id": "levelpack.7z/missions/single/ffyl.mn2:6",
+            "level_file": "pdl13.rl2",
+            "original": {
+                "exit_code": 21,
+                "observation": "mission_rejected",
+                "receipt_sha256": "897721fc0c89a3ef8a0221e28e27e65586ce465007a8afa3c6df1fd416320945"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Advertised level file missing"
+        },
+        {
+            "first_blocker": "Advertised level file missing",
+            "frames": 0,
+            "id": "levelpack.7z/missions/single/ffyl.mn2:7",
+            "level_file": "pdl14.rl2",
+            "original": {
+                "exit_code": 21,
+                "observation": "mission_rejected",
+                "receipt_sha256": "897721fc0c89a3ef8a0221e28e27e65586ce465007a8afa3c6df1fd416320945"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Advertised level file missing"
+        },
+        {
+            "first_blocker": "Advertised level file missing",
+            "frames": 0,
+            "id": "levelpack.7z/missions/single/ffyl.mn2:8",
+            "level_file": "pdl15.rl2",
+            "original": {
+                "exit_code": 21,
+                "observation": "mission_rejected",
+                "receipt_sha256": "897721fc0c89a3ef8a0221e28e27e65586ce465007a8afa3c6df1fd416320945"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Advertised level file missing"
+        },
+        {
+            "first_blocker": "Advertised level file missing",
+            "frames": 0,
+            "id": "levelpack.7z/missions/single/ffyl.mn2:9",
+            "level_file": "pdl16.rl2",
+            "original": {
+                "exit_code": 21,
+                "observation": "mission_rejected",
+                "receipt_sha256": "897721fc0c89a3ef8a0221e28e27e65586ce465007a8afa3c6df1fd416320945"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Advertised level file missing"
+        },
+        {
+            "first_blocker": "Advertised level file missing",
+            "frames": 0,
+            "id": "levelpack.7z/missions/single/ffyl.mn2:10",
+            "level_file": "pdl17.rl2",
+            "original": {
+                "exit_code": 21,
+                "observation": "mission_rejected",
+                "receipt_sha256": "897721fc0c89a3ef8a0221e28e27e65586ce465007a8afa3c6df1fd416320945"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Advertised level file missing"
+        },
+        {
+            "first_blocker": "Advertised level file missing",
+            "frames": 0,
+            "id": "levelpack.7z/missions/single/ffyl.mn2:11",
+            "level_file": "pdl18.rl2",
+            "original": {
+                "exit_code": 21,
+                "observation": "mission_rejected",
+                "receipt_sha256": "897721fc0c89a3ef8a0221e28e27e65586ce465007a8afa3c6df1fd416320945"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Advertised level file missing"
+        },
+        {
+            "first_blocker": "Advertised level file missing",
+            "frames": 0,
+            "id": "levelpack.7z/missions/single/ffyl.mn2:12",
+            "level_file": "pdl19.rl2",
+            "original": {
+                "exit_code": 21,
+                "observation": "mission_rejected",
+                "receipt_sha256": "897721fc0c89a3ef8a0221e28e27e65586ce465007a8afa3c6df1fd416320945"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Advertised level file missing"
+        },
+        {
+            "first_blocker": "Advertised level file missing",
+            "frames": 0,
+            "id": "levelpack.7z/missions/single/ffyl.mn2:13",
+            "level_file": "pdl20.rl2",
+            "original": {
+                "exit_code": 21,
+                "observation": "mission_rejected",
+                "receipt_sha256": "897721fc0c89a3ef8a0221e28e27e65586ce465007a8afa3c6df1fd416320945"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Advertised level file missing"
+        },
+        {
+            "first_blocker": "Advertised level file missing",
+            "frames": 0,
+            "id": "levelpack.7z/missions/single/ffyl.mn2:14",
+            "level_file": "pdl21.rl2",
+            "original": {
+                "exit_code": 21,
+                "observation": "mission_rejected",
+                "receipt_sha256": "897721fc0c89a3ef8a0221e28e27e65586ce465007a8afa3c6df1fd416320945"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Advertised level file missing"
+        },
+        {
+            "first_blocker": "Advertised level file missing",
+            "frames": 0,
+            "id": "levelpack.7z/missions/single/ffyl.mn2:15",
+            "level_file": "pdl22.rl2",
+            "original": {
+                "exit_code": 21,
+                "observation": "mission_rejected",
+                "receipt_sha256": "897721fc0c89a3ef8a0221e28e27e65586ce465007a8afa3c6df1fd416320945"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Advertised level file missing"
+        },
+        {
+            "first_blocker": "Advertised level file missing",
+            "frames": 0,
+            "id": "levelpack.7z/missions/single/ffyl.mn2:16",
+            "level_file": "pdl23.rl2",
+            "original": {
+                "exit_code": 21,
+                "observation": "mission_rejected",
+                "receipt_sha256": "897721fc0c89a3ef8a0221e28e27e65586ce465007a8afa3c6df1fd416320945"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Advertised level file missing"
+        },
+        {
+            "first_blocker": "Advertised level file missing",
+            "frames": 0,
+            "id": "levelpack.7z/missions/single/ffyl.mn2:17",
+            "level_file": "pdl24.rl2",
+            "original": {
+                "exit_code": 21,
+                "observation": "mission_rejected",
+                "receipt_sha256": "897721fc0c89a3ef8a0221e28e27e65586ce465007a8afa3c6df1fd416320945"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Advertised level file missing"
+        },
+        {
+            "first_blocker": "Advertised level file missing",
+            "frames": 0,
+            "id": "levelpack.7z/missions/single/ffyl.mn2:18",
+            "level_file": "aquaphnx.rl2",
+            "original": {
+                "exit_code": 21,
+                "observation": "mission_rejected",
+                "receipt_sha256": "897721fc0c89a3ef8a0221e28e27e65586ce465007a8afa3c6df1fd416320945"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Advertised level file missing"
+        },
+        {
+            "first_blocker": "Advertised level file missing",
+            "frames": 0,
+            "id": "levelpack.7z/missions/single/ffyl.mn2:19",
+            "level_file": "pdl25-1.rl2",
+            "original": {
+                "exit_code": 21,
+                "observation": "mission_rejected",
+                "receipt_sha256": "897721fc0c89a3ef8a0221e28e27e65586ce465007a8afa3c6df1fd416320945"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Advertised level file missing"
+        },
+        {
+            "first_blocker": "Advertised level file missing",
+            "frames": 0,
+            "id": "levelpack.7z/missions/single/ffyl.mn2:20",
+            "level_file": "pdl25-2.rl2",
+            "original": {
+                "exit_code": 21,
+                "observation": "mission_rejected",
+                "receipt_sha256": "897721fc0c89a3ef8a0221e28e27e65586ce465007a8afa3c6df1fd416320945"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Advertised level file missing"
+        },
+        {
+            "first_blocker": "Advertised level file missing",
+            "frames": 0,
+            "id": "levelpack.7z/missions/single/ffyl.mn2:21",
+            "level_file": "pdl26.rl2",
+            "original": {
+                "exit_code": 21,
+                "observation": "mission_rejected",
+                "receipt_sha256": "897721fc0c89a3ef8a0221e28e27e65586ce465007a8afa3c6df1fd416320945"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Advertised level file missing"
+        },
+        {
+            "first_blocker": "Advertised level file missing",
+            "frames": 0,
+            "id": "levelpack.7z/missions/single/ffyl.mn2:22",
+            "level_file": "pdl27.rl2",
+            "original": {
+                "exit_code": 21,
+                "observation": "mission_rejected",
+                "receipt_sha256": "897721fc0c89a3ef8a0221e28e27e65586ce465007a8afa3c6df1fd416320945"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Advertised level file missing"
+        },
+        {
+            "first_blocker": "Advertised level file missing",
+            "frames": 0,
+            "id": "levelpack.7z/missions/single/ffyl.mn2:23",
+            "level_file": "pdl28.rl2",
+            "original": {
+                "exit_code": 21,
+                "observation": "mission_rejected",
+                "receipt_sha256": "897721fc0c89a3ef8a0221e28e27e65586ce465007a8afa3c6df1fd416320945"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Advertised level file missing"
+        },
+        {
+            "first_blocker": "Advertised level file missing",
+            "frames": 0,
+            "id": "levelpack.7z/missions/single/ffyl.mn2:24",
+            "level_file": "pdl29.rl2",
+            "original": {
+                "exit_code": 21,
+                "observation": "mission_rejected",
+                "receipt_sha256": "897721fc0c89a3ef8a0221e28e27e65586ce465007a8afa3c6df1fd416320945"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Advertised level file missing"
+        },
+        {
+            "first_blocker": "Advertised level file missing",
+            "frames": 0,
+            "id": "levelpack.7z/missions/single/ffyl.mn2:25",
+            "level_file": "pdl30.rl2",
+            "original": {
+                "exit_code": 21,
+                "observation": "mission_rejected",
+                "receipt_sha256": "897721fc0c89a3ef8a0221e28e27e65586ce465007a8afa3c6df1fd416320945"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Advertised level file missing"
+        },
+        {
+            "first_blocker": "Advertised level file missing",
+            "frames": 0,
+            "id": "levelpack.7z/missions/single/ffyl.mn2:26",
+            "level_file": "pdl31.rl2",
+            "original": {
+                "exit_code": 21,
+                "observation": "mission_rejected",
+                "receipt_sha256": "897721fc0c89a3ef8a0221e28e27e65586ce465007a8afa3c6df1fd416320945"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Advertised level file missing"
+        },
+        {
+            "first_blocker": "Advertised level file missing",
+            "frames": 0,
+            "id": "levelpack.7z/missions/single/ffyl.mn2:27",
+            "level_file": "pdl32.rl2",
+            "original": {
+                "exit_code": 21,
+                "observation": "mission_rejected",
+                "receipt_sha256": "897721fc0c89a3ef8a0221e28e27e65586ce465007a8afa3c6df1fd416320945"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Advertised level file missing"
+        },
+        {
+            "first_blocker": "Mission selection",
+            "frames": 0,
+            "id": "levelpack.7z/missions/single/pmlev1.mn2:1",
+            "level_file": "pmlev1p.rl2",
+            "original": {
+                "exit_code": 0,
+                "observation": "started_and_ran",
+                "receipt_sha256": "8ad08b3b61aaad9802414f7aa803543d403e4f99084ad717712438fdd3097a07"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Mission selection"
+        },
+        {
+            "first_blocker": "Advertised level file missing",
+            "frames": 0,
+            "id": "levelpack.7z/missions/single/reflux.mn2:1",
+            "level_file": "reflux.rl2",
+            "original": {
+                "exit_code": 21,
+                "observation": "mission_rejected",
+                "receipt_sha256": "c5b33229f2f3812846cea82736c51ba57088637f283784ad8fa16091ec69afc9"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Advertised level file missing"
+        },
+        {
+            "first_blocker": "Robot definitions",
+            "frames": 0,
+            "id": "levelpack.7z/missions/single/sphere.mn2:1",
+            "level_file": "sp-01.rl2",
+            "original": {
+                "exit_code": 0,
+                "observation": "started_and_ran",
+                "receipt_sha256": "0499a9b835aa5deebd285c32161423e0bd1f626dbcb912b93736c41fd224da2f"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Robot definitions"
+        },
+        {
+            "first_blocker": "Object trigger actions",
+            "frames": 0,
+            "id": "levelpack.7z/missions/sirius/antho1-3.mn2:1",
+            "level_file": "antho-d1.rl2",
+            "original": {
+                "exit_code": 0,
+                "observation": "started_and_ran",
+                "receipt_sha256": "1b57453ba708f32588db123ccf81ace468a58f73d95f74c32e3684ddcf841041"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Object trigger actions"
+        },
+        {
+            "first_blocker": "Trigger targets",
+            "frames": 0,
+            "id": "levelpack.7z/missions/sirius/antho1-3.mn2:3",
+            "level_file": "antho-d3.rl2",
+            "original": {
+                "exit_code": 0,
+                "observation": "started_and_ran",
+                "receipt_sha256": "4bab131efd4638ed8aaa58e0b2dd8fb3cb8b6900aab38f4bb703c7f88e50fa60"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Trigger targets"
+        },
+        {
+            "first_blocker": "Segment functions",
+            "frames": 0,
+            "id": "levelpack.7z/missions/sirius/fv24b.mn2:1",
+            "level_file": "fv24b.rl2",
+            "original": {
+                "exit_code": 0,
+                "observation": "started_and_ran",
+                "receipt_sha256": "2c2e1345ff6ab2759e6c2d95945ff3e188d82f038b6d296f1165aab6bff148fd"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Segment functions"
+        },
+        {
+            "first_blocker": "Unsupported level format",
+            "frames": 0,
+            "id": "levelpack.7z/missions/sirius/sclairxl.mn2:1",
+            "level_file": "sclairxl.rl2",
+            "original": {
+                "exit_code": 0,
+                "observation": "started_and_ran",
+                "receipt_sha256": "52ec6f4687bf081579361e27cb91adec94422f22611992d9dfc4e698833b1752"
+            },
+            "outcome": "unsupported_format",
+            "redux_rerun": "unsupported_format",
+            "rerun_blocker": "Unsupported level format"
+        },
+        {
+            "first_blocker": "Unsupported level format",
+            "frames": 0,
+            "id": "levelpack.7z/missions/spotlight/crownx.mn2:1",
+            "level_file": "crownx.rl2",
+            "original": {
+                "exit_code": 0,
+                "observation": "started_and_ran",
+                "receipt_sha256": "f37b4451ecbabfcec89ac4b7b359d9e2b7d8f33354a18b110cf028432313837c"
+            },
+            "outcome": "unsupported_format",
+            "redux_rerun": "unsupported_format",
+            "rerun_blocker": "Unsupported level format"
+        },
+        {
+            "first_blocker": "Fluid behavior",
+            "frames": 0,
+            "id": "levelpack.7z/missions/spotlight/rtarena.mn2:1",
+            "level_file": "rtarena.rl2",
+            "original": {
+                "exit_code": 0,
+                "observation": "started_and_ran",
+                "receipt_sha256": "8ce37f1cc8d803064a0d24f1b7f1822702942ce1f229627cc86d41e323211a3e"
+            },
+            "outcome": "load_failed",
+            "redux_rerun": "load_failed",
+            "rerun_blocker": "Fluid behavior"
+        }
+    ],
+    "schema": "xl-reference-deficit-comparison-v1",
+    "source_engine": "6ac14b637fe092929b9fdc5913ac15407464cb174225a49834b0e8fa9b0a4fc5",
+    "source_survey_sha256": "ff86a949a55af655e9793a4f22cb49151b48f6cf28b4a8a39890ad23b9c4df03",
+    "source_target": "907c45b1133d6e372d81fd7ce3a22638aec7f6a1"
+}
