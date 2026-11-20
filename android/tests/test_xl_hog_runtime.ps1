@@ -6,6 +6,7 @@ param(
     [Parameter(Mandatory)][string]$Descriptor,
     [string]$OriginalSurvey,
     [switch]$CheckOriginalRestores,
+    [string]$LightingRuntime,
     [string]$OutputDirectory
 )
 $ErrorActionPreference = 'Stop'
@@ -14,7 +15,20 @@ $expectedDescriptor = 'a4a1be94729745d47fb34b5b83beeff85ed4379f3126c30556a2351ea
 $mission = 'xhogs'
 $extension = '.mn2'
 $scenario = 'test_xl_hog_runtime.jsonc'
-if ($OriginalSurvey) {
+if ($LightingRuntime) {
+    if ($OriginalSurvey -or $CheckOriginalRestores) { throw 'Select one original test scenario' }
+    $addons = @{
+        'd2x.hog' = '97a4433833ec1f2fbdd2becc144a1e9726ca78b1210a71a49ddbec6182665fe6'
+        'd2x-xl.hog' = 'e7351d66d534c3fdb400f03b91b771ad2d0c0d2b0100cf48718d504008ada7e6'
+    }
+    foreach ($name in $addons.Keys) {
+        if ((Get-FileHash -LiteralPath (Join-Path $LightingRuntime $name)).Hash -ne $addons[$name]) { throw "Requires the original $name" }
+    }
+    $expectedHog = '69d0d102c5551f164cefee6b7d79f576e5f0c314eb943e49902fe9dcb591f0e2'
+    $expectedDescriptor = 'fd89030cc1a7cf40cdaf5730d14e0c19370b3bdd294af057c7f1fcd169f80d57'
+    $mission = 'vignette-xl'
+    $scenario = 'test_xl_original_lighting.jsonc'
+} elseif ($OriginalSurvey) {
     # The original distributions include a classic, an XL and a D1 descriptor
     $originals = @{
         'chaothry' = @('XL: Chaos Theory', 6, 'd5d0462d8849fe0518444d98822c36b423cefc97cf773be79632cdf734e8d155', '2792be916036170f7daa3dfdd1921b2cbf9911b87ce4097a8d304f3f58d240e2')
@@ -103,8 +117,15 @@ $backup = 'files/xl-extended-hog-runtime-backup'
 $paths = @('files/d2x-redux/Players', 'files/d2x-redux/descent.cfg', 'files/d2x-redux/d2x.ini',
     'files/d2x-redux/mod_usage.json', 'files/descent.cfg', 'files/file_sets.json', 'shared_prefs',
     "files/d2x-redux/missions/$mission.hog", "files/d2x-redux/missions/$mission$extension")
+if ($LightingRuntime) {
+    $paths += @($addons.Keys | ForEach-Object { "files/imported/sets/default/$_" })
+}
 $ready = $false
 try {
+    if ($LightingRuntime) {
+        $activeSet = (Invoke-HogPrivate 'cat files/file_sets.json' | Out-String | ConvertFrom-Json).active
+        if ($activeSet -ne 'default') { throw 'Original lighting fixture requires the default retail data set' }
+    }
     Invoke-HogAdb -Arguments @('shell', 'am', 'force-stop', $script:PACKAGE) | Out-Null
     Invoke-HogPrivate "mkdir $backup" | Out-Null
     $existing = @($paths | Where-Object { ([string](Invoke-HogPrivate "if test -e $_; then echo yes; fi")).Trim() -eq 'yes' })
@@ -113,6 +134,15 @@ try {
     $before = @(Invoke-HogPrivate "find $($existing -join ' ') -type f -exec sha256sum {} \;") | Sort-Object
     $before | Set-Content "$output/before.sha256" -Encoding utf8
     $ready = $true
+    if ($LightingRuntime) {
+        foreach ($name in $addons.Keys) {
+            $privatePath = "files/imported/sets/default/$name"
+            Invoke-HogAdb -Arguments @('push', (Resolve-Path -LiteralPath (Join-Path $LightingRuntime $name)).Path, "/data/local/tmp/xl-light-$name") | Out-Null
+            Invoke-HogPrivate "cp /data/local/tmp/xl-light-$name $privatePath" | Out-Null
+            $installed = [string](Invoke-HogPrivate "sha256sum $privatePath")
+            if ($installed.Split(' ')[0] -ne $addons[$name]) { throw "Installed $name differs" }
+        }
+    }
     Invoke-HogAdb -Arguments @('push', (Resolve-Path -LiteralPath $Hog).Path, '/data/local/tmp/xl-hog.hog') | Out-Null
     Invoke-HogAdb -Arguments @('push', (Resolve-Path -LiteralPath $Descriptor).Path, '/data/local/tmp/xl-hog.mn2') | Out-Null
     Invoke-HogPrivate "mkdir -p files/d2x-redux/missions && cp /data/local/tmp/xl-hog.hog files/d2x-redux/missions/$mission.hog && cp /data/local/tmp/xl-hog.mn2 files/d2x-redux/missions/$mission$extension" | Out-Null
@@ -139,6 +169,9 @@ try {
             if (Compare-Object $before $after) { throw "Hog test state restoration differs; backup retained at $backup" }
             Invoke-HogPrivate "rm $backup/state.tar && rmdir $backup" | Out-Null
             Invoke-HogAdb -Arguments @('shell', 'rm', '-f', '/data/local/tmp/xl-hog.hog', '/data/local/tmp/xl-hog.mn2') | Out-Null
+            if ($LightingRuntime) {
+                foreach ($name in $addons.Keys) { Invoke-HogAdb -Arguments @('shell', 'rm', '-f', "/data/local/tmp/xl-light-$name") | Out-Null }
+            }
         }
     } finally {
         if ($previousSerial) { $env:ANDROID_SERIAL = $previousSerial } else { Remove-Item Env:\ANDROID_SERIAL -ErrorAction SilentlyContinue }

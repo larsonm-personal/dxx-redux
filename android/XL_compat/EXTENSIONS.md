@@ -461,6 +461,14 @@ conflicting and absent CLR controls preserve those colors. Foreign LGT/CLR and
 malformed owned companions remain rejected before commit. The same precedence
 applies to 17/36 mines with a complete 910-entry embedded table.
 
+An explicit XL mission can also contain native D2 7/31 geometry. For a native mine
+with an owned LGT, the renderer uses the level CLR when present. A missing level
+CLR selects the D2 colors retained at engine startup from the installed data.
+The effective brightness and RGB feed the existing method-0 ambient and corona
+paths. Texture sources participate in checkpoint identity and retire on level change.
+Authored flicker and light-switch triggers still require separate native integration.
+Animated POG admission continues to govern the original Standoff distributions.
+
 The 15/34 reader now decodes packed light indices and retains audited reserved
 segment bits. [Format evidence](evidence/format-15-34.md) separates the derived
 native/Android controls from original-mission status: fourteen Apocalyptic Factor

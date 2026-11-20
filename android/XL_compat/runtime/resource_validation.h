@@ -49,6 +49,7 @@ struct ObjectDependencies;
 namespace xl_compat
 {
 struct Inventory;
+struct MissionLightingCompanions;
 struct ParticleImageResource;
 struct AnimatedImageResource;
 struct ScopedTextureResources;
@@ -102,6 +103,7 @@ class XlPreparedResources
 	void begin_hitbox_frame();
 	void initialize_camera_objects();
 	bool texture_brightness(int texture, int &brightness) const;
+	const xl_compat::MissionLightingCompanions *classic_lighting() const;
 	bool pog_receipt(int bitmap, unsigned *bytes, unsigned *fnv1a) const;
 	int custom_model_radius(int model, int fallback) const;
 	const xl_compat::ParticleImageResource *particle_image(int subtype = 3) const;
@@ -126,6 +128,7 @@ const xl_compat::ParticleImageResource *xl_prepared_lightning_image();
 const xl_compat::ParticleImageResource *xl_prepared_powerup_glare_image();
 const xl_compat::AnimatedImageResource *xl_prepared_time_equipment_image(unsigned index);
 bool xl_prepared_time_equipment_required();
+const xl_compat::MissionLightingCompanions *xl_prepared_classic_lighting();
 #endif
 
 #endif

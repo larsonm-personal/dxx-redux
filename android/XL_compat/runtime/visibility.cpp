@@ -1,5 +1,6 @@
 #include "visibility.h"
 #include "preview.h"
+#include "resource_validation.h"
 #include "../lighting.h"
 #include "geometry.h"
 #include <stdexcept>
@@ -19,7 +20,7 @@ bool geometry_lighting_available()
 {
 	// Shared geometry also serves audio in admitted legacy XL fluid levels
 	// Availability here does not enable a rendering profile
-	return Current_mission && (Current_mission->descent_version == 1 || xl_level_extensions_active());
+	return Current_mission && (Current_mission->descent_version == 1 || xl_level_extensions_active() || xl_prepared_classic_lighting());
 }
 
 ClassicVisibilityCamera classic_default_lighting_camera()

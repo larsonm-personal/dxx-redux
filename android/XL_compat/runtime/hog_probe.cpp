@@ -1,5 +1,7 @@
 #include "hog_probe.h"
 #include "hog_checkpoint_test.h"
+#include "original_lighting_test.h"
+#include <android/log.h>
 #include "preview.h"
 #include "trigger_state.h"
 #include "../hog_format.h"
@@ -52,9 +54,31 @@ void original_level(const char *request)
 	const char *filename = ordinal < 0 ? Secret_level_names[-ordinal - 1] : Level_names[ordinal - 1];
 	require(!dxx_hog_name_compare(filename, separator + 1) && mission_owns_resource_archive(PHYSFS_getRealDir(filename)), "Advertised level or owning HOG differs");
 	require(!game_is_time_paused(), "Original HOG transition requires resumed gameplay");
-	require(xl_level_supported_at(filename, 0, ordinal), "Original HOG level failed admission");
+	if (!xl_level_supported_at(filename, 0, ordinal)) throw std::runtime_error(xl_level_rejection());
 	if (Current_level_num != ordinal) StartNewLevelSub(ordinal, 1, 0);
 	require(Current_level_num == ordinal && !dxx_hog_name_compare(Gamesave_current_filename, filename) && Num_segments > 0 && ConsoleObject, "Original HOG level failed to start");
+}
+
+void vignette_lighting(const char *operation)
+{
+	if (!std::strcmp(operation, "lighting_vignette")) {
+		char mission[] = "vignette-xl";
+		require(load_mission_by_name(mission), "Cannot select original Vignette mission");
+		original_level("6:clminate.rl2");
+	}
+	require(Current_mission && !std::strcmp(Current_mission->filename, "vignette-xl") && Current_level_num == 6 &&
+	            xl_prepared_classic_lighting() && !xl_level_extensions_active(),
+	        "Expected the native Vignette lighting original");
+	if (!std::strcmp(operation, "lighting_off")) require(subtract_light(113, 1), "Cannot extinguish original variable light");
+	else if (!std::strcmp(operation, "lighting_on")) require(add_light(113, 1), "Cannot restore original variable light");
+	const auto sample = xl_original_lighting_face(113, 1);
+	const bool extinguished = !std::strcmp(operation, "lighting_off");
+	require(sample.at("subtracted") == extinguished && sample.contains("emitter") == !extinguished,
+	        "Variable light and renderer emitter disagree");
+	require(sample.at("brightness") == 83840 && sample.at("raw_rgb") == std::array<int, 3>{ 2054847098, 2054847098, 2054847098 } &&
+	            sample.at("sources").at("d2x-xl.hog/descent2.clr") == "a0cefca9be4746f2bd271f7b21f6687e18cb4b2e7b544c7190fa127346aa454e",
+	        "Original Android face has the wrong effective tables");
+	__android_log_print(ANDROID_LOG_INFO, "DXX-Lighting", "%s %s", operation, sample.dump().c_str());
 }
 void verify()
 {
@@ -72,6 +96,9 @@ const char *xl_hog_probe(const char *operation)
 	try {
 		require(Game_wind && ConsoleObject && !(Game_mode & GM_MULTI), "HOG probe requires running singleplayer");
 		if (!std::strncmp(operation, "visit:", 6)) original_level(operation + 6);
+		else if (!std::strcmp(operation, "lighting_vignette") || !std::strcmp(operation, "lighting_sample") ||
+		         !std::strcmp(operation, "lighting_off") || !std::strcmp(operation, "lighting_on"))
+			vignette_lighting(operation);
 		else if (!std::strcmp(operation, "remember_memory")) {
 			saved_memory = hog_checkpoint_observation();
 			rewind_memory_buffer_discard(&original_checkpoint.bytes);
