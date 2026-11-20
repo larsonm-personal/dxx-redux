@@ -20,6 +20,15 @@ elseif(STAGE STREQUAL "carrier_key")
 elseif(STAGE STREQUAL "morph" OR STAGE STREQUAL "gauss_supply")
     set(initial 2)
     set(entry_receipt carrier_key-15-result.json)
+elseif(STAGE STREQUAL "red_resupply")
+    set(initial 2)
+    set(entry_receipt gauss_supply-22-result.json)
+elseif(STAGE STREQUAL "red_carrier")
+    set(initial 2)
+    set(entry_receipt red_resupply-16-result.json)
+elseif(STAGE STREQUAL "red_recovery")
+    set(initial 2)
+    set(entry_receipt red_carrier-14-result.json)
 elseif(STAGE STREQUAL "cloak")
     set(initial 2)
     set(entry_receipt storage-1-result.json)
@@ -151,6 +160,17 @@ foreach(i RANGE 0 ${last} 1)
         acknowledge_messages)
     if(NOT missing)
         string(JSON plan SET "${plan}" acknowledge_messages "${messages}")
+    endif()
+    string(
+        JSON
+        tracked
+        ERROR_VARIABLE
+        missing
+        GET
+        "${phase}"
+        track_objects)
+    if(NOT missing)
+        string(JSON plan SET "${plan}" track_objects "${tracked}")
     endif()
     set(name "${STAGE}-${i}")
     write_resume_plan("${name}" "${plan}" "${checkpoint}")
