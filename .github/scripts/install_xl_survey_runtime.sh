@@ -12,10 +12,6 @@ done
 if [[ ! -x /usr/bin/7z ]]; then missing+=(p7zip-full); fi
 
 if ((${#missing[@]})); then
-    apt=(sudo apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30)
-    if ! "${apt[@]}" install -y --no-install-recommends "${missing[@]}"; then
-        "${apt[@]}" -o APT::Update::Error-Mode=any update
-        "${apt[@]}" install -y --no-install-recommends "${missing[@]}"
-    fi
+    bash "$(dirname -- "${BASH_SOURCE[0]}")/install_noble_packages.sh" "${missing[@]}"
 fi
 /usr/bin/7z i >/dev/null

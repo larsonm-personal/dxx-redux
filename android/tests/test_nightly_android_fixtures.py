@@ -30,12 +30,12 @@ class SdkWorkflowContractTests(unittest.TestCase):
         step = workflow.split("- name: Require standard FFmpeg for generated preview fixture", 1)[1].split(
             "- name:", 1
         )[0]
-        self.assertIn("Dir::Etc::sourcelist=$GITHUB_WORKSPACE/control/.github/ffmpeg-noble.sources", step)
+        self.assertIn("Dir::Etc::sourcelist=$GITHUB_WORKSPACE/control/.github/ubuntu-noble.sources", step)
         self.assertIn("Dir::Etc::sourceparts=-", step)
         self.assertIn("APT::Get::List-Cleanup=0", step)
         self.assertIn('sudo apt-get "${apt_options[@]}" -o APT::Update::Error-Mode=any update', step)
         self.assertIn('sudo apt-get "${apt_options[@]}" install -y --no-install-recommends "ffmpeg=$expected"', step)
-        sources = (ROOT / ".github/ffmpeg-noble.sources").read_text().strip().split("\n\n")
+        sources = (ROOT / ".github/ubuntu-noble.sources").read_text().strip().split("\n\n")
         archives = {}
         for source in sources:
             fields = dict(line.split(": ", 1) for line in source.splitlines())

@@ -22,21 +22,29 @@ class MirrorTests(unittest.TestCase):
         return {
             name: body
             for name, body in re.findall(r"(?ms)^  ([\w-]+):\n(.*?)(?=^  [\w-]+:|\Z)", jobs)
-            if "sudo apt-get" in body
+            if "sudo apt-get" in body or "install_noble_packages.sh" in body
         }
 
     def assert_controller_before_apt(self, source, job_name):
         match = re.search(rf"(?ms)^  {re.escape(job_name)}:\n(.*?)(?=^  [\w-]+:|\Z)", source)
         self.assertIsNotNone(match, f"Missing {job_name} job")
         job = match.group(1)
-        call = "python3 control/.github/scripts/prefer_ubuntu_archive.py"
+        direct_install = job_name == "host"
+        call = (
+            "bash control/.github/scripts/install_noble_packages.sh"
+            if direct_install
+            else "python3 control/.github/scripts/prefer_ubuntu_archive.py"
+        )
         self.assertEqual(job.count(call), 1)
         trusted_ref = "ref: ${{ github.workflow_sha }}"
         self.assertIn(trusted_ref, job)
         self.assertLess(job.index(trusted_ref), job.index(call))
         self.assertLess(job.index("path: control"), job.index(call))
-        self.assertLess(job.index(call), job.index("sudo apt-get"))
-        self.assertNotIn("python3 target/.github/scripts/prefer_ubuntu_archive.py", job)
+        if direct_install:
+            self.assertNotIn("sudo apt-get", job)
+        else:
+            self.assertLess(job.index(call), job.index("sudo apt-get"))
+        self.assertNotIn(call.replace("control/", "target/"), job)
 
     def transform(self, data, sources=SOURCES, env=None, release=None, machine="x86_64"):
         return helper.prefer_archive(
