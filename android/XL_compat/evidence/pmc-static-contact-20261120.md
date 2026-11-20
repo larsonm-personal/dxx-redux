@@ -1,0 +1,7 @@
+# Pumo PMC1 stationary robot impacts
+
+A pilot who flew from the hub to ordinal 11 resumed in room 239. Firing while flying through room 275 aborted the game on both Windows and Linux. The first impact involved a stationary robot of mass 65,536,000 and a projectile of mass 6,554 in 16.16 units. The scaled impulse on the x axis was -7,313,794,502.76. A subsequent impact produced rotational force (-2,147,483,648, 657,095,279, -343,964,598) with a magnitude of 2,271,953,315.72.
+
+The pinned x86 implementation of BumpTwoObjects returned velocity (28,469, -6,315,773, -2,502,705) and rotation force (-1,305,455,433, 98,843,114, -51,739,825) for the first hit. Running the second force through ApplyRotForce with forward orientation and incoming rotation (8,192, -7,000, 11) returned (3,240, 14,724, 0). Regression controls retain both observations. Collision arithmetic explicitly reproduces the x86 integer-indefinite conversion when the truncated double exceeds signed 32-bit storage.
+
+The replay started from save SHA-256 `21856d311e2e8c993e9045a395ac4eab8167df6a1a9e71e98c6ba39a636ab978`. Ten native passages with primary fire reached room 1210 alive at score 870, eight lives and 119.96 shields. The complete Windows and Linux player state matched. The Linux projectile suite also compared 32,448 ordinary rotation cases against the pinned engine. This checkpoint covers the PMC1 approach from the hub.

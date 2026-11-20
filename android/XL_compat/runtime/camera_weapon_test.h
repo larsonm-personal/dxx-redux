@@ -23,6 +23,16 @@ extern "C" {
 }
 static void camera_rotation_native_controls(const std::filesystem::path &root)
 {
+	// Original x86 ApplyRotForce on the second PMC1 impact, facing forward
+	object projectile{};
+	projectile.type = OBJ_WEAPON;
+	projectile.movement_type = MT_PHYSICS;
+	projectile.mtype.phys_info.mass = 6554;
+	projectile.orient.fvec.z = F1_0;
+	projectile.mtype.phys_info.rotvel = { 8192, -7000, 11 };
+	xl_camera_splash_rotation(projectile, { INT32_MIN, 657095279, -343964598 });
+	const auto turn = projectile.mtype.phys_info.rotvel;
+	require(turn.x == 3240 && turn.y == 14724 && turn.z == 0, "PMC1 projectile turn differs from pinned x86 rotation");
 	const int slot = projectile_robot();
 	auto &actor = Objects[slot];
 	const auto saved_actor = actor;

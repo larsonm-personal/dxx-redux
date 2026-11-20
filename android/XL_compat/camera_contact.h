@@ -1,12 +1,20 @@
 #ifndef DXX_XL_CAMERA_CONTACT_H
 #define DXX_XL_CAMERA_CONTACT_H
 #include <array>
+#include <cmath>
 #include <cstdint>
 #include <limits>
 #include <stdexcept>
 
 namespace xl_compat
 {
+// Pinned x86 physics converts with truncation and returns integer indefinite on overflow
+inline std::int32_t contact_fixed(double value)
+{
+	const double truncated = std::trunc(value);
+	return truncated >= INT32_MIN && truncated <= INT32_MAX ? std::int32_t(truncated) : INT32_MIN;
+}
+
 template <typename RandomShort>
 inline bool camera_gauss_spin(int &skip, std::int32_t frame, std::array<std::int32_t, 3> &thrust, RandomShort random_short)
 {

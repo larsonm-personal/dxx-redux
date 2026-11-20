@@ -8,14 +8,18 @@ extern "C" {
 }
 namespace xl_compat
 {
-inline vms_angvec teleport_angles(const vms_vector &vector)
+inline vms_angvec angles_from_direction(const FixedLightPoint &direction)
 {
-	const auto direction = xl_compat::geometry_fixed_direction({ vector.x, vector.y, vector.z });
 	vms_angvec angles{};
 	// XL retains the positive endpoint for both signs at exactly unit magnitude
 	angles.p = std::abs(direction[1]) >= F1_0 ? 0x4000 : fix_asin(-direction[1]);
 	angles.h = direction[0] || direction[2] ? fix_atan2(direction[2], direction[0]) : 0;
 	return angles;
+}
+
+inline vms_angvec teleport_angles(const vms_vector &vector)
+{
+	return angles_from_direction(geometry_fixed_direction({ vector.x, vector.y, vector.z }));
 }
 
 inline fix teleport_dot(const vms_vector &a, const vms_vector &b)

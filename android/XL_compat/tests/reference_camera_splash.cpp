@@ -526,6 +526,13 @@ void camera_flash_robot_source_controls()
 void static_contact_source_controls()
 {
 	using namespace camera_splash_reference;
+	// Captured PMC1 projectile impact and outputs from the pinned x86 BumpTwoObjects
+	const auto pmc = xl_compat::static_contact({ 11932107, -67839034, -23275063 }, 65536000,
+	                                           { 11649650, -67972256, -23330654 }, { 9490263, -718560, 376139 },
+	                                           6554, false, false, false);
+	if (!pmc.apply || pmc.velocity != xl_compat::FixedLightPoint{ 28469, -6315773, -2502705 } ||
+	    pmc.rotation_force != xl_compat::FixedLightPoint{ -1305455433, 98843114, -51739825 })
+		throw std::runtime_error("PMC1 projectile rebound differs from the pinned x86 engine");
 	unsigned ordinary_cases = 0, factor_one_caught = 0, omitted_force_caught = 0;
 	for (const bool reverse : { false, true })
 		for (const int mass : { 0, 1, 3, 32768, 65536, 98317, 262144 })

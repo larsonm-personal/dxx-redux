@@ -62,7 +62,8 @@ void xl_camera_splash_rotation(object &actor, const vms_vector &input)
 {
 	const auto force = point(input);
 	if (actor.movement_type != MT_PHYSICS) return;
-	const int magnitude = xl_compat::geometry_default_magnitude(force) / 8;
+	const int length = xl_compat::contact_fixed(xl_compat::geometry_vector_length(force));
+	const int magnitude = length / 8;
 	int rate = 4 * F1_0;
 	if (magnitude >= F1_0 / 256 && magnitude >= (actor.mtype.phys_info.mass >> 14)) {
 		rate = splash_divide(actor.mtype.phys_info.mass, magnitude);
@@ -77,7 +78,9 @@ void xl_camera_splash_rotation(object &actor, const vms_vector &input)
 	}
 	if ((&actor == ConsoleObject && Automap_active) || force == FixedLightPoint{}) return;
 	if (actor.control_type == CT_MORPH) rate *= 2;
-	const auto goal = xl_compat::teleport_angles(native(force));
+	FixedLightPoint direction{};
+	for (unsigned i = 0; i < 3; ++i) direction[i] = splash_divide(force[i], length);
+	const auto goal = xl_compat::angles_from_direction(direction);
 	const auto current = xl_compat::teleport_angles(actor.orient.fvec);
 	const auto turn = [&](int destination, int present, int previous) {
 		int delta = destination - present;
