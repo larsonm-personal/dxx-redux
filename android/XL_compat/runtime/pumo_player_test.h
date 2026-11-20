@@ -572,7 +572,7 @@ static int run(int argc, char **argv, const char *plan_argument, bool pumo)
 		                                 std::any_of(plan.at("steps").begin(), plan.at("steps").end(), [](const Json &step) -> bool {
 			                                 if (!step.is_object() || !step.contains("action") || !step.at("action").is_string()) return false;
 			                                 const std::string action = step.at("action");
-			                                 if (action == "select_secondary" || action == "fly_through_side" || action == "approach_side" || action == "shoot_wall_trigger" || action == "collect_pickup") return true;
+			                                 if (action == "select_secondary" || action == "fly_through_side" || action == "approach_side" || action == "shoot_wall_trigger" || action == "collect_pickup" || action == "engage_visible_robot") return true;
 			                                 return (action == "send_axis" && step.contains("axis") && pumo_ordinary_input_validation::integer_in_range(step.at("axis"), 2, 4)) ||
 			                                        (action == "send_button" && step.contains("button") && pumo_ordinary_input_validation::integer_in_range(step.at("button"), 101, 101));
 		                                 });
@@ -975,6 +975,36 @@ static int run(int argc, char **argv, const char *plan_argument, bool pumo)
 				firing = false;
 				require(Current_level_num == level && state.operated && state.shot && state.object == ConsoleObject - Objects,
 				        "Player fire did not operate the requested wall trigger");
+			} else if (action == "engage_visible_robot") {
+				require(pumo_ordinary_input_validation::integer_in_range(step.at("object"), 0, Highest_object_index) &&
+				            pumo_ordinary_input_validation::integer_in_range(step.at("max_frames"), 1, 600),
+				        "Combat flight requires a valid object and frame limit");
+				const int slot = step.at("object"), frames = step.at("max_frames");
+				if (step.contains("strafe"))
+					require(pumo_ordinary_input_validation::integer_in_range(step.at("strafe"), -1, 1), "Combat strafe must be -1, 0 or 1");
+				const int strafe = step.value("strafe", 0);
+				const auto &robot = Objects[slot];
+				require(robot.type == OBJ_ROBOT && robot.id < N_robot_types && robot.id == step.at("robot_id") && !Robot_info[robot.id].companion,
+				        "Combat flight requires the requested hostile robot");
+				const TrackedCombatObject bound{ slot, robot.signature, robot.type, robot.id, Current_level_num, combat_load_generation, int(robot.shields) };
+				const auto station = ConsoleObject->pos;
+				auto visible = [&] {
+					return !Player_is_dead && combat_object_matches(bound) && robot.shields > 0 && !(robot.flags & OF_SHOULD_BE_DEAD) &&
+					       vm_vec_dist(&robot.pos, &ConsoleObject->pos) < i2f(80) && pilot_target::center_ray_open(robot);
+				};
+				require(visible(), "Combat flight requires a visible robot within range");
+				for (int i = 0; i < frames && visible(); ++i) {
+					steer(station, &robot.pos, true);
+					if (strafe) {
+						thrust = vertical = 0;
+						sideways = strafe;
+					}
+					trace << Json{ { "flight_frame", frame_count }, { "aim_robot", slot }, { "signature", bound.signature }, { "shields_raw", int(robot.shields) }, { "controls", { thrust, sideways, vertical, heading, pitch, firing } } }.dump() << '\n';
+					tick();
+				}
+				thrust = sideways = vertical = heading = pitch = 0;
+				firing = false;
+				require(!Player_is_dead, "Pilot died while engaging the visible robot");
 			} else if (action == "fly_through_side" || action == "approach_side") {
 				const bool approach = action == "approach_side";
 				const int level = Current_level_num, segment = step.at("segment"), side = step.at("side");
