@@ -561,6 +561,7 @@ fun AdvancedSettingsPage(
     isGameReady: (String) -> Boolean,
     refreshTrigger: Int = 0,
     controllerFocusActive: Boolean = true,
+    sectionTarget: String? = null,
     onPlayInputDemo: (StagedInputDemo) -> Unit,
     onClearRouteMetadataCache: suspend () -> Int,
     onSetRouteMetadataComputeFaster: (Boolean) -> Unit,
@@ -582,7 +583,7 @@ fun AdvancedSettingsPage(
             ),
         )
     }
-    RequestLauncherControllerFocus(initialFocus, controllerFocusActive)
+    RequestLauncherControllerFocus(initialFocus, controllerFocusActive && sectionTarget == null)
 
     // Load once per page visit; returning from an export/share activity must not reset the page
     // Sections refresh their own lists after mutations
@@ -669,7 +670,17 @@ fun AdvancedSettingsPage(
                                 .verticalScroll(scrollState),
                     ) {
                         // -- Export / Import configs --
-                        Text("Config Management", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        Text(
+                            "Config Management",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp,
+                            modifier =
+                                Modifier.settingsSectionTarget(
+                                    SettingsSections.ADVANCED_CONFIG,
+                                    sectionTarget,
+                                    focusContainer = true,
+                                ),
+                        )
                         Spacer(modifier = Modifier.height(8.dp))
 
                         val configImportLauncher =
@@ -706,59 +717,74 @@ fun AdvancedSettingsPage(
                         Spacer(modifier = Modifier.height(16.dp))
 
                         // -- Online metadata lookups --
-                        OnlineMetadataSection()
+                        SettingsTargetSection(SettingsSections.ADVANCED_METADATA, sectionTarget) {
+                            OnlineMetadataSection()
+                        }
 
                         Spacer(modifier = Modifier.height(16.dp))
                         HorizontalDivider()
                         Spacer(modifier = Modifier.height(16.dp))
 
                         // -- Route metadata precompute --
-                        RouteMetadataPrecomputeSection(
-                            filesDir,
-                            onClearRouteMetadataCache,
-                            onSetRouteMetadataComputeFaster,
-                        )
+                        SettingsTargetSection(SettingsSections.ADVANCED_ROUTES, sectionTarget) {
+                            RouteMetadataPrecomputeSection(
+                                filesDir,
+                                onClearRouteMetadataCache,
+                                onSetRouteMetadataComputeFaster,
+                                sectionTarget,
+                            )
+                        }
 
                         Spacer(modifier = Modifier.height(16.dp))
                         HorizontalDivider()
                         Spacer(modifier = Modifier.height(16.dp))
 
                         // -- Debug Logging --
-                        DebugLoggingSection(loadedLists.logFiles)
+                        SettingsTargetSection(SettingsSections.ADVANCED_LOGGING, sectionTarget) {
+                            DebugLoggingSection(loadedLists.logFiles)
+                        }
 
                         Spacer(modifier = Modifier.height(16.dp))
                         HorizontalDivider()
                         Spacer(modifier = Modifier.height(16.dp))
 
                         // -- Crash Reports --
-                        CrashReportsSection(loadedLists.crashFiles)
+                        SettingsTargetSection(SettingsSections.ADVANCED_CRASHES, sectionTarget) {
+                            CrashReportsSection(loadedLists.crashFiles)
+                        }
 
                         Spacer(modifier = Modifier.height(16.dp))
                         HorizontalDivider()
                         Spacer(modifier = Modifier.height(16.dp))
 
                         // -- Newly-Recorded Demos --
-                        RecordedInputDemosSection(
-                            filesDir,
-                            fileSetManager,
-                            isGameReady,
-                            onPlayInputDemo,
-                            loadedLists.demos,
-                        )
+                        SettingsTargetSection(SettingsSections.ADVANCED_DEMOS, sectionTarget) {
+                            RecordedInputDemosSection(
+                                filesDir,
+                                fileSetManager,
+                                isGameReady,
+                                onPlayInputDemo,
+                                loadedLists.demos,
+                            )
+                        }
 
                         Spacer(modifier = Modifier.height(16.dp))
                         HorizontalDivider()
                         Spacer(modifier = Modifier.height(16.dp))
 
                         // -- Storage Inspector --
-                        StorageInspectorSection(filesDir, refreshTrigger)
+                        SettingsTargetSection(SettingsSections.ADVANCED_STORAGE, sectionTarget) {
+                            StorageInspectorSection(filesDir, refreshTrigger)
+                        }
 
                         Spacer(modifier = Modifier.height(16.dp))
                         HorizontalDivider()
                         Spacer(modifier = Modifier.height(16.dp))
 
                         // -- Imported Files Location --
-                        ImportLocationSection(filesDir)
+                        SettingsTargetSection(SettingsSections.ADVANCED_LOCATION, sectionTarget) {
+                            ImportLocationSection(filesDir)
+                        }
 
                         Spacer(modifier = Modifier.height(16.dp))
                         HorizontalDivider()
@@ -767,6 +793,12 @@ fun AdvancedSettingsPage(
                         // -- Dangerous zone --
                         Text(
                             "Danger Zone",
+                            modifier =
+                                Modifier.settingsSectionTarget(
+                                    SettingsSections.ADVANCED_RESET,
+                                    sectionTarget,
+                                    focusContainer = true,
+                                ),
                             fontWeight = FontWeight.Bold,
                             fontSize = 14.sp,
                             color = Color(0xFFF44336),
@@ -994,6 +1026,7 @@ private fun RouteMetadataPrecomputeSection(
     filesDir: File,
     onClearCache: suspend () -> Int,
     onSetComputeFaster: (Boolean) -> Unit,
+    sectionTarget: String? = null,
 ) {
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -1020,7 +1053,7 @@ private fun RouteMetadataPrecomputeSection(
         }
     }
 
-    RouteMetadataPrecomputeProgress(snapshot)
+    RouteMetadataPrecomputeProgress(snapshot, sectionTarget)
     Spacer(modifier = Modifier.height(8.dp))
     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         Button(
@@ -1153,7 +1186,10 @@ private fun RouteMetadataPrecomputeSection(
 }
 
 @Composable
-private fun RouteMetadataPrecomputeProgress(snapshot: RouteMetadataPrecomputeSnapshot) {
+private fun RouteMetadataPrecomputeProgress(
+    snapshot: RouteMetadataPrecomputeSnapshot,
+    sectionTarget: String? = null,
+) {
     val total = snapshot.totalLevels
     val finished = snapshot.finishedLevels.coerceIn(0, total.coerceAtLeast(0))
     val progress = if (total == 0) 0f else finished.toFloat() / total.toFloat()
@@ -1250,7 +1286,17 @@ private fun RouteMetadataPrecomputeProgress(snapshot: RouteMetadataPrecomputeSna
             ((System.currentTimeMillis() - snapshot.musicUpdatedAtMs) / 1_000L).coerceAtLeast(0L)
         }
     Spacer(modifier = Modifier.height(12.dp))
-    Text("Chromaprint Hashing", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+    Text(
+        "Chromaprint Hashing",
+        fontWeight = FontWeight.Bold,
+        fontSize = 14.sp,
+        modifier =
+            Modifier.settingsSectionTarget(
+                SettingsSections.ADVANCED_CHROMAPRINT,
+                sectionTarget,
+                focusContainer = true,
+            ),
+    )
     Spacer(modifier = Modifier.height(6.dp))
     Text(formatChromaprintPrecomputeProgress(snapshot), fontSize = 12.sp)
     LinearProgressIndicator(

@@ -1,7 +1,6 @@
 package com.dxxredux.app
 
 import android.content.Context
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -82,75 +81,78 @@ fun EnginePreferencesPage(
     gameVariant: String,
     filesDir: File,
     controllerFocusActive: Boolean = true,
+    sectionTarget: String? = null,
     onBack: () -> Unit,
 ) {
-    BackHandler(onBack = onBack)
-
     val context = LocalContext.current
+    val draft = rememberSettingsEditorDraft("game.preferences")
+    var draftLoaded by draft.state("loaded") { mutableStateOf(false) }
     val prefs =
         remember {
             context.getSharedPreferences("dxx_prefs", Context.MODE_PRIVATE)
         }
     val scrollState = rememberScrollState()
     val initialFocus = remember { FocusRequester() }
-    var cockpitMode by remember { mutableIntStateOf(CM_FULL_COCKPIT) }
-    var savedCockpitMode by remember { mutableIntStateOf(CM_FULL_COCKPIT) }
-    var autoLeveling by remember { mutableStateOf(true) }
-    var savedAutoLeveling by remember { mutableStateOf(true) }
-    var showRobotHostageCounts by remember { mutableStateOf(false) }
-    var savedShowRobotHostageCounts by remember { mutableStateOf(false) }
-    var showBossHealthBar by remember { mutableStateOf(true) }
-    var savedShowBossHealthBar by remember { mutableStateOf(true) }
-    var mapCheatsAccessible by remember { mutableStateOf(true) }
-    var savedMapCheatsAccessible by remember { mutableStateOf(true) }
-    var originalHoming by remember { mutableStateOf(true) }
-    var savedOriginalHoming by remember { mutableStateOf(true) }
-    var presetError by remember { mutableStateOf("") }
-    var statusMessage by remember { mutableStateOf("") }
-    var hasPilotFile by remember { mutableStateOf(false) }
-    var showGuidebotLine by remember {
+    var cockpitMode by draft.state("cockpitMode") { mutableIntStateOf(CM_FULL_COCKPIT) }
+    var savedCockpitMode by draft.state("savedCockpitMode") { mutableIntStateOf(CM_FULL_COCKPIT) }
+    var autoLeveling by draft.state("autoLeveling") { mutableStateOf(true) }
+    var savedAutoLeveling by draft.state("savedAutoLeveling") { mutableStateOf(true) }
+    var showRobotHostageCounts by draft.state("showRobotHostageCounts") { mutableStateOf(false) }
+    var savedShowRobotHostageCounts by draft.state("savedShowRobotHostageCounts") { mutableStateOf(false) }
+    var showBossHealthBar by draft.state("showBossHealthBar") { mutableStateOf(true) }
+    var savedShowBossHealthBar by draft.state("savedShowBossHealthBar") { mutableStateOf(true) }
+    var mapCheatsAccessible by draft.state("mapCheatsAccessible") { mutableStateOf(true) }
+    var savedMapCheatsAccessible by draft.state("savedMapCheatsAccessible") { mutableStateOf(true) }
+    var originalHoming by draft.state("originalHoming") { mutableStateOf(true) }
+    var savedOriginalHoming by draft.state("savedOriginalHoming") { mutableStateOf(true) }
+    var presetError by draft.state("presetError") { mutableStateOf("") }
+    var statusMessage by draft.state("statusMessage") { mutableStateOf("") }
+    var hasPilotFile by draft.state("hasPilotFile") { mutableStateOf(false) }
+    var showGuidebotLine by draft.state("showGuidebotLine") {
         mutableStateOf(prefs.getBoolean(PREF_GUIDEBOT_HELPER_LINE, true))
     }
-    var savedShowGuidebotLine by remember { mutableStateOf(showGuidebotLine) }
-    var presetNeedsSave by remember { mutableStateOf(false) }
-    var pendingPreset by remember { mutableStateOf<GameSettingsPreset?>(null) }
-    var persistGuidebotGoal by remember {
+    var savedShowGuidebotLine by draft.state("savedShowGuidebotLine") { mutableStateOf(showGuidebotLine) }
+    var presetNeedsSave by draft.state("presetNeedsSave") { mutableStateOf(false) }
+    var pendingPreset by draft.state("pendingPreset") { mutableStateOf<GameSettingsPreset?>(null) }
+    var persistGuidebotGoal by draft.state("persistGuidebotGoal") {
         mutableStateOf(prefs.getBoolean(PREF_PERSIST_GUIDEBOT_GOAL, true))
     }
-    var guidebotRoutingMode by remember {
+    var guidebotRoutingMode by draft.state("guidebotRoutingMode") {
         mutableIntStateOf(
             GuidebotRoutingMode.sanitize(prefs.getInt(PREF_GUIDEBOT_ROUTING_MODE, GuidebotRoutingMode.ENHANCED)),
         )
     }
-    var showNearestPlayerLine by remember {
+    var showNearestPlayerLine by draft.state("showNearestPlayerLine") {
         mutableStateOf(prefs.getBoolean(PREF_NEAREST_PLAYER_LINE, true))
     }
-    var skipIntroMovie by remember {
+    var skipIntroMovie by draft.state("skipIntroMovie") {
         mutableStateOf(prefs.getBoolean(PREF_SKIP_INTRO_MOVIE, false))
     }
-    var savedSkipIntroMovie by remember { mutableStateOf(skipIntroMovie) }
-    var showProgressBars by remember { mutableStateOf(prefs.getBoolean(PREF_SHOW_PROGRESS_BARS, true)) }
-    var savedShowProgressBars by remember { mutableStateOf(showProgressBars) }
-    var rewindSupportEnabled by remember {
+    var savedSkipIntroMovie by draft.state("savedSkipIntroMovie") { mutableStateOf(skipIntroMovie) }
+    var showProgressBars by draft.state("showProgressBars") {
+        mutableStateOf(prefs.getBoolean(PREF_SHOW_PROGRESS_BARS, true))
+    }
+    var savedShowProgressBars by draft.state("savedShowProgressBars") { mutableStateOf(showProgressBars) }
+    var rewindSupportEnabled by draft.state("rewindSupportEnabled") {
         mutableStateOf(prefs.getBoolean(PREF_REWIND_SUPPORT_ENABLED, true))
     }
-    var savedRewindSupportEnabled by remember { mutableStateOf(rewindSupportEnabled) }
-    var serverCoopQol by remember { mutableStateOf(HostGameDefaults.load(context).coopQol) }
-    var savedServerCoopQol by remember { mutableStateOf(serverCoopQol) }
-    var rewindTargetSeconds by remember {
+    var savedRewindSupportEnabled by draft.state("savedRewindSupportEnabled") { mutableStateOf(rewindSupportEnabled) }
+    var serverCoopQol by draft.state("serverCoopQol") { mutableStateOf(HostGameDefaults.load(context).coopQol) }
+    var savedServerCoopQol by draft.state("savedServerCoopQol") { mutableStateOf(serverCoopQol) }
+    var rewindTargetSeconds by draft.state("rewindTargetSeconds") {
         mutableIntStateOf(
             sanitizeRewindTargetSeconds(
                 prefs.getInt(PREF_REWIND_TARGET_SECONDS, DEFAULT_REWIND_TARGET_SECONDS),
             ),
         )
     }
-    var headlightOffByDefault by remember {
+    var headlightOffByDefault by draft.state("headlightOffByDefault") {
         mutableStateOf(prefs.getBoolean(PREF_HEADLIGHT_OFF_BY_DEFAULT, true))
     }
-    var showDemoInstallerOffer by remember {
+    var showDemoInstallerOffer by draft.state("showDemoInstallerOffer") {
         mutableStateOf(prefs.getBoolean(PREF_SHOW_DEMO_INSTALLER_OFFER, true))
     }
-    var screenSaverMinutes by remember {
+    var screenSaverMinutes by draft.state("screenSaverMinutes") {
         mutableIntStateOf(idleSaverMinutes(prefs.getInt(PREF_IDLE_SAVER_MINUTES, 5)))
     }
     val hasChanges =
@@ -200,66 +202,84 @@ fun EnginePreferencesPage(
     }
 
     fun savePreferences(preset: GameSettingsPreset? = null): Boolean {
-        val count =
-            NativePilotPreferences.writeEngineAndHomingPrefsToAll(
-                filesDir.absolutePath,
-                cockpitMode,
-                autoLeveling,
-                showRobotHostageCounts,
-                showBossHealthBar,
-                mapCheatsAccessible,
-                !headlightOffByDefault,
-                originalHoming,
-                resetAutoselectOnlyOnce = presetNeedsSave,
-            )
-        if (count < 0) {
-            statusMessage = "Could not save pilot preferences; original files were restored"
-        } else if (count > 0) {
-            try {
-                if (preset != null) {
-                    preset.resetGraphicsPreferences(filesDir, context.noBackupFilesDir)
+        return try {
+            val count =
+                NativePilotPreferences.writeEngineAndHomingPrefsToAll(
+                    filesDir.absolutePath,
+                    cockpitMode,
+                    autoLeveling,
+                    showRobotHostageCounts,
+                    showBossHealthBar,
+                    mapCheatsAccessible,
+                    !headlightOffByDefault,
+                    originalHoming,
+                    resetAutoselectOnlyOnce = presetNeedsSave,
+                )
+            if (count < 0) {
+                statusMessage = "Could not save pilot preferences; original files were restored"
+            } else if (count > 0) {
+                try {
+                    if (preset != null) {
+                        preset.resetGraphicsPreferences(filesDir, context.noBackupFilesDir)
+                    }
+                    prefs
+                        .edit()
+                        .putBoolean(PREF_GUIDEBOT_HELPER_LINE, showGuidebotLine)
+                        .putBoolean(PREF_PERSIST_GUIDEBOT_GOAL, persistGuidebotGoal)
+                        .putInt(PREF_GUIDEBOT_ROUTING_MODE, guidebotRoutingMode)
+                        .putBoolean(PREF_REWIND_SUPPORT_ENABLED, rewindSupportEnabled)
+                        .putBoolean(PREF_SKIP_INTRO_MOVIE, skipIntroMovie)
+                        .putBoolean(PREF_SHOW_PROGRESS_BARS, showProgressBars)
+                        .putBoolean(HostGameDefaults.COOP_QOL_PREF, serverCoopQol)
+                        .putLong(
+                            PREF_GRAPHICS_SETTINGS_GENERATION,
+                            prefs.getLong(PREF_GRAPHICS_SETTINGS_GENERATION, 0L) + 1L,
+                        ).apply()
+                    savedServerCoopQol = serverCoopQol
+                    savedRewindSupportEnabled = rewindSupportEnabled
+                    savedSkipIntroMovie = skipIntroMovie
+                    savedShowProgressBars = showProgressBars
+                    savedShowGuidebotLine = showGuidebotLine
+                    if (preset != null) MidiPreviewBridge.resetPreferences(context, preset)
+                } catch (_: Exception) {
+                    statusMessage =
+                        "Pilot preferences saved, but some game preferences could not be saved. Please retry"
+                    return false
                 }
-                prefs
-                    .edit()
-                    .putBoolean(PREF_GUIDEBOT_HELPER_LINE, showGuidebotLine)
-                    .putBoolean(PREF_PERSIST_GUIDEBOT_GOAL, persistGuidebotGoal)
-                    .putInt(PREF_GUIDEBOT_ROUTING_MODE, guidebotRoutingMode)
-                    .putBoolean(PREF_REWIND_SUPPORT_ENABLED, rewindSupportEnabled)
-                    .putBoolean(PREF_SKIP_INTRO_MOVIE, skipIntroMovie)
-                    .putBoolean(PREF_SHOW_PROGRESS_BARS, showProgressBars)
-                    .putBoolean(HostGameDefaults.COOP_QOL_PREF, serverCoopQol)
-                    .putLong(
-                        PREF_GRAPHICS_SETTINGS_GENERATION,
-                        prefs.getLong(PREF_GRAPHICS_SETTINGS_GENERATION, 0L) + 1L,
-                    ).apply()
-                savedServerCoopQol = serverCoopQol
-                savedRewindSupportEnabled = rewindSupportEnabled
-                savedSkipIntroMovie = skipIntroMovie
-                savedShowProgressBars = showProgressBars
-                savedShowGuidebotLine = showGuidebotLine
-                if (preset != null) MidiPreviewBridge.resetPreferences(context, preset)
-            } catch (_: Exception) {
-                statusMessage =
-                    "Pilot preferences saved, but some game preferences could not be saved. Please retry"
-                return false
+                savedCockpitMode = cockpitMode
+                savedAutoLeveling = autoLeveling
+                savedShowRobotHostageCounts = showRobotHostageCounts
+                savedShowBossHealthBar = showBossHealthBar
+                savedMapCheatsAccessible = mapCheatsAccessible
+                savedOriginalHoming = originalHoming
+                presetNeedsSave = false
+                hasPilotFile = true
+                statusMessage = "Saved to $count pilot file(s) across both games"
+            } else {
+                statusMessage = "No pilot files found to save"
             }
-            savedCockpitMode = cockpitMode
-            savedAutoLeveling = autoLeveling
-            savedShowRobotHostageCounts = showRobotHostageCounts
-            savedShowBossHealthBar = showBossHealthBar
-            savedMapCheatsAccessible = mapCheatsAccessible
-            savedOriginalHoming = originalHoming
-            presetNeedsSave = false
-            hasPilotFile = true
-            statusMessage = "Saved to $count pilot file(s) across both games"
-        } else {
-            statusMessage = "No pilot files found to save"
+            count > 0
+        } catch (_: Exception) {
+            statusMessage = "Could not save game preferences. Please retry"
+            false
         }
-        return count > 0
     }
 
-    RequestLauncherControllerFocus(initialFocus, controllerFocusActive)
-    LaunchedEffect(Unit) { loadPrefs() }
+    val requestExit =
+        rememberSettingsEditorExit(
+            dirty = hasChanges,
+            onSaveAndLeave = { if (savePreferences()) onBack() },
+            onLeave = onBack,
+            mixedImmediateSaves = true,
+        )
+
+    RequestLauncherControllerFocus(initialFocus, controllerFocusActive && sectionTarget == null)
+    LaunchedEffect(Unit) {
+        if (!draftLoaded) {
+            loadPrefs()
+            draftLoaded = true
+        }
+    }
 
     pendingPreset?.let { preset ->
         AlertDialog(
@@ -338,7 +358,7 @@ fun EnginePreferencesPage(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                TextButton(onClick = onBack, modifier = Modifier.focusRequester(initialFocus).tvFocusBorder()) {
+                TextButton(onClick = requestExit, modifier = Modifier.focusRequester(initialFocus).tvFocusBorder()) {
                     Text("< Back", fontSize = 12.sp)
                 }
                 Spacer(modifier = Modifier.width(8.dp))
@@ -358,7 +378,17 @@ fun EnginePreferencesPage(
                         .fillMaxSize()
                         .verticalScroll(scrollState),
             ) {
-                Text("Presets", fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                Text(
+                    "Presets",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 11.sp,
+                    modifier =
+                        Modifier.settingsSectionTarget(
+                            SettingsSections.GAME_PRESETS,
+                            sectionTarget,
+                            focusContainer = true,
+                        ),
+                )
                 Spacer(modifier = Modifier.height(6.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -389,7 +419,17 @@ fun EnginePreferencesPage(
                 HorizontalDivider()
                 Spacer(modifier = Modifier.height(8.dp))
 
-                Text("Launcher", fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                Text(
+                    "Launcher",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 11.sp,
+                    modifier =
+                        Modifier.settingsSectionTarget(
+                            SettingsSections.GAME_LAUNCHER,
+                            sectionTarget,
+                            focusContainer = true,
+                        ),
+                )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     "Launcher-only options that control setup-screen behavior before the game starts",
@@ -429,7 +469,17 @@ fun EnginePreferencesPage(
                 HorizontalDivider()
                 Spacer(modifier = Modifier.height(8.dp))
 
-                Text("Pilot-backed Preferences", fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                Text(
+                    "Pilot-backed Preferences",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 11.sp,
+                    modifier =
+                        Modifier.settingsSectionTarget(
+                            SettingsSections.GAME_PILOT,
+                            sectionTarget,
+                            focusContainer = true,
+                        ),
+                )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     "These settings apply to every pilot file found for Descent 1 and Descent 2. Press Save to apply changes",
@@ -607,7 +657,17 @@ fun EnginePreferencesPage(
                 HorizontalDivider()
                 Spacer(modifier = Modifier.height(8.dp))
 
-                Text("Launch Intro", fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                Text(
+                    "Launch Intro",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 11.sp,
+                    modifier =
+                        Modifier.settingsSectionTarget(
+                            SettingsSections.GAME_INTRO,
+                            sectionTarget,
+                            focusContainer = true,
+                        ),
+                )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     "Applies to the launch intro only. Other movies stay tap-to-skip",
@@ -658,7 +718,17 @@ fun EnginePreferencesPage(
                 }
                 Text("Show loading progress in games and previews, including XL resource loading", fontSize = 9.sp)
                 Spacer(modifier = Modifier.height(8.dp))
-                Text("Gameplay", fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                Text(
+                    "Gameplay",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 11.sp,
+                    modifier =
+                        Modifier.settingsSectionTarget(
+                            SettingsSections.GAME_GAMEPLAY,
+                            sectionTarget,
+                            focusContainer = true,
+                        ),
+                )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     "Android runtime options that affect in-level helper features",
@@ -714,9 +784,19 @@ fun EnginePreferencesPage(
                     }
                 }
 
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    "Rewind amount",
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier =
+                        Modifier.settingsSectionTarget(
+                            SettingsSections.GAME_REWIND_AMOUNT,
+                            sectionTarget,
+                            focusContainer = true,
+                        ),
+                )
                 if (rewindSupportEnabled) {
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Text("Rewind amount", fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
                     Text(
                         "Targets the first rewind point at least this far back. Actual distance snaps to saved 5 second points",
                         fontSize = 9.sp,
@@ -739,13 +819,29 @@ fun EnginePreferencesPage(
                             Text("$seconds seconds", fontSize = 10.sp)
                         }
                     }
+                } else {
+                    Text(
+                        "Enable rewind support above to change the rewind amount. Your saved amount is unchanged",
+                        fontSize = 9.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
                 HorizontalDivider()
                 Spacer(modifier = Modifier.height(8.dp))
 
-                Text("Screen saver after inactivity", fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                Text(
+                    "Screen saver after inactivity",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 11.sp,
+                    modifier =
+                        Modifier.settingsSectionTarget(
+                            SettingsSections.GAME_SCREENSAVER,
+                            sectionTarget,
+                            focusContainer = true,
+                        ),
+                )
                 Text(
                     "Single-player: saves and sleeps while paused. Multiplayer: darkens the display while play continues; you can still take damage",
                     fontSize = 10.sp,
@@ -768,7 +864,17 @@ fun EnginePreferencesPage(
                 HorizontalDivider()
                 Spacer(modifier = Modifier.height(8.dp))
 
-                Text("Guidebot routing", fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                Text(
+                    "Guidebot routing",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 11.sp,
+                    modifier =
+                        Modifier.settingsSectionTarget(
+                            SettingsSections.GAME_GUIDEBOT,
+                            sectionTarget,
+                            focusContainer = true,
+                        ),
+                )
                 Text(
                     "Applies to new games and loaded single-player saves; co-op uses the host's choice",
                     fontSize = 10.sp,
@@ -828,7 +934,17 @@ fun EnginePreferencesPage(
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
-                Text("Local Visual Helpers", fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                Text(
+                    "Local Visual Helpers",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 11.sp,
+                    modifier =
+                        Modifier.settingsSectionTarget(
+                            SettingsSections.GAME_HELPERS,
+                            sectionTarget,
+                            focusContainer = true,
+                        ),
+                )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     "Local display preferences. Path lines also depend on the host's coop QoL setting",
