@@ -1,0 +1,113 @@
+[
+    {
+        "_info": {
+            "games": ["d2"],
+        },
+    },
+    {
+        "action": "enter_game",
+        "game": "d2",
+    },
+    {
+        "action": "skip_intro",
+        "timeout_ms": 30000,
+    },
+    {
+        "timeout_ms": 15000,
+        "text": "spcore",
+        "action": "select",
+    },
+    {
+        "timeout_ms": 15000,
+        "text": "Load Game",
+        "action": "select",
+    },
+    {
+        "timeout_ms": 15000,
+        "text": "Ordinary XL",
+        "action": "select",
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "current_level_num": 2,
+            "reactor_countdown.active": true,
+            "player.lives": 3,
+            "player.score": 61800,
+            "player.has_red_key": true,
+        },
+        "timeout_ms": 35000,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "player_dead": true,
+            "screen_advance_kind": "death",
+        },
+        "timeout_ms": 60000,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "player_exploded": true,
+            "screen_advance_can_activate": true,
+        },
+        "timeout_ms": 30000,
+    },
+    {
+        "action": "key",
+        "key": "space",
+        "post_delay_ms": 200,
+    },
+    {
+        "action": "select",
+        "text": "OK",
+        "timeout_ms": 30000,
+    },
+    {
+        "action": "wait_ms",
+        "ms": 700,
+    },
+    {
+        "action": "key",
+        "key": "enter",
+        "post_delay_ms": 500,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "screen_advance_kind": "briefing",
+            "briefing_text.active": true,
+        },
+        "timeout_ms": 30000,
+    },
+    {
+        "action": "key",
+        "key": "escape",
+        "post_delay_ms": 250,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "current_level_num": 3,
+            "in_game": true,
+            "player_dead": false,
+            "cheats_enabled": false,
+            "player.lives": 2,
+            "reactor_countdown.active": false,
+        },
+        "timeout_ms": 35000,
+    },
+    {
+        "action": "introspect",
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "quick_save",
+    },
+    {
+        "action": "wait_ms",
+        "ms": 1200,
+    },
+]

@@ -1,0 +1,113 @@
+[
+    {
+        "_info": {
+            "games": ["d2"],
+        },
+    },
+    {
+        "action": "enter_game",
+        "game": "d2",
+    },
+    {
+        "action": "skip_intro",
+        "timeout_ms": 30000,
+    },
+    {
+        "timeout_ms": 15000,
+        "text": "spcore",
+        "action": "select",
+    },
+    {
+        "timeout_ms": 15000,
+        "text": "Load Game",
+        "action": "select",
+    },
+    {
+        "timeout_ms": 15000,
+        "text": "[quick] level 3",
+        "action": "select",
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "current_level_num": 3,
+            "in_game": true,
+            "player_dead": false,
+            "cheats_enabled": false,
+            "player.lives": 2,
+            "reactor_countdown.active": false,
+            "player.score": 61800,
+            "player.primary_weapon_flags": 1,
+            "player.has_gold_key": false,
+            "player.has_red_key": false,
+        },
+        "timeout_ms": 35000,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "current_level_num": 3,
+            "in_game": true,
+            "player_dead": false,
+            "cheats_enabled": false,
+            "player.lives": 2,
+            "reactor_countdown.active": false,
+            "player.score": 61800,
+            "player.primary_weapon_flags": 1,
+            "player.has_gold_key": false,
+            "player.has_red_key": false,
+        },
+    },
+    {
+        "action": "meta_action",
+        "id": 1034,
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "input_demo.recording": true,
+            "input_demo.frame_count": {
+                "gte": 1,
+            },
+        },
+        "timeout_ms": 12000,
+    },
+    {
+        "action": "send_button",
+        "button": 104,
+        "held": 1,
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "send_button",
+        "button": 104,
+        "held": 0,
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "input_demo.recording": true,
+            "input_demo.frame_count": {
+                "gte": 24,
+            },
+        },
+        "timeout_ms": 14000,
+    },
+    {
+        "action": "meta_action",
+        "id": 1034,
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "input_demo.recording": false,
+            "current_level_num": 3,
+            "player_dead": false,
+            "cheats_enabled": false,
+        },
+        "timeout_ms": 10000,
+    },
+]

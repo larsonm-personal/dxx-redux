@@ -1,0 +1,194 @@
+{
+    "engine_source": "5f2039b1d9fe9ca196abf84296a654c704fc6575",
+    "ordinary_android": {
+        "apk": "7e2d4da6be7e3845e872633fa5ddb17391b06b9b0265d3b9e35855c457cfda20",
+        "export": "89f5f6be9eab24414ca28cc66772fd34112bddfa8d8591931d93010fffd83da4",
+        "written": "66816afebd74be797d6fdacec27ace53bbb93dadaf39a813363f42b5deb1b416",
+        "expect": {
+            "current_level_num": 3,
+            "in_game": true,
+            "player_dead": false,
+            "cheats_enabled": false,
+            "player.lives": 2,
+            "reactor_countdown.active": false
+        },
+        "logs": {
+            "write": "7254a38afb43b5e71a01f702fa027b75569f48af2806391943536a2a1a570707",
+            "cold": "92f7d24c949afdbd11a63356cf13d9e9024e6dc0998af35ca02e292fa5e79001"
+        }
+    },
+    "scope": "Death after the Sphere level 2 reactor explosion, native score screen, acknowledged level 3 briefing, normal new ship and device-written save. The pilot lost one life. The living exit was not crossed.",
+    "states": {
+        "write": {
+            "fixture": {
+                "path": "sphere_reactor_death_advance_android.jsonc",
+                "fixture_sha256": "fef58f1cbc462f48f0d9aab8df1cd9e98ceb52fcb27998172f6994bb522b383b",
+                "executed_plan_sha256": "5668ccf28c5d9b20111afee7cc18bd5b3c759073bde3c9580c23db7f4e4ea64e"
+            },
+            "segment": 991,
+            "player": {
+                "score": 61800,
+                "lives": 2,
+                "energy": 100.0,
+                "shields": 100.0,
+                "primary_weapon_flags": 1,
+                "robots_killed_level": 0,
+                "secondary_ammo": [7, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                "has_blue_key": false,
+                "has_gold_key": false,
+                "has_red_key": false
+            }
+        },
+        "cold": {
+            "fixture": {
+                "path": "sphere_reactor_death_advance_android_cold.jsonc",
+                "fixture_sha256": "328a005ea9744c950c4459d2bb6e02283276d7a07a6b5f484b44b69cf6a3bb57",
+                "executed_plan_sha256": "34f822f4d1758d1c270f2f91993ffee36cb5fc2f560b4beeef8bd6a0b25b93b5"
+            },
+            "segment": 991,
+            "player": {
+                "score": 61800,
+                "lives": 2,
+                "energy": 100.0,
+                "shields": 100.0,
+                "primary_weapon_flags": 1,
+                "robots_killed_level": 0,
+                "secondary_ammo": [7, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                "has_blue_key": false,
+                "has_gold_key": false,
+                "has_red_key": false
+            }
+        }
+    },
+    "native_import": {
+        "source": "9b12673efee1214714f186d69a1489b298836c97",
+        "binary": "573c9e3515b4c24a837423f7a57158facb35e6aa2162c8fee978ef786ffb31ff",
+        "incoming": "66816afebd74be797d6fdacec27ace53bbb93dadaf39a813363f42b5deb1b416",
+        "outgoing": "672d1029af4ccecb0f05ac288fb18acffc54409237a101b56479a00e9f674b5a",
+        "plan": "deffc6166a6699a726076679a0c4132b0645f410f4f7ea7b8e3498c44a88b84a",
+        "result": "69743d21891e438fef9d8b9c62fb3e1cfb633c8b1f155c6c53016f24fd37985a"
+    },
+    "capture": {
+        "apk": "e6e6ea8c3c6d7e19a132468c3b3ee9198931f1f9eac243c5f0053429098105f1",
+        "fixture": {
+            "path": "sphere_earned_level3_capture_android.jsonc",
+            "fixture_sha256": "4196ccb69514a8eb30f4eb9a71efa6cc5c312b596bcb1e91ce9050e3ed9da3ec",
+            "executed_plan_sha256": "983886e0cce9a3af5456be0ef4acc60aa02541212552eeff0e50f19039e6390c"
+        },
+        "files": [
+            {
+                "file": "d2_sphere_level3_20261120_053513.dximdemo",
+                "bytes": 1321257,
+                "sha256": "ee736cec16255588aeddc4be64a9287b18f988757c2e372caae9c81002c4ef01"
+            },
+            {
+                "file": "d2_sphere_level3_20261120_053513.dximdemo.rngtrace.jsonl",
+                "bytes": 1995195,
+                "sha256": "442aa3cdc670f00d7a342de12f0c28cdb77d20b68ab578f4d258139ebb14f602"
+            },
+            {
+                "file": "live-14497.jsonl.gz",
+                "bytes": 3205745,
+                "sha256": "d90f9b80093ee0f6bcd9df230e512a1a37a4e210d70207e813315b79e1ba73e0"
+            }
+        ],
+        "log": "83201e8da6010805cdb8948cff3cda26332b274d3585634f30ef254e0602b4f9",
+        "profile": {
+            "spcore.plr": "5cd431c61100c3564dd61fdb852d1ca492d60714d8aab70d5d36d8fe62d0a4dc",
+            "spcore.plx": "5835e77249d75e186db54a115231777a1c277710d7dde2bac45f4092ae33ea80",
+            "descent.cfg": "9739231f9c6a2d5a5cd8280882225c20a7ef0d369bf19d52eb43ab530cc31561"
+        }
+    },
+    "playback": {
+        "windows": {
+            "source": "d93dbe6e701b1131c3a46bfc181345f8a9380a5f",
+            "binary": "e8aa8eaed3ee217d0258de7b3dbd4a426e6ea6a49a2351e22eb72ce0a0ec64a3",
+            "results": {
+                "receipt.json": "81890310ac2bebe362764f9c8830a0b928931943f8fc7092bf128666c5fb7549",
+                "comparison.json": "b702e65ed45c4d906d8afa827c45d470514a6bc3f97fb47ceef2a9908203bc2f",
+                "actual.json": "dc2b97894d673fdefa7598e3162b104480fc2b4eb48fbb4d02ca7d28596affe8",
+                "state.jsonl.gz": "ef74228a4e402941609659d2248d53cea9954ac3c08769eb69caaa8dd5ab4c29",
+                "rng.jsonl": "ea692490af44f3a9e8df1d1d16aecfd97fbd5f199d45bbb80157fda87b5c6381"
+            },
+            "owners": {
+                "frames": {
+                    "frames_compared": 25,
+                    "status": "pass"
+                },
+                "objects": {
+                    "status": "pass",
+                    "frames_compared": 25
+                },
+                "world": {
+                    "status": "pass",
+                    "records_compared": 29
+                },
+                "sim_rng": {
+                    "status": "pass",
+                    "simulation_events_compared": 1398
+                },
+                "fx_rng": {
+                    "status": "pass",
+                    "effects_events_compared": 0
+                },
+                "trailer": {
+                    "status": "pass"
+                }
+            }
+        },
+        "linux": {
+            "source": "d93dbe6e701b1131c3a46bfc181345f8a9380a5f",
+            "binary": "2ab9c897449e8ca63593aecf7d9bf17838a85928f45048e32f8b0b8afaadfa72",
+            "results": {
+                "receipt.json": "6b222abcc76c0d172ba40d1362163e2618ff3ba85e7e5157dce0f6c730ef3a7e",
+                "comparison.json": "f5277803c15f45d5ae40ceb1127a26d64c04e294091fad0dd145ea47910d9f59",
+                "actual.json": "dc2b97894d673fdefa7598e3162b104480fc2b4eb48fbb4d02ca7d28596affe8",
+                "state.jsonl.gz": "7d0cc48b9aba735957791025c2819b6bd2eb598dc0dad3630e9685b633088c7d",
+                "rng.jsonl": "c2a4de85a35b0cc24b8830a754fe5a46176021f33406c910d4b2cb7c3f94b1d9"
+            },
+            "owners": {
+                "frames": {
+                    "frames_compared": 25,
+                    "status": "pass"
+                },
+                "objects": {
+                    "status": "pass",
+                    "frames_compared": 25
+                },
+                "world": {
+                    "status": "pass",
+                    "records_compared": 29
+                },
+                "sim_rng": {
+                    "status": "pass",
+                    "simulation_events_compared": 1398
+                },
+                "fx_rng": {
+                    "status": "pass",
+                    "effects_events_compared": 0
+                },
+                "trailer": {
+                    "status": "pass"
+                }
+            }
+        }
+    },
+    "preserved_failed_attempts": [
+        {
+            "owner": "initial countdown quicksave",
+            "outcome": "Script completed, but the pilot died and no Android slot was written. The pulled 98 bytes were an adb error.",
+            "log": "c791476bc2041a973939a967b58f59772c3e716e1311a4c1d087e30c8f990d51",
+            "output": "f4e0d5a0b0e5ccd4871e1942caaa8346c3914639ce2bd4096d01ddcd7abb8d76"
+        },
+        {
+            "owner": "death advance before briefing acknowledgement",
+            "outcome": "Timed out on the authored level 3 briefing page.",
+            "log": "751878753bc88bd3268d3e6118a1712591aa5efa936293017898ca223ad2a73e"
+        },
+        {
+            "owner": "first level 3 capture",
+            "outcome": "Recorded all three files. The stale final check required level 2 and failed.",
+            "log": "414b6d5bb2347a9284638511b28b86ff3e7887eb3ae7157457ee5900518ce3bd"
+        }
+    ]
+}
