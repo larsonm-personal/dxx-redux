@@ -1,0 +1,196 @@
+{
+  "capture_source": "5f2039b1d9fe9ca196abf84296a654c704fc6575",
+  "android": {
+    "original_apk": "93d3d2afdf1b5a4450cb24bd742978b18712b6c449a8412d893dc0327c319bc5",
+    "apk": "7e2d4da6be7e3845e872633fa5ddb17391b06b9b0265d3b9e35855c457cfda20",
+    "export": "230955f389c956f14de3621117c42aedf0e0d1df1059915e362882d2c419af13",
+    "written": "cdd6495db486a6318f9237acd1934ac020c1595ae32b66690a193deb6e659667",
+    "assets": [
+      {
+        "path": "files/imported/sets/default/missions/sphere.hog",
+        "sha256": "a40bf59101fee991200e34984a45fdf209cee4d68d47d4d52996dfe875dbe253",
+        "added": true
+      },
+      {
+        "path": "files/imported/sets/default/missions/sphere.mn2",
+        "sha256": "7104fe4eada0804ed6b03ac4b2a68656ab5c15d3f8b1bec37b43c9a5fab0ac6b",
+        "added": true
+      },
+      {
+        "path": "files/imported/sets/default/d2x.hog",
+        "sha256": "97a4433833ec1f2fbdd2becc144a1e9726ca78b1210a71a49ddbec6182665fe6",
+        "added": true
+      },
+      {
+        "path": "files/imported/sets/default/d2x-xl.hog",
+        "sha256": "e7351d66d534c3fdb400f03b91b771ad2d0c0d2b0100cf48718d504008ada7e6",
+        "added": true
+      }
+    ],
+    "expect": {
+      "current_level_num": 2,
+      "in_game": true,
+      "cheats_enabled": false,
+      "player.has_gold_key": true,
+      "player.has_red_key": true,
+      "player.lives": 2,
+      "player_dead": false
+    },
+    "logs": {
+      "write": "e1f797f403ff2379cf77d327aa4aebe34c4bff0bce2cbaed2036f297ecccc074",
+      "cold": "35934d0b7010a5e6abe0209cd8268afd670f7059215a35181cc69520426fca62"
+    }
+  },
+  "observations": {
+    "write": {
+      "segment": 0,
+      "lives": 2,
+      "score": 46850,
+      "shields": 100.0,
+      "energy": 100.0,
+      "has_gold_key": true,
+      "has_red_key": true,
+      "flags": 12,
+      "robots_killed_level": 33,
+      "primary_weapon_flags": 1,
+      "secondary_ammo": [
+        7,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "executed_plan_sha256": "eb655a420d514451bf100bea25879b89f858c47e66e0e87bdb6b545f43f4dfb5",
+      "fixture_sha256": "b265a911b47f18a325b7f0c2bff40a20684a0c4a42d99c05760ec2298bfbdc69"
+    },
+    "cold": {
+      "segment": 0,
+      "lives": 2,
+      "score": 46850,
+      "shields": 100.0,
+      "energy": 100.0,
+      "has_gold_key": true,
+      "has_red_key": true,
+      "flags": 12,
+      "robots_killed_level": 33,
+      "primary_weapon_flags": 1,
+      "secondary_ammo": [
+        7,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "executed_plan_sha256": "a4cd153a13eb9f6e1ece22d82b41b8ed9d2e4e71795cef234fd87d95c078ccc0",
+      "fixture_sha256": "d1bb9660957b2de0f8b605058ae1f6cc5aba608cd9a6b94622df765b03f275d9"
+    }
+  },
+  "windows_import": {
+    "source": "6311cb2a61873268b5a227956365a30c3ab0c936",
+    "engine_sha256": "684b8cf213dd79fafdb402333ef401156296f79547c33b072c800765a2c9d96e",
+    "resume": "cdd6495db486a6318f9237acd1934ac020c1595ae32b66690a193deb6e659667",
+    "next_save": "6fa6d8691399597cac145088d4f4de646b0c90467a91de6ac8608f4b0ec2e4db",
+    "hashes": {
+      "plan.json": "6159d89fc1b0bab08445fe5e37c38d05a2b3f66d4e998dde0e423bbdef5ba186",
+      "player-result.json": "bf12a25d1db685a92819088d33925f5a4d91cac74b62de5f0dd0f98f448cf676",
+      "player-state.json": "2fe5646e57ccb1d558792e7d32fd617ccd86d541ada7a5191d2f3643050eb8e0",
+      "player-trace.jsonl": "8977eabef9d89a97da281ed2dc048d83e5edc02814c880d97733b432460a26cf",
+      "engine.log": "cc2df722f4ea65093c5b545acda45e748a504d9a2480fa1ffc28d09d4c01837f"
+    }
+  },
+  "capture": {
+    "apk_sha256": "e6e6ea8c3c6d7e19a132468c3b3ee9198931f1f9eac243c5f0053429098105f1",
+    "files": [
+      {
+        "file": "d2_sphere_level2_20261120_041855.dximdemo",
+        "bytes": 1367847,
+        "sha256": "10f10d0cd92e43efd7336a91e4a77e4f09815d44cc219ede420a48a50dff6f28"
+      },
+      {
+        "file": "d2_sphere_level2_20261120_041855.dximdemo.rngtrace.jsonl",
+        "bytes": 3734346,
+        "sha256": "01dd646950c97385993f26983807e52b6d6f0897a20d5fd6cb7269d4699d1dbc"
+      },
+      {
+        "file": "live-14113.jsonl.gz",
+        "bytes": 4207673,
+        "sha256": "818c8afb659103853f9f50bb46d764a32fcee65f07157e138bb8856e74e7afe4"
+      }
+    ]
+  },
+  "playback_source": "d93dbe6e701b1131c3a46bfc181345f8a9380a5f",
+  "playback": {
+    "windows": {
+      "engine_sha256": "e8aa8eaed3ee217d0258de7b3dbd4a426e6ea6a49a2351e22eb72ce0a0ec64a3",
+      "receipt_sha256": "33a8ae812480df7afb9a6db5f4868d5cbebecf655014487c6df5a522088ee7c5",
+      "comparison_sha256": "463f2c21e11ea8c14e513d7ac26d3d2ebed4f780b8e5595b0cb362cb5f42f713",
+      "actual_sha256": "ba5b81f088ae5ba8d293105c87c5a0c5b2b2b6e350876e334fd838327117d38d",
+      "owners": {
+        "frames": {
+          "frames_compared": 25,
+          "status": "pass"
+        },
+        "objects": {
+          "status": "pass",
+          "frames_compared": 25
+        },
+        "world": {
+          "status": "pass",
+          "records_compared": 29
+        },
+        "sim_rng": {
+          "status": "pass",
+          "simulation_events_compared": 190
+        },
+        "fx_rng": {
+          "status": "pass",
+          "effects_events_compared": 0
+        },
+        "trailer": {
+          "status": "pass"
+        }
+      }
+    },
+    "linux": {
+      "engine_sha256": "2ab9c897449e8ca63593aecf7d9bf17838a85928f45048e32f8b0b8afaadfa72",
+      "receipt_sha256": "04b1db7a77c103c8036e00ecfcdaf0ebe59c3f6a113921ec6ea1a54ba5f6387e",
+      "comparison_sha256": "0b9af80d05eccd07c6c3d0ec98bb3d93610dd11cd2400f43e6d82a083c06c044",
+      "actual_sha256": "ba5b81f088ae5ba8d293105c87c5a0c5b2b2b6e350876e334fd838327117d38d",
+      "owners": {
+        "frames": {
+          "frames_compared": 25,
+          "status": "pass"
+        },
+        "objects": {
+          "status": "pass",
+          "frames_compared": 25
+        },
+        "world": {
+          "status": "pass",
+          "records_compared": 29
+        },
+        "sim_rng": {
+          "status": "pass",
+          "simulation_events_compared": 190
+        },
+        "fx_rng": {
+          "status": "pass",
+          "effects_events_compared": 0
+        },
+        "trailer": {
+          "status": "pass"
+        }
+      }
+    }
+  }
+}
