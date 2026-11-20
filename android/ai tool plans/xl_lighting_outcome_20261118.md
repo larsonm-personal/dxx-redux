@@ -1,0 +1,53 @@
+# XL gameplay and lighting results, November 18, 2026
+
+The first tranche recovered six classic Chaos Theory levels and the second Belial System XL secret. It finished before 6 PM Pacific, so the authorized follow-on addressed thirteen lighting failures. Nine XL-format levels now use their authored brightness and embedded texture colors. Vignette XL level 6 now uses its authored brightness and the genuine installed D2 default colors. Eight of the original eleven failures now pass.
+
+## Ordinary readiness
+
+Every pass requires the advertised original level to run 120 unassisted simulation frames at 60 Hz without death or a level transition. Signed ordinals, repeated basenames and alternate distributions count separately.
+
+| Cohort                     | Before the first tranche | After classic-level work | After embedded colors | After native lighting |
+| -------------------------- | -----------------------: | -----------------------: | --------------------: | --------------------: |
+| Original eleven failures   |                     0/11 |                     7/11 |                  7/11 |                  8/11 |
+| Thirteen lighting cases    |                 See note |                     0/13 |                  9/13 |                 10/13 |
+| Uploaded private inventory |              1,016/1,111 |              1,022/1,111 |           1,027/1,111 |           1,028/1,111 |
+| Additional local inventory |                  459/543 |                  460/543 |               464/543 |               464/543 |
+| Combined originals         |              1,475/1,654 |              1,482/1,654 |           1,491/1,654 |           1,492/1,654 |
+
+Four of the thirteen originally stopped earlier in classic mission admission. All thirteen reproduced at lighting once the first tranche exposed that dependency. The nine extended cases are Chaos Theory XL 3, Vignette XL 2 through 5, Heat of Battle, Unreal Heat of Battle, Dogfight! and the mega zone. Adding native lighting recovered Vignette XL 6, Clminate. Comparing all 1,654 identifiers and first blockers with the classic-level candidate found no change outside those thirteen. Across both tranches, 17 additional originals completed the check.
+
+On the final runtime, Windows passed the fixed eight in 25.26 seconds and all 64 in 197.34 seconds when run alone. Under concurrent builds and census work, the first 64-case run passed 61 and left three untested after 318.94 seconds under its six-minute probe budget. Hosted Linux passed 8/8 and 64/64 on its first attempt. The eight took 78 seconds including a 38-second probe. The 64 took 477 seconds including 313 seconds of staging and 139 seconds of probing. Both fit the ten-minute job window on that run. [Hosted readiness jobs](https://github.com/larsonm-personal/dxx-redux/actions/runs/44398594960)
+
+## Lighting and ownership
+
+The pinned source reader and Redux agreed on brightness, color index and RGB for 910 textures per case. Thirteen originals under original, deliberately conflicting and absent CLR conditions gave 35,490 comparisons. Neptune provided an independent control. In the nine 17/36 levels, the embedded table replaces all 910 companion colors and the authored LGT remains effective. Vignette XL 6 has no level CLR. Its original LGT differs from the genuine startup default at 75 entries.
+
+On Windows, the native loader retained the effective tables through a level change, disk restore, discarded incoming preparation, moved ownership and return to stock. Two isolated controls applied the genuine Standoff light tables to the same Vignette geometry. Both selected overlay 380 at brightness 32,750. Chaos produced RGB (0.01569, 0.42745, 0.76863) and Vignette produced (0, 0, 0.78431). Each installed table agreed with its own archive at all 910 entries. The separate Kruel level-pack control advanced 36 original flicker records and preserved them during pause. Windows passed all 56 public Debug contracts and source comparisons.
+
+On Android, Heat of Battle passed 15 steps on Hotshot and finished with 9,620 shaded vertices and 164 corona draws. The initial script selected Rookie on the single-level mission. Vignette XL 6 passed 28 steps on Hotshot, including switching its authored 22-delta light off and on, visiting extended level 2 and restoring the native level. The launcher owns the XL addon through a separate file-set projection. The loader now recognizes that existing owner while capturing its default table before a mission mounts.
+
+The native Vignette face used texture 291, authored brightness 83,840 and raw RGB (2054847098, 2054847098, 2054847098). Desktop and Android observed the same source colors and emitter. A separate Android camera run held each state for nine seconds and captured the lit, extinguished and relit face. It restored all 26 protected files and the original APK. The desktop still captured the original spawn view after 30 frames and 10,080 shaded vertices. Camera placement, the direct light switch, the requested ordinal and forced save transitions are assists. The early two-second screenshots overlapped a transition and were excluded from the timed visual comparison.
+
+## Replay and remaining failures
+
+Seven real 120-frame captures across the two lighting changes matched the saved result and every nonvisual RNG event on fresh-process rendered playback. Five matched the entire RNG trace byte for byte. The two exceptions were Chaos Theory XL 3 on each candidate. Its capture recorded 60 lightning FX events and the rendered playback recorded 37,640. A second playback of the final recording produced 35,800 while preserving the same simulation result and nonvisual RNG. The differing draws came from lightning object and renderer code. This discrepancy is separate from the Android startup starfield.
+
+On the native-lighting candidate, Vignette XL 6 and Kruel also matched every RNG byte on a second rendered run. Separate runs explicitly using the desktop isolation option reproduced the final results and nonvisual RNG on all three, as well as on the three recordings from the first tranche. The initial native playback used the headless spelling for the user-directory option. Its executable had been staged in a fresh directory, but the desktop engine ignores that spelling.
+
+Six captures carried 366 recorded state, simulation RNG and diagnostic fields. Every recorded field matched across all 120 rendered frames. The Vignette XL 6 capture recorded the two simulation RNG fields per frame. Two independent, isolated rendered runs on this original also produced byte-identical full traces, including all 120 object and world snapshots.
+
+Warm in-process restoration still changed seven recorded fields in Vignette XL 6, including route/automap metadata and tick state. Its object records were identical. Chaos Theory XL 3 changed 19 fields including two object fields. Kruel changed 82 fields including 65 object fields. Each kept its recorded simulation RNG call count. The execution ledger records these fields for each mission.
+
+Three of the original eleven now stop at animated POG replacements. The two Standoff distributions first reach bitmap 2028, a six-frame strip. Chaos Theory XL 6 first reaches bitmap 2280, an eight-frame strip. Separate inspection also found two classic lightning objects in Chaos Standoff, and additive walls and particles in Chaos Clminate. These are reasons to measure again after qualifying the clock. A restored texture alone cannot establish an ordinary pass.
+
+The corrupt-trailer energy change from 91 to 100, the 1,500 extra Android startup starfield draws, the guarded Android timeline replay, Sphere simulation stops and allocator exit warnings remain open. The Windows native ownership control reported 215 allocated blocks at process exit. Short load/tick checks and targeted rendered continuations establish no campaign-completion percentage.
+
+## Publication
+
+The hosted full surveys on both runtime changes published every pinned result. Linux and Windows found the same 84 failed identifiers on the embedded-color candidate. Only the classification of Vignette XL 6 differed. The trusted controller recognized CLR companion errors and reported the newer native LGT diagnostic as unclassified. On the native-lighting candidate, both platforms agreed on every identifier and first blocker, including all 83 remaining failures. The full-survey jobs marked these compatibility failures red. [Embedded-color survey](https://github.com/larsonm-personal/dxx-redux/actions/runs/44389896288) and [native-lighting survey](https://github.com/larsonm-personal/dxx-redux/actions/runs/44398594960)
+
+The final CI-only candidate ran the ordinary engine on a fresh Linux worker using signed Ubuntu sources. The 12.3 MB runtime package download took five seconds, the runtime install step took 23 seconds and that worker launched the engine. The public Linux host job used the new helper, downloaded 93.1 MB in 19 seconds and passed its selected tests. The public native save and replay job downloaded 34.6 MB in 18 seconds and passed. The Linux source-tooling job also passed. On Windows, 159 of the 165 corresponding local Python tests passed, four skipped and two could not create symbolic links under the available account. Private qualification uses the currently merged controller until the maintainer adopts the change. [CI change](https://github.com/larsonm-personal/dxx-redux/pull/609) and [signed-runtime smoke](https://github.com/larsonm-personal/dxx-redux/actions/runs/44404071518)
+
+The private load-and-navigation check passed on the embedded-color candidate after a host-prerequisite retry. On both the native-lighting and final package candidates, all three attempts stopped at the trusted controller’s 15-minute host-package limit before private navigation could run. The fixed eight and expanded 64 passed on both heads. The public native save, headed replay, engine and tooling checks passed on the final package candidate. The complete first attempts, retries and skip reasons are in the execution ledger. [Native private attempts](https://github.com/larsonm-personal/dxx-redux/actions/runs/44398594960/attempts/3) and [package candidate private attempts](https://github.com/larsonm-personal/dxx-redux/actions/runs/44404113404/attempts/3)
+
+The prior [classic tranche](xl_classic_outcome_20261118.md), [case-by-case census](../XL_compat/evidence/lighting-readiness-20261118.json), [execution ledger](xl_lighting_execution_20261118.json), [next plan](xl_lighting_next_window_20261118.md) and [replacement kickoff](xl_lighting_kickoff_20261118.md) retain the measurable starting point for the next invocation.
