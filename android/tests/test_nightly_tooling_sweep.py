@@ -2921,8 +2921,35 @@ Write-SuiteSetupStage 'launcher-reset'
             self.assertLess(host.index("Save verified public tools"), host.index(later))
         self.assertIn("steps.public_tool_cache.outcome == 'failure'", host)
         self.assertIn("steps.public_tool_verification.outcome == 'failure'", host)
-        # No post-job cache action may capture tools after candidate execution
-        self.assertEqual(host.count("uses: actions/cache/"), 2)
+        # Both caches must use explicit restore/save; no post-job cache can capture target output
+        self.assertEqual(host.count("uses: actions/cache/restore@"), 2)
+        self.assertEqual(host.count("uses: actions/cache/save@"), 2)
+        self.assertEqual(host.count("uses: actions/cache/"), 4)
+        self.assertNotIn("uses: actions/cache@", host)
+        selection = step("Select host metadata CLI provisioning")
+        gradle_restore = step("Restore trusted host Gradle dependencies")
+        warm = step("Warm host Gradle dependencies from the trusted controller")
+        gradle_save = step("Save verified public host Gradle dependencies")
+        self.assertIn('"$PUBLIC_TOOL_CACHE_TRUSTED" == true', selection)
+        self.assertIn('-n "$CONTROL_INPUTS" && "$CONTROL_INPUTS" == "$TARGET_INPUTS"', selection)
+        self.assertIn('nightly-host-gradle-modules-v1-$RUNNER_OS-$RUNNER_ARCH-$CONTROL_INPUTS', selection)
+        for operation in (gradle_restore, gradle_save):
+            self.assertIn("steps.metadata_cli_selection.outputs.key != ''", operation)
+            self.assertIn("path: ${{ runner.temp }}/dxx-host-gradle/caches/modules-2", operation)
+            self.assertIn("key: ${{ steps.metadata_cli_selection.outputs.key }}", operation)
+            self.assertNotIn("restore-keys", operation)
+        self.assertIn("steps.host_gradle_restore.outputs.cache-hit != 'true'", warm)
+        self.assertIn("bash control/android/gradlew -p control/android", warm)
+        self.assertNotIn("target/android", warm)
+        self.assertIn('--offline', warm)
+        self.assertIn("steps.host_gradle_warm.outcome == 'success'", gradle_save)
+        for later in (
+            "Check out immutable private retail inputs",
+            "Prepare verified public fixture runtime",
+            "Prepare asset-free metadata CLI",
+            "Execute admitted host owners",
+        ):
+            self.assertLess(host.index("Save verified public host Gradle dependencies"), host.index(later))
 
     def test_host_candidate_setup_follows_private_credential_removal(self):
         workflow = (Path(__file__).parents[2] / ".github/workflows/nightly-tooling-sweep.yml").read_text()
@@ -2933,9 +2960,16 @@ Write-SuiteSetupStage 'launcher-reset'
         execution = host.split("      - name: Execute admitted host owners", 1)[1].split("      - name:", 1)[0]
         self.assertIn("timeout-minutes: 50", execution)
         setup = host.split("      - name: Prepare asset-free metadata CLI", 1)[1].split("      - name:", 1)[0]
-        self.assertIn("VALIDATE_METADATA_CLI: ${{ github.event_name == 'pull_request' }}", setup)
-        self.assertIn('"$VALIDATE_METADATA_CLI" != true', setup)
-        self.assertIn("e.get('fixture') == 'retail-corpus'", setup)
+        selection = host.split("      - name: Select host metadata CLI provisioning", 1)[1].split(
+            "      - name:", 1
+        )[0]
+        self.assertIn("VALIDATE_METADATA_CLI: ${{ github.event_name == 'pull_request' }}", selection)
+        self.assertIn('"$VALIDATE_METADATA_CLI" != true', selection)
+        self.assertIn("e.get('fixture') == 'retail-corpus'", selection)
+        self.assertIn('if [[ -n "$CANDIDATE_PR$CANDIDATE_SHA" ]]; then exit 0; fi', selection)
+        self.assertIn("if: steps.metadata_cli_selection.outputs.needed == 'true'", setup)
+        self.assertIn('if ! "${gradle[@]}" --offline; then', setup)
+        self.assertIn("retrying online once", setup)
         self.assertIn("timeout-minutes: 15", setup)
         self.assertLess(setup.index("get_jdk.sh"), setup.index("export JAVA_HOME="))
         self.assertLess(setup.index("export JAVA_HOME="), setup.index("get_gradle_wrapper.sh"))
