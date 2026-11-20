@@ -69,6 +69,21 @@
             "observation": "simulation_unverified",
             "timed_out": true,
             "receipt_sha256": "460b1d22065b8ecc7386b7516a01cb46c9ee198b2870ea3a0d0e15a6c38fb4d6"
+        },
+        {
+            "schema": "xl-original-campaign-probe-v1",
+            "reference_revision": "2576a98b5de310e3ac7c9777df2677d1627b8bae",
+            "engine_sha256": "2fb2cc81a694a526638cf978d98133b932b9f4fe9c1086dc568e13dd8b4de1d3",
+            "descriptor": "single/sphere.mn2",
+            "descriptor_sha256": "7104fe4eada0804ed6b03ac4b2a68656ab5c15d3f8b1bec37b43c9a5fab0ac6b",
+            "ordinal": 4,
+            "advertised_file": "sp-04.rl2",
+            "exit_code": 0,
+            "observation": "started_and_ran",
+            "timed_out": false,
+            "receipt_sha256": "4ec20fe50c31983c4b41452e447225d4f0ab179328504fc1f37ba3c1536278b3",
+            "texture_quality": 0,
+            "maximum_texture_quality": 3
         }
     ],
     "native": {
@@ -358,7 +373,492 @@
                 "transitions": [],
                 "result": "PASS"
             }
-        ]
+        ],
+        "storage_ancestry": [
+            {
+                "receipt_sha256": "15434e35c47f8e06481920fe52b1a309938d4499cb74d65986da346da0e2660a",
+                "exe": "ffedd2d5f1e2f5052a5864cc9dd0fdb5e79d50db8ccb1a6286e88df1acf7e14f",
+                "plan": "21067d6afa51edacb867957bb646bed635dbc187324b57ad6c979531dc0b701f",
+                "steps": 37,
+                "position_assists": 0,
+                "fixed_view_aim": 0,
+                "resume": "",
+                "save": "9773cdede85405cd807b99b9f572a7118b794aadbfdb9dd28f487823ef0c051f",
+                "export": "40db4a9e71e626119678a4f2d0c11de26b71544a49aaa7066e7bd0309841ef2f",
+                "segment": 1600,
+                "level": 1,
+                "player": {
+                    "lives": 3,
+                    "score": 2200,
+                    "energy": 110.0953369140625,
+                    "shields": 71.54852294921875,
+                    "has_red_key": true,
+                    "has_gold_key": false,
+                    "has_blue_key": false,
+                    "hostages_on_board": 0
+                },
+                "transitions": [],
+                "result": "PASS"
+            },
+            {
+                "receipt_sha256": "912779fd86d06e8ffdb837336773b653bde77b7eb8ebed8035bfb7327b82cc62",
+                "exe": "ffedd2d5f1e2f5052a5864cc9dd0fdb5e79d50db8ccb1a6286e88df1acf7e14f",
+                "plan": "fe041ca7e95383e2f97ab868a85e78f166d1bcfc35fd1d6190bb2591e5013667",
+                "steps": 7,
+                "position_assists": 0,
+                "fixed_view_aim": 0,
+                "resume": "9773cdede85405cd807b99b9f572a7118b794aadbfdb9dd28f487823ef0c051f",
+                "save": "332f15a97db8606acadbc3f84927011af0fa7feaad93d876404c4cc3b52260ac",
+                "export": "fcea84fc8913e9b51095d05e24564d42eae6d835800115bd3a01a14558343ba2",
+                "segment": 1553,
+                "level": 1,
+                "player": {
+                    "lives": 3,
+                    "score": 4000,
+                    "energy": 100.2955322265625,
+                    "shields": 139.7974090576172,
+                    "has_red_key": true,
+                    "has_gold_key": false,
+                    "has_blue_key": false,
+                    "hostages_on_board": 0
+                },
+                "transitions": [],
+                "result": "PASS"
+            },
+            {
+                "receipt_sha256": "51bef36ae9fff28cd7842d8f1c595f3250832312f52044c47f67fcf708ddbf29",
+                "exe": "ffedd2d5f1e2f5052a5864cc9dd0fdb5e79d50db8ccb1a6286e88df1acf7e14f",
+                "plan": "ca4fa5b9e72b3133eb918089a92802850d9fbf81f2f860fd1c0f2182a67be6e2",
+                "steps": 36,
+                "position_assists": 0,
+                "fixed_view_aim": 0,
+                "resume": "332f15a97db8606acadbc3f84927011af0fa7feaad93d876404c4cc3b52260ac",
+                "save": "2915875a4f1f5c30b9894c3d47ee6706e4ac3655aac3609ec770eb60dd89e787",
+                "export": "76e7c30471df5ec51a2f41c93084ceb9aa936a56b3ac3b6587b2e7b3eec486e1",
+                "segment": 979,
+                "level": 1,
+                "player": {
+                    "lives": 3,
+                    "score": 7250,
+                    "energy": 76.0455322265625,
+                    "shields": 3.163818359375,
+                    "has_red_key": true,
+                    "has_gold_key": false,
+                    "has_blue_key": false,
+                    "hostages_on_board": 0
+                },
+                "transitions": [],
+                "result": "PASS"
+            },
+            {
+                "receipt_sha256": "9e7389cec84f89eead6d5f67fee3338e8a21743956d505ad4eecee0179929891",
+                "exe": "ffedd2d5f1e2f5052a5864cc9dd0fdb5e79d50db8ccb1a6286e88df1acf7e14f",
+                "plan": "6f3fd4803b682ff742a97f8821dc9fdbdf14af81129d45956924aa4e6b493058",
+                "steps": 3,
+                "position_assists": 0,
+                "fixed_view_aim": 0,
+                "resume": "2915875a4f1f5c30b9894c3d47ee6706e4ac3655aac3609ec770eb60dd89e787",
+                "save": "c453acd47a87a4d4bf54598624fca14b2398543c33f87dc5a86b5a7efa788136",
+                "export": "5dd2e7aa6493e13c09aba430a1b938c75593698ff661bfc9226e9331316b6697",
+                "segment": 1120,
+                "level": 1,
+                "player": {
+                    "lives": 3,
+                    "score": 7250,
+                    "energy": 75.5455322265625,
+                    "shields": 0.9597625732421875,
+                    "has_red_key": true,
+                    "has_gold_key": false,
+                    "has_blue_key": false,
+                    "hostages_on_board": 0
+                },
+                "transitions": [],
+                "result": "PASS"
+            },
+            {
+                "receipt_sha256": "f13c53b189fed4bed947c11119d232ec2ec38c89106adb5d18ebefb3d4e4448d",
+                "exe": "ffedd2d5f1e2f5052a5864cc9dd0fdb5e79d50db8ccb1a6286e88df1acf7e14f",
+                "plan": "46b7e5aa4e994668f5b3012717c983877076abb6226276108b52d0f8c7f01154",
+                "steps": 13,
+                "position_assists": 0,
+                "fixed_view_aim": 0,
+                "resume": "c453acd47a87a4d4bf54598624fca14b2398543c33f87dc5a86b5a7efa788136",
+                "save": "4df7cdd214a652ca6761b59fed25a56c21dd2b630d1f4eb736f463b70c9d4a24",
+                "export": "b7367756c23ffdd29b36bc41bf4cec32b1fb3a22ba768810fe2134c250ed96cb",
+                "segment": 0,
+                "level": 2,
+                "player": {
+                    "lives": 3,
+                    "score": 7300,
+                    "energy": 100.0,
+                    "shields": 100.0,
+                    "has_red_key": false,
+                    "has_gold_key": false,
+                    "has_blue_key": false,
+                    "hostages_on_board": 0
+                },
+                "transitions": [[1, 2]],
+                "result": "PASS"
+            }
+        ],
+        "storage_laser_approach": [
+            {
+                "receipt_sha256": "5bfe229e72c3ba8a6adfe8d89dbb3f16ac6438e9e64d549d3f5c3827ea358718",
+                "exe": "140d85215f46ffb94037e46a7274f352bdcfb4a7306bfc728d0678da3d03c841",
+                "plan": "26931ad8e2489c8daf32fcfeab27cbf02d2f1515cfa73204434a2cf09196443f",
+                "steps": 7,
+                "position_assists": 0,
+                "fixed_view_aim": 0,
+                "resume": "46a1c6600126a8821c6d8bb1c7085f8d0300490b37e7f5abe10cfa71fe34faa2",
+                "save": "5d4af6e367060e54eae39d41b5db0a57839dff91ddf4226c515107dd94e8b20e",
+                "export": null,
+                "segment": 21,
+                "level": 2,
+                "player": {
+                    "lives": 3,
+                    "score": 7300,
+                    "energy": 100.0,
+                    "shields": 100.0,
+                    "has_red_key": false,
+                    "has_gold_key": false,
+                    "has_blue_key": false,
+                    "hostages_on_board": 0
+                },
+                "transitions": [],
+                "result": "PASS"
+            },
+            {
+                "receipt_sha256": "aa607a7702dc2e3ba23741ae230f2bc1a8909977c2922bffd6faa0da09552505",
+                "exe": "140d85215f46ffb94037e46a7274f352bdcfb4a7306bfc728d0678da3d03c841",
+                "plan": "2282f401a8fd094aa9066518138951b9d0bdeee2332ebb45e15fe7be18eb195a",
+                "steps": 6,
+                "position_assists": 0,
+                "fixed_view_aim": 0,
+                "resume": "5d4af6e367060e54eae39d41b5db0a57839dff91ddf4226c515107dd94e8b20e",
+                "save": "1f6bc24ddfb9279011267f6387b28f472d999210ba1c50a632a114d1474c1482",
+                "export": null,
+                "segment": 173,
+                "level": 2,
+                "player": {
+                    "lives": 3,
+                    "score": 7300,
+                    "energy": 100.0,
+                    "shields": 100.0,
+                    "has_red_key": false,
+                    "has_gold_key": false,
+                    "has_blue_key": false,
+                    "hostages_on_board": 0
+                },
+                "transitions": [],
+                "result": "PASS"
+            },
+            {
+                "receipt_sha256": "576fe37b5df9ef33ef26c97aaa9e21e47abfd56a34b80accab736bc9a1c748a2",
+                "exe": "140d85215f46ffb94037e46a7274f352bdcfb4a7306bfc728d0678da3d03c841",
+                "plan": "b898e6e601b414bb89fa3723272ff7b5c27c3f0044d0d74b73cbd87f8659226d",
+                "steps": 6,
+                "position_assists": 0,
+                "fixed_view_aim": 0,
+                "resume": "1f6bc24ddfb9279011267f6387b28f472d999210ba1c50a632a114d1474c1482",
+                "save": "aa9bfe280c2956c1d8cc8ff80d110db3d993224236c6fbe04143b246029e2af5",
+                "export": null,
+                "segment": 31,
+                "level": 2,
+                "player": {
+                    "lives": 3,
+                    "score": 7300,
+                    "energy": 100.0,
+                    "shields": 127.0,
+                    "has_red_key": false,
+                    "has_gold_key": false,
+                    "has_blue_key": false,
+                    "hostages_on_board": 0
+                },
+                "transitions": [],
+                "result": "PASS"
+            },
+            {
+                "receipt_sha256": "14db2ee50fe5a6e8873cda4ede30f4579565fda5aa15c4818d2e100f803f2153",
+                "exe": "140d85215f46ffb94037e46a7274f352bdcfb4a7306bfc728d0678da3d03c841",
+                "plan": "78723de6dd5c6d8d3f0e18a3cfcd2db4b303b397e685c4fdd92788ea59f6b652",
+                "steps": 6,
+                "position_assists": 0,
+                "fixed_view_aim": 0,
+                "resume": "aa9bfe280c2956c1d8cc8ff80d110db3d993224236c6fbe04143b246029e2af5",
+                "save": "cca1587e12cd20695faa63a24fdd323093b2806a161621fb5e9ed6a91e7eb7ee",
+                "export": null,
+                "segment": 66,
+                "level": 2,
+                "player": {
+                    "lives": 3,
+                    "score": 7300,
+                    "energy": 100.0,
+                    "shields": 127.0,
+                    "has_red_key": false,
+                    "has_gold_key": false,
+                    "has_blue_key": false,
+                    "hostages_on_board": 0
+                },
+                "transitions": [],
+                "result": "PASS"
+            },
+            {
+                "receipt_sha256": "3e475e19c9f08b1096b7f90ecf9ca6bba8876290416d49633f1cc61489d16bea",
+                "exe": "140d85215f46ffb94037e46a7274f352bdcfb4a7306bfc728d0678da3d03c841",
+                "plan": "4d18e6c113e1314063ddec48c196f73338bb319e63d2accf1e2a8d1a75e75333",
+                "steps": 6,
+                "position_assists": 0,
+                "fixed_view_aim": 0,
+                "resume": "cca1587e12cd20695faa63a24fdd323093b2806a161621fb5e9ed6a91e7eb7ee",
+                "save": "55267b285ca99cb256e40cd3e5062366a3d7b26962a2d6ea68141a9c238facb0",
+                "export": null,
+                "segment": 561,
+                "level": 2,
+                "player": {
+                    "lives": 3,
+                    "score": 8100,
+                    "energy": 97.550048828125,
+                    "shields": 123.0,
+                    "has_red_key": false,
+                    "has_gold_key": false,
+                    "has_blue_key": false,
+                    "hostages_on_board": 0
+                },
+                "transitions": [],
+                "result": "PASS"
+            },
+            {
+                "receipt_sha256": "eab302ca7dcee84358257a36445f62c448f983d7f9c8ae66ff895dec00f29fbe",
+                "exe": "140d85215f46ffb94037e46a7274f352bdcfb4a7306bfc728d0678da3d03c841",
+                "plan": "eaa8cb468153980d009b1e7ae6ff8e56e5024a0e5bd799df1208e1f2ba99402e",
+                "steps": 6,
+                "position_assists": 0,
+                "fixed_view_aim": 0,
+                "resume": "55267b285ca99cb256e40cd3e5062366a3d7b26962a2d6ea68141a9c238facb0",
+                "save": "74ee7d06b0359acd4cfb3ee0d8ae662e72d2dcf0d621388471ce79303a573e2b",
+                "export": null,
+                "segment": 638,
+                "level": 2,
+                "player": {
+                    "lives": 3,
+                    "score": 8900,
+                    "energy": 94.1201171875,
+                    "shields": 123.0,
+                    "has_red_key": false,
+                    "has_gold_key": false,
+                    "has_blue_key": false,
+                    "hostages_on_board": 0
+                },
+                "transitions": [],
+                "result": "PASS"
+            },
+            {
+                "receipt_sha256": "38d25f02916962d0eddd157003a2a89749927de228af9531c122339db6b5c9b7",
+                "exe": "140d85215f46ffb94037e46a7274f352bdcfb4a7306bfc728d0678da3d03c841",
+                "plan": "98bb5063fd4aec7c6042c048b83b2701ed575ed040656fb8a2e1c11b76fb4ba7",
+                "steps": 6,
+                "position_assists": 0,
+                "fixed_view_aim": 0,
+                "resume": "74ee7d06b0359acd4cfb3ee0d8ae662e72d2dcf0d621388471ce79303a573e2b",
+                "save": "05802503ab7dba8d0bcae09757823ad6e3690610ec2aeeffd8ddf7455e6fb247",
+                "export": null,
+                "segment": 674,
+                "level": 2,
+                "player": {
+                    "lives": 3,
+                    "score": 8900,
+                    "energy": 91.9151611328125,
+                    "shields": 123.0,
+                    "has_red_key": false,
+                    "has_gold_key": false,
+                    "has_blue_key": false,
+                    "hostages_on_board": 0
+                },
+                "transitions": [],
+                "result": "PASS"
+            },
+            {
+                "receipt_sha256": "dd3b098ed216b2d6bcdbb7a298b5c051443d3c2a06f2b7057007df3c040442e9",
+                "exe": "140d85215f46ffb94037e46a7274f352bdcfb4a7306bfc728d0678da3d03c841",
+                "plan": "b836d566434ef25e4c0554915be50ffed386a261c60de2deda9027d37c3fceb0",
+                "steps": 6,
+                "position_assists": 0,
+                "fixed_view_aim": 0,
+                "resume": "05802503ab7dba8d0bcae09757823ad6e3690610ec2aeeffd8ddf7455e6fb247",
+                "save": "b8635eafd7614e46b9fb44956b64d070372d1da1d343cddc4e0c8eb07df92db9",
+                "export": null,
+                "segment": 704,
+                "level": 2,
+                "player": {
+                    "lives": 3,
+                    "score": 10100,
+                    "energy": 90.690185546875,
+                    "shields": 111.0,
+                    "has_red_key": false,
+                    "has_gold_key": false,
+                    "has_blue_key": false,
+                    "hostages_on_board": 0
+                },
+                "transitions": [],
+                "result": "PASS"
+            },
+            {
+                "receipt_sha256": "1be13780385db7c4300e013c7527090fbaeb6d74575fda5b23ab19ea5b09d052",
+                "exe": "140d85215f46ffb94037e46a7274f352bdcfb4a7306bfc728d0678da3d03c841",
+                "plan": "fbb58868aca22722ea7d6ce7448e605995d9925c2326b78b871d90f52bf4e377",
+                "steps": 6,
+                "position_assists": 0,
+                "fixed_view_aim": 0,
+                "resume": "b8635eafd7614e46b9fb44956b64d070372d1da1d343cddc4e0c8eb07df92db9",
+                "save": "ddc8c4b89277f14b1cbc062d755d4919dc62ca58b9fe9b60c69f1ff91d83bd89",
+                "export": null,
+                "segment": 869,
+                "level": 2,
+                "player": {
+                    "lives": 3,
+                    "score": 10100,
+                    "energy": 88.730224609375,
+                    "shields": 99.0,
+                    "has_red_key": false,
+                    "has_gold_key": false,
+                    "has_blue_key": false,
+                    "hostages_on_board": 0
+                },
+                "transitions": [],
+                "result": "PASS"
+            },
+            {
+                "receipt_sha256": "f620baedd8e5034b9eb6b17c5dccf147fa6d7ed2a5affe3434cf7c7a2d529e7e",
+                "exe": "140d85215f46ffb94037e46a7274f352bdcfb4a7306bfc728d0678da3d03c841",
+                "plan": "d4ebb158fdb345a52f3bd322fbbbc17d954245ee64ea1148a7e62a3549ac9bdc",
+                "steps": 6,
+                "position_assists": 0,
+                "fixed_view_aim": 0,
+                "resume": "ddc8c4b89277f14b1cbc062d755d4919dc62ca58b9fe9b60c69f1ff91d83bd89",
+                "save": "8bf7598ab41aa9cb67a92821e2c65fed2ae78337c77875e01d630e38789e5a6b",
+                "export": null,
+                "segment": 840,
+                "level": 2,
+                "player": {
+                    "lives": 3,
+                    "score": 10100,
+                    "energy": 88.730224609375,
+                    "shields": 97.0,
+                    "has_red_key": false,
+                    "has_gold_key": false,
+                    "has_blue_key": false,
+                    "hostages_on_board": 0
+                },
+                "transitions": [],
+                "result": "PASS"
+            },
+            {
+                "receipt_sha256": "67d904c6733dec5e5573770ee739c32b815b006fc47b8bcb66a62f49a05270e6",
+                "exe": "140d85215f46ffb94037e46a7274f352bdcfb4a7306bfc728d0678da3d03c841",
+                "plan": "8222769941fcb93de31ea4d6b735a7d73fd431a257c57b2318d17fbc2e91529b",
+                "steps": 6,
+                "position_assists": 0,
+                "fixed_view_aim": 0,
+                "resume": "8bf7598ab41aa9cb67a92821e2c65fed2ae78337c77875e01d630e38789e5a6b",
+                "save": "b72951e8351b48ce4d6d3e4b3894cdcb282336ba1822ef54c93d54fa25da9bf8",
+                "export": null,
+                "segment": 910,
+                "level": 2,
+                "player": {
+                    "lives": 3,
+                    "score": 10100,
+                    "energy": 88.730224609375,
+                    "shields": 97.0,
+                    "has_red_key": false,
+                    "has_gold_key": false,
+                    "has_blue_key": false,
+                    "hostages_on_board": 0
+                },
+                "transitions": [],
+                "result": "PASS"
+            },
+            {
+                "receipt_sha256": "20a34a5798e30010539fc47932e364a9c825548c14b69d2a566855c036d0fb94",
+                "exe": "140d85215f46ffb94037e46a7274f352bdcfb4a7306bfc728d0678da3d03c841",
+                "plan": "7507459680a4ebd3457ec3ae3c403df0c41b98970e322161b8a7e803dd7207c1",
+                "steps": 6,
+                "position_assists": 0,
+                "fixed_view_aim": 0,
+                "resume": "b72951e8351b48ce4d6d3e4b3894cdcb282336ba1822ef54c93d54fa25da9bf8",
+                "save": "2dfd521db7539beac79e258683a02d75eaedec6391239594d83a575d479bfc2f",
+                "export": null,
+                "segment": 954,
+                "level": 2,
+                "player": {
+                    "lives": 3,
+                    "score": 10100,
+                    "energy": 87.0152587890625,
+                    "shields": 82.0,
+                    "has_red_key": false,
+                    "has_gold_key": false,
+                    "has_blue_key": false,
+                    "hostages_on_board": 0
+                },
+                "transitions": [],
+                "result": "PASS"
+            }
+        ],
+        "casualties": [
+            {
+                "attempt": "storage-laser-route-12",
+                "resume": "2dfd521db7539beac79e258683a02d75eaedec6391239594d83a575d479bfc2f",
+                "receipt_sha256": "fd67a961cd695dcbd59fc4ada906509fb621df7f678fd9f6f5e9b9f10f2aa379",
+                "diagnostic": "ordinary player probe died or acquired assisted combat",
+                "level": 2,
+                "segment": 1231,
+                "shields": -2.770263671875
+            },
+            {
+                "attempt": "gold-laser-02",
+                "resume": "9269e8f14e74a8685c5c7be92e97c733af786c6caac9d3e4d9da9295d01fd6d3",
+                "receipt_sha256": "480c2bb8cc9f33d9db7ed197035488b03ff86b318a8c8a528702d64f9c01d54b",
+                "diagnostic": "ordinary player probe died or acquired assisted combat",
+                "level": 2,
+                "segment": 1255,
+                "shields": -23.238311767578125
+            },
+            {
+                "attempt": "laser-supplies-02",
+                "resume": "c67d038c8a065ad5ce968e7c22e9ba8602ec7384458bddcd522703be63355024",
+                "receipt_sha256": "e9fe8b72e26b3199211c4a1acd55f81ec5c983d4b70583d8af8af920e9a499c8",
+                "diagnostic": "ordinary player probe died or acquired assisted combat",
+                "level": 2,
+                "segment": 952,
+                "shields": -24.0
+            },
+            {
+                "attempt": "third-blue-route-03",
+                "resume": "253768c2d7f82b2378a0479ba72d86a5ff6f18883f784052ba5e402999b2c097",
+                "receipt_sha256": "5a9e6de5eedca065d805ee946acc5acc1fecffdde668e2d7077420ff3b879174",
+                "diagnostic": "ordinary player probe died or acquired assisted combat",
+                "level": 3,
+                "segment": 162,
+                "shields": -16.9576416015625
+            }
+        ],
+        "assertion_suite": {
+            "build_type": "MSVC x86 Debug /Od /Ob0 /RTC1",
+            "candidate": "7317685f246ddd16560d79ef59fd7c5a20f5155e",
+            "executable_sha256": "679c7e3d0709601ea1d8dce7d6083feac1b8f2768e241e020d0cbfa667953aca",
+            "ctest_log_sha256": "a6ce6c93abfd4568115d1ab19ef7ec8fac415feb9b1b277f255126af28a5a276",
+            "tests": {
+                "xl_sphere_red_key": 81.99,
+                "xl_sphere_shaft_exit": 191.47,
+                "xl_sphere_storage_approach": 374.19,
+                "xl_sphere_level_three_flicker": 158.82
+            }
+        },
+        "public_contracts": {
+            "passed": 56,
+            "registered": 56,
+            "log_sha256": "c68b67a051dc0bdbcf3e5702b6b4f9f68bb8b9c11c5945241cbf28d6d9556ea0",
+            "build_type": "Windows x86 Debug, native compiler, pinned reference tree"
+        }
     },
     "android": {
         "target": "VignetteHost x86_64 emulator",
@@ -486,6 +986,57 @@
                 }
             },
             "comparison_sha256": "990f03d7e7e657df817418447fa9e76b13f8a5e150f08103ab84aaf4babc873d"
+        },
+        "level_three": {
+            "level": 3,
+            "segment": 2,
+            "score": 500,
+            "lives": 3,
+            "export": "0470cdb5555a894401283edd406649c9c5ae402ae490fc5b196f022096c2fe3e",
+            "written": "b70cb50ce80b2902306c124b66986b7cd0f3c410e0c809b337cb2776c9a96616",
+            "written_bytes": 2563053,
+            "apk": "9f978db9543e5da1088a13d546309ed123c8468eeec78c4037504d3028cb1437",
+            "logs": {
+                "write": "325696c502c9786236979ee930cd98f2d1add566a91cab50661ceb602ff29a6a",
+                "cold": "2d9780d3b283e06d27a1986534d0ffd37bae1ac993f05dfd64b99be286cf6913"
+            },
+            "entry": "Direct level-three setup, flight to the authored flicker in room 2, two light changes, native export, device-written save and a new Android process.",
+            "restoration": {
+                "apk": "aef764422b18ee3b37a1e7f360b79214c5620113047183751448b4444cf4eae3",
+                "prior_marker_sha256": "552088d6ecff370504b681b080eb57ac61421e304b2248c946e3858d2709f2a6",
+                "archived": {
+                    "files/d2x-redux/Players/save_sets/single/sphligt/sphere/sphligt.sg0": "0470cdb5555a894401283edd406649c9c5ae402ae490fc5b196f022096c2fe3e",
+                    "files/d2x-redux/Players/save_sets/single/sphligt/sphere/sphligt.sg3.pair.lock": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                    "files/d2x-redux/Players/save_sets/single/sphligt/sphere/sphligt.sg3": "b70cb50ce80b2902306c124b66986b7cd0f3c410e0c809b337cb2776c9a96616",
+                    "files/d2x-redux/Players/sphligt.plr": "d3bf3cda46f1dfbbe110b68d8de6dfeba0f238335d77a13e1a1923744ecabc91",
+                    "files/d2x-redux/Players/sphligt.plx": "5b824e67ddc83c2281efbaa228ebeb3cec4716af93dc159ff98d20083fc98047"
+                }
+            },
+            "source_flight": {
+                "receipt_sha256": "b0f385fbe9dfaf5b1369a6507cbee65d40e0092cc784626a1768322adfcd9af4",
+                "exe": "679c7e3d0709601ea1d8dce7d6083feac1b8f2768e241e020d0cbfa667953aca",
+                "plan": "e2be9e7c7e7b5ab90cdf4e79e18cd9f15d29dbfd610d85c095334b6af0e98d2c",
+                "steps": 2,
+                "position_assists": 0,
+                "fixed_view_aim": 0,
+                "resume": "823caeb732930cedd5da2b0bfded3eb4b197fbf1272a2603c5324c9e3559728a",
+                "save": "1761beb334052956c4e21c3f842ee930fa0bd3a5043b7884a317654e26842a0f",
+                "export": "0470cdb5555a894401283edd406649c9c5ae402ae490fc5b196f022096c2fe3e",
+                "segment": 2,
+                "level": 3,
+                "player": {
+                    "lives": 3,
+                    "score": 500,
+                    "energy": 90.4451904296875,
+                    "shields": 96.34043884277344,
+                    "has_red_key": false,
+                    "has_gold_key": false,
+                    "has_blue_key": false,
+                    "hostages_on_board": 0
+                },
+                "transitions": [],
+                "result": "PASS"
+            }
         }
     },
     "message_clock": {
@@ -603,18 +1154,17 @@
             }
         },
         "light-expanded": {
-            "sha256": "eab239ade8a83c57e6ca03d89607cb4a7a93c045bc23d5c1851ad893e1970635",
+            "sha256": "29b2a9ad7c8ed63b8ff6121940c9cc36704c681d97df3bfa027ff05d23ffcec1",
             "target": "7317685f246ddd16560d79ef59fd7c5a20f5155e",
             "summary": {
-                "complete": false,
+                "complete": true,
                 "counts": {
-                    "loaded_ticked": 15,
-                    "untested": 49
+                    "loaded_ticked": 64
                 },
                 "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
                 "denominator": 64,
-                "passed": 15,
-                "readiness_percent": null
+                "passed": 64,
+                "readiness_percent": 100.0
             }
         }
     },
@@ -734,6 +1284,314 @@
                     "524 source UVL and 56 segment attenuation samples matched"
                 ]
             }
+        },
+        "render_clock": {
+            "3": {
+                "sha256": "c872bb6249daf24abfaabe376ff20491db3b0007811ac53f43f82baddfb90f2a",
+                "executable": "37aee899b1bc5ad0007274faa1f1af24afdd9aa783606e9c271f72e01a943de0",
+                "renderer": "Intel(R) Arc(TM) 140T GPU (16GB)",
+                "assisted": true,
+                "events": [
+                    "simulation_only",
+                    "main",
+                    "auxiliary_mono",
+                    "paused_menu",
+                    "automap",
+                    "endlevel_main",
+                    "endlevel_auxiliary",
+                    "simulation_after_render",
+                    "main_again",
+                    "restored",
+                    "main_after_restore"
+                ],
+                "paused_rng_unchanged": true,
+                "paused_time_unchanged": true
+            },
+            "-1": {
+                "sha256": "de3cbaa06c56c7fdcaf1f0646e524690cb1cac7c9174cde99357a8ee54c69d98",
+                "executable": "37aee899b1bc5ad0007274faa1f1af24afdd9aa783606e9c271f72e01a943de0",
+                "renderer": "Intel(R) Arc(TM) 140T GPU (16GB)",
+                "assisted": true,
+                "events": [
+                    "simulation_only",
+                    "main",
+                    "auxiliary_mono",
+                    "paused_menu",
+                    "automap",
+                    "endlevel_main",
+                    "endlevel_auxiliary",
+                    "simulation_after_render",
+                    "main_again",
+                    "restored",
+                    "main_after_restore"
+                ],
+                "paused_rng_unchanged": true,
+                "paused_time_unchanged": true
+            }
         }
+    },
+    "original_signed_retry": {
+        "receipt": {
+            "schema": "xl-original-campaign-probe-v1",
+            "reference_revision": "2576a98b5de310e3ac7c9777df2677d1627b8bae",
+            "engine_sha256": "2fb2cc81a694a526638cf978d98133b932b9f4fe9c1086dc568e13dd8b4de1d3",
+            "descriptor": "single/sphere.mn2",
+            "descriptor_sha256": "7104fe4eada0804ed6b03ac4b2a68656ab5c15d3f8b1bec37b43c9a5fab0ac6b",
+            "ordinal": -1,
+            "advertised_file": "sp-s.rl2",
+            "exit_code": 0,
+            "observation": "started_and_ran",
+            "timed_out": false,
+            "receipt_sha256": "a33fa70d67b4064e143a119b894c9b74b30f20234e9417cfb7e14a1f3174d33d",
+            "texture_quality": 0,
+            "maximum_texture_quality": 3
+        },
+        "entry": "direct signed ordinal; isolated reference window received Return during the native secret-message sequence",
+        "acknowledgments": [
+            {
+                "window_class": "SDL_app",
+                "key": "Return",
+                "receipt_tail": "starting\t-1\tsp-s.rl2"
+            },
+            {
+                "window_class": "SDL_app",
+                "key": "Return",
+                "receipt_tail": "starting\t-1\tsp-s.rl2"
+            }
+        ]
+    },
+    "standalone_startup": [
+        {
+            "assisted_navigation": "not_run",
+            "frames": 120,
+            "id": "sphere-1.51.7z/missions/single/sphere.mn2:1",
+            "level": 1,
+            "level_file": "sp-01.rl2",
+            "outcome": "loaded_ticked",
+            "seconds": 11.031,
+            "xl_active": true
+        },
+        {
+            "assisted_navigation": "not_run",
+            "frames": 120,
+            "id": "sphere-1.51.7z/missions/single/sphere.mn2:2",
+            "level": 2,
+            "level_file": "sp-02.rl2",
+            "outcome": "loaded_ticked",
+            "seconds": 4.813,
+            "xl_active": true
+        },
+        {
+            "assisted_navigation": "not_run",
+            "frames": 120,
+            "id": "sphere-1.51.7z/missions/single/sphere.mn2:3",
+            "level": 3,
+            "level_file": "sp-03.rl2",
+            "outcome": "loaded_ticked",
+            "seconds": 6.969,
+            "xl_active": true
+        },
+        {
+            "assisted_navigation": "not_run",
+            "frames": 120,
+            "id": "sphere-1.51.7z/missions/single/sphere.mn2:4",
+            "level": 4,
+            "level_file": "sp-04.rl2",
+            "outcome": "loaded_ticked",
+            "seconds": 12.828,
+            "xl_active": true
+        },
+        {
+            "assisted_navigation": "not_run",
+            "frames": 120,
+            "id": "sphere-1.51.7z/missions/single/sphere.mn2:-1",
+            "level": -1,
+            "level_file": "sp-s.rl2",
+            "outcome": "loaded_ticked",
+            "seconds": 2.875,
+            "xl_active": true
+        }
+    ],
+    "black_prophecy": {
+        "optimized_attempts": [
+            {
+                "run_log": "regression.log",
+                "sha256": "f8b36dfda84f6601fce73e0c7ca10357ecc7277789731a741d50ccc3a07cc5a6",
+                "terminal_excerpt": [
+                    "3/4 Test #26: xl_phoenix_secret_approach .......***Failed  138.84 sec",
+                    "4/4 Test #27: xl_phoenix_secret_return .........***Not Run   0.00 sec"
+                ]
+            },
+            {
+                "run_log": "debug-regression.log",
+                "sha256": "f4ea3b266c700b71df2881c6acf2d4ebb468cb2c204dacb5c2ffbfc10fc39766",
+                "terminal_excerpt": [
+                    "1/2 Test #56: xl_phoenix_secret_approach .......***Failed    2.80 sec",
+                    "2/2 Test #57: xl_phoenix_secret_return .........***Not Run   0.00 sec"
+                ]
+            }
+        ],
+        "unoptimized_attempts": [
+            {
+                "log_sha256": "3cc9e07863fccd0feb07dfe523db11d64762fd36bda00990023a4880a2dc1741",
+                "binary": "6e55dcfc01f183f5fedfc7b1ea7fb34695a2643563cae29b9d9a30d2a2b6a00c",
+                "approach_flights": 81,
+                "entry_receipt": "d4320223c4e69b910b92a9f51269f6a2b9bb063b603b8d62f9748fc4593bcf3a",
+                "return_receipt": "47ae03cd3c7c7fc2ed353b5d54655b0ec4aaf91089d2de9a716591a181566e29",
+                "cold_receipt": "10ad22753b16422d3370412b987f60c5d5dfab6f708c9ede2aa107d461e28fbb",
+                "transitions": [
+                    [2, -1],
+                    [-1, 2]
+                ],
+                "cold_level": 2
+            },
+            {
+                "log_sha256": "1b7cdf0d0cd0f09ad738d8f26003f0846619767c7658bbc5ea8921ab83dcbbac",
+                "binary": "679c7e3d0709601ea1d8dce7d6083feac1b8f2768e241e020d0cbfa667953aca",
+                "approach_flights": 81,
+                "entry_receipt": "2ab9ffbffb3be3b2dce79c91f57488e9670b79e10f5fbddcdf9f9bf452a03404",
+                "return_receipt": "3413d5b245c6206d88abba5e51d8f85b13affc51659a2e54676ba1541df14093",
+                "cold_receipt": "3e2e5ca8bbc4cb1074f8af22adb9a3e1b73da8a63b3496c806a0418da042396f",
+                "transitions": [
+                    [2, -1],
+                    [-1, 2]
+                ],
+                "cold_level": 2
+            }
+        ]
+    },
+    "census": {
+        "shards": [
+            {
+                "shard": "pinned",
+                "inventory": "bf4356a7a5fbe64832a40d7065ea02d8b81276ebd8bbba6874012f7851fa0cf8",
+                "engine": "f49ee3c9785aab20f5686dd51358d041dfc322862b2249ed50d6d7eecbcff8b2",
+                "before_sha256": "fd753d89669c882367434005ff27247565032b3075d2d6be03884359f32ea5a3",
+                "now_sha256": "eb4c3af3d721e3c18fd07fffea2778e47738aeda81f4d0e3862f3eaad8c63f16",
+                "before": {
+                    "complete": true,
+                    "counts": {
+                        "load_failed": 69,
+                        "loaded_ticked": 1037,
+                        "simulation_failed": 3,
+                        "unsupported_format": 2
+                    },
+                    "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+                    "denominator": 1111,
+                    "passed": 1037,
+                    "readiness_percent": 93.3
+                },
+                "now": {
+                    "complete": true,
+                    "counts": {
+                        "load_failed": 69,
+                        "loaded_ticked": 1037,
+                        "simulation_failed": 3,
+                        "unsupported_format": 2
+                    },
+                    "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+                    "denominator": 1111,
+                    "passed": 1037,
+                    "readiness_percent": 93.3
+                },
+                "target": "7317685f246ddd16560d79ef59fd7c5a20f5155e",
+                "summed_case_seconds": 4355.646,
+                "asset_commit": "9dad21bd65ba05665ac6fe315f37fe7461e85725",
+                "resources": {
+                    "commit": "dc6565f6b5400d7c700fa8378e766b2354b6ceb6",
+                    "files": [
+                        {
+                            "path": "d2x.hog",
+                            "sha256": "97a4433833ec1f2fbdd2becc144a1e9726ca78b1210a71a49ddbec6182665fe6",
+                            "size": 4371791,
+                            "source": "descent_2_vertigo/d2x.hog"
+                        },
+                        {
+                            "path": "d2x-xl.hog",
+                            "sha256": "e7351d66d534c3fdb400f03b91b771ad2d0c0d2b0100cf48718d504008ada7e6",
+                            "size": 3815963,
+                            "source": "xl-resources/d2x-xl.hog"
+                        }
+                    ],
+                    "profile": "authentic-vertigo-xl-v1",
+                    "repository": "larsonm-personal/dxx-redux-test-assets"
+                }
+            },
+            {
+                "shard": "additional",
+                "inventory": "e7d480aa401522d37f6ec75da01f6cec7c314c901728f1b291131e52a62818df",
+                "engine": "f49ee3c9785aab20f5686dd51358d041dfc322862b2249ed50d6d7eecbcff8b2",
+                "before_sha256": "fc9ff888f9af3cc4e1a2b9a7b8d45513c74e00d7a00c76f2bbd0efb39369c1ca",
+                "now_sha256": "ecf5a480b6d8992bccec734524f989fb7ad013a32064b8d71aa351421ede2a98",
+                "before": {
+                    "complete": true,
+                    "counts": {
+                        "load_failed": 53,
+                        "loaded_ticked": 486,
+                        "simulation_failed": 2,
+                        "timeout": 1,
+                        "unsupported_format": 1
+                    },
+                    "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+                    "denominator": 543,
+                    "passed": 486,
+                    "readiness_percent": 89.5
+                },
+                "now": {
+                    "complete": true,
+                    "counts": {
+                        "load_failed": 52,
+                        "loaded_ticked": 487,
+                        "simulation_failed": 2,
+                        "timeout": 1,
+                        "unsupported_format": 1
+                    },
+                    "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+                    "denominator": 543,
+                    "passed": 487,
+                    "readiness_percent": 89.7
+                },
+                "target": "7317685f246ddd16560d79ef59fd7c5a20f5155e",
+                "summed_case_seconds": 1522.663,
+                "asset_commit": null,
+                "resources": {
+                    "commit": "dc6565f6b5400d7c700fa8378e766b2354b6ceb6",
+                    "files": [
+                        {
+                            "path": "d2x.hog",
+                            "sha256": "97a4433833ec1f2fbdd2becc144a1e9726ca78b1210a71a49ddbec6182665fe6",
+                            "size": 4371791,
+                            "source": "descent_2_vertigo/d2x.hog"
+                        },
+                        {
+                            "path": "d2x-xl.hog",
+                            "sha256": "e7351d66d534c3fdb400f03b91b771ad2d0c0d2b0100cf48718d504008ada7e6",
+                            "size": 3815963,
+                            "source": "xl-resources/d2x-xl.hog"
+                        }
+                    ],
+                    "profile": "authentic-vertigo-xl-v1",
+                    "repository": "larsonm-personal/dxx-redux-test-assets"
+                }
+            }
+        ],
+        "counts": {
+            "load_failed": 121,
+            "loaded_ticked": 1524,
+            "simulation_failed": 5,
+            "unsupported_format": 3,
+            "timeout": 1
+        },
+        "changed": [
+            {
+                "id": "sphere-1.51.7z/missions/single/sphere.mn2:3",
+                "archive": "sphere-1.51.7z",
+                "ordinal": 3,
+                "member": "sp-03.rl2",
+                "before": "load_failed",
+                "after": "loaded_ticked"
+            }
+        ],
+        "denominator": 1654
     }
 }
