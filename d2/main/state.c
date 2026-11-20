@@ -660,6 +660,7 @@ static void state_read_morph_state(PHYSFS_file *fp, int swap, int apply)
 		int objnum = PHYSFSX_readSXE32(fp, swap);
 		int morph_sig = PHYSFSX_readSXE32(fp, swap);
 		morph_data *md = NULL;
+		int model_parts = 0;
 
 		if (apply && next_slot < MAX_MORPH_OBJECTS && objnum >= 0 && objnum <= Highest_object_index &&
 			Objects[objnum].type != OBJ_NONE && Objects[objnum].signature == morph_sig &&
@@ -668,6 +669,7 @@ static void state_read_morph_state(PHYSFS_file *fp, int swap, int apply)
 			memset(md, 0, sizeof(*md));
 			md->obj = &Objects[objnum];
 			md->Morph_sig = morph_sig;
+			model_parts = Polygon_models[md->obj->rtype.pobj_info.model_num].n_models;
 		}
 
 		for (j = 0; j < MAX_VECS; j++) {
@@ -695,12 +697,12 @@ static void state_read_morph_state(PHYSFS_file *fp, int swap, int apply)
 		for (j = 0; j < MAX_SUBMODELS; j++) {
 			int value = PHYSFSX_readSXE32(fp, swap);
 			if (md)
-				md->n_morphing_points[j] = value;
+				md->n_morphing_points[j] = j < model_parts ? value : 0;
 		}
 		for (j = 0; j < MAX_SUBMODELS; j++) {
 			int value = PHYSFSX_readSXE32(fp, swap);
 			if (md)
-				md->submodel_startpoints[j] = value;
+				md->submodel_startpoints[j] = j < model_parts ? value : 0;
 		}
 		{
 			int n_submodels_active = PHYSFSX_readSXE32(fp, swap);
@@ -1041,12 +1043,12 @@ static int state_validate_morph_runtime_state(PHYSFS_file *fp, int swap)
 		    PHYSFS_read(fp, &movement_type, sizeof(movement_type), 1) != 1 ||
 		    !state_runtime_skip(fp, STATE_PHYSICS_INFO_DISK_BYTES))
 			return 0;
+		/* Older saves can retain bounded counters from the previous occupant of a morph slot. */
 		for (j = 0; j < MAX_SUBMODELS; j++) {
 			if (active[j] < 0 || active[j] > 2 || counts[j] < 0 ||
 			    starts[j] < 0 || starts[j] > MAX_VECS ||
 			    counts[j] > MAX_VECS - starts[j] ||
-			    (j >= Polygon_models[model_num].n_models &&
-			     (active[j] || counts[j])))
+			    (j >= Polygon_models[model_num].n_models && active[j]))
 				return 0;
 			if (active[j] == 1)
 				active_count++;
