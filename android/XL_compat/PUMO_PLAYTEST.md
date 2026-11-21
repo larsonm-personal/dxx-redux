@@ -6,9 +6,13 @@ For Kartsal level 13, use build 32030. It fixes a flight that could leave the sh
 
 ### Play the Kartsal ending
 
-Choose `kartsal-final-checkpoint` in the 32030 kit to load the pilot aboard the Black Hole ship with one life and score 48,270. Fly straight ahead through the checkpoint. Advance the score screen to see the authored ending. The ordinary Android build completed this flight from a cold load and showed the MD Vertex9 ending on `demoendb.pcx`. This completes the Kartsal Motivation route from the hub through levels 11, 12 and 13. The Mineral Valley pilot has reached Mercury Geothermal Lab. [Rendered ending receipt](evidence/pumo-kartsal-ending-20261120.json)
+Choose `kartsal-final-checkpoint` in the 32030 kit to load the pilot aboard the Black Hole ship with one life and score 48,270. Fly straight ahead through the checkpoint. Advance the score screen to see the authored ending. The ordinary Android build completed this flight from a cold load and showed the MD Vertex9 ending on `demoendb.pcx`. This completes the Kartsal Motivation route from the hub through levels 11, 12 and 13. The separate Mineral Valley route also reached its ending. [Rendered ending receipt](evidence/pumo-kartsal-ending-20261120.json)
 
 ### Continue Mineral Valley
+
+For a short ending test, install build 32080 and choose `mineral-ending`. The checkpoint resumes with one life, score 344,540 and the ship already moving through Umbriel's final exit. Advance the **Level 9 Complete** screen, then read through the briefing. On ordinary Android the last page displays “Thanks for playing this first episode, Pumo Mines: Mineral Valley.” The kit contains the engine-written Android-format export that produced this screen. Report if the closing text, page advances or score screen behave differently on your phone. [Build 32080 kit](../../temp/xl-pumo-phone-32080/README.md)
+
+For a longer final-level test, choose `umbriel-blue`. Android wrote and cold-loaded this save in room 997 with blue, two lives and score 315,790. Try to find the red-key switch behind the grate, defeat the teleporting boss and reach the escape tunnel. Report the first place where the route or controls stop making sense. [Umbriel checkpoint and ending evidence](evidence/pumo-mineral-valley-ending-20261121.json)
 
 For Mineral Valley, install build 32080, which fixes extra lasers from some robot impacts. Start in the lava shafts with `lava-shafts-arrival` (level 6, two lives, score 100,000) or Mercury Geothermal Lab with `mercury-arrival` (level 7, three lives, score 162,740). Both are device-written saves verified after restarting the ordinary Android game. Record the first room where finding a key, firing through a grate, or controlling the ship becomes difficult. [Build 32080 kit and installation instructions](../../temp/xl-pumo-phone-32080/README.md)
 

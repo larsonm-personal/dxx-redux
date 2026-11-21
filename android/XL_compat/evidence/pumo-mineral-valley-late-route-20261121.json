@@ -1,0 +1,285 @@
+{
+    "archive": "pmines_v11.7z",
+    "episode": "Mineral Valley",
+    "platform": "Windows x86",
+    "flight": "Ordinary-input pilot, with retries from earned checkpoints. Shields, weapons, keys and lives come from normal gameplay.",
+    "checkpoints": {
+        "terradeep_gold": {
+            "level": 8,
+            "room": 491,
+            "lives": 2,
+            "score": 266560,
+            "shields": 25.8,
+            "keys": ["blue", "gold"],
+            "countdown_active": false,
+            "native_save_sha256": "8632498d9afa39b653f213b460c9b306047324fd649d780474eab832f08861de",
+            "android_export_sha256": "5ca34079fe4badf4208c5c6ff1d2753998ae5411e6e86e727af76801855bc1ff"
+        },
+        "terradeep_red": {
+            "level": 8,
+            "room": 894,
+            "lives": 1,
+            "score": 278670,
+            "shields": 87.98,
+            "keys": ["blue", "gold", "red"],
+            "countdown_active": false,
+            "native_save_sha256": "c9dd93a5517c4329bbfe405e9caf1c4ff94a69fb3503336972acdb365fd4150c",
+            "android_export_sha256": "8828defc46774c37f143ac7d9c597cafddfd86be6727d63df6d504705c2ea412"
+        },
+        "terradeep_reactor": {
+            "level": 8,
+            "room": 208,
+            "lives": 1,
+            "score": 285690,
+            "shields": 65.8,
+            "keys": ["blue", "gold", "red"],
+            "countdown_active": true,
+            "native_save_sha256": "3a855a490c086ae608fe05a5ea354afdc51dba1f9ed16f16a8a7731f323c02da",
+            "android_export_sha256": "8730a174528191488e3dbb8edfe528cb2cc5d32751f6aebaa053541d12f4746b"
+        },
+        "terradeep_escape": {
+            "level": 8,
+            "room": 1665,
+            "lives": 1,
+            "score": 287990,
+            "shields": 56.41,
+            "keys": ["blue", "gold", "red"],
+            "countdown_active": true,
+            "native_save_sha256": "3f148c0b0ced236721cb46ddd5046329a12a05a1b9ecf9c4a6db3a54a250a0a8",
+            "android_export_sha256": "4518cee5bdaedea5e5923534af1ec78f329273c7b7dcda6065a10bc0c194c93f"
+        },
+        "umbriel_arrival": {
+            "level": 9,
+            "room": 832,
+            "lives": 1,
+            "score": 292840,
+            "shields": 100.0,
+            "keys": [],
+            "countdown_active": false,
+            "native_save_sha256": "aac7e2f603312b0edc3017886fcdf67de7b578a96263c993663a4b58e2dbad31",
+            "android_export_sha256": "0ba89505c91ae2453b1bf5cac7b09492ace43848d913be1817c0d3d7c6985680"
+        },
+        "umbriel_first_switch": {
+            "level": 9,
+            "room": 74,
+            "lives": 1,
+            "score": 294840,
+            "shields": 83.87,
+            "keys": [],
+            "countdown_active": false,
+            "native_save_sha256": "20791c05be578fbc462d474c4ccf3244c11fae9c3c39887eca677e08373d1b0a",
+            "android_export_sha256": "c6a3d5c7b22bfdab6794f3cda27f3211167495dc3a1ad281f4fe59b7e813ac98"
+        },
+        "umbriel_blue_gate_switch": {
+            "level": 9,
+            "room": 1462,
+            "lives": 2,
+            "score": 310290,
+            "shields": 27.97,
+            "keys": [],
+            "countdown_active": false,
+            "native_save_sha256": "e7420f9a9b1a822672e143d6942773f0294923e8c56e27248b906427384ed385",
+            "android_export_sha256": "33ea51b444d644793025c34159eea09e615c346093727c3632e529d03e313009"
+        },
+        "umbriel_blue_drop": {
+            "level": 9,
+            "room": 611,
+            "lives": 2,
+            "score": 311240,
+            "shields": 15.91,
+            "keys": ["blue"],
+            "countdown_active": false,
+            "native_save_sha256": "98e7f5adda6b98cfe770b9117774bd3dd16c136328bb61c7d837757c8d7ec37a",
+            "android_export_sha256": "037ce1da0fe4eeb8d3ea17a9a2feb0160fe642cc1d54b2e6bf3770bc86ca4f4a"
+        },
+        "umbriel_blue_door_extra_life": {
+            "level": 9,
+            "room": 997,
+            "lives": 2,
+            "score": 315790,
+            "shields": 108.81,
+            "keys": ["blue"],
+            "countdown_active": false,
+            "native_save_sha256": "1caa00e518f57b2ac171a7b6ab23508e3ad54e491c5fec8ba74009db19592e46",
+            "android_export_sha256": "a0d58238a64bd71778fbaaf734c624a483f6ef1f3fc8053540bf8224abf33e2a"
+        },
+        "umbriel_red_switch": {
+            "level": 9,
+            "room": 1534,
+            "lives": 2,
+            "score": 316590,
+            "shields": 83.99,
+            "keys": ["blue"],
+            "countdown_active": false,
+            "native_save_sha256": "02109f01521bb622cc374942ade044082396d7af27ece136375127d291f28b2e",
+            "android_export_sha256": "c15690f4762834909081cfbdc3e103db400af40cc7fd88ff98e3fc2eae5dc854"
+        },
+        "umbriel_red_key": {
+            "level": 9,
+            "room": 1536,
+            "lives": 2,
+            "score": 316590,
+            "shields": 101.79,
+            "keys": ["blue", "red"],
+            "countdown_active": false,
+            "native_save_sha256": "afa6b8c808f2b817b6ac654b8da68511f45e966eae7212ce1310b9b916b8a35c",
+            "android_export_sha256": "de5fcde42efc15a071a1a19a075180c7d978b4e29e5245a22ae255d4ae08610c"
+        },
+        "umbriel_boss_approach": {
+            "level": 9,
+            "room": 251,
+            "lives": 2,
+            "score": 327440,
+            "shields": 108.56,
+            "keys": ["blue", "red"],
+            "countdown_active": false,
+            "native_save_sha256": "0a39eafc948b0ca7f4e674f8b39ed308541f2e1c263d9c358bd101f96ff3ddf5",
+            "android_export_sha256": "a929eb9b2f7332af6639f01360e9c755fad6fa88f76d0c3c9835a1a8779a1c0c"
+        },
+        "umbriel_boss_destroyed": {
+            "level": 9,
+            "room": 259,
+            "lives": 1,
+            "score": 339340,
+            "shields": 48.37,
+            "keys": ["blue", "red"],
+            "countdown_active": false,
+            "native_save_sha256": "f3b508b0c9347c7176d60ba284eea0dae6bbae99f2c0dd1ddb2a3af3a1055964",
+            "android_export_sha256": "72b80ae574629d6329caa3048dc940b05f65b421c15a2adde490c4787e78c0c0"
+        },
+        "umbriel_countdown": {
+            "level": 9,
+            "room": 334,
+            "lives": 1,
+            "score": 339340,
+            "shields": 10.57,
+            "keys": ["blue", "red"],
+            "countdown_active": true,
+            "native_save_sha256": "2e8bafc65ae9055b4318db1b5021848bbc20172f3c3ca2cfff0badbc267d13a9",
+            "android_export_sha256": "a89daa48bd3b5c0a836d2d47b3bdae2f7a7a797a2e6c533ec69e6852bdb366c0"
+        },
+        "umbriel_teleporter_approach": {
+            "level": 9,
+            "room": 1657,
+            "lives": 1,
+            "score": 341740,
+            "shields": 14.48,
+            "keys": ["blue", "red"],
+            "countdown_active": true,
+            "native_save_sha256": "f66e761e1fdcd1db9de292737ad9b3e1e5b291f78aa43cdb8da168aef755d0f4",
+            "android_export_sha256": "9a27feeec863a93d90d8987cde395523ad665e9f69dda763de71e07625206014"
+        },
+        "umbriel_after_teleport": {
+            "level": 9,
+            "room": 1660,
+            "lives": 1,
+            "score": 341740,
+            "shields": 14.48,
+            "keys": ["blue", "red"],
+            "countdown_active": true,
+            "native_save_sha256": "6962f6ae2823f88268de2a95b29d730897d80df9eb7a848cf1c2ec8aafbaf472",
+            "android_export_sha256": "56c9fea185abd9d77e97b4b4936fd27790ddeb9340235ea4173932d8a3ef6e85"
+        },
+        "umbriel_escape_shaft": {
+            "level": 9,
+            "room": 992,
+            "lives": 1,
+            "score": 344540,
+            "shields": 54.73,
+            "keys": ["blue", "red"],
+            "countdown_active": true,
+            "native_save_sha256": "6998bbef36bad5923fdf395ec74b0c34fa26b4e6660657747eef6cc20d2b2a28",
+            "android_export_sha256": "a949d8050f41a25c88301fa1d728b6130b1ce683262cb109d73a4ae0beead02e"
+        },
+        "umbriel_exit_face": {
+            "level": 9,
+            "room": 1728,
+            "lives": 1,
+            "score": 344540,
+            "shields": 54.73,
+            "keys": ["blue", "red"],
+            "countdown_active": true,
+            "native_save_sha256": "95b09a58a9827911b56331cc12705f4779a1458df384fd27efb2b5c5029560f4",
+            "android_export_sha256": "9cbcf0f9f0f2d8c35b8f67648b0a91f220664f3282318a396e551e7501d999f9"
+        },
+        "episode_transition": {
+            "level": 10,
+            "room": 0,
+            "lives": 1,
+            "score": 348640,
+            "shields": 100.0,
+            "keys": [],
+            "countdown_active": false,
+            "native_save_sha256": "49f825ba2deb8521027b92ca2f699771d31828803d42ff148241f9afc3417df5",
+            "android_export_sha256": "00335a05791613d61efb09c70f605bbba5bbc0026a05dd2eb4a3ce5612d1e5c3"
+        }
+    },
+    "switch_5": {
+        "room": 1538,
+        "side": 4,
+        "firing_room": 1534,
+        "before": {
+            "actor": -1,
+            "attached": false,
+            "delay_ms": -1,
+            "flags": 2,
+            "operated": false,
+            "shot": 0,
+            "type": 9,
+            "value": 327680
+        },
+        "after": {
+            "actor": 0,
+            "attached": false,
+            "delay_ms": -1,
+            "flags": 6,
+            "operated": true,
+            "shot": 1,
+            "type": 9,
+            "value": 327680
+        },
+        "closed_gate_wall": 160,
+        "wall_before": {
+            "clip": -1,
+            "flags": 16,
+            "keys": 1,
+            "state": 0,
+            "type": 5
+        },
+        "wall_after_settling": {
+            "clip": -1,
+            "flags": 16,
+            "keys": 1,
+            "state": 0,
+            "type": 4
+        },
+        "contacts": [
+            {
+                "overlay": 414,
+                "u_fixed": -32701,
+                "v_fixed": 28641,
+                "transparency": 1
+            },
+            {
+                "overlay": 414,
+                "u_fixed": -35627,
+                "v_fixed": 34710,
+                "transparency": 0
+            },
+            {
+                "overlay": 413,
+                "u_fixed": -39573,
+                "v_fixed": 39143,
+                "transparency": 0
+            }
+        ]
+    },
+    "escape": {
+        "teleport_entry": [1657, 4],
+        "teleport_destination": 1668,
+        "exit_face": [1728, 4],
+        "closing_briefing": 10,
+        "native_exit_receipt_room": 0,
+        "method": "The room-flight action reported a neighbor mismatch when the engine changed room or level at the authored boundary. The next saved position and trigger state establish the transition."
+    }
+}
