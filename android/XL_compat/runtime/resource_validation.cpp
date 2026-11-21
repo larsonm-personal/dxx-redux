@@ -983,17 +983,17 @@ const std::map<std::string, std::string> &xl_resource_mod_sources()
 bool xl_resource_same_mod_sources(const std::map<std::string, std::string> &saved, const std::map<std::string, std::string> &incoming)
 {
 	if (saved == incoming) return true;
-	if (saved.size() != incoming.size()) return false;
-	// Case-sensitive hosts record the spelling found on disk. Match each owned path and digest once
-	std::map<std::string, std::string> remaining;
-	for (const auto &[path, digest] : saved)
-		if (!remaining.emplace(resource_key(path), digest).second) return false;
-	for (const auto &[path, digest] : incoming) {
-		const auto found = remaining.find(resource_key(path));
-		if (found == remaining.end() || found->second != digest) return false;
-		remaining.erase(found);
-	}
-	return true;
+	// Multiple models can reference the same skin with different capitalization
+	const auto canonical = [](const auto &sources) -> std::optional<std::map<std::string, std::string>> {
+		std::map<std::string, std::string> result;
+		for (const auto &[path, digest] : sources) {
+			const auto [entry, inserted] = result.emplace(resource_key(path), digest);
+			if (!inserted && entry->second != digest) return std::nullopt;
+		}
+		return result;
+	};
+	const auto expected = canonical(saved);
+	return expected && expected == canonical(incoming);
 }
 
 std::map<std::string, std::string> xl_resource_sources_for_level(int ordinal, std::map<int, int> *effect_frames)
