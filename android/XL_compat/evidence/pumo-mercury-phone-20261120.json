@@ -175,6 +175,147 @@
       "countdown": false,
       "save_sha256": "e7e2d973b3fde4de5c2ece333b71a7ab48642b1c025058c0f505a6a157916baa",
       "android_export_sha256": "6fae584e38e1de6cda10435343f98f74dbc7f8151c8ee27fda1b8f8c0b028b4a"
+    },
+    "terradeep_blue_key": {
+      "level": 8,
+      "room": 1049,
+      "lives": 1,
+      "score": 269300,
+      "shields": 34.83,
+      "keys": [
+        "blue"
+      ],
+      "countdown": false,
+      "save_sha256": "b9f668e2684541ae7fa6a91556349e167fb5e1771c9b1ada7c44c0b0d00fe54a",
+      "android_export_sha256": "c96ce1d457e495849af1d5b506615389399c701e94997e6d847d4c732be529c2",
+      "master_13_operated": false
+    },
+    "terradeep_blue_door_master": {
+      "level": 8,
+      "room": 1093,
+      "lives": 1,
+      "score": 271620,
+      "shields": 4.47,
+      "keys": [
+        "blue"
+      ],
+      "countdown": false,
+      "save_sha256": "5641e0ef72946eefb85ccae8435d76243aeb175f9827efd66345da3617c3e369",
+      "android_export_sha256": "800065b10db91a63b5aa49ce49f92253de6619572600bb81a3e73597d8939434",
+      "master_13_operated": true
+    }
+  },
+  "additional_device_checkpoints": {
+    "first_owner": "59635ec1a0854e048f3e52ca87408bed",
+    "blue_retry_owner": "52bf75ae303d408c8c9080b140831714",
+    "first_owner_failure": "Terradeep blue-key checkpoint failed",
+    "hub": {
+      "result": "PASS",
+      "run_id": "4b228e56624f4c8eba2faa12f8cd4dc0",
+      "steps_completed": 37,
+      "total_steps": 37,
+      "elapsed_ms": 177024
+    },
+    "profile_hashes_restored": true,
+    "saves": {
+      "mercury-three-keys": {
+        "input": "8702d547b8354d399aab51772ac4aa4b938d180bb4dd3710501d5317733cec5b",
+        "device_save": "7ae3f9ef70cb968d1c842b066793f3056783c212227f0415a5c3ca3b33371910",
+        "expect": {
+          "current_level_num": 7,
+          "position.segment": 424,
+          "player.lives": 3,
+          "player.score": 206990,
+          "mission_asset_owner": "mod/pmines_v11.7z",
+          "cheats_enabled": false,
+          "player_dead": false,
+          "in_game": true,
+          "player.has_red_key": true,
+          "player.has_blue_key": true,
+          "player.has_gold_key": true
+        },
+        "device_write": {
+          "result": "PASS",
+          "run_id": "0209d9c370f54dbaa11f74545e42678b",
+          "steps_completed": 9,
+          "total_steps": 9,
+          "elapsed_ms": 45338
+        },
+        "cold_load": {
+          "result": "PASS",
+          "run_id": "f6afcb9139164bb6b3e7f62e45dcd1c5",
+          "steps_completed": 7,
+          "total_steps": 7,
+          "elapsed_ms": 47270
+        }
+      },
+      "terradeep-arrival": {
+        "input": "ded9624ef6ba033fd9e02dc0cae73bcc87330ad9f153f18274eeab2ac36f6c07",
+        "device_save": "c861b2b7bf9301bfe79e5c97913149989f233200229e64b73cfbb5fcfa79b6bd",
+        "expect": {
+          "current_level_num": 8,
+          "position.segment": 1239,
+          "player.lives": 3,
+          "player.score": 260440,
+          "mission_asset_owner": "mod/pmines_v11.7z",
+          "cheats_enabled": false,
+          "player_dead": false,
+          "in_game": true,
+          "player.has_red_key": false,
+          "player.has_blue_key": false,
+          "player.has_gold_key": false
+        },
+        "device_write": {
+          "result": "PASS",
+          "run_id": "83c768bceaf7456bb4378e466f8dd6af",
+          "steps_completed": 9,
+          "total_steps": 9,
+          "elapsed_ms": 55334
+        },
+        "cold_load": {
+          "result": "PASS",
+          "run_id": "2e1f6b1d3cf6438d9a7ab8c2ac3d73db",
+          "steps_completed": 7,
+          "total_steps": 7,
+          "elapsed_ms": 52647
+        }
+      },
+      "terradeep-blue": {
+        "input": "c96ce1d457e495849af1d5b506615389399c701e94997e6d847d4c732be529c2",
+        "device_save": "3e85d4612b045d9b8e421f2d62215744ecb955ed302db8f733a054e87c04031b",
+        "expect": {
+          "current_level_num": 8,
+          "position.segment": 1049,
+          "player.lives": 1,
+          "player.score": 269300,
+          "mission_asset_owner": "mod/pmines_v11.7z",
+          "cheats_enabled": false,
+          "player_dead": false,
+          "in_game": true,
+          "player.has_red_key": false,
+          "player.has_blue_key": true,
+          "player.has_gold_key": false
+        },
+        "device_write": {
+          "result": "PASS",
+          "run_id": "8e1469669deb47bdadbc2ee45926a28b",
+          "steps_completed": 9,
+          "total_steps": 9,
+          "elapsed_ms": 59268
+        },
+        "cold_load": {
+          "result": "PASS",
+          "run_id": "95b21f44e5a946f19b2de00124840dde",
+          "steps_completed": 7,
+          "total_steps": 7,
+          "elapsed_ms": 49814
+        },
+        "first_load_room": 1049,
+        "observed_rooms": {
+          "earned-write": 1049,
+          "earned-cold": 1049
+        }
+      }
     }
   }
 }
