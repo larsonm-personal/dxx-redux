@@ -7,10 +7,15 @@
 
 namespace xl_compat
 {
-std::int32_t geometry_default_magnitude(const FixedLightPoint &vector)
+double geometry_vector_length(const FixedLightPoint &vector)
 {
 	const double x = vector[0], y = vector[1], z = vector[2];
-	const double magnitude = std::sqrt(x * x + y * y + z * z);
+	return std::sqrt(x * x + y * y + z * z);
+}
+
+std::int32_t geometry_default_magnitude(const FixedLightPoint &vector)
+{
+	const double magnitude = geometry_vector_length(vector);
 	if (magnitude > std::numeric_limits<std::int32_t>::max())
 		throw std::runtime_error("XL default magnitude exceeds fixed-point range");
 	return static_cast<std::int32_t>(magnitude);

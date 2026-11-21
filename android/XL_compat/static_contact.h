@@ -1,5 +1,6 @@
 #ifndef DXX_XL_STATIC_CONTACT_H
 #define DXX_XL_STATIC_CONTACT_H
+#include "camera_contact.h"
 #include "model_hitbox_query.h"
 #include <optional>
 namespace xl_compat
@@ -21,7 +22,7 @@ inline StaticContactResult static_contact(const FixedLightPoint &position, int m
 	const int difference = hitbox_fixed(double(actor_mass) - mass);
 	const auto scale = [](const FixedLightPoint &v, int amount) {
 		FixedLightPoint out{};
-		for (unsigned i = 0; i < 3; ++i) out[i] = hitbox_fixed(double(amount) / 65536.0 * v[i]);
+		for (unsigned i = 0; i < 3; ++i) out[i] = contact_fixed(double(amount) / 65536.0 * v[i]);
 		return out;
 	};
 	FixedLightPoint force{}, rotation{};

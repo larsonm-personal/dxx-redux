@@ -17,6 +17,7 @@ using Rgb = std::array<float, 3>;
 using LightPoint = std::array<float, 3>;
 using FixedLightPoint = std::array<std::int32_t, 3>;
 // Pinned default math format 2; side-normal setup uses the separate legacy path
+double geometry_vector_length(const FixedLightPoint &vector);
 std::int32_t geometry_default_magnitude(const FixedLightPoint &vector);
 FixedLightPoint geometry_default_direction(const FixedLightPoint &vector);
 FixedLightPoint geometry_scaled_edge(const FixedLightPoint &a, const FixedLightPoint &b);
