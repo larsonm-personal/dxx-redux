@@ -1,0 +1,96 @@
+{
+  "apk_version": 32080,
+  "apk_sha256": "75da219eca512114e0b96cb8822490858de1510e7055280964843697b00d69a3",
+  "device": "Android 14 x86_64 emulator",
+  "mission": "original Pumo Mines v1.1",
+  "protected_profile_restored": true,
+  "hub": {
+    "result": "PASS",
+    "run_id": "1891703ae5f74e1c8a030b99be8db814",
+    "steps_completed": 37,
+    "total_steps": 37,
+    "elapsed_ms": 162061
+  },
+  "checkpoints": {
+    "mercury-arrival": {
+      "input": "d3b4a9502f2566ee9bf3efe6a82efe4cc5e42dbd476ee97af3f11cc4e4af749c",
+      "device_save": "df3daf9f0b027d9fac55b8150cbe9654b5c950f352f80af815176696405cbe9a",
+      "expect": {
+        "current_level_num": 7,
+        "position.segment": 1183,
+        "player.lives": 3,
+        "player.score": 162740,
+        "mission_asset_owner": "mod/pmines_v11.7z",
+        "cheats_enabled": false,
+        "player_dead": false,
+        "in_game": true,
+        "player.has_red_key": false,
+        "player.has_blue_key": false,
+        "player.has_gold_key": false
+      },
+      "device_write": {
+        "result": "PASS",
+        "run_id": "590acdaf8f674dffa2e5dd1a1281bfd5",
+        "steps_completed": 9,
+        "total_steps": 9,
+        "elapsed_ms": 51401
+      },
+      "cold_load": {
+        "result": "PASS",
+        "run_id": "193ecbb889b74b8c80ca40a6a90255b5",
+        "steps_completed": 7,
+        "total_steps": 7,
+        "elapsed_ms": 44424
+      }
+    },
+    "lava-shafts-arrival": {
+      "input": "0286c215c0e19ef61c5b23ce258fa94abad8446de85d5dd73ba1ac96bf8765a1",
+      "device_save": "2c4c5a270381709fac6c731e54738dc782732ce169b09dc76504fdc26cb71078",
+      "expect": {
+        "current_level_num": 6,
+        "position.segment": 329,
+        "player.lives": 2,
+        "player.score": 100000,
+        "mission_asset_owner": "mod/pmines_v11.7z",
+        "cheats_enabled": false,
+        "player_dead": false,
+        "in_game": true,
+        "player.has_red_key": false,
+        "player.has_blue_key": false,
+        "player.has_gold_key": false
+      },
+      "device_write": {
+        "result": "PASS",
+        "run_id": "a162d52c68ea4138b11b4f600dd71f1c",
+        "steps_completed": 9,
+        "total_steps": 9,
+        "elapsed_ms": 48026
+      },
+      "cold_load": {
+        "result": "PASS",
+        "run_id": "f9787d38895d4424831128d6bb7d0bd4",
+        "steps_completed": 7,
+        "total_steps": 7,
+        "elapsed_ms": 44225
+      }
+    }
+  },
+  "iquaxel_exit": {
+    "source_level": 5,
+    "source_room": 895,
+    "starting_score": 98450,
+    "exit_score_screen": 99950,
+    "result": {
+      "result": "PASS",
+      "run_id": "0a7904370e2e4c7ebc759b3e574bfed6",
+      "steps_completed": 11,
+      "total_steps": 11,
+      "elapsed_ms": 75880
+    },
+    "destination_level": 6,
+    "destination_room": 329,
+    "lives": 1,
+    "score": 99950,
+    "cheats_enabled": false
+  }
+}
