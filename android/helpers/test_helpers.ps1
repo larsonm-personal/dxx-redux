@@ -1754,7 +1754,8 @@ function Start-GameWithRetry {
         [scriptblock]$PreLaunchScript = $null,
         [int]$MaxAttempts = 3,
         [string]$Game = "d2",
-        [switch]$SkipGameData
+        [switch]$SkipGameData,
+        [ValidateRange(1, 3600)][int]$GameStartupTimeoutSeconds = (Get-AndroidInfrastructureTimeout -DefaultSeconds 30 -Kind GameStartup)
     )
 
     $launchArgs = @("shell", "am", "broadcast", "-a", "com.dxxredux.SETUP_COMMAND", "--es", "command", "launch")
@@ -1805,7 +1806,7 @@ function Start-GameWithRetry {
         Write-Status "Sending launch command..."
         Adb -AdbArgs $launchArgs | Out-Null
 
-        if (Wait-GameStarted) {
+        if (Wait-GameStarted -TimeoutSeconds $GameStartupTimeoutSeconds) {
             Write-Status "Game started" "Green"
             return $true
         }
