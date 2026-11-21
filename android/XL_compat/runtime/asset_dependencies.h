@@ -266,8 +266,12 @@ struct ObjectDependencies {
 		for (const int id : { r.exp1_sound_num, r.exp2_sound_num, r.see_sound, r.attack_sound, r.claw_sound, r.taunt_sound }) sound(id);
 		if (r.death_roll) sound(r.deathroll_sound);
 		model(r.model_num);
-		weapon(r.weapon_type);
-		weapon(r.weapon_type2);
+		// A zero-gun AIB_STATIC actor runs with CT_NONE. Its firing slots are
+		// unused, but its collision, drops, death explosions and blobs are live.
+		if (animated || r.n_guns != 0) {
+			weapon(r.weapon_type);
+			weapon(r.weapon_type2);
+		}
 		clip(r.exp1_vclip_num);
 		clip(r.exp2_vclip_num);
 		if (r.contains_count > 0) contents(r.contains_type, r.contains_id);
