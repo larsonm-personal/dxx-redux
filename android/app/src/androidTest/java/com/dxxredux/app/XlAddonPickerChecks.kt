@@ -104,7 +104,7 @@ internal class XlAddonPickerChecks(
                 true,
             )
         try {
-            click("\uD83D\uDCC2 Select Game Files or Archive to Import")
+            click("Import files")
             click("Pick One or More Files")
             completed()
             check(monitor.hits == 1) { "General import did not launch its document picker" }
