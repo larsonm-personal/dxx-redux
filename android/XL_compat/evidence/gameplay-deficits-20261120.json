@@ -11,6 +11,7 @@
         "advertised_file",
         "redux_outcome",
         "completed_frames",
+        "latest_census_first_blocker",
         "first_blocker_at_reference_comparison",
         "original_observation"
     ],
@@ -21,6 +22,7 @@
             "load_failed",
             0,
             "Segment functions",
+            "Segment functions",
             "started_and_ran"
         ],
         [
@@ -28,6 +30,7 @@
             "d1fs01xl.rl2",
             "load_failed",
             0,
+            "Wall types",
             "Unsupported level format",
             "simulation_unverified"
         ],
@@ -37,6 +40,7 @@
             "load_failed",
             0,
             "Advertised level file missing",
+            "Advertised level file missing",
             "mission_rejected"
         ],
         [
@@ -44,6 +48,7 @@
             "acat-xl.rl2",
             "load_failed",
             0,
+            "Custom base definitions",
             "Custom base definitions",
             "started_and_ran"
         ],
@@ -53,6 +58,7 @@
             "load_failed",
             0,
             "Animated replacement textures",
+            "Animated replacement textures",
             "started_and_ran"
         ],
         [
@@ -60,6 +66,7 @@
             "clminate.rl2",
             "load_failed",
             0,
+            "Animated replacement textures",
             "Animated replacement textures",
             "started_and_ran"
         ],
@@ -69,6 +76,7 @@
             "simulation_failed",
             82,
             "Simulation stopped",
+            "Simulation stopped",
             "started_and_ran"
         ],
         [
@@ -76,6 +84,7 @@
             "biohzrd.rl2",
             "load_failed",
             0,
+            "Segment functions",
             "Segment functions",
             "started_and_ran"
         ],
@@ -85,6 +94,7 @@
             "load_failed",
             0,
             "Replacement bitmap directory",
+            "Replacement bitmap directory",
             "started_and_ran"
         ],
         [
@@ -92,6 +102,7 @@
             "emtombz.rl2",
             "load_failed",
             0,
+            "Segment functions",
             "Segment functions",
             "started_and_ran"
         ],
@@ -101,6 +112,7 @@
             "load_failed",
             0,
             "Segment functions",
+            "Segment functions",
             "started_and_ran"
         ],
         [
@@ -108,6 +120,7 @@
             "forest.rl2",
             "load_failed",
             0,
+            "Robot definitions",
             "Robot definitions",
             "started_and_ran"
         ],
@@ -117,6 +130,7 @@
             "load_failed",
             0,
             "Wall types",
+            "Wall types",
             "started_and_ran"
         ],
         [
@@ -124,6 +138,7 @@
             "playgdxl.rl2",
             "load_failed",
             0,
+            "Object placement",
             "Object placement",
             "started_and_ran"
         ],
@@ -133,6 +148,7 @@
             "load_failed",
             0,
             "Animated replacement textures",
+            "Animated replacement textures",
             "started_and_ran"
         ],
         [
@@ -140,6 +156,7 @@
             "pyrotech.rl2",
             "simulation_failed",
             104,
+            "Simulation stopped",
             "Simulation stopped",
             "started_and_ran"
         ],
@@ -149,6 +166,7 @@
             "load_failed",
             0,
             "Replacement bitmap directory",
+            "Replacement bitmap directory",
             "started_and_ran"
         ],
         [
@@ -156,6 +174,7 @@
             "speed.rl2",
             "load_failed",
             0,
+            "Reactor triggers",
             "Reactor triggers",
             "started_and_ran"
         ],
@@ -165,6 +184,7 @@
             "load_failed",
             0,
             "Lightning effects",
+            "Lightning effects",
             "started_and_ran"
         ],
         [
@@ -172,6 +192,7 @@
             "toxic-d3.rl2",
             "load_failed",
             0,
+            "Replacement bitmap directory",
             "Replacement bitmap directory",
             "started_and_ran"
         ],
@@ -181,6 +202,7 @@
             "load_failed",
             0,
             "Advertised level file missing",
+            "Advertised level file missing",
             "mission_rejected"
         ],
         [
@@ -188,6 +210,7 @@
             "wfc20.rl2",
             "load_failed",
             0,
+            "Segment functions",
             "Segment functions",
             "started_and_ran"
         ],
@@ -197,6 +220,7 @@
             "simulation_failed",
             120,
             "Resolved level filename differs",
+            "Resolved level filename differs",
             "started_and_ran"
         ],
         [
@@ -204,6 +228,7 @@
             "picasso.rl2",
             "load_failed",
             0,
+            "Advertised level file missing",
             "Advertised level file missing",
             "advertised_member_lookup_empty"
         ],
@@ -213,6 +238,7 @@
             "load_failed",
             0,
             "Light index bounds",
+            "Light index bounds",
             "started_and_ran"
         ],
         [
@@ -220,6 +246,7 @@
             "esonapri.rl2",
             "load_failed",
             0,
+            "Light index bounds",
             "Light index bounds",
             "started_and_ran"
         ],
@@ -229,6 +256,7 @@
             "load_failed",
             0,
             "Light index bounds",
+            "Light index bounds",
             "started_and_ran"
         ],
         [
@@ -236,6 +264,7 @@
             "chacshir.rl2",
             "load_failed",
             0,
+            "Light index bounds",
             "Light index bounds",
             "started_and_ran"
         ],
@@ -245,6 +274,7 @@
             "load_failed",
             0,
             "Light index bounds",
+            "Light index bounds",
             "started_and_ran"
         ],
         [
@@ -252,6 +282,7 @@
             "cefispar.rl2",
             "load_failed",
             0,
+            "Light index bounds",
             "Light index bounds",
             "started_and_ran"
         ],
@@ -261,6 +292,7 @@
             "load_failed",
             0,
             "Light index bounds",
+            "Light index bounds",
             "started_and_ran"
         ],
         [
@@ -268,6 +300,7 @@
             "lakshmid.rl2",
             "load_failed",
             0,
+            "Light index bounds",
             "Light index bounds",
             "started_and_ran"
         ],
@@ -277,6 +310,7 @@
             "load_failed",
             0,
             "Light index bounds",
+            "Light index bounds",
             "started_and_ran"
         ],
         [
@@ -284,6 +318,7 @@
             "aurabyss.rl2",
             "load_failed",
             0,
+            "Light index bounds",
             "Light index bounds",
             "started_and_ran"
         ],
@@ -293,6 +328,7 @@
             "load_failed",
             0,
             "Light index bounds",
+            "Light index bounds",
             "started_and_ran"
         ],
         [
@@ -300,6 +336,7 @@
             "lvoxonbt.rl2",
             "load_failed",
             0,
+            "Light index bounds",
             "Light index bounds",
             "started_and_ran"
         ],
@@ -309,6 +346,7 @@
             "load_failed",
             0,
             "Light index bounds",
+            "Light index bounds",
             "started_and_ran"
         ],
         [
@@ -316,6 +354,7 @@
             "thorium.rl2",
             "load_failed",
             0,
+            "Light index bounds",
             "Light index bounds",
             "started_and_ran"
         ],
@@ -325,6 +364,7 @@
             "load_failed",
             0,
             "Light index bounds",
+            "Light index bounds",
             "started_and_ran"
         ],
         [
@@ -332,6 +372,7 @@
             "pdl8.rl2",
             "load_failed",
             0,
+            "Advertised level file missing",
             "Advertised level file missing",
             "mission_rejected"
         ],
@@ -341,6 +382,7 @@
             "load_failed",
             0,
             "Advertised level file missing",
+            "Advertised level file missing",
             "mission_rejected"
         ],
         [
@@ -348,6 +390,7 @@
             "pdl10.rl2",
             "load_failed",
             0,
+            "Advertised level file missing",
             "Advertised level file missing",
             "mission_rejected"
         ],
@@ -357,6 +400,7 @@
             "load_failed",
             0,
             "Advertised level file missing",
+            "Advertised level file missing",
             "mission_rejected"
         ],
         [
@@ -364,6 +408,7 @@
             "pdl12.rl2",
             "load_failed",
             0,
+            "Advertised level file missing",
             "Advertised level file missing",
             "mission_rejected"
         ],
@@ -373,6 +418,7 @@
             "load_failed",
             0,
             "Advertised level file missing",
+            "Advertised level file missing",
             "mission_rejected"
         ],
         [
@@ -380,6 +426,7 @@
             "pdl14.rl2",
             "load_failed",
             0,
+            "Advertised level file missing",
             "Advertised level file missing",
             "mission_rejected"
         ],
@@ -389,6 +436,7 @@
             "load_failed",
             0,
             "Advertised level file missing",
+            "Advertised level file missing",
             "mission_rejected"
         ],
         [
@@ -396,6 +444,7 @@
             "pdl16.rl2",
             "load_failed",
             0,
+            "Advertised level file missing",
             "Advertised level file missing",
             "mission_rejected"
         ],
@@ -405,6 +454,7 @@
             "load_failed",
             0,
             "Advertised level file missing",
+            "Advertised level file missing",
             "mission_rejected"
         ],
         [
@@ -412,6 +462,7 @@
             "pdl18.rl2",
             "load_failed",
             0,
+            "Advertised level file missing",
             "Advertised level file missing",
             "mission_rejected"
         ],
@@ -421,6 +472,7 @@
             "load_failed",
             0,
             "Advertised level file missing",
+            "Advertised level file missing",
             "mission_rejected"
         ],
         [
@@ -428,6 +480,7 @@
             "pdl20.rl2",
             "load_failed",
             0,
+            "Advertised level file missing",
             "Advertised level file missing",
             "mission_rejected"
         ],
@@ -437,6 +490,7 @@
             "load_failed",
             0,
             "Advertised level file missing",
+            "Advertised level file missing",
             "mission_rejected"
         ],
         [
@@ -444,6 +498,7 @@
             "pdl22.rl2",
             "load_failed",
             0,
+            "Advertised level file missing",
             "Advertised level file missing",
             "mission_rejected"
         ],
@@ -453,6 +508,7 @@
             "load_failed",
             0,
             "Advertised level file missing",
+            "Advertised level file missing",
             "mission_rejected"
         ],
         [
@@ -460,6 +516,7 @@
             "pdl24.rl2",
             "load_failed",
             0,
+            "Advertised level file missing",
             "Advertised level file missing",
             "mission_rejected"
         ],
@@ -469,6 +526,7 @@
             "load_failed",
             0,
             "Advertised level file missing",
+            "Advertised level file missing",
             "mission_rejected"
         ],
         [
@@ -476,6 +534,7 @@
             "pdl25-1.rl2",
             "load_failed",
             0,
+            "Advertised level file missing",
             "Advertised level file missing",
             "mission_rejected"
         ],
@@ -485,6 +544,7 @@
             "load_failed",
             0,
             "Advertised level file missing",
+            "Advertised level file missing",
             "mission_rejected"
         ],
         [
@@ -492,6 +552,7 @@
             "pdl26.rl2",
             "load_failed",
             0,
+            "Advertised level file missing",
             "Advertised level file missing",
             "mission_rejected"
         ],
@@ -501,6 +562,7 @@
             "load_failed",
             0,
             "Advertised level file missing",
+            "Advertised level file missing",
             "mission_rejected"
         ],
         [
@@ -508,6 +570,7 @@
             "pdl28.rl2",
             "load_failed",
             0,
+            "Advertised level file missing",
             "Advertised level file missing",
             "mission_rejected"
         ],
@@ -517,6 +580,7 @@
             "load_failed",
             0,
             "Advertised level file missing",
+            "Advertised level file missing",
             "mission_rejected"
         ],
         [
@@ -524,6 +588,7 @@
             "pdl30.rl2",
             "load_failed",
             0,
+            "Advertised level file missing",
             "Advertised level file missing",
             "mission_rejected"
         ],
@@ -533,6 +598,7 @@
             "load_failed",
             0,
             "Advertised level file missing",
+            "Advertised level file missing",
             "mission_rejected"
         ],
         [
@@ -540,6 +606,7 @@
             "pdl32.rl2",
             "load_failed",
             0,
+            "Advertised level file missing",
             "Advertised level file missing",
             "mission_rejected"
         ],
@@ -549,6 +616,7 @@
             "unsupported_format",
             0,
             "Unsupported level format",
+            "Unsupported level format",
             "started_and_ran"
         ],
         [
@@ -556,6 +624,7 @@
             "reflux.rl2",
             "load_failed",
             0,
+            "Advertised level file missing",
             "Advertised level file missing",
             "mission_rejected"
         ],
@@ -565,6 +634,7 @@
             "load_failed",
             0,
             "Robot definitions",
+            "Robot definitions",
             "started_and_ran"
         ],
         [
@@ -572,6 +642,7 @@
             "antho-d1.rl2",
             "load_failed",
             0,
+            "Object trigger actions",
             "Object trigger actions",
             "started_and_ran"
         ],
@@ -581,6 +652,7 @@
             "load_failed",
             0,
             "Trigger targets",
+            "Trigger targets",
             "started_and_ran"
         ],
         [
@@ -588,6 +660,7 @@
             "fv24b.rl2",
             "load_failed",
             0,
+            "Segment functions",
             "Segment functions",
             "started_and_ran"
         ],
@@ -597,6 +670,7 @@
             "unsupported_format",
             0,
             "Unsupported level format",
+            "Unsupported level format",
             "started_and_ran"
         ],
         [
@@ -604,6 +678,7 @@
             "rtarena.rl2",
             "load_failed",
             0,
+            "Fluid behavior",
             "Fluid behavior",
             "started_and_ran"
         ],
@@ -613,6 +688,7 @@
             "load_failed",
             0,
             "OOF model decoding",
+            "OOF model decoding",
             "started_and_ran"
         ],
         [
@@ -620,6 +696,7 @@
             "antho-d2.rl2",
             "load_failed",
             0,
+            "OOF model decoding",
             "OOF model decoding",
             "started_and_ran"
         ],
@@ -629,6 +706,7 @@
             "load_failed",
             0,
             "OOF model decoding",
+            "OOF model decoding",
             "started_and_ran"
         ],
         [
@@ -636,6 +714,7 @@
             "antholgy.rl2",
             "load_failed",
             0,
+            "OOF model decoding",
             "OOF model decoding",
             "started_and_ran"
         ],
@@ -645,6 +724,7 @@
             "load_failed",
             0,
             "Animated replacement textures",
+            "Animated replacement textures",
             "started_and_ran"
         ],
         [
@@ -652,6 +732,7 @@
             "control.rl2",
             "load_failed",
             0,
+            "Light index bounds",
             "Light index bounds",
             "started_and_ran"
         ],
@@ -661,6 +742,7 @@
             "load_failed",
             0,
             "Animated replacement textures",
+            "Animated replacement textures",
             "started_and_ran"
         ],
         [
@@ -668,6 +750,7 @@
             "subzero.rl2",
             "load_failed",
             0,
+            "Animated replacement textures",
             "Animated replacement textures",
             "started_and_ran"
         ],
@@ -677,6 +760,7 @@
             "load_failed",
             0,
             "Animated replacement textures",
+            "Animated replacement textures",
             "started_and_ran"
         ],
         [
@@ -684,6 +768,7 @@
             "control2.rl2",
             "load_failed",
             0,
+            "Animated replacement textures",
             "Animated replacement textures",
             "simulation_unverified"
         ],
@@ -693,6 +778,7 @@
             "load_failed",
             0,
             "Multiplayer-only objects",
+            "Multiplayer-only objects",
             "started_and_ran"
         ],
         [
@@ -700,6 +786,7 @@
             "elitehnt.rl2",
             "load_failed",
             0,
+            "Fluid behavior",
             "Unsupported level format",
             "started_and_ran"
         ],
@@ -709,14 +796,24 @@
             "load_failed",
             0,
             "Non-hexahedral geometry",
+            "Non-hexahedral geometry",
             "started_and_ran"
         ],
-        ["levels/kore.zip/kore/kore.mn2:1", "kore.rl2", "load_failed", 0, "Robot contents", "started_and_ran"],
+        [
+            "levels/kore.zip/kore/kore.mn2:1",
+            "kore.rl2",
+            "load_failed",
+            0,
+            "Robot contents",
+            "Robot contents",
+            "started_and_ran"
+        ],
         [
             "levels/lor-xl.7z/missions/single/lor-xl.mn2:1",
             "lor-xl.rl2",
             "load_failed",
             0,
+            "Animated replacement textures",
             "Animated replacement textures",
             "started_and_ran"
         ],
@@ -726,6 +823,7 @@
             "load_failed",
             0,
             "Custom base definitions",
+            "Custom base definitions",
             "started_and_ran"
         ],
         [
@@ -733,6 +831,7 @@
             "biohzrd.rl2",
             "load_failed",
             0,
+            "Segment functions",
             "Segment functions",
             "started_and_ran"
         ],
@@ -742,6 +841,7 @@
             "load_failed",
             0,
             "Animated replacement textures",
+            "Animated replacement textures",
             "started_and_ran"
         ],
         [
@@ -749,6 +849,7 @@
             "initiati.rl2",
             "load_failed",
             0,
+            "Reactor triggers",
             "Reactor triggers",
             "started_and_ran"
         ],
@@ -758,6 +859,7 @@
             "load_failed",
             0,
             "Animated replacement textures",
+            "Animated replacement textures",
             "started_and_ran"
         ],
         [
@@ -765,6 +867,7 @@
             "standoff.rl2",
             "load_failed",
             0,
+            "Animated replacement textures",
             "Animated replacement textures",
             "started_and_ran"
         ],
@@ -774,6 +877,7 @@
             "load_failed",
             0,
             "Reactor triggers",
+            "Reactor triggers",
             "started_and_ran"
         ],
         [
@@ -781,6 +885,7 @@
             "clminate.rl2",
             "load_failed",
             0,
+            "Reactor triggers",
             "Reactor triggers",
             "started_and_ran"
         ],
@@ -790,6 +895,7 @@
             "load_failed",
             0,
             "Non-hexahedral geometry",
+            "Non-hexahedral geometry",
             "started_and_ran"
         ],
         [
@@ -797,6 +903,7 @@
             "crdntion.rl2",
             "load_failed",
             0,
+            "Non-hexahedral geometry",
             "Non-hexahedral geometry",
             "started_and_ran"
         ],
@@ -806,6 +913,7 @@
             "load_failed",
             0,
             "Animated replacement textures",
+            "Animated replacement textures",
             "started_and_ran"
         ],
         [
@@ -813,6 +921,7 @@
             "dmentia5.rl2",
             "load_failed",
             0,
+            "Advertised level file missing",
             "Advertised level file missing",
             "advertised_member_lookup_empty"
         ],
@@ -822,6 +931,7 @@
             "load_failed",
             0,
             "Segment functions",
+            "Segment functions",
             "started_and_ran"
         ],
         [
@@ -829,6 +939,7 @@
             "etombz.rl2",
             "load_failed",
             0,
+            "Segment functions",
             "Segment functions",
             "started_and_ran"
         ],
@@ -838,6 +949,7 @@
             "load_failed",
             0,
             "Lightning effects",
+            "Lightning effects",
             "started_and_ran"
         ],
         [
@@ -845,6 +957,7 @@
             "fv24b.rl2",
             "unsupported_format",
             0,
+            "Unsupported level format",
             "Unsupported level format",
             "simulation_unverified"
         ],
@@ -854,6 +967,7 @@
             "load_failed",
             0,
             "Wall types",
+            "Wall types",
             "started_and_ran"
         ],
         [
@@ -861,6 +975,7 @@
             "mb-arena.rl2",
             "load_failed",
             0,
+            "Segment functions",
             "Segment functions",
             "started_and_ran"
         ],
@@ -870,6 +985,7 @@
             "load_failed",
             0,
             "Advertised level file missing",
+            "Advertised level file missing",
             "mission_rejected"
         ],
         [
@@ -877,6 +993,7 @@
             "picasso.rl2",
             "load_failed",
             0,
+            "Advertised level file missing",
             "Advertised level file missing",
             "advertised_member_lookup_empty"
         ],
@@ -886,6 +1003,7 @@
             "load_failed",
             0,
             "Particle effects",
+            "Particle effects",
             "started_and_ran"
         ],
         [
@@ -894,6 +1012,7 @@
             "load_failed",
             0,
             "Object placement",
+            "Object placement",
             "started_and_ran"
         ],
         [
@@ -901,6 +1020,7 @@
             "pmanicd2.rl2",
             "load_failed",
             0,
+            "Segment flags",
             "Unsupported level format",
             "started_and_ran"
         ],
@@ -910,6 +1030,7 @@
             "load_failed",
             0,
             "Animated replacement textures",
+            "Animated replacement textures",
             "started_and_ran"
         ],
         [
@@ -917,6 +1038,7 @@
             "pyrotech.rl2",
             "simulation_failed",
             104,
+            "Simulation stopped",
             "Simulation stopped",
             "started_and_ran"
         ],
@@ -926,6 +1048,7 @@
             "load_failed",
             0,
             "Animated replacement textures",
+            "Animated replacement textures",
             "started_and_ran"
         ],
         [
@@ -933,6 +1056,7 @@
             "pyrotech.rl2",
             "simulation_failed",
             104,
+            "Simulation stopped",
             "Simulation stopped",
             "started_and_ran"
         ],
@@ -942,6 +1066,7 @@
             "load_failed",
             0,
             "Fluid behavior",
+            "Fluid behavior",
             "started_and_ran"
         ],
         [
@@ -949,6 +1074,7 @@
             "speed.rl2",
             "load_failed",
             0,
+            "Reactor triggers",
             "Reactor triggers",
             "started_and_ran"
         ],
@@ -958,6 +1084,7 @@
             "load_failed",
             0,
             "Robot definitions",
+            "Robot definitions",
             "started_and_ran"
         ],
         [
@@ -965,6 +1092,7 @@
             "tohelix.rl2",
             "load_failed",
             0,
+            "Non-hexahedral geometry",
             "Non-hexahedral geometry",
             "started_and_ran"
         ],
@@ -974,6 +1102,7 @@
             "load_failed",
             0,
             "Animated replacement textures",
+            "Animated replacement textures",
             "started_and_ran"
         ],
         [
@@ -981,6 +1110,7 @@
             "qtoxic.rl2",
             "load_failed",
             0,
+            "Replacement bitmap directory",
             "Replacement bitmap directory",
             "started_and_ran"
         ],
@@ -990,6 +1120,7 @@
             "load_failed",
             0,
             "Segment functions",
+            "Segment functions",
             "started_and_ran"
         ],
         [
@@ -997,6 +1128,7 @@
             "wfc20.rl2",
             "load_failed",
             0,
+            "Segment functions",
             "Segment functions",
             "started_and_ran"
         ],
@@ -1006,6 +1138,7 @@
             "timeout",
             0,
             "timeout",
+            "timeout",
             "simulation_unverified"
         ],
         [
@@ -1013,6 +1146,7 @@
             "pmlev1.rl2",
             "load_failed",
             0,
+            "ASE model rendering",
             "ASE model rendering",
             "started_and_ran"
         ],
@@ -1022,6 +1156,7 @@
             "load_failed",
             0,
             "ASE model rendering",
+            "ASE model rendering",
             "started_and_ran"
         ],
         [
@@ -1030,6 +1165,7 @@
             "load_failed",
             0,
             "ASE model rendering",
+            "ASE model rendering",
             "started_and_ran"
         ],
         [
@@ -1037,6 +1173,7 @@
             "aqunia.rl2",
             "load_failed",
             0,
+            "Fluid behavior",
             "Unsupported level format",
             "started_and_ran"
         ],
@@ -1045,6 +1182,7 @@
             "auora1.rl2",
             "load_failed",
             0,
+            "Segment functions",
             "Unsupported level format",
             "started_and_ran"
         ]
