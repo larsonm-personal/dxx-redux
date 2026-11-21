@@ -165,6 +165,12 @@ void xl_compat::skybox_render_native_controls(const Inventory &original)
 		for (std::size_t i = 0; i < derived.segments.size(); ++i)
 			if (bool(xl_skybox_segment(int(i))) != (derived.segments[i].function == 10)) throw std::runtime_error("Skybox render membership differs from loaded source");
 		if (xl_skybox_segment(-1) || xl_skybox_segment(int(derived.segments.size()))) throw std::runtime_error("Skybox render accepted an out-of-range segment");
+		vms_vector center;
+		compute_segment_center(&center, &Segments[0]);
+		if (mask == 2 && (find_point_seg(&center, -1) != -1 || find_point_seg(&center, 0) != 0))
+			throw std::runtime_error("Mine lookup entered skybox geometry or lost a point already in the skybox");
+		if (mask == 0 && find_point_seg(&center, -1) < 0)
+			throw std::runtime_error("Mine lookup lost ordinary geometry without a skybox");
 		if (!world) continue;
 		int previous = -1;
 		for (const auto &face : world->faces) {
