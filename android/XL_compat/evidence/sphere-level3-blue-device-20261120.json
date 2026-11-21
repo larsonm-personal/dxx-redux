@@ -1,0 +1,349 @@
+{
+    "scope": "Two-life level-three blue-gate pilot. Ordinary x86_64 Android wrote and cold-loaded its own slot. An instrumented Android build recorded genuine controls. The blue pickup-room slot is a separate open owner.",
+    "native_input": {
+        "manifest": "1bdcf18dc28320438d3fc58daeed546cbc589cccd240db3c6daceec658399822",
+        "prior": "a0ca6072cf7e23eb1c705f679ac41be9b3f2f466543f3f57fb4072b2eb9ecec2",
+        "last_native": "f187fb16af4ab52fbc3f2516629d670e6540cdf599020fe979be00fcffdf4328",
+        "last_export": "67deddccc40fae1e2ac4538f48c6a2fe2ae066d7c7d81c9e49a4f9d405dff3b5",
+        "incoming_state": "1ba6d39a5a3e8c2dfe769bdb76bffb211609e3ff5b17f1c66a27b3871cab2f9b"
+    },
+    "android_source": "068c007c5ead5cf5a21bedb00817dc62236b6996",
+    "apks": [
+        {
+            "source": "068c007c5ead5cf5a21bedb00817dc62236b6996",
+            "apk": "E:/dxx-redux-builds/xl-gameplay-window-20261120/level3-068c007c5-false.apk",
+            "sha256": "8bbd671696f9b0d16b4a606464afa12fd605e80e09215619e0bf930af036c181",
+            "abi": "x86_64",
+            "developer_tests": "false",
+            "log": "aa705cf577f541ab2157abcfee0dc350ace4b6fc83fa2f9b4e7651a31dddaee4"
+        },
+        {
+            "source": "068c007c5ead5cf5a21bedb00817dc62236b6996",
+            "apk": "E:/dxx-redux-builds/xl-gameplay-window-20261120/level3-068c007c5-true.apk",
+            "sha256": "e4152171a65bb380a88d4996a7d1822767fd51aabb077999589bcf1b476af297",
+            "abi": "x86_64",
+            "developer_tests": "true",
+            "log": "57cfb6c8acb7c42a828b41a2ddd4e54aeecac78ed4c18cba8c5b3e49ae9cca67"
+        }
+    ],
+    "device": {
+        "original_apk": "93d3d2afdf1b5a4450cb24bd742978b18712b6c449a8412d893dc0327c319bc5",
+        "apk": "8bbd671696f9b0d16b4a606464afa12fd605e80e09215619e0bf930af036c181",
+        "export": "67deddccc40fae1e2ac4538f48c6a2fe2ae066d7c7d81c9e49a4f9d405dff3b5",
+        "written": "1c50ed967bf9b8fe4d332dc9c974313044b8862045c735a88900b17670ce52e1",
+        "assets": [
+            {
+                "path": "files/imported/sets/default/missions/sphere.hog",
+                "sha256": "a40bf59101fee991200e34984a45fdf209cee4d68d47d4d52996dfe875dbe253",
+                "added": true
+            },
+            {
+                "path": "files/imported/sets/default/missions/sphere.mn2",
+                "sha256": "7104fe4eada0804ed6b03ac4b2a68656ab5c15d3f8b1bec37b43c9a5fab0ac6b",
+                "added": true
+            },
+            {
+                "path": "files/imported/sets/default/d2x.hog",
+                "sha256": "97a4433833ec1f2fbdd2becc144a1e9726ca78b1210a71a49ddbec6182665fe6",
+                "added": true
+            },
+            {
+                "path": "files/imported/sets/default/d2x-xl.hog",
+                "sha256": "e7351d66d534c3fdb400f03b91b771ad2d0c0d2b0100cf48718d504008ada7e6",
+                "added": true
+            }
+        ],
+        "expect": {
+            "current_level_num": 3,
+            "in_game": true,
+            "cheats_enabled": false,
+            "player.lives": 2,
+            "player.score": 79250,
+            "player.has_gold_key": false,
+            "player.has_red_key": false,
+            "player_dead": false,
+            "player.has_blue_key": true,
+            "player.primary_weapon_flags": 7,
+            "position.segment": 142
+        },
+        "logs": {
+            "write": "f58dd5d3f726eff08ecfd892107579985fe79b6cddd10d4e095b4411f72010fe",
+            "cold": "cf5e2d500e7db440d94ec11ba594d248ca5420980b7b41ed04220fd8835e56ad"
+        }
+    },
+    "capture": {
+        "android.log": "07da23dc6f1f843a551180e1dba22ccc2b04a5e1dfb4801661a27709678c0c24",
+        "before.json": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "d2_sphere_level3_20261120_083641.dximdemo": "457daad1c78fe92681beb5b74e97d8c371e7823e4d4e062f1a55153eae5bbad1",
+        "d2_sphere_level3_20261120_083641.dximdemo.rngtrace.jsonl": "2131b76b00523a91ba3bf764920457abe91aa07416ef155651f31acfb1f67634",
+        "descent.cfg": "abf5046efe5c692d0ecaf791e289180f86ca9f2f640c7ce5b4208bee5f5d5387",
+        "files.json": "9a74f8c41e93d54969a73cde35febd3f46e0df5e32282022ae0325b777df1cb8",
+        "live-11692.jsonl.gz": "3d2ddec2c1d4f734c3589ac8def8c349bb5e8492192da1b096272169a1225d50",
+        "plan.jsonc": "3dc585d2d7e549e4a0f49e82f3c5a2ec211c186cafb8ac39d79fc958d54235f1",
+        "spgate.plr": "5cd431c61100c3564dd61fdb852d1ca492d60714d8aab70d5d36d8fe62d0a4dc",
+        "spgate.plx": "5835e77249d75e186db54a115231777a1c277710d7dde2bac45f4092ae33ea80"
+    },
+    "device_plans": {
+        "write.jsonc": "65b8c68fef5d9d5eaefdee759400a267a5bb81961795c01b936236a690a1a510",
+        "cold.jsonc": "b17ce1846b93b30a6664a468edcddd5e9806bda2289e0da0b358de3b67d9b218"
+    },
+    "native": {
+        "windows": {
+            "source": "91014d09c3ad2034e5875f15243f730c00cd2b95",
+            "binary": "2c2fb01976556573176c712e0ea4c33aaf241459abb6ad1f77b74f26154ab462",
+            "source_dgss": "1c50ed967bf9b8fe4d332dc9c974313044b8862045c735a88900b17670ce52e1",
+            "save": "2137f5509912ee0495d6ba7a3bc02b555fcd33b0887171f7e3bdbfa1b8285193",
+            "player": {
+                "cloaked": false,
+                "energy": 35.780029296875,
+                "has_blue_key": true,
+                "has_gold_key": false,
+                "has_red_key": false,
+                "hostages_on_board": 0,
+                "invulnerable": false,
+                "laser_level": 3,
+                "lives": 2,
+                "muzzles": {
+                    "0": {
+                        "legacy_limit_exceeded": false,
+                        "model": 108,
+                        "owned": false,
+                        "point_fixed": [146013, -59748, 35756],
+                        "quick_distance": 175122
+                    },
+                    "1": {
+                        "legacy_limit_exceeded": false,
+                        "model": 108,
+                        "owned": false,
+                        "point_fixed": [-147477, -59892, 34430],
+                        "quick_distance": 176391
+                    },
+                    "4": {
+                        "legacy_limit_exceeded": false,
+                        "model": 108,
+                        "owned": false,
+                        "point_fixed": [153026, -185, -91405],
+                        "quick_distance": 187337
+                    },
+                    "5": {
+                        "legacy_limit_exceeded": false,
+                        "model": 108,
+                        "owned": false,
+                        "point_fixed": [-156840, -185, -91405],
+                        "quick_distance": 191151
+                    },
+                    "6": {
+                        "legacy_limit_exceeded": false,
+                        "model": 108,
+                        "owned": false,
+                        "point_fixed": [1608, -87663, 184978],
+                        "quick_distance": 218152
+                    }
+                },
+                "primary_weapon": 2,
+                "primary_weapon_flags": 7,
+                "quad_lasers": false,
+                "robots_killed_level": 28,
+                "score": 79250,
+                "secondary_ammo": [7, 0, 4, 0, 0, 0, 0, 8, 0, 0],
+                "secondary_weapon": 0,
+                "secondary_weapon_flags": 133,
+                "shields": 54.51655578613281,
+                "vulcan_ammo": 392
+            },
+            "door4": {
+                "clip": 28,
+                "flags": 2,
+                "keys": 2,
+                "state": 4,
+                "type": 2
+            },
+            "rng": {
+                "call_count": 3041920,
+                "state": 2959292288,
+                "state_available": true
+            },
+            "receipts": {
+                "plan.json": "f01eb8e53058de0a75eb442c84d30e9244ab69052bbe87582b641418db882ea8",
+                "player-result.json": "652479e6a7eb11f33c4a5f2aaf010504b49484091257ee782d5f6acd54b54bf3",
+                "player-state.json": "c49b9fdb30d4254eb4a8fb672435684c140eeacdaa60da958f40dc45a563b99d",
+                "player-trace.jsonl": "59db9466e2a645608e7558132c32c7129f4275325234dfce9fd7007cee8c42cc"
+            }
+        },
+        "linux": {
+            "source": "91014d09c3ad2034e5875f15243f730c00cd2b95",
+            "binary": "e391143e16b8281ea5cf533e941f29477412fb0d60f57e33e41439015c1f221c",
+            "source_dgss": "1c50ed967bf9b8fe4d332dc9c974313044b8862045c735a88900b17670ce52e1",
+            "save": "7586bdd8b35400abf98a3d90c600c33165a33086acfd29a3872f10124169ddea",
+            "player": {
+                "cloaked": false,
+                "energy": 35.780029296875,
+                "has_blue_key": true,
+                "has_gold_key": false,
+                "has_red_key": false,
+                "hostages_on_board": 0,
+                "invulnerable": false,
+                "laser_level": 3,
+                "lives": 2,
+                "muzzles": {
+                    "0": {
+                        "legacy_limit_exceeded": false,
+                        "model": 108,
+                        "owned": false,
+                        "point_fixed": [146013, -59748, 35756],
+                        "quick_distance": 175122
+                    },
+                    "1": {
+                        "legacy_limit_exceeded": false,
+                        "model": 108,
+                        "owned": false,
+                        "point_fixed": [-147477, -59892, 34430],
+                        "quick_distance": 176391
+                    },
+                    "4": {
+                        "legacy_limit_exceeded": false,
+                        "model": 108,
+                        "owned": false,
+                        "point_fixed": [153026, -185, -91405],
+                        "quick_distance": 187337
+                    },
+                    "5": {
+                        "legacy_limit_exceeded": false,
+                        "model": 108,
+                        "owned": false,
+                        "point_fixed": [-156840, -185, -91405],
+                        "quick_distance": 191151
+                    },
+                    "6": {
+                        "legacy_limit_exceeded": false,
+                        "model": 108,
+                        "owned": false,
+                        "point_fixed": [1608, -87663, 184978],
+                        "quick_distance": 218152
+                    }
+                },
+                "primary_weapon": 2,
+                "primary_weapon_flags": 7,
+                "quad_lasers": false,
+                "robots_killed_level": 28,
+                "score": 79250,
+                "secondary_ammo": [7, 0, 4, 0, 0, 0, 0, 8, 0, 0],
+                "secondary_weapon": 0,
+                "secondary_weapon_flags": 133,
+                "shields": 54.51655578613281,
+                "vulcan_ammo": 392
+            },
+            "door4": {
+                "clip": 28,
+                "flags": 2,
+                "keys": 2,
+                "state": 4,
+                "type": 2
+            },
+            "rng": {
+                "call_count": 3041920,
+                "state": 2959292288,
+                "state_available": true
+            },
+            "receipts": {
+                "plan.json": "081be772808c373c65b8708a953a6a93302470eb69dea5333a56e33138285ac9",
+                "player-result.json": "6c3b6f87cc604dffb61f191cfa24b997e2489c95da27900063fdd096ea5102d1",
+                "player-state.json": "1faefecc663bc2bc74bb619cc838d576b6e2844a799db2acafd89fbcc828bccc",
+                "player-trace.jsonl": "fc32534449580652b610f2bdbb00e61676b08b4c8c3614383278564e4975027d"
+            }
+        }
+    },
+    "all_emitted_native_state_equal": true,
+    "replays": {
+        "windows": {
+            "ordinary_source": "91014d09c3ad2034e5875f15243f730c00cd2b95",
+            "binary": "ca6daa369096986d6f94640999634879abb8752dcd134e8f57c3ebf4da94b2b0",
+            "compared": {
+                "frames": {
+                    "frames_compared": 182,
+                    "status": "pass"
+                },
+                "objects": {
+                    "status": "pass",
+                    "frames_compared": 182
+                },
+                "world": {
+                    "status": "pass",
+                    "records_compared": 186
+                },
+                "sim_rng": {
+                    "status": "pass",
+                    "simulation_events_compared": 113136
+                },
+                "fx_rng": {
+                    "status": "pass",
+                    "effects_events_compared": 0
+                },
+                "trailer": {
+                    "status": "pass"
+                }
+            },
+            "inputs": {
+                "alien1.pig": "811fc58caa3e2a72cdfa07d7530b2bb0ca71836a6a2d8a3cb401e4284949c233",
+                "alien2.pig": "75ef8fa0cba03410c61ad1b58f57dcb1481f1f302985828aab0af90639926055",
+                "d2x-xl.hog": "e7351d66d534c3fdb400f03b91b771ad2d0c0d2b0100cf48718d504008ada7e6",
+                "d2x.hog": "97a4433833ec1f2fbdd2becc144a1e9726ca78b1210a71a49ddbec6182665fe6",
+                "descent.hog": "83d76ff0c46bb2e7348a49bdd287ad764abeda0d851bfb16b42c1ede93b21052",
+                "descent.pig": "093f9cc029200e9d71d5e14f2f06e5e876a658dd64dc664d6911c5d24d7b64fe",
+                "descent2.ham": "5233242206c677d65db7f075dd61f2b0a1b7bbe8cd65f56d769efaee1cc38b4d",
+                "descent2.hog": "f1abf516512739c97b43e2e93611a2398fc9f8bc7a014095ebc2b6b2fd21b703",
+                "descent2.s22": "4f10632dd4efcbffe532c35b6763edd22817135442bbcc4171381706f3893728",
+                "fire.pig": "26a5a5f4e91456abf31f79578d0922e7bc3348b6aa92489a84033de83f358156",
+                "groupa.pig": "facdde6cf8a2cab99ea39ba06931872a1fe5636fe211e61fb58c57d706bf627b",
+                "ice.pig": "ae6152ef69502b00e51a98d8f04b21f2855a332cd2988ecceb3b909a49fa26a1",
+                "water.pig": "de88ead87dcb32f16936b3e2a08b81a2248440f29e6f8be0c4c3a5f9fe4b63c1",
+                "missions/sphere.hog": "a40bf59101fee991200e34984a45fdf209cee4d68d47d4d52996dfe875dbe253",
+                "missions/sphere.mn2": "7104fe4eada0804ed6b03ac4b2a68656ab5c15d3f8b1bec37b43c9a5fab0ac6b"
+            },
+            "hashes": {
+                "receipt.json": "001bf8e08d1b7762a9a4cdb6b4c7bb9c8810dad21ad71c56de0f3f8f19ebd46f",
+                "actual.json": "8b055db2cec4aa455bd2538f531c7d87fe429346ac1a172c6977a6fceeeba8ac",
+                "comparison.json": "2211bba49f2195f14ff7c9bbea7304270e80c70e65ab06c3b53b79ee4c75fdd8",
+                "state.jsonl.gz": "fe6484fdcbd6c12411117b0cb4e8a071e07318e7f0c9165c60fd66d62cf8cffd",
+                "rng.jsonl": "0210124620817bbafc15b40e28de54427c33436b05737ecf8aa2ea3d9902ff21"
+            }
+        },
+        "linux": {
+            "ordinary_source": "91014d09c3ad2034e5875f15243f730c00cd2b95",
+            "binary": "890e5220d559368d3519d4bc9e87c823799fc7b689cc07e2ed221ee05a33332b",
+            "compared": {
+                "frames": {
+                    "frames_compared": 182,
+                    "status": "pass"
+                },
+                "objects": {
+                    "status": "pass",
+                    "frames_compared": 182
+                },
+                "world": {
+                    "status": "pass",
+                    "records_compared": 186
+                },
+                "sim_rng": {
+                    "status": "pass",
+                    "simulation_events_compared": 113136
+                },
+                "fx_rng": {
+                    "status": "pass",
+                    "effects_events_compared": 0
+                },
+                "trailer": {
+                    "status": "pass"
+                }
+            },
+            "inputs": null,
+            "hashes": {
+                "receipt.json": "2003e39c6e643dec0f9d8c8153985fabd61c85d4bd1ce4923c7a397211e0407e",
+                "actual.json": "8b055db2cec4aa455bd2538f531c7d87fe429346ac1a172c6977a6fceeeba8ac",
+                "comparison.json": "6e143da7e70fd9c0e7c0a41bcf747eba90d747aeb990b2c87f892b907ec56575",
+                "state.jsonl.gz": "8a5b5d8c85a3ec038d1367a2362dbf5b5ddb4bb3ea42904af7e654c55f062a8b",
+                "rng.jsonl": "fa074168280ea1bb7edbb2b732ae02c20af1934bf13ec2865f0aad1260ffda3f"
+            }
+        }
+    }
+}
