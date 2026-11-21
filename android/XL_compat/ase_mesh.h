@@ -42,8 +42,9 @@ inline AseMesh compile_ase_mesh(const AseModel &model)
 		auto name = part.name;
 		for (char &c : name) c = char(std::toupper(static_cast<unsigned char>(c)));
 		const bool thruster = name.rfind("$THRUSTER", 0) == 0;
+		const bool glow = name.find("GLOW") != std::string::npos;
 		auto &body = bounds[index];
-		body.excluded_from_hitboxes = thruster || name.rfind("$GUNPNT-", 0) == 0;
+		body.excluded_from_hitboxes = glow || thruster || name.rfind("$GUNPNT-", 0) == 0;
 		// Admitted non-billboard ASE nodes have zero source TM_POS offsets
 		if (!part.parent.empty()) {
 			const auto parent = std::find_if(model.submodels.begin(), model.submodels.end(), [&](const AseSubmodel &p) { return p.name == part.parent; });
@@ -113,11 +114,11 @@ inline AseMesh compile_ase_mesh(const AseModel &model)
 			if (!result.gunpoints.emplace(gun, center).second) throw std::runtime_error("Duplicate ASE gunpoint marker");
 			continue;
 		}
-		if (!thruster && (name.find('$') != std::string::npos || name.find("GLOW") != std::string::npos || name.find("FLARE") != std::string::npos))
+		if (!thruster && (name.find('$') != std::string::npos || name.find("FLARE") != std::string::npos))
 			throw std::runtime_error("ASE conditional submodel requires explicit rendering support: " + part.name);
 		const auto &material = model.materials.at(part.material);
 		mesh.offsets.emplace(int(index), OofVector{});
-		if (!thruster)
+		if (!thruster && !glow)
 			for (const auto &position : part.vertices)
 				for (unsigned axis = 0; axis < 3; ++axis) {
 					mesh.low[axis] = (std::min) (mesh.low[axis], position[axis]);
@@ -126,8 +127,9 @@ inline AseMesh compile_ase_mesh(const AseModel &model)
 		for (const auto &face : part.faces) {
 			OofRenderFace output;
 			output.submodel = int(index);
-			output.collision = !thruster;
+			output.collision = !thruster && !glow;
 			output.texture = texture_ids.at(part.material);
+			output.additive = glow && !thruster && output.texture >= 0;
 			output.normal = face.normal;
 			for (int corner = 0; corner < 3; ++corner) {
 				OofRenderVertex vertex;
