@@ -1,0 +1,106 @@
+{
+    "episode": "Mineral Valley",
+    "archive": "pmines_v11.7z",
+    "version_code": 32080,
+    "apk_sha256": "75da219eca512114e0b96cb8822490858de1510e7055280964843697b00d69a3",
+    "device": "Android 14, x86_64 software emulator",
+    "owner": "ad8c5e1c02ef4faeb0cc9faafed3b9c8",
+    "protected_profile_restored": true,
+    "hub_import": {
+        "result": "PASS",
+        "run_id": "fb259708b6694a2baf127b7d0e85d4bc",
+        "steps_completed": 14,
+        "total_steps": 14,
+        "elapsed_ms": 54979
+    },
+    "checkpoints": {
+        "umbriel-blue": {
+            "input": "a0d58238a64bd71778fbaaf734c624a483f6ef1f3fc8053540bf8224abf33e2a",
+            "device_save": "1348f70011969ea7b9fea3e2042d286422dc2f2062ea59b973b6496e24f2888d",
+            "expect": {
+                "current_level_num": 9,
+                "position.segment": 997,
+                "player.lives": 2,
+                "player.score": 315790,
+                "mission_asset_owner": "mod/pmines_v11.7z",
+                "cheats_enabled": false,
+                "player_dead": false,
+                "in_game": true,
+                "player.has_red_key": false,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false
+            },
+            "device_write": {
+                "result": "PASS",
+                "run_id": "62c98cd6810b4345be4d063fae212e2b",
+                "steps_completed": 9,
+                "total_steps": 9,
+                "elapsed_ms": 48412
+            },
+            "cold_load": {
+                "result": "PASS",
+                "run_id": "90073030aafd4f4dbe190656a72298a8",
+                "steps_completed": 7,
+                "total_steps": 7,
+                "elapsed_ms": 61739
+            }
+        },
+        "mineral-ending": {
+            "kind": "Engine-written Android-format desktop export cold-loaded on the ordinary APK",
+            "sha256": "9cbcf0f9f0f2d8c35b8f67648b0a91f220664f3282318a396e551e7501d999f9",
+            "expect": {
+                "current_level_num": 9,
+                "position.segment": 1728,
+                "player.lives": 1,
+                "player.score": 344540,
+                "mission_asset_owner": "mod/pmines_v11.7z",
+                "cheats_enabled": false,
+                "player_dead": false,
+                "in_game": true,
+                "player.has_red_key": true,
+                "player.has_blue_key": true,
+                "player.has_gold_key": false
+            }
+        }
+    },
+    "first_attempt": {
+        "owner": "7ef5269939c8474087115406e90930c4",
+        "hub": {
+            "result": "PASS",
+            "run_id": "ee4b52f4134f4aefb5011e11d6487fdc",
+            "steps_completed": 37,
+            "total_steps": 37,
+            "elapsed_ms": 242465
+        },
+        "protected_profile_restored": true,
+        "observed": "Loaded room 1728 with score 344540, then crossed to room 1731 and displayed Level 9 Complete with score 348590 before a repeated stationary-state assertion."
+    },
+    "rendered_ending": {
+        "run_to_first_page": {
+            "result": "PASS",
+            "run_id": "1b326b49a5c849818695dbee16460a68",
+            "steps_completed": 10,
+            "total_steps": 10,
+            "elapsed_ms": 64023
+        },
+        "background": "mv17b.pcx",
+        "confirmed_text": "Thanks for playing this first episode, Pumo Mines: Mineral Valley.",
+        "page_backgrounds": ["mv52b.pcx", "mv52b.pcx", "mv40b.pcx", "mv40b.pcx", "mv53b.pcx", "mv53b.pcx", "mv17b.pcx"],
+        "screenshot_sha256": "7aed7ee72679ad906edf343891192daa9c233649461f5d8c028e59c8a34a23ce",
+        "route": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+        "secret_detour": [4, 14, 5]
+    },
+    "first_render_observation": {
+        "owner": "e6ab39c9773b40ec8b10af571bd62515",
+        "method": "Ordinary cold load, score screen and page advances. A separate live observation recorded the high-resolution briefing after the initial script expected its low-resolution filename.",
+        "page_backgrounds": ["mv52b.pcx", "mv52b.pcx", "mv40b.pcx", "mv40b.pcx", "mv53b.pcx", "mv53b.pcx", "mv17b.pcx"],
+        "background": "mv17b.pcx",
+        "observed_text": "Thanks for playing this first episode, Pumo Mines: Mineral Valley.",
+        "screenshot_sha256": "602a1295e7e3c69599485530cf0d678346135657cfa2a248b6bda4dcf2a18413"
+    },
+    "device_score_screen": {
+        "room": 1731,
+        "text": "Level 9 Complete / Umbriel Mineral Valley Destroyed!",
+        "score": 348590
+    }
+}
