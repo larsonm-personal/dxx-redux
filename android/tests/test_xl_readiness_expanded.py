@@ -81,6 +81,12 @@ class ExpandedReadinessTests(unittest.TestCase):
         self.assertEqual(
             full_report.first_blocker(row, {"phase": "simulation_failed", "frames": 82}, ""), "Simulation stopped"
         )
+        stopped = {"phase": "simulation_failed", "frames": 82}
+        damage = "You took 15.7 damage from a robot's weapon blast, shields now "
+        self.assertEqual(
+            full_report.first_blocker(row, stopped, damage + "-13.1\n"), "Robot fire killed the idle pilot"
+        )
+        self.assertEqual(full_report.first_blocker(row, stopped, damage + "13.1\n"), "Simulation stopped")
 
     def staged_fixture(self, root):
         archive = root / "fixture.zip"
