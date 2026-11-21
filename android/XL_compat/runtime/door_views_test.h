@@ -139,4 +139,22 @@ static void descriptor_door_view_controls()
 	            gameplay_definitions() == definitions,
 	        "Door native retirement leaked a clock, view or definition");
 	std::cout << "Derived door views: retained definitions, 16 immutable phases, shared aliases, independent discard, ownership transfer, nine malformed controls and retirement passed\n";
+
+	image.index = graph.texture_data[clip.frames[0]].index;
+	Owner packed(xl_pog_prepare_rgba({ image }, graph.resource_banks->bitmap_count()), xl_pog_free);
+	xl_compat::ScopedTexturePlayback packed_plan;
+	packed_plan.doors = xl_pog_bind_animation(*packed, graph, graph.resource_banks->bitmap_count());
+	require(packed_plan.doors.size() == 1 && xl_pog_count(packed.get()) == int(aliases.size()) &&
+	            !xl_pog_side_frame(image.index, 0),
+	        "Packed wall preparation omitted aliases or published them prematurely");
+	require(xl_pog_install(packed.get()) && xl_pog_door_frames(0) == 16 && !xl_pog_scoped_owner(packed.get()),
+	        "Packed wall strip failed to install without scoped textures");
+	for (int bitmap : aliases)
+		require(xl_pog_side_frame(bitmap, 15) == xl_pog_side_frame(image.index, 15),
+		        "Packed wall aliases do not share their immutable views");
+	descriptor_door_phase_controls(graph, packed_plan);
+	require(xl_pog_install(nullptr) && !xl_pog_door_frames(0) && !xl_pog_side_frame(image.index, 0) &&
+	            gameplay_definitions() == definitions,
+	        "Packed wall strip survived retirement");
+	std::cout << "Packed wall strip: alias installation, independent pixel and collision phases, restore and retirement passed\n";
 }

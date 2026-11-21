@@ -1147,6 +1147,7 @@ struct XlPreparedResources::State {
 	std::unique_ptr<xl_compat::Inventory> level_inventory;
 	std::unique_ptr<const xl_compat::ScopedTextureResources> scoped_textures;
 	std::unique_ptr<const xl_compat::ScopedTexturePlayback> texture_playback;
+	std::unique_ptr<const xl_compat::ScopedTexturePlayback> wall_playback;
 	std::shared_ptr<const XlResourceBanks> banks;
 	std::vector<unsigned char> palette_bytes;
 	std::unique_ptr<XlPreparedHam> incoming_ham;
@@ -1371,22 +1372,9 @@ std::unique_ptr<XlPreparedResources> XlPreparedResources::prepare_level_inputs(m
 	return result;
 }
 
-void XlPreparedResources::prepare_scoped_textures(const xl_compat::Inventory &level, int ordinal, xl_compat::TargetSources &target)
+static void validate_blastable_strips(const xl_compat::Inventory &level, const std::vector<xl_compat::ScopedTextureDoor> &strips)
 {
-	auto dependencies = state->graph;
-	if (!state->banks) throw std::runtime_error("Scoped textures require retained native banks");
-	dependencies.require_owned_banks = true;
-	xl_collect_incoming_dependencies(level, false, dependencies);
-	auto textures = std::make_unique<const xl_compat::ScopedTextureResources>(
-	    xl_compat::ScopedTextureResources::prepare(target, dependencies, ordinal, state->pog.get()));
-	if (textures->texture_target)
-		con_printf(CON_NORMAL, "XL scoped textures: selected %u pixel target for %zu authored images\n", textures->texture_target, textures->images.size());
-	for (const auto &image : textures->images) state->owned_models.sources.emplace(image.path, image.hash);
-	state->texture_playback = std::make_unique<const xl_compat::ScopedTexturePlayback>(
-	    xl_compat::ScopedTexturePlayback::prepare(*textures, dependencies));
-	if (level.level_version == 7 && (!state->texture_playback->effects.empty() || !state->texture_playback->clips.empty() || !state->texture_playback->doors.empty()))
-		throw std::runtime_error("Clocked animation frames on a classic mine require XL texture playback");
-	for (const auto &strip : state->texture_playback->doors)
+	for (const auto &strip : strips)
 		for (const auto &wall : level.walls) {
 			if (wall.type != WALL_BLASTABLE || wall.clip != strip.clip) continue;
 			if (wall.segment < 0 || std::size_t(wall.segment) >= level.segments.size() || wall.side < 0 || wall.side >= 6)
@@ -1409,6 +1397,31 @@ void XlPreparedResources::prepare_scoped_textures(const xl_compat::Inventory &le
 			if (back.segment != child || back.side != back_side || back.type != WALL_BLASTABLE || back.clip != wall.clip)
 				throw std::runtime_error("Blastable strip requires the same clip on both reciprocal walls");
 		}
+}
+
+void XlPreparedResources::prepare_scoped_textures(const xl_compat::Inventory &level, int ordinal, xl_compat::TargetSources &target)
+{
+	auto dependencies = state->graph;
+	if (!state->banks) throw std::runtime_error("Scoped textures require retained native banks");
+	dependencies.require_owned_banks = true;
+	xl_collect_incoming_dependencies(level, false, dependencies);
+	auto textures = std::make_unique<const xl_compat::ScopedTextureResources>(
+	    xl_compat::ScopedTextureResources::prepare(target, dependencies, ordinal, state->pog.get()));
+	if (textures->texture_target)
+		con_printf(CON_NORMAL, "XL scoped textures: selected %u pixel target for %zu authored images\n", textures->texture_target, textures->images.size());
+	for (const auto &image : textures->images) state->owned_models.sources.emplace(image.path, image.hash);
+	state->texture_playback = std::make_unique<const xl_compat::ScopedTexturePlayback>(
+	    xl_compat::ScopedTexturePlayback::prepare(*textures, dependencies));
+	if (level.level_version == 7 && (!state->texture_playback->effects.empty() || !state->texture_playback->clips.empty() || !state->texture_playback->doors.empty()))
+		throw std::runtime_error("Clocked animation frames on a classic mine require XL texture playback");
+	validate_blastable_strips(level, state->texture_playback->doors);
+	if (!state->texture_playback->doors.empty()) {
+		auto wall_playback = std::make_unique<xl_compat::ScopedTexturePlayback>();
+		if (state->wall_playback) wall_playback->doors = state->wall_playback->doors;
+		const auto &scoped_doors = state->texture_playback->doors;
+		wall_playback->doors.insert(wall_playback->doors.end(), scoped_doors.begin(), scoped_doors.end());
+		state->wall_playback = std::move(wall_playback);
+	}
 	if (!textures->images.empty()) {
 		for (const auto &image : textures->images)
 			if (const char *error = ogl_xl_rgba_prepare(int(image.bitmap.width), int(image.bitmap.frame_height())))
@@ -1435,6 +1448,11 @@ const xl_compat::ScopedTextureResources *XlPreparedResources::scoped_textures() 
 const xl_compat::ScopedTexturePlayback *XlPreparedResources::scoped_texture_playback() const
 {
 	return state ? state->texture_playback.get() : nullptr;
+}
+
+const xl_compat::ScopedTexturePlayback *XlPreparedResources::wall_texture_playback() const
+{
+	return state ? state->wall_playback.get() : nullptr;
 }
 
 std::map<int, int> XlPreparedResources::effect_frame_counts() const
@@ -1711,7 +1729,7 @@ void XlPreparedResources::prepare_level_resources(const char *level_filename, co
 	const auto pog_name = base + ".POG";
 	const auto prepare_level_pog = [&](PHYSFS_file *file) {
 		try {
-			prepare_pog(file);
+			prepare_pog(file, level);
 		} catch (const std::exception &error) {
 			throw std::runtime_error(pog_name + ": " + error.what());
 		}
@@ -1722,7 +1740,7 @@ void XlPreparedResources::prepare_level_resources(const char *level_filename, co
 	state->audio_install = std::make_unique<xl_compat::PreparedAudioInstall>(state->audio);
 }
 
-void XlPreparedResources::prepare_pog(PHYSFS_file *file)
+void XlPreparedResources::prepare_pog(PHYSFS_file *file, const xl_compat::Inventory *level)
 {
 	if (state->scoped_textures) throw std::runtime_error("POG must be prepared before scoped textures");
 	if (state->installed) throw std::runtime_error("Cannot prepare POG after resource publication");
@@ -1731,7 +1749,16 @@ void XlPreparedResources::prepare_pog(PHYSFS_file *file)
 	const int bitmap_count = state->banks ? state->banks->bitmap_count() : Num_bitmap_files;
 	std::unique_ptr<xl_pog_resources, decltype(&xl_pog_free)> prepared(xl_pog_prepare(file, bitmap_count, error, sizeof(error)), xl_pog_free);
 	if (!prepared) throw std::runtime_error(std::string("POG: ") + error);
-	xl_pog_bind_texture_effects(*prepared, state->graph, bitmap_count);
+	auto dependencies = state->graph;
+	if (level && xl_compat::supported_xl_layout(*level))
+		for (const auto &wall : level->walls) dependencies.wall(wall.type, wall.clip);
+	auto doors = xl_pog_bind_animation(*prepared, dependencies, bitmap_count);
+	std::unique_ptr<xl_compat::ScopedTexturePlayback> wall_playback;
+	if (!doors.empty()) {
+		validate_blastable_strips(*level, doors);
+		wall_playback = std::make_unique<xl_compat::ScopedTexturePlayback>();
+		wall_playback->doors = std::move(doors);
+	}
 	for (int i = 0; i < xl_pog_count(prepared.get()); ++i) {
 		const auto *entry = xl_pog_entry(prepared.get(), i);
 		if (!entry->rgba) continue;
@@ -1746,6 +1773,7 @@ void XlPreparedResources::prepare_pog(PHYSFS_file *file)
 	}
 	if (!xl_pog_prepare_storage(prepared.get())) throw std::runtime_error("Cannot prepare native POG pixel storage");
 	state->pog = std::move(prepared);
+	state->wall_playback = std::move(wall_playback);
 }
 
 void XlPreparedResources::prepare_camera_model(PHYSFS_file *file)

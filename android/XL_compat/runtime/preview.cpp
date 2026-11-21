@@ -933,7 +933,7 @@ extern "C" int xl_preview_load_level_at(const char *filename, int ordinal)
 					throw std::runtime_error("XL source does not match loaded segment vertices");
 		brightness = xl_compat::vertex_brightness(*level);
 		dynamic_vertices.resize(level->vertices.size());
-		xl_door_phases_bind(*level, resources->dependencies(), resources->scoped_texture_playback());
+		xl_door_phases_bind(*level, resources->dependencies(), resources->wall_texture_playback());
 		xl_set_prepared_resources(filename, std::move(resources));
 		source = std::move(level);
 		xl_mission_progress_bind(ordinal);

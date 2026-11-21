@@ -29,7 +29,7 @@ void *xl_pog_prepare_side_views(const struct xl_pog_resources *resources)
 	for (i = 0; i < xl_pog_count(resources); ++i) {
 		const struct xl_pog_bitmap *entry = xl_pog_entry(resources, i);
 		if (!entry->side_frames) continue;
-		if (!entry->scoped_texture || !entry->rgba || entry->index >= MAX_BITMAP_FILES ||
+		if (!entry->rgba || entry->index >= MAX_BITMAP_FILES ||
 		    entry->frames < 2 || entry->frames > 128 || views->offsets[entry->index] >= 0) goto invalid;
 		/* Aliases of one retained image share immutable views, never a current frame */
 		for (previous = 0; previous < i; ++previous) {

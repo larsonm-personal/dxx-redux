@@ -71,7 +71,8 @@ int xl_pog_install_prepared(struct xl_pog_resources *resources)
 			const struct xl_pog_bitmap *entry = xl_pog_entry(resources, i);
 			if (entry->index >= (unsigned) Num_bitmap_files) return 0;
 			if (entry->effect_clock && xl_pog_non_effect_clock(entry->index)) return 0;
-			if (entry->frames > 1 && !entry->effect_clock && !(entry->scoped_texture && xl_pog_scoped_owner(resources)) && xl_pog_strip_clock(entry->index)) return 0;
+			if (entry->frames > 1 && !entry->effect_clock && !entry->side_frames &&
+			    !(entry->scoped_texture && xl_pog_scoped_owner(resources)) && xl_pog_strip_clock(entry->index)) return 0;
 		}
 		installed = xl_pog_take_storage(resources, &size);
 		if (!installed) return xl_pog_active_token == xl_pog_owner_token(resources);
@@ -120,7 +121,7 @@ int xl_pog_install_prepared(struct xl_pog_resources *resources)
 			for (c = 0; c < 3; ++c) bitmap->avg_color_rgb[c] = (fix) ((unsigned) entry->average_rgb[c] * F1_0 / 255);
 		}
 		gr_set_bitmap_flags(bitmap, entry->flags);
-		if ((entry->scoped_texture || entry->effect_clock) && entry->frames > 1)
+		if ((entry->scoped_texture || entry->effect_clock || entry->side_frames) && entry->frames > 1)
 			gr_set_bitmap_flags(bitmap, dxx_xl_texture_frame_flags(entry->transparent_frames, entry->super_frames, 0));
 		if (!entry->rgba) {
 			/* XL LoadReplacementBitmaps expands indexed pixels then SetPalette
