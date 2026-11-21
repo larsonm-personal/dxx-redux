@@ -28,4 +28,12 @@ The Mineral Valley pilot replenished shields in rooms 990, 991 and 1006 and earn
 
 On Kartsal the player can aim through the grate in room 236 and hit the unlocked side of wall 93 with an ordinary laser. After sprinting around the corridor the ship passed the thin doorway into room 1781. This put the next switch bank within reach. The earlier attempts to shoot switches 5 and 47 from the grate remain failed attempts. The door shot itself passed independently on Linux.
 
+## Both Metillis exits and the next two mines
+
+From the earned reactor checkpoint, the main pilot flew 39 portals back to exit trigger 10. Windows and Linux agreed on the resulting Iquaxel state in room 260 with four lives, 100 shields, 100 energy and score 51,150. The ordinary Android APK imported the same mission and restored it, wrote a new quicksave and passed seven cold-load steps. On Iquaxel an ordinary laser destroyed wall 36 from six units away. Flying across switch 3 in room 382 opened the path to the next area.
+
+On the other branch the pilot picked up the cloak, passed the guards and traversed the four portals from room 1183 to room 1189. The secret exit entered Coldrom in room 228 with four lives and score 53,740. For Kartsal, moving sideways before firing let the pilot hit master switch 15 from room 357, operating child triggers 47 and 48. The resulting 538 reachable rooms include the corridor to the next switch. [Checkpoint and device identities](../XL_compat/evidence/pumo-earned-exits-20261120.json)
+
+Hosted LAN run 44837498928 exercised PR 697 on a real failed-job retry. The first Android attempt failed before the game with artifact 14679349574. The second produced artifact 14680093267 under the same name. The gate selected that attempt and passed. [Hosted run, attempt 2](https://github.com/larsonm-personal/dxx-redux/actions/runs/44837498928/attempts/2)
+
 [Next plan](xl_pumo_next_tranche_20261120.md) / [Replacement kickoff](xl_pumo_next_kickoff_20261120.txt) / [Human playtest directions](../XL_compat/PUMO_PLAYTEST.md)
