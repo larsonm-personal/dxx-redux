@@ -34,6 +34,7 @@ class ReplayChild {
         if (index < 0 || index + 1 >= args.Length) return 24;
         File.WriteAllText(args[index + 1], "{\"frame_count\":1}");
         if (scenario == "result-hang") { Thread.Sleep(60000); return 0; }
+        if (scenario == "delayed-success") Thread.Sleep(3200);
         return scenario == "result-error" ? 17 : 0;
     }
 }
@@ -126,6 +127,7 @@ int main(int argc, char **argv) {
         if (strcmp(argv[i], "-inputdemo-actual-result") == 0) {
             write_text(argv[i + 1], "", "{\"frame_count\":1}");
             if (strcmp(scenario, "result-hang") == 0) { sleep(60); return 0; }
+            if (strcmp(scenario, "delayed-success") == 0) sleep(3);
             return strcmp(scenario, "result-error") == 0 ? 17 : 0;
         }
     }
@@ -184,7 +186,7 @@ int main(int argc, char **argv) {
     $report = @()
     try {
         foreach ($runner in @('headless-console', 'visual')) {
-            foreach ($scenario in @('prelaunch', 'early', 'timeout', 'result-error', 'result-hang', 'mismatch', 'success')) {
+            foreach ($scenario in @('prelaunch', 'early', 'timeout', 'result-error', 'result-hang', 'mismatch', 'delayed-success', 'success')) {
                 $env:DXX_REPLAY_RUNNER_TEST = $scenario
                 $stem = 'runner-' + [guid]::NewGuid().ToString('N')
                 $demo = Join-Path $testRoot ($stem + '.dximdemo')
@@ -200,14 +202,15 @@ int main(int argc, char **argv) {
                 }
                 $result = Join-Path $testRoot ($runner + '-' + $scenario + '.result.json')
                 $log = Join-Path $testRoot ($runner + '-' + $scenario + '.log')
+                $timeout = if ($scenario -eq 'delayed-success') { 12 } else { 2 }
                 & $pwsh -NoProfile -File (Join-Path $PSScriptRoot 'run_input_demo_replay.ps1') `
                     -AllowUnverifiedAssets -DemoPath $demo -DataDir $data -ExecutablePath $nativeExe -Runner $runner `
-                    -Mode accelerated -TimeoutSeconds 2 -ResultCopyPath $result -StrictComparison -RequireCleanExit *> $log
+                    -Mode accelerated -TimeoutSeconds $timeout -ResultCopyPath $result -StrictComparison -RequireCleanExit *> $log
                 $exitCode = $LASTEXITCODE
                 $archives = @(Get-ChildItem -LiteralPath $testRoot -Directory | Where-Object Name -Like ($runner + '-' + $scenario + '.result.json.failure_*'))
                 $sandbox = Join-Path $repoRoot ('temp/input_demo_runtime_wrapper/d1/' + $stem)
                 if (Test-Path -LiteralPath $sandbox) { throw "$scenario left its staged engine package behind" }
-                if ($scenario -eq 'success') {
+                if ($scenario -in @('success', 'delayed-success')) {
                     if ($exitCode -ne 0 -or $archives.Count -ne 0 -or -not (Test-Path -LiteralPath $result)) {
                         throw "Successful replay was not accepted and cleaned: $log"
                     }

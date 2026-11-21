@@ -1928,7 +1928,13 @@ try {
             }
         }
 
-        if (-not $process.HasExited -and -not $process.WaitForExit(2000)) {
+        # Native replay can publish the result before it finishes closing its traces
+        $exitWaitMs = 2000
+        if ($useHeadlessConsole -or $RequireCleanExit -or $fixtureInfo) {
+            $remainingMs = 1000L * $TimeoutSeconds - $replayStopwatch.ElapsedMilliseconds
+            $exitWaitMs = [Math]::Max(2000L, [Math]::Min(15000L, $remainingMs))
+        }
+        if (-not $process.HasExited -and -not $process.WaitForExit([int]$exitWaitMs)) {
             $lastWindowTitle = $process.MainWindowTitle
             $forcedReplayStop = $true
             Stop-ReplayProcess -Process $process

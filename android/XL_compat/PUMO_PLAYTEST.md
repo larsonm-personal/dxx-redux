@@ -6,11 +6,15 @@ For Kartsal level 13, use build 32030. It fixes a flight that could leave the sh
 
 ### Play the Kartsal ending
 
-Choose `kartsal-final-checkpoint` in the 32030 kit to load the pilot aboard the Black Hole ship with one life and score 48,270. Fly straight ahead through the checkpoint. Advance the score screen to see the authored ending. The ordinary Android build completed this flight from a cold load and showed the MD Vertex9 ending on `demoendb.pcx`. This completes the Kartsal Motivation route from the hub through levels 11, 12 and 13. Mineral Valley remains open from Iquaxel. [Rendered ending receipt](evidence/pumo-kartsal-ending-20261120.json)
+Choose `kartsal-final-checkpoint` in the 32030 kit to load the pilot aboard the Black Hole ship with one life and score 48,270. Fly straight ahead through the checkpoint. Advance the score screen to see the authored ending. The ordinary Android build completed this flight from a cold load and showed the MD Vertex9 ending on `demoendb.pcx`. This completes the Kartsal Motivation route from the hub through levels 11, 12 and 13. The Mineral Valley pilot has reached Mercury Geothermal Lab. [Rendered ending receipt](evidence/pumo-kartsal-ending-20261120.json)
 
 ### Continue Mineral Valley
 
-Choose `iquaxel-direct-gold` to resume in room 322 on the direct route with one life, 89 shields, the blue and gold keys, Vulcan and Plasma Cannons, and score 76,750. Try the guarded passage beyond the gold door. Record which robot or doorway stops you and whether the ship can retreat into cover. Choose `iquaxel-from-coldrom` for the alternate two-life entry from the secret level.
+For Mineral Valley, install build 32080, which fixes extra lasers from some robot impacts. Start in the lava shafts with `lava-shafts-arrival` (level 6, two lives, score 100,000) or Mercury Geothermal Lab with `mercury-arrival` (level 7, three lives, score 162,740). Both are device-written saves verified after restarting the ordinary Android game. Record the first room where finding a key, firing through a grate, or controlling the ship becomes difficult. [Build 32080 kit and installation instructions](../../temp/xl-pumo-phone-32080/README.md)
+
+Three more 32080 checkpoints are available. Use `mercury-three-keys` for the laboratory puzzles and prototype fight (room 424, three lives), `terradeep-arrival` for a fresh run of level 8 (room 1239, three lives), or `terradeep-blue` for the defended return after collecting blue (room 1049, one life). The moving ship can drift into a neighboring room after load. For the blue-key save, confirm the blue indicator and score 269,300. Android wrote each save and loaded it in a fresh process. [Run and checkpoint identities](evidence/pumo-mercury-phone-20261120.json)
+
+In the earlier build 32030, choose `iquaxel-direct-gold` to resume in room 322 on the direct route with one life, 89 shields, the blue and gold keys, Vulcan and Plasma Cannons, and score 76,750. Try the guarded passage beyond the gold door. Record which robot or doorway stops you and whether the ship can retreat into cover. Choose `iquaxel-from-coldrom` for the alternate two-life entry from the secret level.
 
 ### Earlier checkpoints
 
