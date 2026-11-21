@@ -107,7 +107,10 @@ std::vector<PogBitmap> read_pog(const unsigned char *data, std::size_t size, uns
 	    std::memcmp(data, "DPOG", 4) || u32(data + 4) != 1)
 		throw std::runtime_error("POG header or file size is invalid");
 	const auto count = u32(data + 8);
-	if (count >= max_bitmaps || count > (size - 12) / 20)
+	// One registry slot can receive many consecutive replacements. Bound the
+	// directory allocation independently and validate each destination below.
+	constexpr unsigned directory_limit = 65536;
+	if (count > directory_limit || count > (size - 12) / 20)
 		throw std::runtime_error("POG bitmap directory is invalid");
 	const std::size_t headers = 12 + std::size_t(count) * 2;
 	const std::size_t payload = headers + std::size_t(count) * 18;

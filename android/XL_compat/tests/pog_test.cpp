@@ -96,8 +96,13 @@ try {
 	shared[12] = shared[14] = 1;
 	for (unsigned header : { 16u, 34u }) { shared[header + 9] = shared[header + 10] = 1; }
 	shared.push_back(42);
-	const auto copies = xl_compat::read_pog(shared.data(), shared.size(), 2620);
+	const auto copies = xl_compat::read_pog(shared.data(), shared.size(), 2);
 	require(copies.size() == 2 && copies[0].pixels[0] == 42 && copies[1].pixels[0] == 42, "shared indexed payload changed");
+	// The later row can point at different pixels in the same registry slot
+	put32(shared, 34 + 14, 1);
+	shared.push_back(73);
+	const auto ordered = xl_compat::read_pog(shared.data(), shared.size(), 2);
+	require(ordered.size() == 2 && ordered[0].pixels[0] == 42 && ordered[1].pixels[0] == 73, "ordered repeated replacements changed");
 	std::cout << "POG RGBA/indexed/RLE resources, frame bounds and " << rejected << " invalid-input controls passed\n";
 	return 0;
 } catch (const std::exception &error) {
