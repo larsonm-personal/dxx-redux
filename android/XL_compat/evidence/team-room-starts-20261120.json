@@ -1,0 +1,104 @@
+{
+    "criterion": "120 unassisted frames in singleplayer",
+    "source": "9c36e36ffe919ce6e204c0705d6cd5d73e63615d",
+    "shards": {
+        "pinned": {
+            "hosts": {
+                "win": {
+                    "engine_sha256": "c60d95b2407ce52e746244fb4843cd22279b6f52dcfe50abd9ff94b974eb2077",
+                    "result_sha256": "fd2f8d6b7cb8371b69130a79da3c3672397d48b91d17ec5f3912843b8a47ca18"
+                },
+                "linux": {
+                    "engine_sha256": "0c8e40c0b82b886b7f34096866fbfdba5d7fb3376dca310b0c990eb77206eadb",
+                    "result_sha256": "c1df0ba7e87918d0174d7f147a3e18d3587f71d4eb8bb7348b116b855e0433e7"
+                }
+            },
+            "cases": [
+                [
+                    "levelpack.7z/missions/aus-red/mb-arena.mn2:1",
+                    "loaded_ticked",
+                    120
+                ],
+                [
+                    "levelpack.7z/missions/diedel/biohzrd.mn2:1",
+                    "load_failed",
+                    0
+                ],
+                [
+                    "levelpack.7z/missions/diedel/emtombz.mn2:1",
+                    "load_failed",
+                    0
+                ],
+                [
+                    "levelpack.7z/missions/diedel/etombz.mn2:1",
+                    "load_failed",
+                    0
+                ],
+                [
+                    "levelpack.7z/missions/diedel/speed.mn2:1",
+                    "load_failed",
+                    0
+                ],
+                [
+                    "levelpack.7z/missions/diedel/wfc20.mn2:1",
+                    "loaded_ticked",
+                    120
+                ],
+                [
+                    "levelpack.7z/missions/sirius/fv24b.mn2:1",
+                    "load_failed",
+                    0
+                ]
+            ]
+        },
+        "local": {
+            "hosts": {
+                "win": {
+                    "engine_sha256": "c60d95b2407ce52e746244fb4843cd22279b6f52dcfe50abd9ff94b974eb2077",
+                    "result_sha256": "cbd5dd7b11352c350a15480e6d253158e5a3fc9f66b31188e6cbff8b29db3f5e"
+                },
+                "linux": {
+                    "engine_sha256": "0c8e40c0b82b886b7f34096866fbfdba5d7fb3376dca310b0c990eb77206eadb",
+                    "result_sha256": "796485a729162e3c18810b24879b9f6bb5638c74f848a7f0dd9225304d4afa42"
+                }
+            },
+            "cases": [
+                [
+                    "levels_multiplayer/biohzrd.zip/biohzrd.mn2:1",
+                    "load_failed",
+                    0
+                ],
+                [
+                    "levels_multiplayer/emtombz.zip/emtombz.mn2:1",
+                    "load_failed",
+                    0
+                ],
+                [
+                    "levels_multiplayer/etombz.zip/etombz.mn2:1",
+                    "load_failed",
+                    0
+                ],
+                [
+                    "levels_multiplayer/mb-arena.7z/missions/spotlight/mb-arena.mn2:1",
+                    "loaded_ticked",
+                    120
+                ],
+                [
+                    "levels_multiplayer/wfc.7z/missions/diedel/d3/wfc-d3.mn2:1",
+                    "loaded_ticked",
+                    120
+                ],
+                [
+                    "levels_multiplayer/wfc.7z/missions/diedel/wfc20.mn2:1",
+                    "load_failed",
+                    0
+                ],
+                [
+                    "prophxl131beta.zip/missions/sapphire wolf sp/PROPHXL.MN2:3",
+                    "load_failed",
+                    0
+                ]
+            ]
+        }
+    }
+}

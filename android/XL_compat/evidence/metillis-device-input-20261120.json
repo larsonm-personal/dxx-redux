@@ -1,0 +1,60 @@
+{
+    "mission": "Pumo Mines v1.1",
+    "level": 4,
+    "segment": 948,
+    "keys": [
+        "blue",
+        "gold"
+    ],
+    "score": 35360,
+    "lives": 3,
+    "android": {
+        "system": "Android 14 x86_64 software emulator",
+        "ordinary_apk_sha256": "25ffdbc26f6f78ea217e2a9840b78469292ee62d1f14f43db1920ac25d5d2cc6",
+        "developer_apk_sha256": "969302ec11c36ae31c4d79f826fb49637f2de26ede23b477451f4158a83c6c6e",
+        "incoming_save_sha256": "5261bf5750002e458f53d370a1ac5355b58ae38a0061db58f6d54448446f3679",
+        "ordinary_device_save_sha256": "bbf6548ff9917f9359206eaa0e327ba03ccbcacb1200366b6fe4937a0ac0347f",
+        "input_demo_sha256": "1e53d2d4ccabcaadc123a44b8ece257512d91b1325b1ad6b5ed212d9d095fbd8",
+        "live_state_sha256": "eb8e822ea7700fdf317f5c34d05ee93fe04ab7b0cb678835136edc2787c4ab2f",
+        "recorded_frames": 25,
+        "ordinary_hub_steps": 37,
+        "ordinary_warm_steps": 9,
+        "ordinary_cold_steps": 7,
+        "developer_capture_steps": 14
+    },
+    "desktop": {
+        "windows": {
+            "source": "9c36e36ffe919ce6e204c0705d6cd5d73e63615d",
+            "executable_sha256": "ecb25b2bb1df030a323873798ec2c5d2b6c0770fbf710b48b934c2e1c3cc07d8",
+            "state_trace_sha256": "faa7945f701c290111e9d6b68f1f54247e414c00795cbea4805eb1f379012299",
+            "rng_trace_sha256": "a4e34f9a6d5dda68bebde784d94cfbed8c6eb44f960b45e6bd342cb7a2885543",
+            "comparison_sha256": "b61a127c4e5bf55ae754765a8a580595194b75392d2674d40307f1204d4dcb38",
+            "frames": 25,
+            "passed": [
+                "frames",
+                "objects",
+                "world",
+                "sim_rng",
+                "fx_rng",
+                "trailer"
+            ]
+        },
+        "linux": {
+            "source": "9c36e36ffe919ce6e204c0705d6cd5d73e63615d",
+            "executable_sha256": "534f9d18893135c769c55928127504553f40190264e98a1c7b6f2f4a3892ad9a",
+            "state_trace_sha256": "9fd0ca28b737c2ea6cb66ca25b8271767871ddf09b905b4ccbed5c89c8682eeb",
+            "rng_trace_sha256": "a4e34f9a6d5dda68bebde784d94cfbed8c6eb44f960b45e6bd342cb7a2885543",
+            "comparison_sha256": "e5b83a2ba0e4fc0aa354618ff30645a002aaac9d8309b828a15c930c9030da09",
+            "frames": 25,
+            "passed": [
+                "frames",
+                "objects",
+                "world",
+                "sim_rng",
+                "fx_rng",
+                "trailer"
+            ]
+        }
+    },
+    "control": "Both desktop players rejected the recording with an additional Vertigo HOG/HAM in the installation. The matched retail D2 plus original Pumo set replayed successfully."
+}

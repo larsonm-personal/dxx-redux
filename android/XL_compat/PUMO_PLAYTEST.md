@@ -1,6 +1,22 @@
 # Original Pumo gameplay playtest
 
-## Current full-original candidate
+## November 20 phone playtest
+
+The local universal APK is version 31920, package `com.dxxredux.app`, SHA-256 `25ffdbc26f6f78ea217e2a9840b78469292ee62d1f14f43db1920ac25d5d2cc6`. It includes ARM64, ARMv7 and x86_64, with XL developer controls off. The acceptance run used an Android 14 x86_64 software emulator. Physical phone testing is open. [Playtest APK on the build machine](../../temp/xl-pumo-tranche-20261120/pumo-portable-skin-debug.apk)
+
+1. Install the APK over a compatible test installation. If Android rejects the signature, preserve your existing pilots and saves before changing installations.
+2. Open **Import files > Pick One or More Files**. Select your retail D2 data, the original `pmines_v11.7z` archive and the XL camera, effects and sound resources. Under **Mods/Levels > Show Files**, check that the mission and resources are enabled together. For the recorded Metillis route, leave Vertigo disabled. Pumo supplies its own robot and model definitions.
+3. Select **Launch Descent2 > New game**, choose **XL: [-Pumo Mines-]**, and start at level 1. Use a separate pilot or save slot. At the hub select the Mineral Valley or Kartsal Motivation entrance. Record which one you chose.
+4. On Mineral Valley, try reaching Metillis, collecting the keys, navigating back to the reactor and escaping. On Kartsal Motivation, try the opening switches and fire at the stationary robots. At a recognizable landmark, save, close the game and use **Load Game**. Check your room, keys, score and the state of the last door you opened.
+5. For feedback, give the APK version, phone and Android version, input method, difficulty, episode, level, last successful action, and the shortest sequence that reproduces what you saw. Describe what you expected. A screenshot, short video or separate save before the problem can identify a switch or corridor more reliably than the room name alone.
+
+The earned Metillis checkpoint reached room 948 with the blue and gold keys, three lives and score 35,360. The ordinary Android Load Game menu restored the desktop checkpoint and then reloaded an Android-written quicksave after a fresh launch. A separate developer recording from that Android save matched 25 frames on the ordinary Windows and Linux players. [Replay receipts](evidence/metillis-device-input-20261120.json)
+
+The connected pilot later earned red in room 1257, replenished shields, picked up a life, and destroyed the reactor from room 1202. On Kartsal, shooting through the grate after switch 4 opens the far side of the door. Fly around to it promptly. Both are landmarks where timing or controls on a physical phone would be useful feedback. [Earned reactor checkpoints](evidence/metillis-earned-reactor-20261120.json)
+
+The full Mineral Valley ending and the end of the three released Kartsal Motivation levels still need connected playthroughs. [Metillis save evidence](evidence/metillis-portable-gold-save-20261120.md) / [Author's v1.1 release and episode list](https://descentbb.net/viewtopic.php?t=24808)
+
+## Historical November 3 candidate
 
 Use the [universal29470 APK and instructions](../../temp/pumo-mission-toggle-playtest-20261103-29470/README.md).
 Source `7d2899bf816d16f5d59e724ab3d3f144a46211a1`, package
