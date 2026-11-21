@@ -195,6 +195,21 @@ void object_dependencies()
 	}
 	Robot_info[robot].weapon_type = original_weapon;
 	require(rejected, "missing transitive robot weapon was not rejected");
+	ObjectDependencies stationary;
+	std::vector<robot_info> definitions(Robot_info, Robot_info + N_robot_types);
+	auto &prop = definitions[robot];
+	prop.n_guns = prop.attack_type = prop.companion = prop.thief = 0;
+	prop.weapon_type = 127;
+	stationary.robot_data = definitions.data();
+	stationary.robot_behavior(robot, 135, true);
+	require(!stationary.weapons.count(127), "stationary zero-gun actor acquired a firing dependency");
+	rejected = false;
+	try {
+		stationary.robot(robot);
+	} catch (const std::runtime_error &e) {
+		rejected = !std::strcmp(e.what(), "object dependency references missing weapon");
+	}
+	require(rejected, "an active instance reused the stationary robot's qualification");
 }
 void depth_policy(bool pilot)
 {
