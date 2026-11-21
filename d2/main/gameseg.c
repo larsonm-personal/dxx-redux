@@ -35,6 +35,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "byteswap.h"
 #ifdef DXX_XL_RUNTIME
 #include "changing_light.h"
+#include "skybox_render.h"
 #endif
 #include "mission.h"
 
@@ -786,9 +787,17 @@ int find_point_seg(const vms_vector *p,int segnum)
 	//	slowing down lighting, and in about 98% of cases, it would just return -1 anyway.
 	//	Matt: This really should be fixed, though.  We're probably screwing up our lighting in a few places.
 	if (!Doing_lighting_hack_flag) {
-		for (newseg=0;newseg <= Highest_segment_index;newseg++)
+		/* XL keeps separate spatial searches for mine and skybox geometry. */
+#ifdef DXX_XL_RUNTIME
+		const int skybox = xl_skybox_segment(segnum);
+#endif
+		for (newseg=0;newseg <= Highest_segment_index;newseg++) {
+#ifdef DXX_XL_RUNTIME
+			if (xl_skybox_segment(newseg) != skybox) continue;
+#endif
 			if (get_seg_masks(p, newseg, 0, __FILE__, __LINE__).centermask == 0)
 				return newseg;
+		}
 
 		return -1;		//no segment found
 	} else
