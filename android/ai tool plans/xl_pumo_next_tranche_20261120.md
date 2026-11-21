@@ -11,7 +11,7 @@ Budget roughly ten hours of engineering. Adjust the allocation as play uncovers 
 
 The integrated Windows startup baseline is 1,534/1,654. The case report identifies 32 alternative distributions with an observed start for the same mission ordinal and filename. For a human session, choose one of those archives where appropriate. Record the archive name with feedback. Keep the 120 remaining cases in the census until each original entry passes. [Case report](../XL_compat/evidence/gameplay-census-integrated-20261120.json)
 
-Kartsal's earned level 13 save in room 3021 is available in the 32030 phone kit. Both downloads and the teleporter were subsequently operated on Windows. A pilot on the return ship reached the final checkpoint face in room 4238. Check the execution record for the rendered outcome before repeating that flight. In Iquaxel the direct pilot reached the corridor beyond the blue key. The alternate pilot returning from Coldrom begins with two lives and a different loadout. Preserve the main or secret origin when comparing combat and save results.
+Kartsal Motivation is ready for end-to-end human feedback. Its 32030 kit includes the three-key checkpoint and the final return-ship checkpoint. Android displayed the authored ending from the latter. Concentrate connected gameplay on Mineral Valley. Iquaxel's direct pilot earned blue and gold, recovered the Plasma Cannon and reached the passage toward the red key. The alternate pilot returning from Coldrom begins with two lives and a different loadout. Preserve the main or secret origin when comparing combat and save results. [Kartsal ending evidence](../XL_compat/evidence/pumo-kartsal-ending-20261120.json)
 
 ### Evidence to preserve
 
