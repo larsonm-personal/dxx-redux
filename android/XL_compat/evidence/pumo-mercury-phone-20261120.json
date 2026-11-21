@@ -92,5 +92,89 @@
     "lives": 1,
     "score": 99950,
     "cheats_enabled": false
+  },
+  "windows_connected_campaign": {
+    "prototype_chamber_unlocked": {
+      "level": 7,
+      "room": 1537,
+      "lives": 1,
+      "score": 238450,
+      "shields": 136.07,
+      "keys": [
+        "blue",
+        "gold",
+        "red"
+      ],
+      "countdown": false,
+      "save_sha256": "b83b5704e6bae04cc37bef2e417b94924ad123edf54a5b6ad815a97b997f332d",
+      "android_export_sha256": "bbe934d1fda155aaa8b1922f9cec19ef147b5e2586248e6acc7b164d49f81725"
+    },
+    "boss_combat": {
+      "level": 7,
+      "room": 1518,
+      "lives": 3,
+      "score": 253400,
+      "shields": 28.53,
+      "keys": [
+        "blue",
+        "gold",
+        "red"
+      ],
+      "countdown": false,
+      "save_sha256": "000b1da6d6598fe59af719d988f88f8c784442de4a8d46de4a9fa59c2f0ce520",
+      "android_export_sha256": "e20dfe4b35bc08a215df44fc352ddfbe78bddccaef5f43d9e140b55e242b33a0"
+    },
+    "countdown": {
+      "level": 7,
+      "room": 1180,
+      "lives": 3,
+      "score": 255440,
+      "shields": 96.33,
+      "keys": [
+        "blue",
+        "gold",
+        "red"
+      ],
+      "countdown": true,
+      "save_sha256": "a84e47b8a9892d99f88751028c760615d329c94e5c2bec687733b04241d005ac",
+      "android_export_sha256": "33cbe61aefd0c8dba18e30c77dfc37202d3331fbf8720827698d693a666897bf"
+    },
+    "exit": {
+      "level": 7,
+      "room": 1577,
+      "lives": 3,
+      "score": 255440,
+      "shields": 96.33,
+      "keys": [
+        "blue",
+        "gold",
+        "red"
+      ],
+      "countdown": true,
+      "save_sha256": "c12bf7130a239046e2db2deb1dff96efb08683dee43a9ba80613f86b68bee3c4",
+      "android_export_sha256": "79c99b445625f82091c35fd42c86a7f786b40c46ad87440c9a3c4b8fc3f327b1"
+    },
+    "terradeep_arrival": {
+      "level": 8,
+      "room": 1239,
+      "lives": 3,
+      "score": 260440,
+      "shields": 100.0,
+      "keys": [],
+      "countdown": false,
+      "save_sha256": "9e2e9a3cc2a252be27a3e8e4e2cc3e3314cbe796ce1a371d798bf3fb92d2f803",
+      "android_export_sha256": "ded9624ef6ba033fd9e02dc0cae73bcc87330ad9f153f18274eeab2ac36f6c07"
+    },
+    "terradeep_blue_barrier": {
+      "level": 8,
+      "room": 919,
+      "lives": 1,
+      "score": 263090,
+      "shields": 23.57,
+      "keys": [],
+      "countdown": false,
+      "save_sha256": "e7e2d973b3fde4de5c2ece333b71a7ab48642b1c025058c0f505a6a157916baa",
+      "android_export_sha256": "6fae584e38e1de6cda10435343f98f74dbc7f8151c8ee27fda1b8f8c0b028b4a"
+    }
   }
 }
