@@ -4,6 +4,8 @@
 
 Use the merged universal APK, version 32000, package `com.dxxredux.app`, SHA-256 `4ad8f0b32f34e0277dac002b3ab56ba314d60d7e4d0a81da22729e2b838f765b`. It includes ARM64, ARMv7 and x86_64 with XL developer controls off. An Android 14 x86_64 software emulator passed the original mission import, hub flight and cold save tests. Physical phone testing is open. [Playtest APK on the build machine](../../temp/xl-pumo-tranche-20261120/pumo-integrated-3c21ac2d4.apk)
 
+For a shorter session, the local playtest kit includes the APK, five earned checkpoints and a helper that installs a checkpoint in a free manual slot. It includes the Kartsal level 12 entry and the Iquaxel entry reached by finishing Coldrom. The helper was exercised on Android with an occupied slot and a second slot claimed during installation. [Playtest kit instructions on the build machine](../../temp/xl-pumo-phone-32000/README.md)
+
 1. Install the APK over a compatible test installation. If Android rejects the signature, preserve your existing pilots and saves before changing installations.
 2. Open **Import files > Pick One or More Files**. Select your retail D2 data, the original `pmines_v11.7z` archive and the XL camera, effects and sound resources. Under **Mods/Levels > Show Files**, check that the mission and resources are enabled together. For the recorded Metillis route, leave Vertigo disabled. Pumo supplies its own robot and model definitions.
 3. Select **Launch Descent2 > New game**, choose **XL: [-Pumo Mines-]**, and start at level 1. Use a separate pilot or save slot. At the hub select the Mineral Valley or Kartsal Motivation entrance. Record which one you chose.
@@ -18,7 +20,7 @@ For a shorter Coldrom session, start from the earned level 14 entry. The ship st
 
 On Kartsal Motivation, activate the three opening switches, then shoot through the grate from room 236 and fly around to the far side of the timed door. Beyond it, stand in room 357 to shoot the two recessed switches. Try the master switch from an angle toward the side corridor. Record which switch responded and whether the forcefields dropped. [Reactor and grate route](evidence/metillis-earned-reactor-20261120.json)
 
-The full Mineral Valley ending and the end of the three released Kartsal Motivation levels still need connected playthroughs. [Metillis save evidence](evidence/metillis-portable-gold-save-20261120.md) / [Author's v1.1 release and episode list](https://descentbb.net/viewtopic.php?t=24808)
+The connected pilot completed Coldrom and returned to Iquaxel with score 83,440. On Kartsal it took the first exit into level 12 with six lives and score 17,580. Android cold-loaded both arrivals. In level 12, rolling the ship before firing helped hit the thin panel. Find the two access keys, use the control settings in the briefing, then take the escape route. The native pilot reached level 13 with six lives and score 28,820. Both episode endings remain open. [Connected exits and Android receipts](evidence/pumo-connected-boundaries-20261120.json) [Metillis save evidence](evidence/metillis-portable-gold-save-20261120.md) / [Author's v1.1 release and episode list](https://descentbb.net/viewtopic.php?t=24808)
 
 ## Historical November 3 candidate
 

@@ -1,0 +1,232 @@
+{
+    "source": "3c21ac2d4a243e08e41f2273b81b6f83b37dc35b",
+    "method": "Connected pilot with automated ordinary movement, combat, pickups and native saves. Exploration included retries from earned saves.",
+    "windows_stock_engine": "fba7c1a89b01cdaa21799c4b1faf402b2c289ace863441b3404fb1612986c5dc",
+    "boundaries": [
+        {
+            "name": "Kartsal first level exit",
+            "earned_start": {
+                "level": 11,
+                "room": 1702,
+                "lives": 6,
+                "score": 11430,
+                "shields": 78.20010375976562,
+                "energy": 87.750244140625,
+                "reactor": false,
+                "native_save_sha256": "f4ce1be366e51ad7217eae94bd1b0665e94896c6e06140de56063f66df9d6086",
+                "android_export_sha256": "c65b811eb66a64d807841bf1755da5eabc141013c9a75c727ab167088aafe45e"
+            },
+            "earned_arrival": {
+                "level": 12,
+                "room": 376,
+                "lives": 6,
+                "score": 17580,
+                "shields": 100.0,
+                "energy": 100.0,
+                "reactor": false,
+                "native_save_sha256": "1965c76e3614754b81fa19f9217c832057ea6fabb5557f59059b9a922f96cc93",
+                "android_export_sha256": "146ee45e740c9d338c2d4fcefb4be7163d525379eab988ccd17c84d74bb9344f"
+            },
+            "stock_windows_arrival": {
+                "level": 12,
+                "room": 376,
+                "lives": 6,
+                "score": 17580,
+                "shields": 100.0,
+                "energy": 100.0,
+                "reactor": false,
+                "native_save_sha256": "87c49e805ca29eee844e2101588a95c0f81ec4db093ef3c47c9bf6006f917c22",
+                "android_export_sha256": "fdb111f533a6285f96beb2d085074be4b6da0cac6867567b4ab83a1fe53fc608"
+            },
+            "stock_plan_sha256": "bbf9b5b2fc3d92e117fa156bea2890e03d2cd2edd6028abf432ccaa69b64af2e",
+            "stock_plan_actions": 2,
+            "stock_windows": "PASS",
+            "stock_linux": "PASS"
+        },
+        {
+            "name": "Coldrom return",
+            "earned_start": {
+                "level": 14,
+                "room": 702,
+                "lives": 2,
+                "score": 77240,
+                "shields": 152.4291229248047,
+                "energy": 109.6053466796875,
+                "reactor": false,
+                "native_save_sha256": "9704f7e2d630da9dee7c50f3fcd8b2526e20237fa7a7cc9c364f40ed063c95e8",
+                "android_export_sha256": "b6b6f1af3e28d6343544294dc16f2f48ac029f15e2917244aa1ff2e9fb231f68"
+            },
+            "earned_arrival": {
+                "level": 5,
+                "room": 260,
+                "lives": 2,
+                "score": 83440,
+                "shields": 152.4291229248047,
+                "energy": 100.0,
+                "reactor": false,
+                "native_save_sha256": "958fa0d0cf42a91892bebdedb6f57c26a6192c86f2e87b15bd6788da47252066",
+                "android_export_sha256": "0a6f370ca9ec8eee46b3a200becde7154cd1a1afb8e008dc1a2aa3ef980e5684"
+            },
+            "stock_windows_arrival": {
+                "level": 5,
+                "room": 260,
+                "lives": 2,
+                "score": 83440,
+                "shields": 152.4291229248047,
+                "energy": 102.010498046875,
+                "reactor": false,
+                "native_save_sha256": "fc9c2c8e486423a8a7ab424ca61c5e8b87c0b6f5dcf5d78fed66131d04ac5322",
+                "android_export_sha256": "cfe0f3a8c76740f392ad628f6c0966bd83b122e825810622c84185aeb5c607ee"
+            },
+            "stock_plan_sha256": "60e88e2ac4f7e431ecb4bffbba0655fee163e47d9d842072e245212cc375a58e",
+            "stock_plan_actions": 46,
+            "stock_windows": "PASS",
+            "stock_linux": "PASS"
+        }
+    ],
+    "ordinary_android": {
+        "version_code": 32000,
+        "apk_sha256": "4ad8f0b32f34e0277dac002b3ab56ba314d60d7e4d0a81da22729e2b838f765b",
+        "device": "Android 14 x86_64 software emulator",
+        "owner_attempt": "dc1ff3e476ee4bed871816b89e7d0dd1",
+        "profile_restored": true,
+        "checks": [
+            {
+                "checkpoint": "kartsal-second",
+                "input_sha256": "146ee45e740c9d338c2d4fcefb4be7163d525379eab988ccd17c84d74bb9344f",
+                "device_save_sha256": "b438c26463cc2b475a2f1ce8c75f4af700d372cb037d84710f80f74485be9207",
+                "expect": {
+                    "current_level_num": 12,
+                    "position.segment": 376,
+                    "player.lives": 6,
+                    "player.score": 17580,
+                    "mission_asset_owner": "mod/pmines_v11.7z",
+                    "cheats_enabled": false,
+                    "player_dead": false,
+                    "in_game": true,
+                    "player.has_red_key": false,
+                    "player.has_blue_key": false,
+                    "player.has_gold_key": false
+                },
+                "load_and_write": {
+                    "result": "PASS",
+                    "run_id": "79c5e5ed42924082b88dc4e499a7fe26",
+                    "steps_completed": 9,
+                    "total_steps": 9,
+                    "elapsed_ms": 45381
+                },
+                "cold_reload": {
+                    "result": "PASS",
+                    "run_id": "fffb03c1ff524319a54749a5f73e68e4",
+                    "steps_completed": 7,
+                    "total_steps": 7,
+                    "elapsed_ms": 43454
+                }
+            },
+            {
+                "checkpoint": "coldrom-return",
+                "input_sha256": "0a6f370ca9ec8eee46b3a200becde7154cd1a1afb8e008dc1a2aa3ef980e5684",
+                "device_save_sha256": "5a62d28184e71de111e45213e74a535f65338dbaf3c1e1ad8e8311dade349eca",
+                "expect": {
+                    "current_level_num": 5,
+                    "position.segment": 260,
+                    "player.lives": 2,
+                    "player.score": 83440,
+                    "mission_asset_owner": "mod/pmines_v11.7z",
+                    "cheats_enabled": false,
+                    "player_dead": false,
+                    "in_game": true,
+                    "player.has_red_key": false,
+                    "player.has_blue_key": false,
+                    "player.has_gold_key": false
+                },
+                "load_and_write": {
+                    "result": "PASS",
+                    "run_id": "a3f0e56b9b154d2f89821ecddd26ea62",
+                    "steps_completed": 9,
+                    "total_steps": 9,
+                    "elapsed_ms": 40185
+                },
+                "cold_reload": {
+                    "result": "PASS",
+                    "run_id": "d26f82cfbd944c49ae59b080d3995969",
+                    "steps_completed": 7,
+                    "total_steps": 7,
+                    "elapsed_ms": 39734
+                }
+            }
+        ]
+    },
+    "kartsal_level_12_windows_ordinary_controls": [
+        {
+            "level": 12,
+            "room": 425,
+            "lives": 6,
+            "score": 17580,
+            "shields": 98.0,
+            "blue": false,
+            "red": false,
+            "native_save_sha256": "1226f4c2a8d54b1dd8070b2a37888d1781a12493926d95b1921323ecdc144b65"
+        },
+        {
+            "level": 12,
+            "room": 1282,
+            "lives": 6,
+            "score": 17580,
+            "shields": 90.57673645019531,
+            "blue": true,
+            "red": false,
+            "native_save_sha256": "d1284f58721f870b3a8c59a87bf0d4a42ca273eeac54ac3115ce7bbd9b63ef03"
+        },
+        {
+            "level": 12,
+            "room": 1404,
+            "lives": 6,
+            "score": 18060,
+            "shields": 71.670166015625,
+            "blue": true,
+            "red": true,
+            "native_save_sha256": "c084ab9248a7f0d1aef844763a7b01361b47716acb9c01c95439c4548ad7e66f"
+        },
+        {
+            "level": 12,
+            "room": 1460,
+            "lives": 6,
+            "score": 19020,
+            "shields": 76.03802490234375,
+            "blue": true,
+            "red": true,
+            "native_save_sha256": "3b6f019a39915b86bd7bd983a09a8d03d3e16a055bd13f6705e19d99a10390df"
+        },
+        {
+            "level": 12,
+            "room": 19,
+            "lives": 5,
+            "score": 20670,
+            "shields": 72.75445556640625,
+            "blue": true,
+            "red": true,
+            "native_save_sha256": "3fc363c5102b4f4f95c0d35d619d37ee1684efb8f1f0a833b2e03f0a4f39dbbe"
+        },
+        {
+            "level": 12,
+            "room": 2234,
+            "lives": 5,
+            "score": 21470,
+            "shields": 90.83929443359375,
+            "blue": true,
+            "red": true,
+            "native_save_sha256": "7cfde6995cd8219537338d794c70d25f232684ce15059c071210acf3d94644f5"
+        },
+        {
+            "level": 13,
+            "room": 1619,
+            "lives": 5,
+            "score": 28820,
+            "shields": 100.0,
+            "blue": false,
+            "red": false,
+            "native_save_sha256": "59d66a4a85bf866ec5ceb80fc0a44c52400efae597a7daaa1f86800ddf839ce8"
+        }
+    ]
+}
