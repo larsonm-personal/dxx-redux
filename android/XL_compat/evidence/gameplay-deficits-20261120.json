@@ -1,0 +1,1052 @@
+{
+    "sources": {
+        "census": "../../ai tool plans/xl_gameplay_execution_20261120.json",
+        "reference": "all-startup-misses-reference-20261119.json"
+    },
+    "criterion": "120 unassisted simulation frames at 60 Hz after exact mission and ordinal selection",
+    "advertised": 1654,
+    "loaded_ticked": 1524,
+    "columns": [
+        "case",
+        "advertised_file",
+        "redux_outcome",
+        "completed_frames",
+        "first_blocker_at_reference_comparison",
+        "original_observation"
+    ],
+    "rows": [
+        [
+            "levelpack.7z/missions/aus-red/mb-arena.mn2:1",
+            "mb-arena.rl2",
+            "load_failed",
+            0,
+            "Segment functions",
+            "started_and_ran"
+        ],
+        [
+            "levelpack.7z/missions/d1fsxl/d1fs-xl.mn2:1",
+            "d1fs01xl.rl2",
+            "load_failed",
+            0,
+            "Unsupported level format",
+            "simulation_unverified"
+        ],
+        [
+            "levelpack.7z/missions/danwentz/dffusion.mn2:1",
+            "dffusion.rl2",
+            "load_failed",
+            0,
+            "Advertised level file missing",
+            "mission_rejected"
+        ],
+        [
+            "levelpack.7z/missions/darkflamewolf/acat-xl.mn2:1",
+            "acat-xl.rl2",
+            "load_failed",
+            0,
+            "Custom base definitions",
+            "started_and_ran"
+        ],
+        [
+            "levelpack.7z/missions/darkflamewolf/ctheo-xl.mn2:4",
+            "standoff.rl2",
+            "load_failed",
+            0,
+            "Animated replacement textures",
+            "started_and_ran"
+        ],
+        [
+            "levelpack.7z/missions/darkflamewolf/ctheo-xl.mn2:6",
+            "clminate.rl2",
+            "load_failed",
+            0,
+            "Animated replacement textures",
+            "started_and_ran"
+        ],
+        [
+            "levelpack.7z/missions/darkflamewolf/wolfpak3.mn2:6",
+            "wolf0006.rl2",
+            "simulation_failed",
+            82,
+            "Simulation stopped",
+            "started_and_ran"
+        ],
+        [
+            "levelpack.7z/missions/diedel/biohzrd.mn2:1",
+            "biohzrd.rl2",
+            "load_failed",
+            0,
+            "Segment functions",
+            "started_and_ran"
+        ],
+        [
+            "levelpack.7z/missions/diedel/dogfight.mn2:1",
+            "dogfight.rl2",
+            "load_failed",
+            0,
+            "Replacement bitmap directory",
+            "started_and_ran"
+        ],
+        [
+            "levelpack.7z/missions/diedel/emtombz.mn2:1",
+            "emtombz.rl2",
+            "load_failed",
+            0,
+            "Segment functions",
+            "started_and_ran"
+        ],
+        [
+            "levelpack.7z/missions/diedel/etombz.mn2:1",
+            "etombz.rl2",
+            "load_failed",
+            0,
+            "Segment functions",
+            "started_and_ran"
+        ],
+        [
+            "levelpack.7z/missions/diedel/forest.mn2:1",
+            "forest.rl2",
+            "load_failed",
+            0,
+            "Robot definitions",
+            "started_and_ran"
+        ],
+        [
+            "levelpack.7z/missions/diedel/g-house.mn2:1",
+            "g-house.rl2",
+            "load_failed",
+            0,
+            "Wall types",
+            "started_and_ran"
+        ],
+        [
+            "levelpack.7z/missions/diedel/playgdxl.mn2:1",
+            "playgdxl.rl2",
+            "load_failed",
+            0,
+            "Object placement",
+            "started_and_ran"
+        ],
+        [
+            "levelpack.7z/missions/diedel/ptech-d3.mn2:1",
+            "ptech-d3.rl2",
+            "load_failed",
+            0,
+            "Animated replacement textures",
+            "started_and_ran"
+        ],
+        [
+            "levelpack.7z/missions/diedel/pyrotech.mn2:1",
+            "pyrotech.rl2",
+            "simulation_failed",
+            104,
+            "Simulation stopped",
+            "started_and_ran"
+        ],
+        [
+            "levelpack.7z/missions/diedel/qtoxic.mn2:1",
+            "qtoxic.rl2",
+            "load_failed",
+            0,
+            "Replacement bitmap directory",
+            "started_and_ran"
+        ],
+        [
+            "levelpack.7z/missions/diedel/speed.mn2:1",
+            "speed.rl2",
+            "load_failed",
+            0,
+            "Reactor triggers",
+            "started_and_ran"
+        ],
+        [
+            "levelpack.7z/missions/diedel/steel-xl.mn2:1",
+            "steel-xl.rl2",
+            "load_failed",
+            0,
+            "Lightning effects",
+            "started_and_ran"
+        ],
+        [
+            "levelpack.7z/missions/diedel/toxic-d3.mn2:1",
+            "toxic-d3.rl2",
+            "load_failed",
+            0,
+            "Replacement bitmap directory",
+            "started_and_ran"
+        ],
+        [
+            "levelpack.7z/missions/diedel/wfc.mn2:1",
+            "wfc.rl2",
+            "load_failed",
+            0,
+            "Advertised level file missing",
+            "mission_rejected"
+        ],
+        [
+            "levelpack.7z/missions/diedel/wfc20.mn2:1",
+            "wfc20.rl2",
+            "load_failed",
+            0,
+            "Segment functions",
+            "started_and_ran"
+        ],
+        [
+            "levelpack.7z/missions/lotw/bay32.msn:1",
+            "bay32.rdl",
+            "simulation_failed",
+            120,
+            "Resolved level filename differs",
+            "started_and_ran"
+        ],
+        [
+            "levelpack.7z/missions/sidewinder/picasso.mn2:1",
+            "picasso.rl2",
+            "load_failed",
+            0,
+            "Advertised level file missing",
+            "advertised_member_lookup_empty"
+        ],
+        [
+            "levelpack.7z/missions/single/af-xl.mn2:1",
+            "sdg22.rl2",
+            "load_failed",
+            0,
+            "Light index bounds",
+            "started_and_ran"
+        ],
+        [
+            "levelpack.7z/missions/single/af-xl.mn2:2",
+            "esonapri.rl2",
+            "load_failed",
+            0,
+            "Light index bounds",
+            "started_and_ran"
+        ],
+        [
+            "levelpack.7z/missions/single/af-xl.mn2:3",
+            "serduta.rl2",
+            "load_failed",
+            0,
+            "Light index bounds",
+            "started_and_ran"
+        ],
+        [
+            "levelpack.7z/missions/single/af-xl.mn2:4",
+            "chacshir.rl2",
+            "load_failed",
+            0,
+            "Light index bounds",
+            "started_and_ran"
+        ],
+        [
+            "levelpack.7z/missions/single/af-xl.mn2:5",
+            "tefoleg.rl2",
+            "load_failed",
+            0,
+            "Light index bounds",
+            "started_and_ran"
+        ],
+        [
+            "levelpack.7z/missions/single/af-xl.mn2:7",
+            "cefispar.rl2",
+            "load_failed",
+            0,
+            "Light index bounds",
+            "started_and_ran"
+        ],
+        [
+            "levelpack.7z/missions/single/af-xl.mn2:8",
+            "ganeshd.rl2",
+            "load_failed",
+            0,
+            "Light index bounds",
+            "started_and_ran"
+        ],
+        [
+            "levelpack.7z/missions/single/af-xl.mn2:9",
+            "lakshmid.rl2",
+            "load_failed",
+            0,
+            "Light index bounds",
+            "started_and_ran"
+        ],
+        [
+            "levelpack.7z/missions/single/af-xl.mn2:10",
+            "fbasin.rl2",
+            "load_failed",
+            0,
+            "Light index bounds",
+            "started_and_ran"
+        ],
+        [
+            "levelpack.7z/missions/single/af-xl.mn2:11",
+            "aurabyss.rl2",
+            "load_failed",
+            0,
+            "Light index bounds",
+            "started_and_ran"
+        ],
+        [
+            "levelpack.7z/missions/single/af-xl.mn2:12",
+            "ursula.rl2",
+            "load_failed",
+            0,
+            "Light index bounds",
+            "started_and_ran"
+        ],
+        [
+            "levelpack.7z/missions/single/af-xl.mn2:13",
+            "lvoxonbt.rl2",
+            "load_failed",
+            0,
+            "Light index bounds",
+            "started_and_ran"
+        ],
+        [
+            "levelpack.7z/missions/single/af-xl.mn2:14",
+            "laradhes.rl2",
+            "load_failed",
+            0,
+            "Light index bounds",
+            "started_and_ran"
+        ],
+        [
+            "levelpack.7z/missions/single/af-xl.mn2:15",
+            "thorium.rl2",
+            "load_failed",
+            0,
+            "Light index bounds",
+            "started_and_ran"
+        ],
+        [
+            "levelpack.7z/missions/single/boilpnt.mn2:2",
+            "control.rl2",
+            "load_failed",
+            0,
+            "Light index bounds",
+            "started_and_ran"
+        ],
+        [
+            "levelpack.7z/missions/single/ffyl.mn2:1",
+            "pdl8.rl2",
+            "load_failed",
+            0,
+            "Advertised level file missing",
+            "mission_rejected"
+        ],
+        [
+            "levelpack.7z/missions/single/ffyl.mn2:2",
+            "pdl9.rl2",
+            "load_failed",
+            0,
+            "Advertised level file missing",
+            "mission_rejected"
+        ],
+        [
+            "levelpack.7z/missions/single/ffyl.mn2:3",
+            "pdl10.rl2",
+            "load_failed",
+            0,
+            "Advertised level file missing",
+            "mission_rejected"
+        ],
+        [
+            "levelpack.7z/missions/single/ffyl.mn2:4",
+            "pdl11.rl2",
+            "load_failed",
+            0,
+            "Advertised level file missing",
+            "mission_rejected"
+        ],
+        [
+            "levelpack.7z/missions/single/ffyl.mn2:5",
+            "pdl12.rl2",
+            "load_failed",
+            0,
+            "Advertised level file missing",
+            "mission_rejected"
+        ],
+        [
+            "levelpack.7z/missions/single/ffyl.mn2:6",
+            "pdl13.rl2",
+            "load_failed",
+            0,
+            "Advertised level file missing",
+            "mission_rejected"
+        ],
+        [
+            "levelpack.7z/missions/single/ffyl.mn2:7",
+            "pdl14.rl2",
+            "load_failed",
+            0,
+            "Advertised level file missing",
+            "mission_rejected"
+        ],
+        [
+            "levelpack.7z/missions/single/ffyl.mn2:8",
+            "pdl15.rl2",
+            "load_failed",
+            0,
+            "Advertised level file missing",
+            "mission_rejected"
+        ],
+        [
+            "levelpack.7z/missions/single/ffyl.mn2:9",
+            "pdl16.rl2",
+            "load_failed",
+            0,
+            "Advertised level file missing",
+            "mission_rejected"
+        ],
+        [
+            "levelpack.7z/missions/single/ffyl.mn2:10",
+            "pdl17.rl2",
+            "load_failed",
+            0,
+            "Advertised level file missing",
+            "mission_rejected"
+        ],
+        [
+            "levelpack.7z/missions/single/ffyl.mn2:11",
+            "pdl18.rl2",
+            "load_failed",
+            0,
+            "Advertised level file missing",
+            "mission_rejected"
+        ],
+        [
+            "levelpack.7z/missions/single/ffyl.mn2:12",
+            "pdl19.rl2",
+            "load_failed",
+            0,
+            "Advertised level file missing",
+            "mission_rejected"
+        ],
+        [
+            "levelpack.7z/missions/single/ffyl.mn2:13",
+            "pdl20.rl2",
+            "load_failed",
+            0,
+            "Advertised level file missing",
+            "mission_rejected"
+        ],
+        [
+            "levelpack.7z/missions/single/ffyl.mn2:14",
+            "pdl21.rl2",
+            "load_failed",
+            0,
+            "Advertised level file missing",
+            "mission_rejected"
+        ],
+        [
+            "levelpack.7z/missions/single/ffyl.mn2:15",
+            "pdl22.rl2",
+            "load_failed",
+            0,
+            "Advertised level file missing",
+            "mission_rejected"
+        ],
+        [
+            "levelpack.7z/missions/single/ffyl.mn2:16",
+            "pdl23.rl2",
+            "load_failed",
+            0,
+            "Advertised level file missing",
+            "mission_rejected"
+        ],
+        [
+            "levelpack.7z/missions/single/ffyl.mn2:17",
+            "pdl24.rl2",
+            "load_failed",
+            0,
+            "Advertised level file missing",
+            "mission_rejected"
+        ],
+        [
+            "levelpack.7z/missions/single/ffyl.mn2:18",
+            "aquaphnx.rl2",
+            "load_failed",
+            0,
+            "Advertised level file missing",
+            "mission_rejected"
+        ],
+        [
+            "levelpack.7z/missions/single/ffyl.mn2:19",
+            "pdl25-1.rl2",
+            "load_failed",
+            0,
+            "Advertised level file missing",
+            "mission_rejected"
+        ],
+        [
+            "levelpack.7z/missions/single/ffyl.mn2:20",
+            "pdl25-2.rl2",
+            "load_failed",
+            0,
+            "Advertised level file missing",
+            "mission_rejected"
+        ],
+        [
+            "levelpack.7z/missions/single/ffyl.mn2:21",
+            "pdl26.rl2",
+            "load_failed",
+            0,
+            "Advertised level file missing",
+            "mission_rejected"
+        ],
+        [
+            "levelpack.7z/missions/single/ffyl.mn2:22",
+            "pdl27.rl2",
+            "load_failed",
+            0,
+            "Advertised level file missing",
+            "mission_rejected"
+        ],
+        [
+            "levelpack.7z/missions/single/ffyl.mn2:23",
+            "pdl28.rl2",
+            "load_failed",
+            0,
+            "Advertised level file missing",
+            "mission_rejected"
+        ],
+        [
+            "levelpack.7z/missions/single/ffyl.mn2:24",
+            "pdl29.rl2",
+            "load_failed",
+            0,
+            "Advertised level file missing",
+            "mission_rejected"
+        ],
+        [
+            "levelpack.7z/missions/single/ffyl.mn2:25",
+            "pdl30.rl2",
+            "load_failed",
+            0,
+            "Advertised level file missing",
+            "mission_rejected"
+        ],
+        [
+            "levelpack.7z/missions/single/ffyl.mn2:26",
+            "pdl31.rl2",
+            "load_failed",
+            0,
+            "Advertised level file missing",
+            "mission_rejected"
+        ],
+        [
+            "levelpack.7z/missions/single/ffyl.mn2:27",
+            "pdl32.rl2",
+            "load_failed",
+            0,
+            "Advertised level file missing",
+            "mission_rejected"
+        ],
+        [
+            "levelpack.7z/missions/single/pmlev1.mn2:1",
+            "pmlev1p.rl2",
+            "unsupported_format",
+            0,
+            "Unsupported level format",
+            "started_and_ran"
+        ],
+        [
+            "levelpack.7z/missions/single/reflux.mn2:1",
+            "reflux.rl2",
+            "load_failed",
+            0,
+            "Advertised level file missing",
+            "mission_rejected"
+        ],
+        [
+            "levelpack.7z/missions/single/sphere.mn2:1",
+            "sp-01.rl2",
+            "load_failed",
+            0,
+            "Robot definitions",
+            "started_and_ran"
+        ],
+        [
+            "levelpack.7z/missions/sirius/antho1-3.mn2:1",
+            "antho-d1.rl2",
+            "load_failed",
+            0,
+            "Object trigger actions",
+            "started_and_ran"
+        ],
+        [
+            "levelpack.7z/missions/sirius/antho1-3.mn2:3",
+            "antho-d3.rl2",
+            "load_failed",
+            0,
+            "Trigger targets",
+            "started_and_ran"
+        ],
+        [
+            "levelpack.7z/missions/sirius/fv24b.mn2:1",
+            "fv24b.rl2",
+            "load_failed",
+            0,
+            "Segment functions",
+            "started_and_ran"
+        ],
+        [
+            "levelpack.7z/missions/spotlight/crownx.mn2:1",
+            "crownx.rl2",
+            "unsupported_format",
+            0,
+            "Unsupported level format",
+            "started_and_ran"
+        ],
+        [
+            "levelpack.7z/missions/spotlight/rtarena.mn2:1",
+            "rtarena.rl2",
+            "load_failed",
+            0,
+            "Fluid behavior",
+            "started_and_ran"
+        ],
+        [
+            "anthology(split).7z/missions/single/antho1-3.mn2:1",
+            "antho-d1.rl2",
+            "load_failed",
+            0,
+            "OOF model decoding",
+            "started_and_ran"
+        ],
+        [
+            "anthology(split).7z/missions/single/antho1-3.mn2:2",
+            "antho-d2.rl2",
+            "load_failed",
+            0,
+            "OOF model decoding",
+            "started_and_ran"
+        ],
+        [
+            "anthology(split).7z/missions/single/antho1-3.mn2:3",
+            "antho-d3.rl2",
+            "load_failed",
+            0,
+            "OOF model decoding",
+            "started_and_ran"
+        ],
+        [
+            "anthology.7z/missions/sirius/antholgy.mn2:1",
+            "antholgy.rl2",
+            "load_failed",
+            0,
+            "OOF model decoding",
+            "started_and_ran"
+        ],
+        [
+            "boilpnt.7z/missions/single/boilpnt.mn2:1",
+            "watrwrks.rl2",
+            "load_failed",
+            0,
+            "Animated replacement textures",
+            "started_and_ran"
+        ],
+        [
+            "boilpnt.7z/missions/single/boilpnt.mn2:2",
+            "control.rl2",
+            "load_failed",
+            0,
+            "Light index bounds",
+            "started_and_ran"
+        ],
+        [
+            "boilpnt.7z/missions/single/boilpnt.mn2:3",
+            "canyon.rl2",
+            "load_failed",
+            0,
+            "Animated replacement textures",
+            "started_and_ran"
+        ],
+        [
+            "boilpnt.7z/missions/single/boilpnt.mn2:4",
+            "subzero.rl2",
+            "load_failed",
+            0,
+            "Animated replacement textures",
+            "started_and_ran"
+        ],
+        [
+            "boilpnt.7z/missions/single/boilpnt.mn2:6",
+            "canyon2.rl2",
+            "load_failed",
+            0,
+            "Animated replacement textures",
+            "started_and_ran"
+        ],
+        [
+            "boilpnt.7z/missions/single/boilpnt.mn2:7",
+            "control2.rl2",
+            "load_failed",
+            0,
+            "Animated replacement textures",
+            "simulation_unverified"
+        ],
+        [
+            "levels/amalthea.zip/amalthea/Amalthea.mn2:1",
+            "amalthea.rl2",
+            "load_failed",
+            0,
+            "Multiplayer-only objects",
+            "started_and_ran"
+        ],
+        [
+            "levels/elitehunt.zip/elitehnt.mn2:1",
+            "elitehnt.rl2",
+            "load_failed",
+            0,
+            "Unsupported level format",
+            "started_and_ran"
+        ],
+        [
+            "levels/kalisto.zip/kalisto/kalisto.mn2:1",
+            "kalisto.rl2",
+            "load_failed",
+            0,
+            "Non-hexahedral geometry",
+            "started_and_ran"
+        ],
+        ["levels/kore.zip/kore/kore.mn2:1", "kore.rl2", "load_failed", 0, "Robot contents", "started_and_ran"],
+        [
+            "levels/lor-xl.7z/missions/single/lor-xl.mn2:1",
+            "lor-xl.rl2",
+            "load_failed",
+            0,
+            "Animated replacement textures",
+            "started_and_ran"
+        ],
+        [
+            "levels_multiplayer/acat-xl.7z/missions/acat-xl.mn2:1",
+            "acat-xl.rl2",
+            "load_failed",
+            0,
+            "Custom base definitions",
+            "started_and_ran"
+        ],
+        [
+            "levels_multiplayer/biohzrd.zip/biohzrd.mn2:1",
+            "biohzrd.rl2",
+            "load_failed",
+            0,
+            "Segment functions",
+            "started_and_ran"
+        ],
+        [
+            "levels_multiplayer/chaos-theory-xl.7z/missions/darkflamewolf/ctheo-xl.mn2:1",
+            "catalyst.rl2",
+            "load_failed",
+            0,
+            "Animated replacement textures",
+            "started_and_ran"
+        ],
+        [
+            "levels_multiplayer/chaos-theory-xl.7z/missions/darkflamewolf/ctheo-xl.mn2:2",
+            "initiati.rl2",
+            "load_failed",
+            0,
+            "Reactor triggers",
+            "started_and_ran"
+        ],
+        [
+            "levels_multiplayer/chaos-theory-xl.7z/missions/darkflamewolf/ctheo-xl.mn2:3",
+            "unbridle.rl2",
+            "load_failed",
+            0,
+            "Animated replacement textures",
+            "started_and_ran"
+        ],
+        [
+            "levels_multiplayer/chaos-theory-xl.7z/missions/darkflamewolf/ctheo-xl.mn2:4",
+            "standoff.rl2",
+            "load_failed",
+            0,
+            "Animated replacement textures",
+            "started_and_ran"
+        ],
+        [
+            "levels_multiplayer/chaos-theory-xl.7z/missions/darkflamewolf/ctheo-xl.mn2:5",
+            "brekthru.rl2",
+            "load_failed",
+            0,
+            "Reactor triggers",
+            "started_and_ran"
+        ],
+        [
+            "levels_multiplayer/chaos-theory-xl.7z/missions/darkflamewolf/ctheo-xl.mn2:6",
+            "clminate.rl2",
+            "load_failed",
+            0,
+            "Reactor triggers",
+            "started_and_ran"
+        ],
+        [
+            "levels_multiplayer/code-yena-xl.7z/cdeyena2.mn2:1",
+            "cdeyena2.rl2",
+            "load_failed",
+            0,
+            "Non-hexahedral geometry",
+            "started_and_ran"
+        ],
+        [
+            "levels_multiplayer/coordination-xl.7z/crdntion.mn2:1",
+            "crdntion.rl2",
+            "load_failed",
+            0,
+            "Non-hexahedral geometry",
+            "started_and_ran"
+        ],
+        [
+            "levels_multiplayer/cs-dust.7z/dust.mn2:1",
+            "cs-dust.rl2",
+            "load_failed",
+            0,
+            "Animated replacement textures",
+            "started_and_ran"
+        ],
+        [
+            "levels_multiplayer/dmentia2.zip/DMENTIA2.MN2:2",
+            "dmentia5.rl2",
+            "load_failed",
+            0,
+            "Advertised level file missing",
+            "advertised_member_lookup_empty"
+        ],
+        [
+            "levels_multiplayer/emtombz.zip/emtombz.mn2:1",
+            "emtombz.rl2",
+            "load_failed",
+            0,
+            "Segment functions",
+            "started_and_ran"
+        ],
+        [
+            "levels_multiplayer/etombz.zip/etombz.mn2:1",
+            "etombz.rl2",
+            "load_failed",
+            0,
+            "Segment functions",
+            "started_and_ran"
+        ],
+        [
+            "levels_multiplayer/firsteel.7z/steel-xl.mn2:1",
+            "steel-xl.rl2",
+            "load_failed",
+            0,
+            "Lightning effects",
+            "started_and_ran"
+        ],
+        [
+            "levels_multiplayer/fv24b.zip/fv24b.mn2:1",
+            "fv24b.rl2",
+            "unsupported_format",
+            0,
+            "Unsupported level format",
+            "simulation_unverified"
+        ],
+        [
+            "levels_multiplayer/g-house.7z/missions/diedel/d3/g-house.mn2:1",
+            "g-house.rl2",
+            "load_failed",
+            0,
+            "Wall types",
+            "started_and_ran"
+        ],
+        [
+            "levels_multiplayer/mb-arena.7z/missions/spotlight/mb-arena.mn2:1",
+            "mb-arena.rl2",
+            "load_failed",
+            0,
+            "Segment functions",
+            "started_and_ran"
+        ],
+        [
+            "levels_multiplayer/nocturnl.zip/d1nctrlnl.msn:1",
+            "d1nctrnl.rdl",
+            "load_failed",
+            0,
+            "Advertised level file missing",
+            "mission_rejected"
+        ],
+        [
+            "levels_multiplayer/picasso.zip/Picasso.mn2:1",
+            "picasso.rl2",
+            "load_failed",
+            0,
+            "Advertised level file missing",
+            "advertised_member_lookup_empty"
+        ],
+        [
+            "levels_multiplayer/playgrnd.7z/missions/diedel/XL/playgdxl.mn2:1",
+            "playgdxl.rl2",
+            "load_failed",
+            0,
+            "Particle effects",
+            "started_and_ran"
+        ],
+        [
+            "levels_multiplayer/playgrnd.7z/playgdxl.mn2:1",
+            "playgdxl.rl2",
+            "load_failed",
+            0,
+            "Object placement",
+            "started_and_ran"
+        ],
+        [
+            "levels_multiplayer/pmanicd2.zip/pmanicd2.mn2:1",
+            "pmanicd2.rl2",
+            "load_failed",
+            0,
+            "Unsupported level format",
+            "started_and_ran"
+        ],
+        [
+            "levels_multiplayer/pyrotech.7z/missions/diedel/d3/ptech-d3.mn2:1",
+            "ptech-d3.rl2",
+            "load_failed",
+            0,
+            "Animated replacement textures",
+            "started_and_ran"
+        ],
+        [
+            "levels_multiplayer/pyrotech.7z/missions/diedel/pyrotech.mn2:1",
+            "pyrotech.rl2",
+            "simulation_failed",
+            104,
+            "Simulation stopped",
+            "started_and_ran"
+        ],
+        [
+            "levels_multiplayer/pyrotech.7z/ptech-d3.mn2:1",
+            "ptech-d3.rl2",
+            "load_failed",
+            0,
+            "Animated replacement textures",
+            "started_and_ran"
+        ],
+        [
+            "levels_multiplayer/pyrotech.7z/pyrotech.mn2:1",
+            "pyrotech.rl2",
+            "simulation_failed",
+            104,
+            "Simulation stopped",
+            "started_and_ran"
+        ],
+        [
+            "levels_multiplayer/rtarena.zip/RTARENA.MN2:1",
+            "rtarena.rl2",
+            "load_failed",
+            0,
+            "Fluid behavior",
+            "started_and_ran"
+        ],
+        [
+            "levels_multiplayer/speed.7z/missions/diedel/d3/speed.mn2:1",
+            "speed.rl2",
+            "load_failed",
+            0,
+            "Reactor triggers",
+            "started_and_ran"
+        ],
+        [
+            "levels_multiplayer/subspace.7z/missions/diedel/d3/subspace.mn2:1",
+            "subspace.rl2",
+            "load_failed",
+            0,
+            "Robot definitions",
+            "started_and_ran"
+        ],
+        [
+            "levels_multiplayer/Temple Of Helix.zip/missions/tohelix.mn2:1",
+            "tohelix.rl2",
+            "load_failed",
+            0,
+            "Non-hexahedral geometry",
+            "started_and_ran"
+        ],
+        [
+            "levels_multiplayer/toxic.7z/missions/diedel/d3/toxic-d3.mn2:1",
+            "toxic-d3.rl2",
+            "load_failed",
+            0,
+            "Animated replacement textures",
+            "started_and_ran"
+        ],
+        [
+            "levels_multiplayer/toxic.7z/missions/diedel/XL/qtoxic.mn2:1",
+            "qtoxic.rl2",
+            "load_failed",
+            0,
+            "Replacement bitmap directory",
+            "started_and_ran"
+        ],
+        [
+            "levels_multiplayer/wfc.7z/missions/diedel/d3/wfc-d3.mn2:1",
+            "wfc-d3.rl2",
+            "load_failed",
+            0,
+            "Segment functions",
+            "started_and_ran"
+        ],
+        [
+            "levels_multiplayer/wfc.7z/missions/diedel/wfc20.mn2:1",
+            "wfc20.rl2",
+            "load_failed",
+            0,
+            "Segment functions",
+            "started_and_ran"
+        ],
+        [
+            "levels_multiplayer/zugzwang.7z/zugzwang.mn2:1",
+            "zugzwang.rl2",
+            "timeout",
+            0,
+            "timeout",
+            "simulation_unverified"
+        ],
+        [
+            "PMKartsal-3L-Demo-v1.0.rar/missions/kartsal.mn2:1",
+            "pmlev1.rl2",
+            "load_failed",
+            0,
+            "ASE model rendering",
+            "started_and_ran"
+        ],
+        [
+            "PMKartsal-3L-Demo-v1.0.rar/missions/kartsal.mn2:2",
+            "pmlev2.rl2",
+            "load_failed",
+            0,
+            "ASE model rendering",
+            "started_and_ran"
+        ],
+        [
+            "PMKartsal-3L-Demo-v1.0.rar/missions/kartsal.mn2:3",
+            "pmlev3.rl2",
+            "load_failed",
+            0,
+            "ASE model rendering",
+            "started_and_ran"
+        ],
+        [
+            "prophxl131beta.zip/missions/sapphire wolf sp/PROPHXL.MN2:1",
+            "aqunia.rl2",
+            "load_failed",
+            0,
+            "Unsupported level format",
+            "started_and_ran"
+        ],
+        [
+            "prophxl131beta.zip/missions/sapphire wolf sp/PROPHXL.MN2:3",
+            "auora1.rl2",
+            "load_failed",
+            0,
+            "Unsupported level format",
+            "started_and_ran"
+        ]
+    ]
+}
