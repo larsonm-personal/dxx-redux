@@ -168,7 +168,7 @@ static GameplayProbe prepare_probe(const Bytes &source, bool water_segments, int
 	for (std::size_t i = 0; i < 9; ++i) rebase(35 + i * 12);
 	// The classic reader does not apply XL CTriggerTargets::Check
 	// Translate only the inspected count, retaining the original input as evidence
-	if (modern_layout && v.reactor_authored_count > 10) {
+	if (modern_layout && v.reactor_authored_count != static_cast<int>(v.reactor_targets.size())) {
 		const auto reactor_offset = read_offset(out, new_game_offset + 35 + 5 * 12);
 		patch(out, reactor_offset, static_cast<int>(v.reactor_targets.size()), 2);
 	}
