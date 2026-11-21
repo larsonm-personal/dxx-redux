@@ -788,8 +788,15 @@ static int descriptor_test(int argc, char **argv)
 			require(!xl_resource_same_mod_sources(upper, changed), "Different owner passed case-insensitive source comparison");
 			const std::map<std::string, std::string> aliases{ { "mods/Owner/skin.tga", "second" }, { "mods/Owner/Skin.tga", "second" } };
 			const std::map<std::string, std::string> other_aliases{ { "mods/owner/SKIN.tga", "second" }, { "mods/owner/skin.TGA", "second" } };
-			require(!xl_resource_same_mod_sources(aliases, other_aliases) && !xl_resource_same_mod_sources(other_aliases, aliases),
-			        "Ambiguous source spelling passed case-insensitive source comparison");
+			const std::map<std::string, std::string> single{ { "mods/owner/skin.tga", "second" } };
+			require(xl_resource_same_mod_sources(aliases, other_aliases) && xl_resource_same_mod_sources(aliases, single) &&
+			            xl_resource_same_mod_sources(single, aliases),
+			        "Repeated references to the same skin changed its save identity");
+			auto conflicting = aliases;
+			conflicting.begin()->second = "other";
+			require(!xl_resource_same_mod_sources(conflicting, single) && !xl_resource_same_mod_sources(single, conflicting) &&
+			            !xl_resource_same_mod_sources(conflicting, other_aliases),
+			        "Conflicting case aliases passed source comparison");
 			const int64_t saved_epoch = (int64_t(1) << 34) + 91;
 			int64_t clock = 0;
 			require(xl_secret_restore_clock(-1, saved_epoch, &clock) && clock == saved_epoch,
