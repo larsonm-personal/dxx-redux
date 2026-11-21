@@ -53,6 +53,9 @@ on:
       run:
         description: Whether execution remained eligible after the optional late stack check
         value: ${{ jobs.android.outputs.run }}
+      public_results_artifact_id:
+        description: Artifact uploaded by this execution of the public Android lane
+        value: ${{ jobs.android.outputs.public_results_artifact_id }}
     secrets:
       RETAIL_ASSETS_READ_TOKEN:
         required: false
@@ -65,6 +68,7 @@ jobs:
     name: Run selected tests
     outputs:
       run: ${{ !inputs.recheck_stack && 'true' || steps.stack.outputs.run }}
+      public_results_artifact_id: ${{ steps.public_results.outputs.artifact-id }}
     runs-on: ubuntu-24.04
     # Provision/build time is separate from the approximately 45-minute test sample
     timeout-minutes: ${{ inputs.nightly_target_ref != '' && 55 || 105 }}
@@ -797,6 +801,7 @@ jobs:
                               target.write_bytes(stream.read(65536))
           PYTHON
       - name: Upload execution evidence
+        id: public_results
         if: (inputs.recheck_stack != true || steps.stack.outputs.run == 'true') && (always() && !inputs.retail_assets)
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:

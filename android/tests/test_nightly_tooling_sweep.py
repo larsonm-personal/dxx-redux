@@ -1625,6 +1625,12 @@ Write-SuiteSetupStage 'launcher-reset'
         self.assertIn("needs.plan.outputs.campaign != 'lan-three-player' && inputs.recovery_checks == true", public)
         self.assertIn("ref: ${{ github.event.pull_request.head.sha || github.sha }}", public)
         android = (root / ".github/workflows/android-nightly-tooling.yml").read_text()
+        # A retried lane can leave two artifacts with the same name in one run
+        self.assertIn("id: public_results\n", android)
+        self.assertIn("public_results_artifact_id: ${{ steps.public_results.outputs.artifact-id }}", android)
+        self.assertIn("value: ${{ jobs.android.outputs.public_results_artifact_id }}", android)
+        self.assertIn("if: needs.android.outputs.public_results_artifact_id != ''", public)
+        self.assertIn("artifact-ids: ${{ needs.android.outputs.public_results_artifact_id }}", public)
         for requirement in ("public_fixtures", "three_emulators"):
             expression = next(
                 line.split(":", 1)[1].strip().rstrip(",")
@@ -2932,7 +2938,7 @@ Write-SuiteSetupStage 'launcher-reset'
         gradle_save = step("Save verified public host Gradle dependencies")
         self.assertIn('"$PUBLIC_TOOL_CACHE_TRUSTED" == true', selection)
         self.assertIn('-n "$CONTROL_INPUTS" && "$CONTROL_INPUTS" == "$TARGET_INPUTS"', selection)
-        self.assertIn('nightly-host-gradle-modules-v1-$RUNNER_OS-$RUNNER_ARCH-$CONTROL_INPUTS', selection)
+        self.assertIn("nightly-host-gradle-modules-v1-$RUNNER_OS-$RUNNER_ARCH-$CONTROL_INPUTS", selection)
         for operation in (gradle_restore, gradle_save):
             self.assertIn("steps.metadata_cli_selection.outputs.key != ''", operation)
             self.assertIn("path: ${{ runner.temp }}/dxx-host-gradle/caches/modules-2", operation)
@@ -2941,7 +2947,7 @@ Write-SuiteSetupStage 'launcher-reset'
         self.assertIn("steps.host_gradle_restore.outputs.cache-hit != 'true'", warm)
         self.assertIn("bash control/android/gradlew -p control/android", warm)
         self.assertNotIn("target/android", warm)
-        self.assertIn('--offline', warm)
+        self.assertIn("--offline", warm)
         self.assertIn("steps.host_gradle_warm.outcome == 'success'", gradle_save)
         for later in (
             "Check out immutable private retail inputs",
@@ -2960,9 +2966,7 @@ Write-SuiteSetupStage 'launcher-reset'
         execution = host.split("      - name: Execute admitted host owners", 1)[1].split("      - name:", 1)[0]
         self.assertIn("timeout-minutes: 50", execution)
         setup = host.split("      - name: Prepare asset-free metadata CLI", 1)[1].split("      - name:", 1)[0]
-        selection = host.split("      - name: Select host metadata CLI provisioning", 1)[1].split(
-            "      - name:", 1
-        )[0]
+        selection = host.split("      - name: Select host metadata CLI provisioning", 1)[1].split("      - name:", 1)[0]
         self.assertIn("VALIDATE_METADATA_CLI: ${{ github.event_name == 'pull_request' }}", selection)
         self.assertIn('"$VALIDATE_METADATA_CLI" != true', selection)
         self.assertIn("e.get('fixture') == 'retail-corpus'", selection)
@@ -3766,7 +3770,10 @@ class RefillNightlyTests(unittest.TestCase):
                 sweep.write(directory / "attempt.json", attempt)
                 raise subprocess.TimeoutExpired(command, timeout)
 
-            with patch.object(sample.time, "time", return_value=101), patch.object(sweep, "run_command", side_effect=run):
+            with (
+                patch.object(sample.time, "time", return_value=101),
+                patch.object(sweep, "run_command", side_effect=run),
+            ):
                 self.assertEqual(sample.execute_refills(plan, policy, "host", output), 0)
             receipt = sweep.read(output / "results.json")
             self.assertEqual(receipt["results"][0]["status"], "RUNNING")

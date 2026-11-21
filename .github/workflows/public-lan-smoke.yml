@@ -125,9 +125,11 @@ jobs:
           name: nightly-plan
           path: plan
       - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        if: needs.android.outputs.public_results_artifact_id != ''
         continue-on-error: true
         with:
-          pattern: nightly-results-*
+          artifact-ids: ${{ needs.android.outputs.public_results_artifact_id }}
+          merge-multiple: true
           path: receipts
       - name: Reconcile terminal results and retain unresolved failures
         env:
