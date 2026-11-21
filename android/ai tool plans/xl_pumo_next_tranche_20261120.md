@@ -1,0 +1,16 @@
+# Next Pumo gameplay tranche
+
+Budget roughly ten hours of engineering. Adjust the allocation as play uncovers blockers and finish validation of any change already published. Begin from the current fork branch and the last successful connected checkpoint in the [execution record](xl_pumo_gameplay_execution_20261120.md).
+
+| Effort | Exit evidence |
+| --- | --- |
+| First hour | Verify the save's SHA-256, input archive, APK or executable and parent receipt. Restore the living pilot. Compare level, position, keys, score, lives, health and countdown. Record which actions used automated steering. |
+| Five hours | Follow Mineral Valley through ordinary input. Preserve saves immediately before a branch and after each actual exit. Pursue the original Coldrom detour and its return to Iquaxel from the connected pilot. On Kartsal Motivation, continue beyond master switch 15, through the opened forcefields toward room 424. Compare an observed failure with the original executable or source before changing the engine. |
+| Two hours | Use the first repeatable engine discrepancy to choose the next fix. Keep XL translation, policy and diagnostics in android/XL_compat. Use narrow native hooks only when the owning subsystem requires one. Repeat the failed action, a neighboring control and a clean restore on Windows and Linux. For survey changes repeat the exact affected ordinals in both distributions and preserve the two full census denominators. |
+| Two hours | Rehearse phone installation, authentic import, a normal save, cold load and meaningful continuation on the ordinary APK. Record the exact APK and save digests, retail/addon selections, device and input method. Incorporate human feedback if available. Publish the execution record, remaining case categories, updated human playtest directions, next design and a replacement kickoff prompt. |
+
+### Evidence to preserve
+
+Track the Mineral Valley main route through ordinals 1, 2, 3, 4, 5, 6, 7, 8, 9 and the episode transition in 10. The Coldrom path branches from 4 through 14 and rejoins at 5. Kartsal Motivation uses 1, 11, 12 and 13. Confirm each terminal event in the engine. Preserve deaths, inventory costs and authored key resets. Count separate fixed-position mechanics, direct starts, multiplayer matches and human playtests according to how each was exercised.
+
+Continue monitoring the ready-for-review fork PRs while working on independent gameplay. Record every merge base and new head after a restack. A selected check must pass on the revision being integrated. Diagnose each skipped or absent owner from its admission log and verify the cumulative private check on the native stack tip. Link the resulting run and attempt in the execution record.

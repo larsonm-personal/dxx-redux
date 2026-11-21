@@ -1,0 +1,133 @@
+{
+    "mission": "pmines_v11.7z",
+    "route": "Alternative continuations of the same earned Metillis reactor save. Automated ordinary controls at 60 Hz.",
+    "checkpoints": [
+        {
+            "name": "metillis-reactor-firing-00",
+            "ordinal": 4,
+            "room": 1202,
+            "lives": 4,
+            "score": 50000,
+            "shields": 43.62042236328125,
+            "reactor": true,
+            "resume": "ea1cdc03c1ecc14da6d766fff23612bf34297a52305b4289d0754089a90fb1a3",
+            "native_save": "056d6d37bae0e6170b66a9499c17a6f567ddbbe2974d4e076867860e28d940ba",
+            "android_save": "693fa01516d5635ecc5556d462b2544270928e0190cdb63dc7bb409adf849cdc",
+            "state": "bfa9a2db79c2b4c9181e307b8a6b9bf92de61c43c7d12529961e70f24a6d2399"
+        },
+        {
+            "name": "metillis-earned-main-exit",
+            "ordinal": 5,
+            "room": 260,
+            "lives": 4,
+            "score": 51150,
+            "shields": 100.0,
+            "reactor": false,
+            "resume": "68e5a0ac56c6c17a26b6edd0f03d92f448e5776cac1108f7b0ced1e3053110b3",
+            "native_save": "d89f25add8f88d6c085ac0762e107f4207812b1c88c5b1de5245b8d486c9ebff",
+            "android_save": "318e0e6f41671075cc67403a062a16a8e2e23f3a10ee86c69b332cf93cb261a6",
+            "state": "a3cf729d0f43accdf3658b255239a5318b6fe69cf3698e658099954af21cec61"
+        },
+        {
+            "name": "metillis-secret-cloaked-01",
+            "ordinal": 4,
+            "room": 1183,
+            "lives": 4,
+            "score": 51340,
+            "shields": 53.547119140625,
+            "reactor": true,
+            "resume": "db0da901d004467040c4076f2063a8289f49b384bf81f51a143cd87dd83542be",
+            "native_save": "0b44cf5c1683be6e656c21a651891bf777d81e74ee553d81aafd0b2ec5711aec",
+            "android_save": "86e134c764a7b47d3d2c14e8b7d3151e21bb5dfdecfc847955f3bdb9a0dd6a62",
+            "state": "c01d92e765aafbddad9f1c355554a8c1b087d157763b3acec48647d360188c5e"
+        },
+        {
+            "name": "metillis-secret-to-1189-0",
+            "ordinal": 4,
+            "room": 1189,
+            "lives": 4,
+            "score": 52540,
+            "shields": 22.428909301757812,
+            "reactor": true,
+            "resume": "0b44cf5c1683be6e656c21a651891bf777d81e74ee553d81aafd0b2ec5711aec",
+            "native_save": "09c8cf986bb99a47eb8607c53f3e38485a9552c30e557b2cc398b818629c37db",
+            "android_save": "0c2a96cd792dfe36a11512c78312471ef02f6c62389be9a8722afc53ce708fc5",
+            "state": "38d7f201e6969a4ff703e42c33f6aff9e1ee4d20e4e9ce69190832e696343c40"
+        },
+        {
+            "name": "metillis-secret-boost-exit",
+            "ordinal": 14,
+            "room": 228,
+            "lives": 4,
+            "score": 53740,
+            "shields": 100.0,
+            "reactor": false,
+            "resume": "09c8cf986bb99a47eb8607c53f3e38485a9552c30e557b2cc398b818629c37db",
+            "native_save": "72e6270fa20a147ea0bd0c357363aebfac5371a4a1a28f97e4f1b4a35917f237",
+            "android_save": "49051238f8038f4e6e2550e8ff564a296667f47d881d29cd0aa79a4f2fbc9be0",
+            "state": "a10e15bf0666704cdf488fc1737650b0a7a31e54bb2c22768e4e9812a65f9978"
+        },
+        {
+            "name": "iquaxel-contact3",
+            "ordinal": 5,
+            "room": 384,
+            "lives": 4,
+            "score": 51450,
+            "shields": 93.14505004882812,
+            "reactor": false,
+            "resume": "e835a4a1feaacd0230171f590c7bf2bb75234ad1e5b798fc1e43a2d579369bd6",
+            "native_save": "cb7e2e4986ef1e900e274083e6c558c725037b3c7793313cb2f4d16b522ba9c3",
+            "android_save": "ccb73d02233d503fecbb0549a67f6a57ee580d8ecdf8ed9021c41d5a86d1c02f",
+            "state": "8dccd14023dbda560ccfc4b3953e64a584e23786f2058fa466bcc4fe08f32bf0"
+        },
+        {
+            "name": "pmc-bank-shoot5-0",
+            "ordinal": 11,
+            "room": 357,
+            "lives": 8,
+            "score": 2710,
+            "shields": 118.80720520019531,
+            "reactor": false,
+            "resume": "c0c8cd36cf53e35f76d565f8e07537f220e6297f25cd7a3fec99a1234671822d",
+            "native_save": "101e87e83c07f408eb04979f36c9a9d802aeef6aaff3a1c440ce9ae27371b9ff",
+            "android_save": "ead32ac3e5b2df8bbe0bcded64ca29ff1f27c9c70bfffbcd7fa0f51d4398be09",
+            "state": "f44a67b9137d5ecdca2bc55065f7a53565119fa6f6d0707546d9434a4d624f50"
+        },
+        {
+            "name": "pmc-angle-master15-0",
+            "ordinal": 11,
+            "room": 357,
+            "lives": 8,
+            "score": 2710,
+            "shields": 118.80720520019531,
+            "reactor": false,
+            "resume": "101e87e83c07f408eb04979f36c9a9d802aeef6aaff3a1c440ce9ae27371b9ff",
+            "native_save": "49c695b9611081d270ee6c0b10b751670d8d27c497aa26d8bee8d383bcbee920",
+            "android_save": "dab6b29b23b4c2be5e74e192f09b94c7e1c291f6e2b8dfa96c85b90f59c3ff19",
+            "state": "36d057b041cbc24544d3d00760ef10cb527d3db7d02432742f7761d0948274c8"
+        }
+    ],
+    "android": [
+        {
+            "ordinal": 4,
+            "room": 1202,
+            "score": 50000,
+            "host_save": "693fa01516d5635ecc5556d462b2544270928e0190cdb63dc7bb409adf849cdc",
+            "device_save": "0a06f08f157f64c20ad342b28cdac96e9ddff2b2ef6f937489154e2f0bdadbc1",
+            "write_steps": 9,
+            "cold_steps": 7,
+            "profile_restored": true
+        },
+        {
+            "ordinal": 5,
+            "room": 260,
+            "score": 51150,
+            "host_save": "318e0e6f41671075cc67403a062a16a8e2e23f3a10ee86c69b332cf93cb261a6",
+            "device_save": "f206a6aad6b453638a7a53e4bfe24ea13c9abee0c54332281cedfb81f5c187c6",
+            "write_steps": 9,
+            "cold_steps": 7,
+            "profile_restored": true
+        }
+    ],
+    "android_apk_sha256": "25ffdbc26f6f78ea217e2a9840b78469292ee62d1f14f43db1920ac25d5d2cc6"
+}

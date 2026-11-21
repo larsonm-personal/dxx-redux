@@ -1,0 +1,201 @@
+{
+    "mission": "pmines_v11.7z",
+    "ordinal": 4,
+    "route": "Mineral Valley from the hub through Majha",
+    "android": {
+        "pilot": "player",
+        "mission": "pmines",
+        "slot": "player.sg3",
+        "input": "91016c72763ef2a54b9091c1019915aa6c50161b1f27f8bdfd80b0fe12d58859",
+        "written": "836cf45e3e1189db596b4ab15695d6d65ce3a1ccd632925d4960978969e0392f",
+        "expect": {
+            "current_level_num": 4,
+            "player.lives": 2,
+            "player.has_blue_key": true,
+            "player.has_gold_key": true,
+            "player.has_red_key": false,
+            "mission_asset_owner": "mod/pmines_v11.7z",
+            "cheats_enabled": false,
+            "player_dead": false,
+            "in_game": true
+        },
+        "normal_respawn": {
+            "result": "PASS",
+            "run_id": "b97302c31bfd475cb7717da474452b29",
+            "steps_completed": 13,
+            "total_steps": 13,
+            "elapsed_ms": 52418
+        },
+        "cold_reload": {
+            "result": "PASS",
+            "run_id": "2d6c17d3a76f48d6b8be97aac7a3c92c",
+            "steps_completed": 7,
+            "total_steps": 7,
+            "elapsed_ms": 63392
+        },
+        "protected_profile_restored": true
+    },
+    "checkpoints": [
+        {
+            "segment": 1257,
+            "lives": 2,
+            "score": 39920,
+            "shields": 55.13862609863281,
+            "keys": [
+                "blue",
+                "gold",
+                "red"
+            ],
+            "reactor_countdown": {
+                "active": false,
+                "timer": 6160384,
+                "total_seconds": 99
+            },
+            "plan_sha256": "5c4b3a3b773b41b5cbeb5c06492719ad518226fa26610f943a926d86d9c3397e",
+            "player_state_sha256": "8cdcb3bde49df028d878d9bf1afd6ec1429e1d92c79ab40a45b6dc659dcbe196",
+            "save_sha256": "a3a49302a95c37e6425ebafabe8e55d105b6defed0fc974e04fd61d5889fa02d",
+            "android_export_sha256": "e4067a5c711857e3521bb5a7776b3c0b375edd87b4eb8b96abdc83e734b6dd4a"
+        },
+        {
+            "segment": 1102,
+            "lives": 2,
+            "score": 40820,
+            "shields": 51.57951354980469,
+            "keys": [
+                "blue",
+                "gold",
+                "red"
+            ],
+            "reactor_countdown": {
+                "active": false,
+                "timer": 6160384,
+                "total_seconds": 99
+            },
+            "plan_sha256": "e052399c67f098e8fd578b716cce826a3961c3ca2f7537a2a9805d9636d85334",
+            "player_state_sha256": "ac652787ea4437c21035323fb61f9e0ca281a50f7d305af75573a30906652030",
+            "save_sha256": "44a6409d5459c7f703f452bc1ba13163cf5cbced5956916c6fc3f8081222dd04",
+            "android_export_sha256": "60c87b6f8fbed7b352a0b6e798c58c028e38ffe656a0e8b7bc2075b640ed0d30"
+        },
+        {
+            "segment": 990,
+            "lives": 2,
+            "score": 42540,
+            "shields": 54.58221435546875,
+            "keys": [
+                "blue",
+                "gold",
+                "red"
+            ],
+            "reactor_countdown": {
+                "active": false,
+                "timer": 6160384,
+                "total_seconds": 99
+            },
+            "plan_sha256": "fe932be497fdd0d5fe26fcfdf17c148e64649b577c93113f1a42ed61e4b29efc",
+            "player_state_sha256": "7f39adcd6689625f415a72d377071e310f1353b221a456b95638707c75e558b5",
+            "save_sha256": "2075f231f963ba3de720df75d2b6a95bdbc17a9d83cb7d4ddc141cd28a4c8d44",
+            "android_export_sha256": "665387f99a78d1a4a3754bb11abf07b0e8ed4ebbf793a6c26f0a9cac1baf7d2f"
+        },
+        {
+            "segment": 991,
+            "lives": 2,
+            "score": 42840,
+            "shields": 81.58221435546875,
+            "keys": [
+                "blue",
+                "gold",
+                "red"
+            ],
+            "reactor_countdown": {
+                "active": false,
+                "timer": 6160384,
+                "total_seconds": 99
+            },
+            "plan_sha256": "d6fb2dc53518352df2b13f2d0d0a913c822e1146cc67de2515b673cbc41d99bf",
+            "player_state_sha256": "58fc344d47e58a8e3ed544d749b17b70cfc391c3da0acf3a20c0892ccf1ec270",
+            "save_sha256": "610b3370e7d1c495a8a55119fc627445d920ae6d312ea8a0410ef3cb05a1e629",
+            "android_export_sha256": "60adb5892f524d0e3e13e985ab5784cd2b53f9abc44e854ab9102d6bb8cc4a43"
+        },
+        {
+            "segment": 997,
+            "lives": 3,
+            "score": 42840,
+            "shields": 81.380859375,
+            "keys": [
+                "blue",
+                "gold",
+                "red"
+            ],
+            "reactor_countdown": {
+                "active": false,
+                "timer": 6160384,
+                "total_seconds": 99
+            },
+            "plan_sha256": "78299f27eaf2d6f9fc16bfc3ba10a2c3524e1fd0add41b1a9c96b01f94ea524d",
+            "player_state_sha256": "0fcb538e2198fd4bc0647542ba29e18f41cba49995e465a1d6633688bfbf9eb9",
+            "save_sha256": "9c8062299dc1ae97336c3a2c15e6ec9f3666585c78f45d6ffb6795f664b51151",
+            "android_export_sha256": "ab828d1cc190f2a206ee3fb4c2397d55d165e3ea9c55f36102996a645f0506ef"
+        },
+        {
+            "segment": 1006,
+            "lives": 3,
+            "score": 43140,
+            "shields": 105.380859375,
+            "keys": [
+                "blue",
+                "gold",
+                "red"
+            ],
+            "reactor_countdown": {
+                "active": false,
+                "timer": 6160384,
+                "total_seconds": 99
+            },
+            "plan_sha256": "dc288255fe3284b35dd656024f5078d002d3c2165faa3151b7521bf66c3521fb",
+            "player_state_sha256": "474a93ecf93b981a1ea950d4810a637dac87e68d0664d5a6471e8f0a2bbdee3e",
+            "save_sha256": "000f464bd6b21dcc98f268bcf2f65d12bda406d8e4510379b3ff3da17720a3e4",
+            "android_export_sha256": "f4a48e14386d6574b1e76ff9a82bab4cee0355e465b06d3e92a85fc9a5a9038f"
+        },
+        {
+            "segment": 1202,
+            "lives": 3,
+            "score": 45000,
+            "shields": 62.682891845703125,
+            "keys": [
+                "blue",
+                "gold",
+                "red"
+            ],
+            "reactor_countdown": {
+                "active": false,
+                "timer": 6160384,
+                "total_seconds": 99
+            },
+            "plan_sha256": "e6a832cf17a8aaeed6ba01258e84d41517814552bc91d7df3776078a2b5ca003",
+            "player_state_sha256": "7cd596b69adf49237b59e5011c4932e2fdd2fdbaf80f521e326ab938289e4e34",
+            "save_sha256": "ea1cdc03c1ecc14da6d766fff23612bf34297a52305b4289d0754089a90fb1a3",
+            "android_export_sha256": "be042bd24d31528b91ce60b35d765feedc148dd16cb8243ef5e0f58c44c5a7a8"
+        },
+        {
+            "segment": 1202,
+            "lives": 4,
+            "score": 50000,
+            "shields": 43.62042236328125,
+            "keys": [
+                "blue",
+                "gold",
+                "red"
+            ],
+            "reactor_countdown": {
+                "active": true,
+                "timer": 5898240,
+                "total_seconds": 90
+            },
+            "plan_sha256": "21295145b530beaae31c054eb4e282c5a9d337467a0b22438140984948837e94",
+            "player_state_sha256": "bfa9a2db79c2b4c9181e307b8a6b9bf92de61c43c7d12529961e70f24a6d2399",
+            "save_sha256": "056d6d37bae0e6170b66a9499c17a6f567ddbbe2974d4e076867860e28d940ba",
+            "android_export_sha256": "693fa01516d5635ecc5556d462b2544270928e0190cdb63dc7bb409adf849cdc"
+        }
+    ],
+    "native_comparison": "Independent Windows and Linux runs matched the complete player-state documents at all eight checkpoints. Ordinary input was steered by a harness."
+}
