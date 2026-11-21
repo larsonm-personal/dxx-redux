@@ -91,6 +91,18 @@ static void model_controls()
 		duplicate_marker = true;
 	}
 	check(duplicate_marker, "Duplicate ASE gunpoint accepted");
+	auto glow_model = model;
+	marker.name = "ShipFronBlueGlow01";
+	glow_model.submodels.push_back(marker);
+	const auto glow_mesh = xl_compat::compile_ase_mesh(glow_model);
+	check(glow_mesh.geometry.faces.size() == mesh.geometry.faces.size() + marker.faces.size() &&
+	          glow_mesh.geometry.faces.back().additive && !glow_mesh.geometry.faces.front().additive &&
+	          !glow_mesh.geometry.faces.back().collision && glow_mesh.geometry.low == mesh.geometry.low &&
+	          glow_mesh.geometry.high == mesh.geometry.high && glow_mesh.geometry.hitboxes.size() == mesh.geometry.hitboxes.size() &&
+	          xl_compat::oof_native_geometry(glow_mesh.geometry) == xl_compat::oof_native_geometry(mesh.geometry),
+	      "Textured ASE glow must render additively outside the collision body");
+	glow_model.materials[marker.material].texture.clear();
+	check(!xl_compat::compile_ase_mesh(glow_model).geometry.faces.back().additive, "Untextured ASE glow acquired a texture pass");
 	for (const auto &name : { "$thruster", "$thruster-RXX-00", "$thruster-RLT-00" }) {
 		auto thrust_model = model;
 		marker.name = name;

@@ -23,6 +23,7 @@ namespace
 struct GpuModel {
 	std::shared_ptr<const xl_compat::OofResource> owner;
 	std::vector<std::shared_ptr<xl_compat::ParticleTexture>> skins;
+	std::vector<std::size_t> additive_faces;
 	unsigned spin_frame = 0;
 	uint32_t spin_tick = 0;
 };
@@ -46,6 +47,8 @@ extern "C" int xl_oof_draw(int id, vms_vector *position, vms_matrix *orientation
 		if (gpu.owner != owner) {
 			GpuModel pending;
 			pending.owner = owner;
+			for (std::size_t i = 0; i < owner->mesh.faces.size(); ++i)
+				if (owner->mesh.faces[i].additive) pending.additive_faces.push_back(i);
 			for (const auto &skin : owner->skins) {
 				auto &cached = skin_textures[skin.get()];
 				auto texture = cached.lock();
@@ -86,7 +89,7 @@ extern "C" int xl_oof_draw(int id, vms_vector *position, vms_matrix *orientation
 		glEnableClientState(GL_VERTEX_ARRAY);
 		glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 		glEnableClientState(GL_COLOR_ARRAY);
-		for (const auto &face : owner->mesh.faces) {
+		const auto draw_face = [&](const xl_compat::OofRenderFace &face) {
 			auto vertices = face.triangles;
 			const auto spin = owner->mesh.spinning_parts.find(face.submodel);
 			for (auto &vertex : vertices) {
@@ -109,6 +112,27 @@ extern "C" int xl_oof_draw(int id, vms_vector *position, vms_matrix *orientation
 			glTexCoordPointer(2, GL_FLOAT, sizeof(xl_compat::OofRenderVertex), vertices[0].uv.data());
 			glColorPointer(4, GL_FLOAT, sizeof(xl_compat::OofRenderVertex), vertices[0].color.data());
 			glDrawArrays(GL_TRIANGLES, 0, GLsizei(vertices.size()));
+		};
+		for (const auto &face : owner->mesh.faces)
+			if (cloaked || !face.additive) draw_face(face);
+		if (!cloaked && !gpu.additive_faces.empty()) {
+			GLboolean depth_write;
+			GLint src_rgb, dst_rgb, src_alpha, dst_alpha;
+			GLint rgb_equation, alpha_equation;
+			glGetBooleanv(GL_DEPTH_WRITEMASK, &depth_write);
+			glGetIntegerv(GL_BLEND_SRC_RGB, &src_rgb);
+			glGetIntegerv(GL_BLEND_DST_RGB, &dst_rgb);
+			glGetIntegerv(GL_BLEND_SRC_ALPHA, &src_alpha);
+			glGetIntegerv(GL_BLEND_DST_ALPHA, &dst_alpha);
+			glGetIntegerv(GL_BLEND_EQUATION_RGB, &rgb_equation);
+			glGetIntegerv(GL_BLEND_EQUATION_ALPHA, &alpha_equation);
+			glDepthMask(GL_FALSE);
+			glBlendEquation(GL_FUNC_ADD);
+			glBlendFunc(GL_ONE, GL_ONE);
+			for (auto i : gpu.additive_faces) draw_face(owner->mesh.faces[i]);
+			glBlendFuncSeparate(src_rgb, dst_rgb, src_alpha, dst_alpha);
+			glBlendEquationSeparate(rgb_equation, alpha_equation);
+			glDepthMask(depth_write);
 		}
 		const uint32_t tick = SDL_GetTicks();
 		if (!owner->mesh.spinning_parts.empty() && uint32_t(tick - gpu.spin_tick) > 1) {

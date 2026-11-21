@@ -16,7 +16,7 @@ struct OofRenderVertex {
 };
 struct OofRenderFace {
 	int submodel = -1, texture = -1;
-	bool collision = true;
+	bool collision = true, additive = false;
 	OofVector normal{};
 	std::vector<OofRenderVertex> triangles;
 };
