@@ -631,7 +631,7 @@ extern "C" int xl_level_supported_at(const char *filename, int multiplayer, int 
 			return 1;
 		}
 		const bool arena = water_profile(bytes, multiplayer != 0);
-		const auto probe = xl_compat::prepare_source_runtime_probe(bytes, arena);
+		const auto probe = xl_compat::prepare_source_runtime_probe(bytes, arena, !multiplayer);
 		XlPreparedResources resources(filename, &probe.source, ordinal);
 		validate_requirements(probe.source, multiplayer != 0, arena, resources.dependencies(), nullptr, nullptr, resources.has_scoped_textures(), resources.mission_replaces_robots());
 		return 1;
@@ -885,7 +885,7 @@ extern "C" int xl_preview_load_level_at(const char *filename, int ordinal)
 #endif
 		}
 		const bool arena = water_profile(bytes, (Game_mode & GM_MULTI) != 0);
-		auto probe = xl_compat::prepare_source_runtime_probe(bytes, arena);
+		auto probe = xl_compat::prepare_source_runtime_probe(bytes, arena, !(Game_mode & GM_MULTI));
 		auto resources = std::make_unique<XlPreparedResources>(filename, &probe.source, ordinal);
 		validate_requirements(probe.source, (Game_mode & GM_MULTI) != 0, arena, resources->dependencies(), nullptr, nullptr, resources->has_scoped_textures(), resources->mission_replaces_robots());
 		if (original) {

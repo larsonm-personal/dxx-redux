@@ -1044,6 +1044,29 @@ void version_34_contract()
 
 void version_21_contract()
 {
+	const auto with_objects = [](std::vector<std::pair<unsigned, unsigned>> objects) {
+		auto bytes = fixture(21);
+		const auto game = xl_compat::inspect_level(bytes).game_offset;
+		const auto start = bytes.size() - 4; // The trigger section follows the objects
+		bytes.insert(bytes.begin() + start, objects.size() * 80, 0);
+		patch(bytes, game + 35, start);
+		patch(bytes, game + 39, objects.size());
+		patch(bytes, game + 71, start + objects.size() * 80);
+		for (std::size_t i = 0; i < objects.size(); ++i) {
+			bytes[start + i * 80] = 7;
+			bytes[start + i * 80 + 1] = objects[i].first;
+			bytes[start + i * 80 + 6] = objects[i].second;
+		}
+		return bytes;
+	};
+	const auto marked = with_objects({ { 1, 1 }, { 2, 0 }, { 3, 255 }, { 4, 0 }, { 5, 1 } });
+	const auto selected = xl_compat::prepare_source_runtime_probe(marked, false, true);
+	const auto control = xl_compat::prepare_source_runtime_probe(with_objects({ { 2, 0 }, { 4, 0 } }));
+	check(selected.stock_level == control.stock_level && selected.source.objects.size() == 2 &&
+	          selected.source.objects[0].id == 2 && selected.source.objects[1].id == 4,
+	      "singleplayer object slots differ from original compact order");
+	check(xl_compat::inspect_level(marked).objects.size() == 5, "inspection lost multiplayer-only object records");
+	rejects([&] { xl_compat::prepare_source_runtime_probe(marked, false, false); });
 	for (int flags = 0; flags < 256; ++flags) {
 		const auto prepared = xl_compat::prepare_gameplay_probe(fixture(21, flags));
 		check(prepared.source.game_version == 40 && prepared.source.segments.at(0).flags == flags, "21/40 translation lost the authored flags");

@@ -47,10 +47,47 @@ int read_offset(const Bytes &bytes, std::size_t offset)
 }
 } // namespace
 
-static GameplayProbe prepare_probe(const Bytes &source, bool water_segments, int qualification_version, bool source_runtime = false)
+// XL ReadObjectInfo consumes every serialized object, but a multiplayer-only
+// object takes no slot or signature in singleplayer. Trigger owners and effect
+// links consequently index the compact list. Reinspect that list so resources,
+// extension state and the stock loader all use identical object numbers.
+static Bytes level_without_multiplayer_objects(const Bytes &source, const Inventory &v)
+{
+	Bytes out;
+	std::size_t cursor = 0;
+	int kept = 0;
+	for (const auto &object : v.objects) {
+		if (!object.multiplayer) {
+			++kept;
+			continue;
+		}
+		out.insert(out.end(), source.begin() + cursor, source.begin() + object.source_offset);
+		cursor = object.source_end;
+	}
+	out.insert(out.end(), source.begin() + cursor, source.end());
+	const auto removed = source.size() - out.size();
+	const auto relocate = [&](std::size_t field) {
+		const int offset = read_offset(source, v.game_offset + field);
+		if (offset <= 0 || static_cast<std::size_t>(offset) <= v.objects.front().source_offset) return;
+		require(static_cast<std::size_t>(offset) >= v.objects.back().source_end, "section overlaps object table");
+		patch(out, v.game_offset + field, offset - static_cast<int>(removed));
+	};
+	relocate(27);
+	for (std::size_t i = 0; i < v.sections.size(); ++i) relocate(35 + 12 * i);
+	patch(out, v.game_offset + 39, kept);
+	return out;
+}
+
+static GameplayProbe prepare_probe(const Bytes &original, bool water_segments, int qualification_version, bool source_runtime = false, bool singleplayer = false)
 {
 	GameplayProbe result;
-	result.source = inspect_level(source);
+	result.source = inspect_level(original);
+	Bytes compact;
+	if (singleplayer && std::any_of(result.source.objects.begin(), result.source.objects.end(), [](const Object &object) { return object.multiplayer != 0; })) {
+		compact = level_without_multiplayer_objects(original, result.source);
+		result.source = inspect_level(compact);
+	}
+	const Bytes &source = compact.empty() ? original : compact;
 	const auto &v = result.source;
 	auto blockers = runtime_blockers(v, water_segments);
 	const bool serialization_17_36 = v.level_version == 17 && v.game_version == 36;
@@ -283,9 +320,9 @@ GameplayProbe prepare_gameplay_probe(const Bytes &source, bool water_segments)
 	return prepare_probe(source, water_segments, 0);
 }
 
-GameplayProbe prepare_source_runtime_probe(const Bytes &source, bool water_segments)
+GameplayProbe prepare_source_runtime_probe(const Bytes &source, bool water_segments, bool singleplayer)
 {
-	return prepare_probe(source, water_segments, 0, true);
+	return prepare_probe(source, water_segments, 0, true, singleplayer);
 }
 
 GameplayProbe prepare_serialization_probe_17_36(const Bytes &source)
