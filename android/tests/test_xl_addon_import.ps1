@@ -499,7 +499,8 @@ try {
         $runtimeScript = Join-Path $output 'ui-owned-hub.jsonc'
         $steps | ConvertTo-Json -Depth 30 | Set-Content $runtimeScript -Encoding utf8
         $phase = 'warm'
-        & "$PSScriptRoot/../helpers/run_test.ps1" -ScriptName $runtimeScript -Game d2 -Serial $Serial -PreserveState -NoEmulatorRecovery -LeaveRunning -TimeoutSeconds 600
+        # The first game launch extracts the original mission resources before the game surface exists
+        & "$PSScriptRoot/../helpers/run_test.ps1" -ScriptName $runtimeScript -Game d2 -Serial $Serial -PreserveState -NoEmulatorRecovery -LeaveRunning -GameStartupTimeoutSeconds 300 -TimeoutSeconds 600
         $runtimeExit = $LASTEXITCODE
         Invoke-AddonPrivate 'cat files/automation_result.json' | Set-Content "$output/runtime-result.json" -Encoding utf8
         Invoke-AddonPrivate 'cat files/automation_log.jsonl' | Set-Content "$output/runtime-steps.jsonl" -Encoding utf8

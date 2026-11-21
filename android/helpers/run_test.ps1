@@ -26,7 +26,8 @@ param(
     [ValidateSet("d1", "d2")]
     [string]$Game,
     [hashtable]$Params = @{},
-    [ValidateSet('default', 'retail', 'shareware')][string]$DataEdition = 'default'
+    [ValidateSet('default', 'retail', 'shareware')][string]$DataEdition = 'default',
+    [ValidateRange(1, 3600)][int]$GameStartupTimeoutSeconds
 )
 
 $ErrorActionPreference = "Stop"
@@ -413,6 +414,7 @@ try {
                 Game = $gameId
             }
             if ($skipGameData) { $launchParams.SkipGameData = $true }
+            if ($GameStartupTimeoutSeconds) { $launchParams.GameStartupTimeoutSeconds = $GameStartupTimeoutSeconds }
 
             if (-not (Start-GameWithRetry @launchParams)) {
                 $allPassed = $false

@@ -4,6 +4,7 @@ import argparse
 from collections import Counter
 import json
 from pathlib import Path
+import re
 
 import xl_readiness as readiness
 from xl_readiness_report import validate_rows
@@ -30,6 +31,8 @@ FAMILIES = {
     "ASE model rendering": ("ase conditional submodel",),
     "Custom base definitions": ("overrides base ham",),
     "Segment functions": ("segment_function", "invalid station type"),
+    "Segment ownership and groups": ("segment_owner_group at record",),
+    "Segment flags": ("segment_flags at record",),
     "Reactor triggers": ("invalid reactor",),
     "Trigger targets": ("invalid trigger target",),
     "Object trigger actions": ("object triggers at record",),
@@ -50,6 +53,10 @@ def first_blocker(row, proof, log):
             if str(proof.get("level_file", "")).casefold() != row["level_file"].casefold():
                 return "Resolved level filename differs"
             return "Completed frames with invalid readiness proof"
+        if proof.get("phase") == "simulation_failed" and re.search(
+            r"^You took [\d.]+ damage from a robot's weapon blast, shields now -[\d.]+\s*\Z", log, re.MULTILINE
+        ):
+            return "Robot fire killed the idle pilot"
         return "Simulation stopped"
     if outcome in ("timeout", "crash", "infrastructure_error", "untested"):
         return outcome
