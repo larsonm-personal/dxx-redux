@@ -1,6 +1,38 @@
 # Original Pumo gameplay playtest
 
-## November 20 phone playtest
+## November 21 phone playtest
+
+For a first session, use the APK and save from the same kit. The Android 14
+emulator reached both authored endings using the checkpoints below. Physical
+phone play is still awaiting a report.
+
+| Session | Kit | Start and first action |
+| --- | --- | --- |
+| Short Kartsal ending | 32030 | Load `kartsal-final-checkpoint`, fly straight through the checkpoint aboard the Black Hole, then advance the score screen. |
+| Short Mineral Valley ending | 32080 | Load `mineral-ending`. The ship enters the exit as it resumes. Advance **Level 9 Complete** and read through the closing briefing. |
+| Longer Mineral Valley flight | 32080 | Load `umbriel-blue` for the red-key grate and boss, or `mercury-arrival` for the full level. Make a manual save at a recognizable landmark, exit to the launcher, then use **Load Game** and continue. |
+| Start from the hub | 32080 | Start Pumo level 1 with a separate test pilot. Record which episode entrance you take. |
+
+Check the kit's `manifest.json` for the APK and checkpoint digests. Follow its
+slot installer instructions if you use an earned save. Keep the supplied save
+and your pre-issue save intact. Use a second slot for testing save and load.
+
+Use this form for each report.
+
+    Kit version and checkpoint (or fresh start):
+    Phone model and Android version:
+    Input method (touch layout or controller model) and difficulty:
+    Episode, level, and room or landmark:
+    Last successful action:
+    First action that failed and steps to repeat:
+    Expected result and observed result:
+    Result after saving, closing the game and loading again:
+
+A screenshot or short video can identify the room and what the controls did.
+Keep saves and profile files on the build machine or your test phone until a
+private transfer is arranged. The existing Windows runs used ordinary-input
+steering through the connected episodes. Android automation and fixed-position
+checks are recorded with the corresponding checkpoint.
 
 For Kartsal level 13, use build 32030. It fixes a flight that could leave the ship trapped in the skybox. The ordinary universal APK includes ARM64, ARMv7 and x86_64. The Android 14 emulator imported the original release and cold-loaded the device-written checkpoints. Choose `kartsal-all-keys` to resume in room 3021 with the blue, gold and red keys, two lives and score 40,220. Choose `iquaxel-from-coldrom` to resume level 5 after the secret mission with score 83,440. The kit includes the APK, save files, a slot installer and a feedback checklist. [Build 32030 kit on the build machine](../../temp/xl-pumo-phone-32030/README.md)
 

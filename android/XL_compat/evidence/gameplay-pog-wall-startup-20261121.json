@@ -1,0 +1,402 @@
+{
+    "scope": "Exact Windows comparison of the animated POG startup cluster: difficulty index 2 and 120 unassisted frames with no level transition. Redux used fixed 60 Hz, seed 1 and no rendering. The pinned original Windows engine used its own loop and default texture quality.",
+    "baseline_census_sha256": "be85403713651a8f25274c762f9b1f320cad68666f1aee7389f5573720f3d9f1",
+    "baseline_source": "3c21ac2d4a243e08e41f2273b81b6f83b37dc35b",
+    "baseline_engine_sha256": "50f6bbdb534041ec0aab518752751a3143f08c49ed6c15b615e0465536092292",
+    "candidate_source": "9923782825cfafb560fec2e45139ebd7ac5b29bb",
+    "candidate_engine_sha256": "f622c2a14f657b87ee5562d83a514a456ad23e1ef84dcf36c6e9e1bf3760915b",
+    "original_revision": "2576a98b5de310e3ac7c9777df2677d1627b8bae",
+    "original_observer_sha256": "2fb2cc81a694a526638cf978d98133b932b9f4fe9c1086dc568e13dd8b4de1d3",
+    "original_clock_witness_sha256": "f47e0b31c803d7c58282e9dcf841b2f7051a24559928edc93f8bf3cc3f9b5b84",
+    "surveys": {
+        "pinned": {
+            "inventory_sha256": "bf4356a7a5fbe64832a40d7065ea02d8b81276ebd8bbba6874012f7851fa0cf8",
+            "baseline_results_sha256": "a1d96b26c4f0c1e2f22d592bd8df2227e5230bb5b2e866e2550456f87ca57a06",
+            "candidate_results_sha256": "2d80a3c98904c719345938bc4b49b80a49dd7cb401e0753fe85a3a1c0c46bf5a",
+            "cases": 4,
+            "gains": 1
+        },
+        "local": {
+            "inventory_sha256": "e7d480aa401522d37f6ec75da01f6cec7c314c901728f1b291131e52a62818df",
+            "baseline_results_sha256": "d7bbe4a15a83bc5997577559e615358f3580e3a7e6f32459a10655ae86d14c16",
+            "candidate_results_sha256": "854db62694ad16207057f93f6b254877c677f79d99b3c7c75b3a8dd3c96d7285",
+            "cases": 13,
+            "gains": 4
+        }
+    },
+    "remaining_after_cluster": {
+        "census_denominator": 1654,
+        "baseline_started": 1534,
+        "verified_cluster_gains": 5,
+        "remaining_from_prior_census": 115,
+        "by_first_blocker": {
+            "Advertised level file missing": 34,
+            "Light index bounds": 16,
+            "Animated replacement textures": 12,
+            "Segment functions": 6,
+            "Lightning effects": 5,
+            "OOF model decoding": 4,
+            "Robot fire killed the idle pilot": 4,
+            "Fluid behavior": 4,
+            "Non-hexahedral geometry": 4,
+            "Wall types": 3,
+            "Segment ownership and groups": 3,
+            "Robot definitions": 3,
+            "Unsupported level format": 3,
+            "Reactor triggers": 3,
+            "Custom base definitions": 2,
+            "Object placement": 2,
+            "Resolved level filename differs": 1,
+            "Object trigger actions": 1,
+            "Trigger targets": 1,
+            "Robot contents": 1,
+            "Particle effects": 1,
+            "Segment flags": 1,
+            "timeout": 1
+        },
+        "by_original_result": {
+            "started_and_ran": 77,
+            "mission_rejected": 31,
+            "simulation_unverified": 4,
+            "advertised_member_lookup_empty": 3
+        },
+        "alternate_distribution_started": 31,
+        "candidate_started": 1539
+    },
+    "cases": [
+        {
+            "case": "boilpnt.7z/missions/single/boilpnt.mn2:1",
+            "archive_sha256": "c16004c8e08354bd554f629a1f29f060207dbfbb5ff9786f73ab5a55ccba25d2",
+            "descriptor_sha256": "a9e35d1ca3e77693c1be2eab8e353a08ee108f9da0ac2b1e348b9107722433db",
+            "ordinal": 1,
+            "advertised_level": "watrwrks.rl2",
+            "baseline_first_blocker": "watrwrks.POG: POG: RGBA bitmap 2538 has clocked animation frames without a texture effect",
+            "candidate_outcome": "load_failed",
+            "candidate_frames": 0,
+            "candidate_first_blocker": "watrwrks.POG: POG: RGBA bitmap 2538 has clocked animation frames without a qualified owner",
+            "candidate_receipt_sha256": "5b9f663795917f27536a33e8c3608aeae00492888f3c7980221ae00817ae0ad6",
+            "original_observation": "started_and_ran"
+        },
+        {
+            "case": "boilpnt.7z/missions/single/boilpnt.mn2:3",
+            "archive_sha256": "c16004c8e08354bd554f629a1f29f060207dbfbb5ff9786f73ab5a55ccba25d2",
+            "descriptor_sha256": "a9e35d1ca3e77693c1be2eab8e353a08ee108f9da0ac2b1e348b9107722433db",
+            "ordinal": 3,
+            "advertised_level": "canyon.rl2",
+            "baseline_first_blocker": "canyon.POG: POG: RGBA bitmap 2538 has clocked animation frames without a texture effect",
+            "candidate_outcome": "loaded_ticked",
+            "candidate_frames": 120,
+            "candidate_first_blocker": null,
+            "candidate_receipt_sha256": "4ba622aa63a835978f131b25a414928fefab6623546c04488b33569154e9eca2",
+            "original_observation": "started_and_ran",
+            "fresh_original_receipt_sha256": "24d408b1b30651fe120d3de893986117e051fd1cb004bee7f654b99da9687d0a"
+        },
+        {
+            "case": "boilpnt.7z/missions/single/boilpnt.mn2:4",
+            "archive_sha256": "c16004c8e08354bd554f629a1f29f060207dbfbb5ff9786f73ab5a55ccba25d2",
+            "descriptor_sha256": "a9e35d1ca3e77693c1be2eab8e353a08ee108f9da0ac2b1e348b9107722433db",
+            "ordinal": 4,
+            "advertised_level": "subzero.rl2",
+            "baseline_first_blocker": "subzero.POG: POG: RGBA bitmap 2538 has clocked animation frames without a texture effect",
+            "candidate_outcome": "load_failed",
+            "candidate_frames": 0,
+            "candidate_first_blocker": "subzero.POG: POG: RGBA bitmap 2538 has clocked animation frames without a qualified owner",
+            "candidate_receipt_sha256": "1d50c40fdf7052a1cc9c2be58cc29dcd04d0c12509cfa2b42fa000b30558ff04",
+            "original_observation": "started_and_ran"
+        },
+        {
+            "case": "boilpnt.7z/missions/single/boilpnt.mn2:6",
+            "archive_sha256": "c16004c8e08354bd554f629a1f29f060207dbfbb5ff9786f73ab5a55ccba25d2",
+            "descriptor_sha256": "a9e35d1ca3e77693c1be2eab8e353a08ee108f9da0ac2b1e348b9107722433db",
+            "ordinal": 6,
+            "advertised_level": "canyon2.rl2",
+            "baseline_first_blocker": "canyon2.POG: POG: RGBA bitmap 2538 has clocked animation frames without a texture effect",
+            "candidate_outcome": "load_failed",
+            "candidate_frames": 0,
+            "candidate_first_blocker": "canyon2.POG: POG: RGBA bitmap 2538 has clocked animation frames without a qualified owner",
+            "candidate_receipt_sha256": "da6aeb70cc5cad4fe26b932cb30908849bff28dcb213414032ef906530850d6e",
+            "original_observation": "started_and_ran"
+        },
+        {
+            "case": "boilpnt.7z/missions/single/boilpnt.mn2:7",
+            "archive_sha256": "c16004c8e08354bd554f629a1f29f060207dbfbb5ff9786f73ab5a55ccba25d2",
+            "descriptor_sha256": "a9e35d1ca3e77693c1be2eab8e353a08ee108f9da0ac2b1e348b9107722433db",
+            "ordinal": 7,
+            "advertised_level": "control2.rl2",
+            "baseline_first_blocker": "control2.POG: POG: RGBA bitmap 2538 has clocked animation frames without a texture effect",
+            "candidate_outcome": "load_failed",
+            "candidate_frames": 0,
+            "candidate_first_blocker": "control2.POG: POG: RGBA bitmap 2538 has clocked animation frames without a qualified owner",
+            "candidate_receipt_sha256": "15233cb11262e8d0a3da5a07613341ec523ad511415d920c142ecd545e9a4bbf",
+            "original_observation": "simulation_unverified"
+        },
+        {
+            "case": "levelpack.7z/missions/darkflamewolf/ctheo-xl.mn2:4",
+            "archive_sha256": "b4b519dc5755b795fd49cc3786a0421b96cd099dcc8f002925ddfd7c038b2719",
+            "descriptor_sha256": "1204d3369c2d63a9c3f55cb5b69d3f159ccab7f9dc1e66afe0b5de1aa1666244",
+            "ordinal": 4,
+            "advertised_level": "standoff.rl2",
+            "baseline_first_blocker": "standoff.POG: POG: RGBA bitmap 2434 has clocked animation frames without a texture effect",
+            "candidate_outcome": "load_failed",
+            "candidate_frames": 0,
+            "candidate_first_blocker": "standoff.POG: POG: RGBA bitmap 2434 has clocked animation frames without a qualified owner",
+            "candidate_receipt_sha256": "131e87c2ee84fb7c8127850b06d28453fda04f8286562dd3f24000b02bcf5766",
+            "original_observation": "started_and_ran",
+            "fresh_original_receipt_sha256": "7dd785fc8697401b61f064dd2fc1c65074fa39f6cf7ddf5869de0dcea1431d03"
+        },
+        {
+            "case": "levelpack.7z/missions/darkflamewolf/ctheo-xl.mn2:6",
+            "archive_sha256": "b4b519dc5755b795fd49cc3786a0421b96cd099dcc8f002925ddfd7c038b2719",
+            "descriptor_sha256": "1204d3369c2d63a9c3f55cb5b69d3f159ccab7f9dc1e66afe0b5de1aa1666244",
+            "ordinal": 6,
+            "advertised_level": "clminate.rl2",
+            "baseline_first_blocker": "clminate.POG: POG: RGBA bitmap 2280 has clocked animation frames without a texture effect",
+            "candidate_outcome": "load_failed",
+            "candidate_frames": 0,
+            "candidate_first_blocker": "clminate.POG: POG: RGBA bitmap 2280 has clocked animation frames without a qualified owner",
+            "candidate_receipt_sha256": "e209d0072d7938acb3dc79f4b41157e3a44d417f43505239f0a9a7cffa73fb85",
+            "original_observation": "started_and_ran",
+            "fresh_original_receipt_sha256": "2bc8f911726d736b65247563ac8ce860cd3a7790f6b3e705853194b576b85bfc"
+        },
+        {
+            "case": "levelpack.7z/missions/diedel/ptech-d3.mn2:1",
+            "archive_sha256": "b4b519dc5755b795fd49cc3786a0421b96cd099dcc8f002925ddfd7c038b2719",
+            "descriptor_sha256": "60c844150cfec4cf062cd335e507b86ff51b5efe1448ae0a51834d81d260acc5",
+            "ordinal": 1,
+            "advertised_level": "ptech-d3.rl2",
+            "baseline_first_blocker": "ptech-d3.POG: POG: RGBA bitmap 2329 has clocked animation frames without a texture effect",
+            "candidate_outcome": "load_failed",
+            "candidate_frames": 0,
+            "candidate_first_blocker": "ptech-d3.POG: POG: RGBA bitmap 2344 has clocked animation frames without a qualified owner",
+            "candidate_receipt_sha256": "94d79df30882c2078f2e91b6957775cc4c0c7ca34d6f1f0fa75cb15041573c90",
+            "original_observation": "started_and_ran"
+        },
+        {
+            "case": "levelpack.7z/missions/diedel/toxic-d3.mn2:1",
+            "archive_sha256": "b4b519dc5755b795fd49cc3786a0421b96cd099dcc8f002925ddfd7c038b2719",
+            "descriptor_sha256": "3b5a408dcc02118184d7434a5ea0b271876e627de99df7b3bf3bf985eef42a37",
+            "ordinal": 1,
+            "advertised_level": "toxic-d3.rl2",
+            "baseline_first_blocker": "toxic-d3.POG: POG: RGBA bitmap 2157 has clocked animation frames without a texture effect",
+            "candidate_outcome": "loaded_ticked",
+            "candidate_frames": 120,
+            "candidate_first_blocker": null,
+            "candidate_receipt_sha256": "1be0220a205258e26208ab142048815d2aad51dca92a10857555b0cd5ddbf1dc",
+            "original_observation": "started_and_ran",
+            "fresh_original_receipt_sha256": "8673f0647264d7fb16e06dfd271eea48962251634005ac418a52757fe82d52f7"
+        },
+        {
+            "case": "levels/lor-xl.7z/missions/single/lor-xl.mn2:1",
+            "archive_sha256": "7c80710e8a317905dee1d027df1079b9a5d7fd63b3a0cbe99cac57a3090994c8",
+            "descriptor_sha256": "400fb2442c8b21f4d1c00c6d880b0ad29e7a3ae95ced25fb166b8ddea4b0a13f",
+            "ordinal": 1,
+            "advertised_level": "lor-xl.rl2",
+            "baseline_first_blocker": "lor-xl.POG: POG: RGBA bitmap 2230 has clocked animation frames without a texture effect",
+            "candidate_outcome": "loaded_ticked",
+            "candidate_frames": 120,
+            "candidate_first_blocker": null,
+            "candidate_receipt_sha256": "f2aeea02a5f293a6b4c693357fccce04b446a878a9e13f68d97611c1ccf24372",
+            "original_observation": "started_and_ran",
+            "fresh_original_receipt_sha256": "f4b21e4c901d0232bc4cf36e4de589bb1bd1edc932b330e11561c76b9a168531"
+        },
+        {
+            "case": "levels_multiplayer/chaos-theory-xl.7z/missions/darkflamewolf/ctheo-xl.mn2:1",
+            "archive_sha256": "5cbe34d9ff56bace946f1ec5c51c3dfdd3f24da2bddc2c165f6e3b16f657c73e",
+            "descriptor_sha256": "1204d3369c2d63a9c3f55cb5b69d3f159ccab7f9dc1e66afe0b5de1aa1666244",
+            "ordinal": 1,
+            "advertised_level": "catalyst.rl2",
+            "baseline_first_blocker": "catalyst.POG: POG: RGBA bitmap 2538 has clocked animation frames without a texture effect",
+            "candidate_outcome": "load_failed",
+            "candidate_frames": 0,
+            "candidate_first_blocker": "catalyst.POG: POG: RGBA bitmap 2538 has clocked animation frames without a qualified owner",
+            "candidate_receipt_sha256": "8be1bbb7e0fbeaa61fc9a814dd6d31e09d2949dc82a1db0b337a0efdbd174a4e",
+            "original_observation": "started_and_ran"
+        },
+        {
+            "case": "levels_multiplayer/chaos-theory-xl.7z/missions/darkflamewolf/ctheo-xl.mn2:3",
+            "archive_sha256": "5cbe34d9ff56bace946f1ec5c51c3dfdd3f24da2bddc2c165f6e3b16f657c73e",
+            "descriptor_sha256": "1204d3369c2d63a9c3f55cb5b69d3f159ccab7f9dc1e66afe0b5de1aa1666244",
+            "ordinal": 3,
+            "advertised_level": "unbridle.rl2",
+            "baseline_first_blocker": "unbridle.POG: POG: RGBA bitmap 2538 has clocked animation frames without a texture effect",
+            "candidate_outcome": "load_failed",
+            "candidate_frames": 0,
+            "candidate_first_blocker": "unbridle.POG: POG: RGBA bitmap 2538 has clocked animation frames without a qualified owner",
+            "candidate_receipt_sha256": "7373f3c589d75c2ea0e34b3cdc064182940490d26e8fb193e3c1df071370edad",
+            "original_observation": "started_and_ran"
+        },
+        {
+            "case": "levels_multiplayer/chaos-theory-xl.7z/missions/darkflamewolf/ctheo-xl.mn2:4",
+            "archive_sha256": "5cbe34d9ff56bace946f1ec5c51c3dfdd3f24da2bddc2c165f6e3b16f657c73e",
+            "descriptor_sha256": "1204d3369c2d63a9c3f55cb5b69d3f159ccab7f9dc1e66afe0b5de1aa1666244",
+            "ordinal": 4,
+            "advertised_level": "standoff.rl2",
+            "baseline_first_blocker": "standoff.POG: POG: RGBA bitmap 2434 has clocked animation frames without a texture effect",
+            "candidate_outcome": "load_failed",
+            "candidate_frames": 0,
+            "candidate_first_blocker": "standoff.POG: POG: RGBA bitmap 2538 has clocked animation frames without a qualified owner",
+            "candidate_receipt_sha256": "e7f22701ab4f43d7c23946086d201db48a3d7acc9d4744fc159aeaa264e57189",
+            "original_observation": "started_and_ran"
+        },
+        {
+            "case": "levels_multiplayer/cs-dust.7z/dust.mn2:1",
+            "archive_sha256": "67861ee846325585b0c289e4e64059b013e0308662fb7069ed0be72e88c0a3cc",
+            "descriptor_sha256": "0f2f45c2a6a9038aeb8640827ad051fcef054a61783e0d14d13086c735f56b76",
+            "ordinal": 1,
+            "advertised_level": "cs-dust.rl2",
+            "baseline_first_blocker": "cs-dust.POG: POG: RGBA bitmap 2265 has clocked animation frames without a texture effect",
+            "candidate_outcome": "loaded_ticked",
+            "candidate_frames": 120,
+            "candidate_first_blocker": null,
+            "candidate_receipt_sha256": "ecf554cc6a93805352eb466b8935f77a6cbe05c48dfd3e16f2edab70c259d2bc",
+            "original_observation": "started_and_ran",
+            "fresh_original_receipt_sha256": "3a1cfa866d2bdc34ca5ea0bf8d5619718ff6b7c793498274f6cd4df4c574cf91"
+        },
+        {
+            "case": "levels_multiplayer/pyrotech.7z/missions/diedel/d3/ptech-d3.mn2:1",
+            "archive_sha256": "1563d6cc6ffd638872d6f44a6e5735c63490f3919cfd617eeafb7214583d099a",
+            "descriptor_sha256": "4e6b627e5a17ba9eb88455eee3748935b157b28ff5223fdbfc283401e7e08dea",
+            "ordinal": 1,
+            "advertised_level": "ptech-d3.rl2",
+            "baseline_first_blocker": "ptech-d3.POG: POG: RGBA bitmap 2329 has clocked animation frames without a texture effect",
+            "candidate_outcome": "load_failed",
+            "candidate_frames": 0,
+            "candidate_first_blocker": "ptech-d3.POG: POG: RGBA bitmap 2344 has clocked animation frames without a qualified owner",
+            "candidate_receipt_sha256": "9c202e56e463a926d6ded6d435c1d44fb2e0b7c96c10d4b548189f345cb3f307",
+            "original_observation": "started_and_ran"
+        },
+        {
+            "case": "levels_multiplayer/pyrotech.7z/ptech-d3.mn2:1",
+            "archive_sha256": "1563d6cc6ffd638872d6f44a6e5735c63490f3919cfd617eeafb7214583d099a",
+            "descriptor_sha256": "60c844150cfec4cf062cd335e507b86ff51b5efe1448ae0a51834d81d260acc5",
+            "ordinal": 1,
+            "advertised_level": "ptech-d3.rl2",
+            "baseline_first_blocker": "ptech-d3.POG: POG: RGBA bitmap 2329 has clocked animation frames without a texture effect",
+            "candidate_outcome": "load_failed",
+            "candidate_frames": 0,
+            "candidate_first_blocker": "ptech-d3.POG: POG: RGBA bitmap 2344 has clocked animation frames without a qualified owner",
+            "candidate_receipt_sha256": "e82d0438f0b3ffbbe973dd3186ee9eb7d45bca55186f889412cb56a1600c9829",
+            "original_observation": "started_and_ran"
+        },
+        {
+            "case": "levels_multiplayer/toxic.7z/missions/diedel/d3/toxic-d3.mn2:1",
+            "archive_sha256": "ea9ed662fd3e44808b6bc312a4d5f5fa8d12a51c9a07574df1bab215419a5e55",
+            "descriptor_sha256": "ae862937791015dc4468495e94cd2e90abf2d18f4930a7fe23bcc6691252a890",
+            "ordinal": 1,
+            "advertised_level": "toxic-d3.rl2",
+            "baseline_first_blocker": "toxic-d3.POG: POG: RGBA bitmap 2157 has clocked animation frames without a texture effect",
+            "candidate_outcome": "loaded_ticked",
+            "candidate_frames": 120,
+            "candidate_first_blocker": null,
+            "candidate_receipt_sha256": "0a257b7dca075443192db8ce4a813eab1592b25e3b306fd44a9a6cea050f5d2e",
+            "original_observation": "started_and_ran",
+            "fresh_original_receipt_sha256": "a259ebbf560bb3e0f5fa45af9e6c6757ad61f8b2dddf9adda23285e54a73160e"
+        }
+    ],
+    "full_windows": {
+        "pinned": {
+            "denominator": 1111,
+            "baseline_started": 1041,
+            "candidate_started": 1042,
+            "gains": [
+                "levelpack.7z/missions/diedel/toxic-d3.mn2:1"
+            ],
+            "losses": [],
+            "other_outcome_or_frame_changes": [],
+            "results_sha256": "fa56fc7d8a77bb6f81ec80ee50bb001be5a283542b328b21b1e8be4d5cb1216f"
+        },
+        "local": {
+            "denominator": 543,
+            "baseline_started": 493,
+            "candidate_started": 497,
+            "gains": [
+                "boilpnt.7z/missions/single/boilpnt.mn2:3",
+                "levels/lor-xl.7z/missions/single/lor-xl.mn2:1",
+                "levels_multiplayer/cs-dust.7z/dust.mn2:1",
+                "levels_multiplayer/toxic.7z/missions/diedel/d3/toxic-d3.mn2:1"
+            ],
+            "losses": [],
+            "other_outcome_or_frame_changes": [],
+            "results_sha256": "33b387716ac0e92f3c22a04ee2d1560d1d62cf9b3e6eae26f052049aff06ae05"
+        }
+    },
+    "toxic_d3_door_flight": {
+        "scope": "Windows developer runner, ordinary inputs with automated steering, unrendered, difficulty index 0. Source revision matches the candidate.",
+        "rooms": [
+            1,
+            10,
+            143,
+            157,
+            156,
+            151,
+            148,
+            180,
+            179
+        ],
+        "door_faces": [
+            [
+                180,
+                4
+            ],
+            [
+                179,
+                0
+            ]
+        ],
+        "clip": 5,
+        "saved_and_cold_restored_phases": [
+            -2,
+            -2
+        ],
+        "distributions": {
+            "pinned": {
+                "case": "levelpack.7z/missions/diedel/toxic-d3.mn2:1",
+                "descriptor_sha256": "3b5a408dcc02118184d7434a5ea0b271876e627de99df7b3bf3bf985eef42a37",
+                "hog_sha256": "0df49a334ac2134816105269e99a69adfac3b2d6d49985ebfa574ee115dbc300",
+                "engine_sha256": "259d70b020b7e631e4882e6f267c13f641d3db780ca4ba052d2f1915bef5d4fd",
+                "flight": {
+                    "steps": 18,
+                    "process_id": 5260,
+                    "input_plan_sha256": "1361b6ba1ef8154528ff747b1a073d5b2cc67c8c964ddaebd72fed46dee931b6",
+                    "receipt_sha256": "48a9fc2cc2fa72b94b94029462954f761198e0bf3b1ee50a74e95d78a4961d21",
+                    "opening_checkpoint_sha256": "a854aece7a252ce95655deaf7a5cd3896244dc775e6ee09301d184f2f118a688",
+                    "end_game_time_raw": 637883,
+                    "end_shields": 100.0
+                },
+                "cold": {
+                    "steps": 4,
+                    "process_id": 28460,
+                    "input_plan_sha256": "b04d94f92dddf9adca5780a6d95175e52e8f8f4b9d3f8ff93ff6d6445c31bd50",
+                    "receipt_sha256": "098cc1ff77201ab49c8b1864f4921a990a7b7946c1b3fc3b3945e53d17f65540",
+                    "opening_checkpoint_sha256": "e6dea97772847d963626aacef4318a103c4fce329207fa4a38a008faa30098cd",
+                    "end_game_time_raw": 637883,
+                    "end_shields": 100.0
+                }
+            },
+            "standalone": {
+                "case": "levels_multiplayer/toxic.7z/missions/diedel/d3/toxic-d3.mn2:1",
+                "descriptor_sha256": "ae862937791015dc4468495e94cd2e90abf2d18f4930a7fe23bcc6691252a890",
+                "hog_sha256": "0423187ecf6fde85fce5691df1aca6866b414cd104836b4ab478050d8627bcd6",
+                "engine_sha256": "259d70b020b7e631e4882e6f267c13f641d3db780ca4ba052d2f1915bef5d4fd",
+                "flight": {
+                    "steps": 18,
+                    "process_id": 37604,
+                    "input_plan_sha256": "6db4d6bc5da80cab63b4f8b5432187c648ac62ca8c75f6d4abec388f2b60ab1a",
+                    "receipt_sha256": "ba1e6ac5a5be91d84ad537ddab50cba296493f6f5f5a2e1d33df0e05b01ef8c8",
+                    "opening_checkpoint_sha256": "b1b39ca91a55c465454f8f2fa8c4c8fc2b45b970a6cdf21e390a0329e2835ff3",
+                    "end_game_time_raw": 637883,
+                    "end_shields": 100.0
+                },
+                "cold": {
+                    "steps": 4,
+                    "process_id": 36808,
+                    "input_plan_sha256": "f521ecd38f33f4fc19681e0736201a20f48ff412be7c378a9e423b70acacf2fe",
+                    "receipt_sha256": "eac50e235007ff30b092f4f290025f7fd17b9818ef20c2802b022b686e340292",
+                    "opening_checkpoint_sha256": "88c4c32e8795694e4c888469eea8dc5f0d8952f01ab9f6162db93e94da3bca30",
+                    "end_game_time_raw": 637883,
+                    "end_shields": 100.0
+                }
+            }
+        }
+    }
+}
