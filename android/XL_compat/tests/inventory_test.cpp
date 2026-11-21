@@ -1044,6 +1044,11 @@ void version_34_contract()
 
 void version_21_contract()
 {
+	for (int flags = 0; flags < 256; ++flags) {
+		const auto prepared = xl_compat::prepare_gameplay_probe(fixture(21, flags));
+		check(prepared.source.game_version == 40 && prepared.source.segments.at(0).flags == flags, "21/40 translation lost the authored flags");
+		check(prepared.source.observations.size() == (flags & 0xfc ? 1u : 0u), "21/40 reserved segment flag observation count");
+	}
 	auto bytes = single_wall_fixture(21);
 	const auto base = xl_compat::inspect_level(bytes);
 	// Actual game40 widths override legacy declared sizes, as in original Dinter
