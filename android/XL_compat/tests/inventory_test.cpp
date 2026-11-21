@@ -1128,14 +1128,19 @@ void version_23_contract()
 		patch(legacy, xl_compat::inspect_level(legacy).mine_offset + 277, 2, 1);
 		rejects([&] { xl_compat::prepare_gameplay_probe(legacy); });
 	}
-	for (const int function : { 7, 13 }) {
+	for (const int function : { 7, 8, 13 }) {
 		auto bad = bytes;
 		patch(bad, segment, function, 1);
 		const auto decoded = xl_compat::inspect_level(bad);
 		check(std::any_of(decoded.unsupported.begin(), decoded.unsupported.end(), [](const auto &issue) { return issue.feature == "segment_function_v21"; }), "modern function confused with old water/no-damage");
 		const auto report = xl_compat::compatibility_json("modern-function.rl2", bad);
 		check(feature_row(report, "water_segments").find("\"count\": 0") != std::string::npos && feature_row(report, "no_damage_segments").find("\"count\": 0") != std::string::npos, "browser confuses modern functions with old properties");
-		rejects([&] { xl_compat::prepare_serialization_probe_23_40(bad); });
+		if (function == 13) rejects([&] { xl_compat::prepare_serialization_probe_23_40(bad); });
+		else {
+			const auto team = xl_compat::prepare_gameplay_probe(bad);
+			check(team.source.segments.at(0).function == function && team.stock_level == xl_compat::prepare_gameplay_probe(bytes).stock_level,
+			      "Team room lost its XL function or changed classic singleplayer behavior");
+		}
 	}
 	for (const int property : { 1, 2, 4, 8, 16, 32, 64, 128 }) {
 		auto bad = bytes;

@@ -60,6 +60,7 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 		    issue.feature == "effect_trigger_target" || issue.feature == "object_effect_trigger_target") continue;
 		if (level.level_version == 17 && level.game_version == 36 && issue.feature == "segment_function" && issue.detail == "2") continue;
 		if (modern_runtime_layout(level) && issue.feature == "segment_function_v21" && issue.detail == "2") continue;
+		if (modern_runtime_layout(level) && issue.feature == "segment_function_v21" && (issue.detail == "7" || issue.detail == "8")) continue;
 		if (modern_runtime_layout(level) && issue.feature == "segment_function_v21" && issue.detail == "11") continue;
 		if (issue.feature == "segment_function" && (issue.detail == "11" || issue.detail == "12")) continue;
 		if (issue.feature == "segment_function_v21" && issue.detail == "9") continue;

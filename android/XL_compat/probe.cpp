@@ -132,8 +132,11 @@ static GameplayProbe prepare_probe(const Bytes &source, bool water_segments, int
 	for (std::size_t segment = 0; segment < v.segments.size(); ++segment) {
 		const auto &seg = v.segments[segment];
 		const int function = producer_function(seg);
-		// The runtime retains water in the source inventory, never in a stock enum
-		put(out, (v.level_version < 21 && ((water_segments && function == 7) || function == 12 || function == 13 || function == 11)) || (modern_layout && (function == 11 || function == 9 || function == 10)) ? 0 : function, 1);
+		// Modern team rooms, speedboost, skybox and equipment keep their original
+		// functions in the XL inventory. None creates a classic fuel center
+		const bool modern_xl_function = modern_layout && function >= 7 && function <= 11;
+		const bool legacy_xl_function = v.level_version < 21 && ((water_segments && function == 7) || (function >= 11 && function <= 13));
+		put(out, modern_xl_function || legacy_xl_function ? 0 : function, 1);
 		// Wide authored fields stay in the owned source. Only robot assignment enters
 		// the native shadow, after geometry-order initialization and capacity checks
 		// Both loaders rebuild station values; other functions never consume them
