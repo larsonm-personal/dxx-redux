@@ -1,0 +1,83 @@
+{
+    "episode": "Kartsal Motivation",
+    "original": "pmines_v11.7z",
+    "release": "v1.1",
+    "apk_version": 32030,
+    "source": "bf08152a4f383950186217cf339933dc4cf4c8cf",
+    "apk_sha256": "f07186b13f563648ca7710058346bce9730d60beafdfff7def5d213419fc5817",
+    "device": "Android 14 x86_64 software emulator",
+    "route": [1, 11, 12, 13],
+    "method": "Connected checkpoints earned through ordinary controls. Retries restored earned saves. Final physical crossing reproduced in the rendered Android game.",
+    "goals": [
+        {
+            "name": "Both computer downloads",
+            "room": 3240,
+            "score": 47520,
+            "lives": 1,
+            "shields": 8.348312377929688,
+            "operated": [33, 57],
+            "checkpoint": "95a143ae40a668694fe21c64e8eebf9b39aa0cc79ad31e8c1c9a30a02b0869fc"
+        },
+        {
+            "name": "Teleporter unblocked",
+            "room": 4144,
+            "score": 48270,
+            "lives": 1,
+            "shields": 88.64717102050781,
+            "operated": [33, 57, 72, 17],
+            "checkpoint": "f92819a8c3cc1ce96c75e5b74b4987f04cba93899823731cbe899e1b949854a9"
+        },
+        {
+            "name": "Arrival aboard Black Hole",
+            "room": 4177,
+            "score": 48270,
+            "lives": 1,
+            "shields": 56.06092834472656,
+            "operated": [33, 57, 72, 17, 18],
+            "checkpoint": "db0f23e1f9505ebb2f327b9a28754dd9055993e6a4f38ed951b6f43b0cdbcebe"
+        },
+        {
+            "name": "Final checkpoint face",
+            "room": 4238,
+            "score": 48270,
+            "lives": 1,
+            "shields": 55.58924865722656,
+            "operated": [33, 57, 72, 17, 18],
+            "checkpoint": "996967108f5ed0d5a1e96df6eaccefd2c9d00889612040ff512de8f765172184"
+        }
+    ],
+    "pre_exit": {
+        "input": "3def640867dc3d0ab24954244aef77da0b5c6925126f1f86b6d337129ca9f8e8",
+        "device_save": "0ea266972771d9d2cc99043c6579181ef8e5677ababe6cf759ec740497a15471",
+        "expect": {
+            "current_level_num": 13,
+            "position.segment": 4238,
+            "player.lives": 1,
+            "player.score": 48270,
+            "mission_asset_owner": "mod/pmines_v11.7z",
+            "cheats_enabled": false,
+            "player_dead": false,
+            "in_game": true,
+            "player.has_red_key": true,
+            "player.has_blue_key": true,
+            "player.has_gold_key": true
+        }
+    },
+    "rendered": {
+        "steps": {
+            "result": "PASS",
+            "run_id": "73b34703aa1c4822a5e7b58e68b0b3a2",
+            "steps_completed": 15,
+            "total_steps": 15,
+            "elapsed_ms": 61392
+        },
+        "level": 13,
+        "room": 4241,
+        "exit_trigger": 38,
+        "operated": true,
+        "destination": 15,
+        "background": "demoendb.pcx",
+        "ending_text_observed": "...And so MD Vertex9 accomplished his first assignments thro",
+        "profile_restored": true
+    }
+}

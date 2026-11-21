@@ -4,6 +4,10 @@
 
 For Kartsal level 13, use build 32030. It fixes a flight that could leave the ship trapped in the skybox. The ordinary universal APK includes ARM64, ARMv7 and x86_64. The Android 14 emulator imported the original release and cold-loaded two device-written saves. Choose `kartsal-all-keys` to resume in room 3021 with the blue, gold and red keys, two lives and score 40,220. Choose `iquaxel-from-coldrom` to resume level 5 after the secret mission with score 83,440. The kit includes the APK, save files, a slot installer and a feedback checklist. [Build 32030 kit on the build machine](../../temp/xl-pumo-phone-32030/README.md)
 
+### Play the Kartsal ending
+
+Choose `kartsal-final-checkpoint` in the 32030 kit to load the pilot aboard the Black Hole ship with one life and score 48,270. Fly straight ahead through the checkpoint. Advance the score screen to see the authored ending. The ordinary Android build completed this flight from a cold load and showed the MD Vertex9 ending on `demoendb.pcx`. This completes the Kartsal Motivation route from the hub through levels 11, 12 and 13. Mineral Valley remains open from Iquaxel. [Rendered ending receipt](evidence/pumo-kartsal-ending-20261120.json)
+
 ### Earlier checkpoints
 
 Use the merged universal APK, version 32000, package `com.dxxredux.app`, SHA-256 `4ad8f0b32f34e0277dac002b3ab56ba314d60d7e4d0a81da22729e2b838f765b`. It includes ARM64, ARMv7 and x86_64 with XL developer controls off. An Android 14 x86_64 software emulator passed the original mission import, hub flight and cold save tests. Physical phone testing is open. [Playtest APK on the build machine](../../temp/xl-pumo-tranche-20261120/pumo-integrated-3c21ac2d4.apk)
@@ -24,7 +28,7 @@ For a shorter Coldrom session, start from the earned level 14 entry. The ship st
 
 On Kartsal Motivation, activate the three opening switches, then shoot through the grate from room 236 and fly around to the far side of the timed door. Beyond it, stand in room 357 to shoot the two recessed switches. Try the master switch from an angle toward the side corridor. Record which switch responded and whether the forcefields dropped. [Reactor and grate route](evidence/metillis-earned-reactor-20261120.json)
 
-The connected pilot completed Coldrom and returned to Iquaxel with score 83,440. On Kartsal it took the first exit into level 12 with six lives and score 17,580. Android cold-loaded both arrivals. In level 12, rolling the ship before firing helped hit the thin panel. Find the two access keys, use the control settings in the briefing, then take the escape route. The native pilot reached level 13 with five lives and score 28,820. Both episode endings remain open. [Connected exits and Android receipts](evidence/pumo-connected-boundaries-20261120.json) [Metillis save evidence](evidence/metillis-portable-gold-save-20261120.md) / [Author's v1.1 release and episode list](https://descentbb.net/viewtopic.php?t=24808)
+The connected pilot completed Coldrom and returned to Iquaxel with score 83,440. On Kartsal it took the first exit into level 12 with six lives and score 17,580. Android cold-loaded both arrivals. In level 12, rolling the ship before firing helped hit the thin panel. Find the two access keys, use the control settings in the briefing, then take the escape route. The native pilot reached level 13 with five lives and score 28,820. The later rendered Kartsal result appears above. [Connected exits and Android receipts](evidence/pumo-connected-boundaries-20261120.json) [Metillis save evidence](evidence/metillis-portable-gold-save-20261120.md) / [Author's v1.1 release and episode list](https://descentbb.net/viewtopic.php?t=24808)
 
 ## Historical November 3 candidate
 
