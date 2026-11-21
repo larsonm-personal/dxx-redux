@@ -91,8 +91,10 @@ def prepare(serials, output):
         for serial in serials:
             adb(serial, "shell", "su", "0", "ip", "link", "set", "dev", "eth0", "down")
         deadline = time.monotonic() + 30
+        reconnected = False
         while True:
             ready = True
+            unreachable = set()
             for serial in serials:
                 if "UP" in ethernet_flags(serial):
                     ready = False
@@ -100,13 +102,31 @@ def prepare(serials, output):
                     if peer == serial:
                         continue
                     route = adb(serial, "shell", "ip", "route", "get", address, allow_failure=True)
+                    if not route and "Network is unreachable" in receipt["commands"][-1]["stderr"]:
+                        unreachable.add(serial)
                     source = re.escape(receipt["addresses"][serial])
                     if not re.search(r"\bdev wlan0\b", route) or not re.search(rf"\bsrc {source}(?:\s|$)", route):
                         ready = False
             if ready:
                 break
             if time.monotonic() >= deadline:
-                raise RuntimeError("Unbound peer routes did not converge to shared Wi-Fi")
+                if reconnected or not unreachable:
+                    raise RuntimeError("Unbound peer routes did not converge to shared Wi-Fi")
+                # API 34 can associate and acquire an address before netd installs
+                # the Wi-Fi network's routes. Reassociate only the stranded guests.
+                for serial in sorted(unreachable):
+                    snapshot(serial)
+                    adb(serial, "shell", "cmd", "wifi", "set-wifi-enabled", "disabled")
+                    try:
+                        stop_deadline = time.monotonic() + 10
+                        while "Wifi is disabled" not in adb(serial, "shell", "cmd", "wifi", "status").splitlines():
+                            if time.monotonic() >= stop_deadline:
+                                raise RuntimeError(f"Wi-Fi did not stop on {serial}")
+                            time.sleep(1)
+                    finally:
+                        adb(serial, "shell", "cmd", "wifi", "set-wifi-enabled", "enabled")
+                reconnected = True
+                deadline = time.monotonic() + 60
             time.sleep(1)
         for serial in serials:
             snapshot(serial)

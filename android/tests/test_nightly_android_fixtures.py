@@ -301,6 +301,7 @@ class LanWifiTopologyTests(unittest.TestCase):
     def run_case(self, serials=None, fault=None, ethernet_prefix=8, unaddressed=False, initially_down=False):
         serials = serials or ["emulator-5554", "emulator-5556"]
         calls, disabled = [], set()
+        wifi_off, reconnected = set(), set()
         pending_route = [fault == "transient"]
 
         def adb(command, **kwargs):
@@ -365,6 +366,17 @@ class LanWifiTopologyTests(unittest.TestCase):
                 if serial in disabled and pending_route[0]:
                     pending_route[0] = False
                     text, code = "", 2
+                if serial in disabled and serial == serials[-1] and fault in ("wifi-reconnect", "wifi-unreachable"):
+                    if serial not in reconnected or fault == "wifi-unreachable":
+                        text, code, stderr = "", 2, "RTNETLINK answers: Network is unreachable"
+            elif args[:4] == ["shell", "cmd", "wifi", "set-wifi-enabled"]:
+                if args[-1] == "disabled":
+                    wifi_off.add(serial)
+                else:
+                    wifi_off.remove(serial)
+                    reconnected.add(serial)
+            elif args == ["shell", "cmd", "wifi", "status"]:
+                text = "Wifi is disabled" if serial in wifi_off else "Wifi is enabled"
             else:
                 text = "diagnostic output"
             return subprocess.CompletedProcess(command, code, text, stderr or ("denied" if code else ""))
@@ -377,17 +389,19 @@ class LanWifiTopologyTests(unittest.TestCase):
             with (
                 patch.dict(wifi.os.environ, env),
                 patch.object(wifi.subprocess, "run", side_effect=adb),
-                patch.object(wifi.time, "monotonic", side_effect=[0, 1, 31] if fault == "transient" else [0, 31]),
+                patch.object(
+                    wifi.time, "monotonic", side_effect=[0, 1, 31] if fault == "transient" else [0, 31, 32, 33, 94]
+                ),
                 patch.object(wifi.time, "sleep"),
             ):
-                if fault and fault != "transient":
+                if fault not in (None, "transient", "wifi-reconnect"):
                     with self.assertRaises((RuntimeError, ValueError, subprocess.TimeoutExpired)):
                         wifi.prepare(serials, output)
                 else:
                     wifi.prepare(serials, output)
             receipt = json.loads(output.read_text())
-            self.assertEqual(receipt["passed"], fault in (None, "transient"))
-            if fault and fault != "transient":
+            self.assertEqual(receipt["passed"], fault in (None, "transient", "wifi-reconnect"))
+            if not receipt["passed"]:
                 self.assertIn("error", receipt)
             return calls, receipt
 
@@ -431,6 +445,13 @@ class LanWifiTopologyTests(unittest.TestCase):
         calls, receipt = self.run_case(fault="transient")
         self.assertEqual(sum(args[-1] == "down" for _, args in calls), 2)
         self.assertTrue(any(c.get("returncode") == 2 for c in receipt["commands"]))
+
+    def test_missing_network_reconnects_only_the_stranded_peer_once(self):
+        for fault in ("wifi-reconnect", "wifi-unreachable"):
+            calls, receipt = self.run_case(fault=fault)
+            switches = [(serial, args[-1]) for serial, args in calls if "set-wifi-enabled" in args]
+            self.assertEqual(switches, [("emulator-5556", "disabled"), ("emulator-5556", "enabled")])
+            self.assertEqual(receipt["passed"], fault == "wifi-reconnect")
 
     def test_observed_ethernet_slash8_and_legacy_slash24_preserve_wifi_routes(self):
         for prefix in (8, 24):
