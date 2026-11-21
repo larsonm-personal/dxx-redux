@@ -4,6 +4,17 @@ static void camera_children_native_controls(object &camera, bool custom = false)
 {
 	const auto saved_player = *ConsoleObject;
 	const auto saved_pilot = Players[Player_num];
+	const int sentinel_shot = projectile_test_shot(int(ConsoleObject - Objects), SMART_ID);
+	const auto original_child = Weapon_info[SMART_ID].children;
+	const auto initial_count = num_objects;
+	for (const int absent : { -1, 0 }) {
+		Weapon_info[SMART_ID].children = absent;
+		create_smart_children(&Objects[sentinel_shot], NUM_SMART_CHILDREN);
+		xl_camera_smart_children(Objects[sentinel_shot]);
+	}
+	Weapon_info[SMART_ID].children = original_child;
+	require(num_objects == initial_count, "An absent XL child definition created a projectile");
+	obj_delete(sentinel_shot);
 	std::vector<std::pair<int, int>> hidden;
 	for (int i = 0; i <= Highest_object_index; ++i)
 		if (Objects[i].type != OBJ_NONE && &Objects[i] != ConsoleObject && &Objects[i] != &camera) {

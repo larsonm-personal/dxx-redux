@@ -20,6 +20,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include <stdlib.h>
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
+#include "camera_children.h"
 #include "slow_motion_runtime.h"
 #include "gameplay_audio.h"
 #include "resource_validation.h"
@@ -2648,6 +2649,11 @@ void create_smart_children(object *objp, int num_smart_children)
 	int numobjs=0, objnum = 0, sel_objnum, last_sel_objnum = -1;
 	int objlist[MAX_OBJDISTS];
 	int blob_id;
+
+#ifdef DXX_XL_RUNTIME
+	if (objp->type == OBJ_WEAPON && xl_level_extensions_active() && !xl_weapon_defines_children(Weapon_info[objp->id].children))
+		return;
+#endif
 
 	if (objp->type == OBJ_WEAPON) {
 		parent_type = objp->ctype.laser_info.parent_type;
