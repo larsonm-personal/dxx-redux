@@ -1,0 +1,177 @@
+{
+    "level": 5,
+    "archive": "pmines_v11.7z",
+    "checkpoint_sha256": "c28d18b2339be4661b14f4ca41a589856a2db343d7596402a1b8e82120a7a819",
+    "active_build": "8a79c689840f0db320ce93e74a51e7bf68819e31",
+    "reference": "arbruijn/d2x-xl 2576a98b5de310e3ac7c9777df2677d1627b8bae, weapons/fireweapon.cpp, CreateSmartChildren",
+    "first_discrepancy": "The control spawned six distinct weapon-zero objects credited to robot 140. Each hit for 10.25 shields in the same simulation tick.",
+    "compared_inputs": [
+        [
+            {
+                "action": "select_primary",
+                "slot": 1
+            },
+            {
+                "action": "fly_and_aim",
+                "segment": 688,
+                "look_room": 848,
+                "hold": true,
+                "max_frames": 15
+            }
+        ],
+        [
+            {
+                "action": "fly_and_aim",
+                "segment": 674,
+                "look_room": 848,
+                "robot": 141,
+                "max_frames": 40
+            }
+        ],
+        [
+            {
+                "action": "fly_and_aim",
+                "segment": 674,
+                "look_room": 689,
+                "hold": true,
+                "max_frames": 70
+            }
+        ],
+        [
+            {
+                "action": "fly_and_aim",
+                "segment": 688,
+                "look_room": 848,
+                "robot": 141,
+                "max_frames": 50
+            }
+        ],
+        [
+            {
+                "action": "fly_and_aim",
+                "segment": 674,
+                "look_room": 848,
+                "robot": 141,
+                "max_frames": 30
+            }
+        ]
+    ],
+    "checkpoints": {
+        "before": [
+            {
+                "room": 688,
+                "shields": 75.79,
+                "score": 78450
+            },
+            {
+                "room": 674,
+                "shields": 75.79,
+                "score": 78450
+            },
+            {
+                "room": 674,
+                "shields": 11.67,
+                "score": 78450
+            },
+            {
+                "room": 688,
+                "shields": 11.67,
+                "score": 78450
+            },
+            {
+                "room": 674,
+                "shields": 11.67,
+                "score": 78450
+            }
+        ],
+        "after": [
+            {
+                "room": 688,
+                "shields": 75.79,
+                "score": 78450
+            },
+            {
+                "room": 674,
+                "shields": 75.79,
+                "score": 78450
+            },
+            {
+                "room": 674,
+                "shields": 70.55,
+                "score": 78450
+            },
+            {
+                "room": 688,
+                "shields": 70.55,
+                "score": 78450
+            },
+            {
+                "room": 674,
+                "shields": 70.55,
+                "score": 78450
+            }
+        ]
+    },
+    "connected_play": [
+        {
+            "event": "red key",
+            "level": 5,
+            "room": 330,
+            "lives": 1,
+            "shields": 35.17,
+            "score": 80350,
+            "countdown_active": false,
+            "native_save_sha256": "c2531675cdf2ce990d36a8cdc300769bfec4fc385bcaa706eafb7ff8de479ce9"
+        },
+        {
+            "event": "reactor destroyed",
+            "level": 5,
+            "room": 55,
+            "lives": 1,
+            "shields": 46.95,
+            "score": 93950,
+            "countdown_active": true,
+            "native_save_sha256": "ff4fdd0a6357d83df83b8d49cbd2a2a181d82eade19c5ef38b20fdae761ff8b6"
+        },
+        {
+            "event": "Iquaxel exit",
+            "level": 5,
+            "room": 895,
+            "lives": 1,
+            "shields": 38.77,
+            "score": 98450,
+            "countdown_active": true,
+            "native_save_sha256": "bc932b58f96cabd2c62d495bb28832f4d0b9a98039d79ebcce7d20827f2e888b"
+        },
+        {
+            "event": "arrival after Iquaxel",
+            "level": 6,
+            "room": 329,
+            "lives": 2,
+            "shields": 100.0,
+            "score": 100000,
+            "countdown_active": false,
+            "native_save_sha256": "0552db92059005e83459c7b76ed010591fe7b4680e0ddb7c76f6214fad0d8d4f"
+        },
+        {
+            "event": "lava shafts exit",
+            "level": 6,
+            "room": 1037,
+            "lives": 3,
+            "shields": 30.53,
+            "score": 161240,
+            "countdown_active": true,
+            "native_save_sha256": "373a39636a4418f8a621a613f4147d2f6803d0a4549682f43bd1737675bf1f94"
+        },
+        {
+            "event": "Mercury Geothermal Lab arrival",
+            "level": 7,
+            "room": 1183,
+            "lives": 3,
+            "shields": 100.0,
+            "score": 162740,
+            "countdown_active": false,
+            "native_save_sha256": "279e42fb7dce71397a26a427997c9e9e7758c79374abfc80a3f5a92492b80f62"
+        }
+    ]
+}

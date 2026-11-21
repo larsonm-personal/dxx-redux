@@ -19,7 +19,7 @@ void xl_camera_smart_children(object &weapon)
 	if (!xl_level_extensions_active() || weapon.type != OBJ_WEAPON || weapon.id >= N_weapon_types)
 		throw std::runtime_error("Camera children require an active XL weapon");
 	const auto &definition = Weapon_info[weapon.id];
-	if (definition.children < 1) return;
+	if (!xl_weapon_defines_children(definition.children)) return;
 	if (definition.children >= N_weapon_types) throw std::runtime_error("Invalid camera child weapon definition");
 	if (weapon.id == EARTHSHAKER_ID) {
 		const auto generation = xl_wall_trigger_generation();
