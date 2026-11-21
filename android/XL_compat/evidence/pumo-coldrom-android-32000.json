@@ -1,0 +1,48 @@
+{
+    "source": "3c21ac2d4a243e08e41f2273b81b6f83b37dc35b",
+    "apk": {
+        "package": "com.dxxredux.app",
+        "version_code": 32000,
+        "sha256": "4ad8f0b32f34e0277dac002b3ab56ba314d60d7e4d0a81da22729e2b838f765b",
+        "abis": ["arm64-v8a", "armeabi-v7a", "x86_64"],
+        "xl_developer_controls": false
+    },
+    "device": "Android 14 x86_64 software emulator",
+    "mission": "pmines_v11.7z",
+    "owner_attempt": "4d13fc7de1b849e28a7828ee69d5b6c9",
+    "protected_profile_restored": true,
+    "input_android_save": "49051238f8038f4e6e2550e8ff564a296667f47d881d29cd0aa79a4f2fbc9be0",
+    "device_written_save": "60fff655e330e73c5903b3f7678153e8973781c880b61811a2dc54e6eea9155d",
+    "expected": {
+        "current_level_num": 14,
+        "position.segment": 228,
+        "player.lives": 4,
+        "player.score": 53740,
+        "player.has_blue_key": false,
+        "player.has_gold_key": false,
+        "player.has_red_key": false,
+        "reactor_countdown.active": false,
+        "xl_pilot.remaining_objectives": 1,
+        "mission_asset_owner": "mod/pmines_v11.7z",
+        "cheats_enabled": false,
+        "player_dead": false,
+        "in_game": true
+    },
+    "checks": {
+        "original_picker_hub": {
+            "result": "PASS",
+            "steps_completed": 37,
+            "run_id": "4481c2b4bd624afd90cb1b14cfe81253"
+        },
+        "load_and_write": {
+            "result": "PASS",
+            "steps_completed": 9,
+            "run_id": "4a84fe79ceec465580ef003ea9fcc8b9"
+        },
+        "cold_load": {
+            "result": "PASS",
+            "steps_completed": 7,
+            "run_id": "ab59c849e9a04af9919382ea20291e50"
+        }
+    }
+}

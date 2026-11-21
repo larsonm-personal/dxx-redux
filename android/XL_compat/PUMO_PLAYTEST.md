@@ -2,7 +2,7 @@
 
 ## November 20 phone playtest
 
-The local universal APK is version 31920, package `com.dxxredux.app`, SHA-256 `25ffdbc26f6f78ea217e2a9840b78469292ee62d1f14f43db1920ac25d5d2cc6`. It includes ARM64, ARMv7 and x86_64, with XL developer controls off. The acceptance run used an Android 14 x86_64 software emulator. Physical phone testing is open. [Playtest APK on the build machine](../../temp/xl-pumo-tranche-20261120/pumo-portable-skin-debug.apk)
+Use the merged universal APK, version 32000, package `com.dxxredux.app`, SHA-256 `4ad8f0b32f34e0277dac002b3ab56ba314d60d7e4d0a81da22729e2b838f765b`. It includes ARM64, ARMv7 and x86_64 with XL developer controls off. An Android 14 x86_64 software emulator passed the original mission import, hub flight and cold save tests. Physical phone testing is open. [Playtest APK on the build machine](../../temp/xl-pumo-tranche-20261120/pumo-integrated-3c21ac2d4.apk)
 
 1. Install the APK over a compatible test installation. If Android rejects the signature, preserve your existing pilots and saves before changing installations.
 2. Open **Import files > Pick One or More Files**. Select your retail D2 data, the original `pmines_v11.7z` archive and the XL camera, effects and sound resources. Under **Mods/Levels > Show Files**, check that the mission and resources are enabled together. For the recorded Metillis route, leave Vertigo disabled. Pumo supplies its own robot and model definitions.
@@ -13,6 +13,8 @@ The local universal APK is version 31920, package `com.dxxredux.app`, SHA-256 `2
 The earned Metillis checkpoint reached room 948 with the blue and gold keys, three lives and score 35,360. The ordinary Android Load Game menu restored the desktop checkpoint and then reloaded an Android-written quicksave after a fresh launch. A separate developer recording from that Android save matched 25 frames on the ordinary Windows and Linux players. [Replay receipts](evidence/metillis-device-input-20261120.json)
 
 At Metillis, collect all three keys, destroy the reactor, then choose an exit. The connected pilot reached Iquaxel through the main exit with four lives and score 51,150. It also reached Coldrom from the same reactor save via the secret exit, with four lives and score 53,740. On Android the Iquaxel save returned to the mine in room 260 after a cold launch. The ordinary device-written quicksave has SHA-256 `f206a6aad6b453638a7a53e4bfe24ea13c9abee0c54332281cedfb81f5c187c6`. [Earned exits and Android save identities](evidence/pumo-earned-exits-20261120.json)
+
+For a shorter Coldrom session, start from the earned level 14 entry. The ship starts in room 228 with four lives, score 53,740 and no keys. Activate the first switch, find the master switch and collect the Fusion Cannon. Watch for the reactor doors to open. On version 32000 the ordinary Load Game menu restored this entry, and a new process loaded the device-written quicksave with the same pilot state. [Coldrom device receipts](evidence/pumo-coldrom-android-32000.json)
 
 On Kartsal Motivation, activate the three opening switches, then shoot through the grate from room 236 and fly around to the far side of the timed door. Beyond it, stand in room 357 to shoot the two recessed switches. Try the master switch from an angle toward the side corridor. Record which switch responded and whether the forcefields dropped. [Reactor and grate route](evidence/metillis-earned-reactor-20261120.json)
 
