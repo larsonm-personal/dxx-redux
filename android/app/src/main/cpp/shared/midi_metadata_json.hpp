@@ -6,6 +6,9 @@
 #include <string>
 
 #include "audio_tag_metadata.h"
+#if defined(DXX_BUILD_DESCENT_II) && defined(DXX_XL_RUNTIME)
+#include "resource_validation.h"
+#endif
 
 extern "C" {
 #include "midi_metadata_physfs.h"
@@ -75,7 +78,12 @@ static Json serialize_active_music_metadata()
 			audio_tag_metadata audio_metadata;
 			Json properties = Json::array();
 			audio_tag_metadata_init(&audio_metadata);
-			audio_tag_metadata_parse_physfs(filename, &audio_metadata);
+			const char *path = filename;
+#if defined(DXX_BUILD_DESCENT_II) && defined(DXX_XL_RUNTIME)
+			char resolved[PATH_MAX];
+			if (xl_mission_music_path(filename, resolved, sizeof(resolved))) path = resolved;
+#endif
+			audio_tag_metadata_parse_physfs(path, &audio_metadata);
 			row["slot_index"] = index;
 			row["slot_kind"] = midi_metadata_slot_kind(index);
 			row["filename"] = filename;

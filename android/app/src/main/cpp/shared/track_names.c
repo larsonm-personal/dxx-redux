@@ -23,6 +23,9 @@
 #include "secretarea.h"
 #ifdef DXX_BUILD_DESCENT_II
 #include "d1_in_d2/d1_in_d2_presentation.h"
+#ifdef DXX_XL_RUNTIME
+#include "resource_validation.h"
+#endif
 #endif
 
 #include "android_jni_overlay.h"
@@ -83,52 +86,55 @@ static struct {
 } s_mission_embedded_names[MAX_MISSION_EMBEDDED_NAMES];
 static int s_mission_embedded_name_count;
 
-static void mission_embedded_names_load(void)
+static const char *mission_embedded_name(const char *filename)
 {
-	int index;
-	s_mission_embedded_name_count = 0;
-	for (index = 0; BIMSongs && index < Num_bim_songs &&
-	                s_mission_embedded_name_count < MAX_MISSION_EMBEDDED_NAMES;
-	     ++index) {
-		const char *filename = BIMSongs[index].filename;
-		const char *metadata_filename = filename;
+	if (!filename || !*filename) return NULL;
+	for (int i = 0; i < s_mission_embedded_name_count; ++i)
+		if (!strcasecmp(filename, s_mission_embedded_names[i].filename))
+			return s_mission_embedded_names[i].display_name[0] ? s_mission_embedded_names[i].display_name : NULL;
+
+	int i = 0;
+	while (BIMSongs && i < Num_bim_songs && strcasecmp(filename, BIMSongs[i].filename)) ++i;
+	if (!BIMSongs || i == Num_bim_songs || s_mission_embedded_name_count == MAX_MISSION_EMBEDDED_NAMES) return NULL;
+	const int slot = s_mission_embedded_name_count++;
+	snprintf(s_mission_embedded_names[slot].filename, sizeof(s_mission_embedded_names[slot].filename), "%s", filename);
+	s_mission_embedded_names[slot].display_name[0] = 0;
+	const char *metadata_filename = filename;
 #ifdef DXX_BUILD_DESCENT_II
-		char resource[PATH_MAX];
-		/* Read the playback owner while retaining the logical name as the lookup key */
-		if (!d1_in_d2_presentation_resource(filename, resource, sizeof(resource))) continue;
-		metadata_filename = resource;
+	char resource[PATH_MAX];
+	/* Read the playback owner while retaining the logical name as the lookup key */
+	if (
+#ifdef DXX_XL_RUNTIME
+	    !xl_mission_music_path(filename, resource, sizeof(resource)) &&
 #endif
-		const char *extension = strrchr(filename, '.');
-		char display_name[sizeof(s_mission_embedded_names[0].display_name)] = "";
-		if (extension && (!strcasecmp(extension, ".ogg") ||
-		                  !strcasecmp(extension, ".mp3") ||
-		                  !strcasecmp(extension, ".flac"))) {
-			audio_tag_metadata metadata;
-			audio_tag_metadata_init(&metadata);
-			audio_tag_metadata_parse_physfs(metadata_filename, &metadata);
-			if (metadata.artist[0] && metadata.title[0])
-				snprintf(display_name, sizeof(display_name), "%s - %s", metadata.artist, metadata.title);
-			else
-				snprintf(display_name, sizeof(display_name), "%s", metadata.display_name);
-			audio_tag_metadata_free(&metadata);
-		} else {
-			midi_metadata metadata;
-			char source[MIDI_METADATA_SOURCE_FILENAME_BYTES];
-			int inherited;
-			midi_metadata_init(&metadata);
-			midi_metadata_resolve_physfs(metadata_filename, &metadata, source, sizeof(source), &inherited);
-			if (midi_metadata_has_useful_summary(&metadata))
-				snprintf(display_name, sizeof(display_name), "%s", metadata.display_name);
-			midi_metadata_free(&metadata);
-		}
-		if (display_name[0]) {
-			snprintf(s_mission_embedded_names[s_mission_embedded_name_count].filename,
-			         sizeof(s_mission_embedded_names[s_mission_embedded_name_count].filename), "%s", filename);
-			snprintf(s_mission_embedded_names[s_mission_embedded_name_count].display_name,
-			         sizeof(s_mission_embedded_names[s_mission_embedded_name_count].display_name), "%s", display_name);
-			++s_mission_embedded_name_count;
-		}
+	    !d1_in_d2_presentation_resource(filename, resource, sizeof(resource)))
+		return NULL;
+	metadata_filename = resource;
+#endif
+	const char *extension = strrchr(filename, '.');
+	char *display_name = s_mission_embedded_names[slot].display_name;
+	if (extension && (!strcasecmp(extension, ".ogg") ||
+	                  !strcasecmp(extension, ".mp3") ||
+	                  !strcasecmp(extension, ".flac"))) {
+		audio_tag_metadata metadata;
+		audio_tag_metadata_init(&metadata);
+		audio_tag_metadata_parse_physfs(metadata_filename, &metadata);
+		if (metadata.artist[0] && metadata.title[0])
+			snprintf(display_name, sizeof(s_mission_embedded_names[0].display_name), "%s - %s", metadata.artist, metadata.title);
+		else
+			snprintf(display_name, sizeof(s_mission_embedded_names[0].display_name), "%s", metadata.display_name);
+		audio_tag_metadata_free(&metadata);
+	} else {
+		midi_metadata metadata;
+		char source[MIDI_METADATA_SOURCE_FILENAME_BYTES];
+		int inherited;
+		midi_metadata_init(&metadata);
+		midi_metadata_resolve_physfs(metadata_filename, &metadata, source, sizeof(source), &inherited);
+		if (midi_metadata_has_useful_summary(&metadata))
+			snprintf(display_name, sizeof(s_mission_embedded_names[0].display_name), "%s", metadata.display_name);
+		midi_metadata_free(&metadata);
 	}
+	return display_name[0] ? display_name : NULL;
 }
 
 void jukebox_names_load(const char *json_path)
@@ -229,7 +235,7 @@ void mission_music_names_load(void)
 	char *buf;
 
 	music_name_table_clear_mission();
-	mission_embedded_names_load();
+	s_mission_embedded_name_count = 0;
 
 	f = PHYSFS_openRead(MISSION_MUSIC_NAMES_FILE);
 	if (!f) return;
@@ -258,13 +264,9 @@ void mission_music_names_load(void)
 const char *mission_music_names_lookup(const char *filename)
 {
 	const char *sidecar = music_name_table_lookup_mission(filename);
-	int index;
 	if (sidecar && sidecar[0])
 		return sidecar;
-	for (index = 0; filename && index < s_mission_embedded_name_count; ++index)
-		if (!strcasecmp(filename, s_mission_embedded_names[index].filename))
-			return s_mission_embedded_names[index].display_name;
-	return NULL;
+	return mission_embedded_name(filename);
 }
 
 /* -- Overlay formatting ---------------------------------------------- */

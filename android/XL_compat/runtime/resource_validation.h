@@ -1,5 +1,6 @@
 #ifndef DXX_XL_RESOURCE_VALIDATION_H
 #define DXX_XL_RESOURCE_VALIDATION_H
+#include <stddef.h>
 #include "physfs.h"
 
 #ifdef __cplusplus
@@ -12,6 +13,10 @@ int xl_resource_load_mod_data(void);
 void xl_resource_note_startup_ham(const char *name, PHYSFS_file *file);
 void xl_resource_select_mission(int requires_xl);
 void xl_resource_commit_mission(void);
+struct bim_song_info;
+void xl_apply_mission_music(struct bim_song_info **songs, int *count, const char *song_list_owner, int enabled);
+int xl_mission_music_path(const char *track, char *path, size_t capacity);
+int xl_secret_music_slot(int ordinal, int fallback);
 /* New D2 texture capability, not a general package-ownership or gameplay flag */
 int xl_resource_texture_scope_enabled(void);
 int xl_resource_owns_installation(const char *source);

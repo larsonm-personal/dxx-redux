@@ -32,18 +32,27 @@ inline bool lightning_outside_clip(const LightningClipVertex &vertex)
 	return std::abs(p[0]) > p[3] || std::abs(p[1]) > p[3] || std::abs(p[2]) > p[3];
 }
 // Source viewport projection uses positive camera Z and only the projection 3x3
-inline std::array<int, 2> lightning_screen_point(const LightningVertex &camera, const std::array<float, 16> &projection, int width, int height)
+inline void extend_glow_viewport(std::array<int, 4> &extent, const LightningVertex &camera, const std::array<float, 16> &projection, int width, int height)
 {
 	if (width <= 0 || height <= 0) throw std::runtime_error("XL lightning canvas has invalid dimensions");
-	std::array<int, 2> result;
+	for (float component : camera)
+		if (!std::isfinite(component)) throw std::runtime_error("XL glow vertex has a non-finite camera position");
 	for (unsigned axis = 0; axis < 2; ++axis) {
 		const float projected = projection[axis] * camera[0] + projection[4 + axis] * camera[1] + projection[8 + axis] * camera[2];
-		const float coordinate = (float(axis ? height : width) / 2.f) * (1.f + projected / std::abs(camera[2]));
-		if (!std::isfinite(coordinate) || double(coordinate) < INT32_MIN || double(coordinate) > INT32_MAX)
-			throw std::runtime_error("XL lightning projected extent exceeds the source integer range");
-		result[axis] = int(coordinate);
+		if (!std::isfinite(projected)) throw std::runtime_error("XL glow vertex has a non-finite projection");
+		if (camera[2] != 0) {
+			const float coordinate = (float(axis ? height : width) / 2.f) * (1.f + projected / std::abs(camera[2]));
+			if (double(coordinate) >= INT32_MIN && double(coordinate) <= INT32_MAX) {
+				extent[axis] = (std::min) (extent[axis], int(coordinate));
+				extent[axis + 2] = (std::max) (extent[axis + 2], int(coordinate));
+				continue;
+			}
+		}
+		// A vertex on or very near the eye plane cannot bound the clipped primitive.
+		// Composite the whole canvas and let the GPU clip the original geometry.
+		extent = { 0, 0, width, height };
+		return;
 	}
-	return result;
 }
 // Authored persistent bolts have negative life and do not use transient alpha fades
 template <class Random>

@@ -1,5 +1,12 @@
 // Detected XL requirements and runtime integration; developer previews remain explicit
 #include "preview.h"
+#ifdef __ANDROID__
+extern "C" {
+#include "android_loading_progress.h"
+#include "android_profile.h"
+#include "android_log.h"
+}
+#endif
 #include "slow_motion_runtime.h"
 #include "mission_progress.h"
 #include "../door_obstruction.h"
@@ -109,6 +116,28 @@ extern int Do_dynamic_light;
 
 namespace
 {
+#ifdef __ANDROID__
+class LevelPreparationProgress
+{
+	const char *phase;
+	bool owns_display;
+	long long started;
+
+  public:
+	LevelPreparationProgress(const char *phase, bool interactive) : phase(phase), owns_display(interactive && !android_loading_progress_is_active()), started(android_profile_monotonic_us())
+	{
+		if (owns_display) {
+			android_loading_progress_begin(phase, 0);
+			android_loading_progress_update(phase, 0, 0);
+		}
+	}
+	~LevelPreparationProgress()
+	{
+		if (owns_display) android_loading_progress_end();
+		debug_log_force(DLOG_PROFILING, "XL %s took %lld us", phase, android_profile_monotonic_us() - started);
+	}
+};
+#endif
 std::unique_ptr<xl_compat::Inventory> source;
 std::unique_ptr<xl_compat::ClassicAmbientLighting> classic_ambient;
 std::vector<xl_compat::Rgb> classic_colors;
@@ -242,19 +271,40 @@ xl_compat::Bytes read_extended_level(const char *filename)
 }
 
 // Experimental fluid profile selected by detected requirements, never mission identity
-bool water_profile(const xl_compat::Bytes &bytes, bool multiplayer)
+bool water_profile(const xl_compat::Bytes &bytes, bool multiplayer, bool water_enabled)
 {
 	const auto level = xl_compat::inspect_level(bytes);
 	const bool water = std::any_of(level.segments.begin(), level.segments.end(), [&](const xl_compat::Segment &segment) {
 		return (xl_compat::segment_property_bits(level.level_version, segment) & xl_compat::segment_water) != 0;
 	});
 	if (!water) return false;
-	if (level.level_version < 21 && !option("-xl-water-physics") && !water_test_profile)
+	if (level.level_version < 21 && !water_enabled)
 		throw std::runtime_error("water physics: the experimental fluid profile is not enabled; Android and presentation qualification is incomplete");
 	if (multiplayer) throw std::runtime_error("water physics multiplayer synchronization is unqualified");
 	if (level.level_version < 21 && (!level.matcens.empty() || std::any_of(level.objects.begin(), level.objects.end(), [](const xl_compat::Object &object) { return object.type == OBJ_ROBOT || (object.contains_count > 0 && object.contains_type == OBJ_ROBOT); })))
 		throw std::runtime_error("water with robots: AI combat and robot generation in fluids remain unqualified");
 	return true;
+}
+
+// Only the pure level translation survives from preflight to load. Read the
+// current bytes again and independently validate mounted resources and graphics.
+struct LevelTranslation {
+	xl_compat::Bytes bytes;
+	bool multiplayer, water_enabled, arena;
+	xl_compat::GameplayProbe probe;
+};
+std::unique_ptr<LevelTranslation> preflight_translation;
+
+std::unique_ptr<LevelTranslation> translate_level(xl_compat::Bytes bytes, bool multiplayer)
+{
+	const bool water_enabled = option("-xl-water-physics") || water_test_profile;
+	auto cached = std::move(preflight_translation);
+	if (cached && cached->multiplayer == multiplayer && cached->water_enabled == water_enabled && cached->bytes == bytes)
+		return cached;
+	cached.reset();
+	const bool arena = water_profile(bytes, multiplayer, water_enabled);
+	auto probe = xl_compat::prepare_source_runtime_probe(bytes, arena, !multiplayer);
+	return std::unique_ptr<LevelTranslation>(new LevelTranslation{ std::move(bytes), multiplayer, water_enabled, arena, std::move(probe) });
 }
 
 void validate_mission_context()
@@ -625,15 +675,20 @@ extern "C" int xl_level_supported_at(const char *filename, int multiplayer, int 
 	rejection.clear();
 	try {
 		validate_mission_context();
-		const auto bytes = read_extended_level(filename);
+		auto bytes = read_extended_level(filename);
 		if (bytes.empty()) {
+			preflight_translation.reset();
 			prepare_classic_member(filename, ordinal, multiplayer != 0);
 			return 1;
 		}
-		const bool arena = water_profile(bytes, multiplayer != 0);
-		const auto probe = xl_compat::prepare_source_runtime_probe(bytes, arena, !multiplayer);
+#ifdef __ANDROID__
+		LevelPreparationProgress progress("Checking level resources and graphics", !multiplayer && !GameArg.SysInputDemoNoRender);
+#endif
+		auto translation = translate_level(std::move(bytes), multiplayer != 0);
+		const auto &probe = translation->probe;
 		XlPreparedResources resources(filename, &probe.source, ordinal);
-		validate_requirements(probe.source, multiplayer != 0, arena, resources.dependencies(), nullptr, nullptr, resources.has_scoped_textures(), resources.mission_replaces_robots());
+		validate_requirements(probe.source, multiplayer != 0, translation->arena, resources.dependencies(), nullptr, nullptr, resources.has_scoped_textures(), resources.mission_replaces_robots());
+		preflight_translation = std::move(translation);
 		return 1;
 	} catch (const std::exception &error) {
 		rejection = std::string(filename) + "\n" + error.what();
@@ -725,6 +780,7 @@ extern "C" int xl_classic_lighting_color(int vertex, float rgb[3])
 
 extern "C" void xl_preview_clear_mission(void)
 {
+	preflight_translation.reset();
 	xl_slow_motion_reset();
 	xl_disarm_clear();
 	xl_countdown_clear();
@@ -884,8 +940,12 @@ extern "C" int xl_preview_load_level_at(const char *filename, int ordinal)
 			if (stream.bad() || bytes.size() != std::size_t(size)) throw std::runtime_error("XL source read failed");
 #endif
 		}
-		const bool arena = water_profile(bytes, (Game_mode & GM_MULTI) != 0);
-		auto probe = xl_compat::prepare_source_runtime_probe(bytes, arena, !(Game_mode & GM_MULTI));
+#ifdef __ANDROID__
+		LevelPreparationProgress progress("Loading level", !(Game_mode & GM_MULTI) && !GameArg.SysInputDemoNoRender);
+#endif
+		auto translation = translate_level(std::move(bytes), (Game_mode & GM_MULTI) != 0);
+		const bool arena = translation->arena;
+		auto &probe = translation->probe;
 		auto resources = std::make_unique<XlPreparedResources>(filename, &probe.source, ordinal);
 		validate_requirements(probe.source, (Game_mode & GM_MULTI) != 0, arena, resources->dependencies(), nullptr, nullptr, resources->has_scoped_textures(), resources->mission_replaces_robots());
 		if (original) {

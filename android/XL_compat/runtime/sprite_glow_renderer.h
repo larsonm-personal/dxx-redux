@@ -28,11 +28,7 @@ void xl_compat::draw_fireball_sprite(grs_bitmap &image, const ParticleQuad &quad
 	glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &target);
 	std::array<int, 4> extent{ 32767, 32767, -32767, -32767 };
 	for (const auto &vertex : quad.vertices) {
-		const auto projected = lightning_screen_point({ vertex.position[0], vertex.position[1], -vertex.position[2] }, projection, viewport[2], viewport[3]);
-		for (unsigned axis = 0; axis < 2; ++axis) {
-			extent[axis] = (std::min) (extent[axis], projected[axis]);
-			extent[axis + 2] = (std::max) (extent[axis + 2], projected[axis]);
-		}
+		extend_glow_viewport(extent, { vertex.position[0], vertex.position[1], -vertex.position[2] }, projection, viewport[2], viewport[3]);
 	}
 	// Source optional glow/depth preparation may fail independently of the image
 	try {

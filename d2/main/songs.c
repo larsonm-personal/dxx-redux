@@ -27,6 +27,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "pstypes.h"
 #include "songs.h"
 #include "songlist_path.h"
+#ifdef DXX_XL_RUNTIME
+#include "resource_validation.h"
+#endif
 #include "d1_in_d2/d1_in_d2_presentation.h"
 #include "digi.h"
 #include "rbaudio.h"
@@ -174,6 +177,15 @@ void songs_init()
 	}
 
 	Num_bim_songs = i;
+#if defined(DXX_XL_RUNTIME) && defined(USE_SDLMIXER)
+	xl_apply_mission_music(&BIMSongs, &Num_bim_songs, fp ? PHYSFS_getRealDir(sng_file) : NULL,
+#ifdef __ANDROID__
+	                       android_music_get_prefer_mission_soundtrack()
+#else
+	                       1
+#endif
+	);
+#endif
 	Songs_initialized = 1;
 #if defined(__ANDROID__) || defined(ANDROID)
 	mission_music_names_load();
@@ -341,6 +353,11 @@ int songs_play_file(char *filename, int repeat, void (*hook_finished_track)(void
 	char *fptr = strrchr(filename, '.');
 
 	/* Resolve base songs by content without changing jukebox filesystem paths */
+#ifdef DXX_XL_RUNTIME
+	if (GameCfg.MusicType == MUSIC_TYPE_BUILTIN && xl_mission_music_path(filename, resource, sizeof(resource)))
+		filename = resource;
+	else
+#endif
 	if (GameCfg.MusicType == MUSIC_TYPE_BUILTIN &&
 		(d1_in_d2_presentation_resource(filename, resource, sizeof(resource)) || PHYSFSX_exists(filename, 1)))
 		filename = resource;
@@ -485,6 +502,9 @@ int songs_play_level_song( int levelnum, int offset )
 			if ((Num_bim_songs - SONG_FIRST_LEVEL_SONG) > 0)
 			{
 				songnum = SONG_FIRST_LEVEL_SONG + (songnum % (Num_bim_songs - SONG_FIRST_LEVEL_SONG));
+#ifdef DXX_XL_RUNTIME
+				songnum = xl_secret_music_slot(levelnum, songnum);
+#endif
 				if (songs_play_file(BIMSongs[songnum].filename, 1, NULL))
 				{
 					Song_playing = songnum;

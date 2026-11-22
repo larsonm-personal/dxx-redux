@@ -3,15 +3,45 @@
 ## November 21 phone playtest
 
 For a first session, use the APK and save from the same kit. The Android 14
-emulator reached both authored endings using the checkpoints below. Physical
-phone play is still awaiting a report.
+emulator reached both authored endings using the checkpoints below. A Samsung
+SM-S931U running the Play Store internal build 31950 (Android SDK 37) reported
+an exit after firing a missile in Mineral Valley level 2, **Crauphel Scilab**.
+The phone log shows Rookie, touch input and last sampled room 129. The
+report also covers music, loading times and briefing text. The supplied ending checkpoints still need a
+physical-phone report. [Phone report and reproduction](../ai%20tool%20plans/pumo_phone_feedback_20261121.md)
 
-| Session | Kit | Start and first action |
-| --- | --- | --- |
-| Short Kartsal ending | 32030 | Load `kartsal-final-checkpoint`, fly straight through the checkpoint aboard the Black Hole, then advance the score screen. |
-| Short Mineral Valley ending | 32080 | Load `mineral-ending`. The ship enters the exit as it resumes. Advance **Level 9 Complete** and read through the closing briefing. |
+To check the hub control, choose **Mission zip** as the music source. Start
+a new Pumo game at level 1. Time the resource check from difficulty selection
+to the first briefing page and the wait from the last page to flight. The
+briefing track is "Unveiling" and the hub track is "Alone - Ambient Remix".
+Fire one concussion missile straight ahead from spawn. Record whether the ship
+remains controllable after impact. For a legibility issue, include the line
+of text and whether it appeared in the briefing, over the mine or on a wall.
+
+For the missile and music retest, use the local 32121 APK. It installs as
+`com.dxxredux.app` alongside Play internal `com.dxxrevival.app`. In the test
+app, select your D2 data, import the original Pumo v1.1 archive and use a
+separate test pilot. For the reported shot choose **Rookie**, use touch,
+take the Mineral Valley entrance and enter Crauphel Scilab. Its mission
+track is "Initialization" by R.a.M. Land. Save in a
+separate slot on the approach to the room where the exit occurred. Fire a
+missile and check whether you can steer again. Load the saved approach and
+repeat. Record the missile type and the wall or doorway you aimed at. For a
+briefing contrast report, include the pictured scene or first few words.
+Keep **Show progress bars** enabled. On leaving level 1, time the interval
+from advancing the score screen until the next briefing appears and note
+which loading label you saw. Report 32121 with these observations.
+
+The Android 14 emulator reproduced the 32080 exit in room 129 by firing a
+concussion missile toward a nearby wall. Build 32121 passed the same shot
+before and after loading the pre-shot save. The phone retest is open.
+
+| Session                      | Kit   | Start and first action                                                                                                                                                                                 |
+| ---------------------------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Short Kartsal ending         | 32030 | Load `kartsal-final-checkpoint`, fly straight through the checkpoint aboard the Black Hole, then advance the score screen.                                                                             |
+| Short Mineral Valley ending  | 32080 | Load `mineral-ending`. The ship enters the exit as it resumes. Advance **Level 9 Complete** and read through the closing briefing.                                                                     |
 | Longer Mineral Valley flight | 32080 | Load `umbriel-blue` for the red-key grate and boss, or `mercury-arrival` for the full level. Make a manual save at a recognizable landmark, exit to the launcher, then use **Load Game** and continue. |
-| Start from the hub | 32080 | Start Pumo level 1 with a separate test pilot. Record which episode entrance you take. |
+| Start from the hub           | 32080 | Start Pumo level 1 with a separate test pilot. Record which episode entrance you take.                                                                                                                 |
 
 Check the kit's `manifest.json` for the APK and checkpoint digests. Follow its
 slot installer instructions if you use an earned save. Keep the supplied save

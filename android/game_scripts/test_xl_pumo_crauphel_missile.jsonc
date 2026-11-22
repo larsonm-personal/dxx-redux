@@ -1,0 +1,210 @@
+[
+    {
+        "_info": {
+            "games": ["d2"],
+            "_standalone": false,
+            "_owner": "test_xl_addon_import",
+        },
+    },
+    {
+        "action": "enter_game",
+        "game": "d2",
+    },
+    {
+        "action": "skip_intro",
+        "timeout_ms": 30000,
+    },
+    {
+        "action": "select",
+        "text": "player",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select",
+        "text": "New game",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select_mission",
+        "text": "Pumo Mines",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select",
+        "text": "Ok",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "select",
+        "text": "Rookie",
+        "timeout_ms": 15000,
+    },
+    {
+        "action": "skip_briefing",
+        "timeout_ms": 30000,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "in_game": true,
+            "game_window_is_front": true,
+            "xl_pilot.runtime_active": true,
+            "current_level_num": 1,
+        },
+        "timeout_ms": 30000,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "cheats_enabled": false,
+            "player.primary_weapon_flags": 1,
+            "player.laser_level": 0,
+        },
+    },
+    {
+        "action": "face_view",
+        "segment": 44,
+        "side": 2,
+        "distance": 12,
+    },
+    {
+        "action": "send_button",
+        "button": 100,
+        "held": 1,
+    },
+    {
+        "action": "wait_ms",
+        "ms": 1500,
+    },
+    {
+        "action": "send_button",
+        "button": 100,
+        "pressed": 0,
+    },
+    {
+        "action": "send_axis",
+        "axis": 1,
+        "axis_value": -1.0,
+    },
+    {
+        "action": "wait_ms",
+        "ms": 6000,
+    },
+    {
+        "action": "send_axis",
+        "axis": 1,
+        "axis_value": 0.0,
+    },
+    {
+        "action": "skip_briefing",
+        "timeout_ms": 120000,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "in_game": true,
+            "game_window_is_front": true,
+            "current_level_num": 2,
+        },
+        "timeout_ms": 120000,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "difficulty": 1,
+            "player.secondary_ammo[0]": 6,
+            "resolution.render_width": 640,
+            "resolution.render_height": 480,
+        },
+    },
+    {
+        "action": "face_view",
+        "segment": 129,
+        "side": 0,
+        "distance": 8,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "current_level_num": 2,
+            "game_window_is_front": true,
+            "player_dead": false,
+            "position.segment": 129,
+            "player.secondary_ammo[0]": 6,
+        },
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "quick_save",
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "console.lines": {
+                "contains": "Quick save complete",
+            },
+        },
+        "timeout_ms": 90000,
+    },
+    {
+        "action": "introspect",
+    },
+    {
+        "action": "send_button",
+        "button": 101,
+    },
+    {
+        "action": "wait_ms",
+        "ms": 3500,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "current_level_num": 2,
+            "game_window_is_front": true,
+            "player_dead": false,
+            "player.secondary_ammo[0]": 5,
+        },
+    },
+    {
+        "action": "introspect",
+    },
+    {
+        "action": "set_debug",
+        "field": "android_game_request",
+        "value": "quick_load",
+        "post_delay_ms": 1000,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "current_level_num": 2,
+            "game_window_is_front": true,
+            "player_dead": false,
+            "position.segment": 129,
+            "player.secondary_ammo[0]": 6,
+        },
+        "timeout_ms": 90000,
+    },
+    {
+        "action": "send_button",
+        "button": 101,
+    },
+    {
+        "action": "wait_ms",
+        "ms": 3500,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "current_level_num": 2,
+            "game_window_is_front": true,
+            "player_dead": false,
+            "player.secondary_ammo[0]": 5,
+        },
+    },
+    {
+        "action": "introspect",
+    },
+]

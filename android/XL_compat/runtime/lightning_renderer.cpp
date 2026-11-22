@@ -107,11 +107,7 @@ void xl_compat::draw_lightning_scene_item(const LightningSceneItem &item, Partic
 	std::array<int, 4> extent{ 32767, 32767, -32767, -32767 };
 	for (std::size_t i = 0; i < count; ++i) {
 		const auto &vertex = glow.vertices[i];
-		const auto projected = lightning_screen_point({ vertex[0], vertex[1], -vertex[2] }, projection, view[2], view[3]);
-		for (unsigned axis = 0; axis < 2; ++axis) {
-			extent[axis] = std::min(extent[axis], projected[axis]);
-			extent[axis + 2] = std::max(extent[axis + 2], projected[axis]);
-		}
+		extend_glow_viewport(extent, { vertex[0], vertex[1], -vertex[2] }, projection, view[2], view[3]);
 	}
 	const auto color = lightning_draw_color(item.color, true, random);
 	if (glow.distance_scale == 0) {
