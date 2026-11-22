@@ -1703,7 +1703,7 @@ std::string XlPreparedResources::prepare_vham(std::vector<unsigned char> bytes)
 	return hash;
 }
 
-XlPreparedResources::XlPreparedResources(const char *level_filename, const xl_compat::Inventory *level, int ordinal)
+void XlPreparedResources::check_selected_definitions()
 {
 	if (!mission_base) throw std::runtime_error("clean mission definitions are unavailable");
 	const auto counts_match = [](const MissionDefinitions &definitions) {
@@ -1711,6 +1711,11 @@ XlPreparedResources::XlPreparedResources(const char *level_filename, const xl_co
 	};
 	if (!counts_match(*mission_base) && !(prepared_resources && prepared_resources->state->installed && counts_match(prepared_resources->state->definitions)))
 		throw std::runtime_error("definition registry changed outside the owned mission resources");
+}
+
+XlPreparedResources::XlPreparedResources(const char *level_filename, const xl_compat::Inventory *level, int ordinal)
+{
+	check_selected_definitions();
 	state = std::make_unique<State>(*mission_base);
 	state->mission_hxm_robots = mission_hxm_robot_replacements;
 	prepare_level_resources(level_filename, level, ordinal, nullptr, nullptr);

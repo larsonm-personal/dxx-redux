@@ -89,6 +89,7 @@ class XlPreparedResources
 	XlPreparedResources(XlPreparedResources &&) noexcept;
 	XlPreparedResources &operator=(XlPreparedResources &&) noexcept;
 	~XlPreparedResources();
+	static void check_selected_definitions();
 	xl_assets::ObjectDependencies &dependencies();
 	std::string prepare_hxm(PHYSFS_file *file, bool *replaced_robots = nullptr);
 	bool mission_replaces_robots() const;

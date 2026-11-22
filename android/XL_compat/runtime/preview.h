@@ -39,6 +39,9 @@ int xl_classic_legacy_fans_active(void);
 void xl_preview_clear_mission(void);
 int xl_level_supported(const char *filename, int multiplayer);
 int xl_level_supported_at(const char *filename, int multiplayer, int ordinal);
+/* A synchronous new-game or level transition may carry its preflight through the briefing */
+int xl_prepare_level_transition(const char *filename, int multiplayer, int ordinal);
+void xl_clear_level_preflight(void);
 int xl_secret_restore_clock(int ordinal, int64_t saved_epoch, int64_t *clock);
 int xl_level_segment_group(int segment);
 /* Authored owner identity; -1 when no XL source segment is retained */

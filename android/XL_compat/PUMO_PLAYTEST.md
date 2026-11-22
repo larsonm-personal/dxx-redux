@@ -1,5 +1,25 @@
 # Original Pumo gameplay playtest
 
+## November 22 loading retest
+
+Build 32123 (`com.dxxredux.app`, SHA-256
+`8907d893bf5eb8fabe9d0bb1abebec8d0000c7fd84889c311a274f8100171fc0`)
+reuses the original Pumo level preparation after a briefing and keeps the
+moving loading bar visible while the native texture cache runs. The Android
+14 emulator passed hub to Crauphel, a missile shot in room 129, save, reload
+and another shot. [Local APK on the build machine](../../temp/xl-pumo-preflight-20261121/pumo-32123.apk)
+
+For a phone loading report, keep **Show progress bars** enabled. On Rookie,
+start the original Pumo Mineral Valley episode with touch input. Time from
+choosing difficulty to the first briefing, then from dismissing the last
+briefing page to flight. At the hub exit, time from advancing the score
+screen to the Crauphel briefing, and from dismissing that briefing to
+flight. Record the exact screen or label shown during each pause and whether
+the moving bar remained visible. Include build **32123**, phone, Android
+version and any difference after a save reload. This checks the two reported
+missing-bar gaps on a physical phone; the emulator screen capture verified
+the bar during texture caching after a briefing.
+
 ## November 21 phone playtest
 
 For a first session, use the APK and save from the same kit. The Android 14

@@ -3,8 +3,10 @@
 #ifdef __ANDROID__
 extern "C" {
 #include "android_loading_progress.h"
+#include "android_lifecycle_diagnostics.h"
 #include "android_profile.h"
 #include "android_log.h"
+#include "android_mission_assets.h"
 }
 #endif
 #include "slow_motion_runtime.h"
@@ -60,6 +62,7 @@ extern "C" {
 #include "../texture_change.h"
 #include "texture_brightness.h"
 #include <cstring>
+#include <cstdlib>
 #include <fstream>
 #include <iterator>
 #include <memory>
@@ -286,12 +289,33 @@ bool water_profile(const xl_compat::Bytes &bytes, bool multiplayer, bool water_e
 	return true;
 }
 
-// Only the pure level translation survives from preflight to load. Read the
-// current bytes again and independently validate mounted resources and graphics.
+#ifdef __ANDROID__
+struct PreparedTransition {
+	std::string filename, mission_key;
+	unsigned mission_generation;
+	uint64_t context_generation;
+	int ordinal;
+	std::unique_ptr<XlPreparedResources> resources;
+
+	bool matches(const char *level, int requested_ordinal) const
+	{
+		android_lifecycle_diagnostic_snapshot lifecycle;
+		android_lifecycle_diagnostics_get_snapshot(&lifecycle);
+		return ordinal == requested_ordinal && filename == level &&
+		       mission_key == android_mission_assets_key() &&
+		       mission_generation == android_mission_assets_generation() &&
+		       context_generation == lifecycle.context_generation;
+	}
+};
+#endif
+
 struct LevelTranslation {
 	xl_compat::Bytes bytes;
 	bool multiplayer, water_enabled, arena;
 	xl_compat::GameplayProbe probe;
+#ifdef __ANDROID__
+	std::unique_ptr<PreparedTransition> transition{};
+#endif
 };
 std::unique_ptr<LevelTranslation> preflight_translation;
 
@@ -670,9 +694,15 @@ extern "C" int xl_level_supported(const char *filename, int multiplayer)
 	return xl_level_supported_at(filename, multiplayer, 0);
 }
 
-extern "C" int xl_level_supported_at(const char *filename, int multiplayer, int ordinal)
+static int level_supported(const char *filename, int multiplayer, int ordinal, bool transition)
 {
 	rejection.clear();
+	// Only a successful check for the current transition can supply resources
+#ifdef __ANDROID__
+	if (preflight_translation) preflight_translation->transition.reset();
+#else
+	(void) transition;
+#endif
 	try {
 		validate_mission_context();
 		auto bytes = read_extended_level(filename);
@@ -686,14 +716,44 @@ extern "C" int xl_level_supported_at(const char *filename, int multiplayer, int 
 #endif
 		auto translation = translate_level(std::move(bytes), multiplayer != 0);
 		const auto &probe = translation->probe;
-		XlPreparedResources resources(filename, &probe.source, ordinal);
-		validate_requirements(probe.source, multiplayer != 0, translation->arena, resources.dependencies(), nullptr, nullptr, resources.has_scoped_textures(), resources.mission_replaces_robots());
+		auto resources = std::make_unique<XlPreparedResources>(filename, &probe.source, ordinal);
+		// Leave the prepared owner's dependency walk fresh for validation at load
+		auto dependencies = resources->dependencies();
+		validate_requirements(probe.source, multiplayer != 0, translation->arena, dependencies, nullptr, nullptr, resources->has_scoped_textures(), resources->mission_replaces_robots());
+#ifdef __ANDROID__
+		// Published mission contexts stay fixed for the lifetime of this activation
+		if (transition && !multiplayer && !GameArg.SysInputDemoNoRender &&
+		    *android_mission_assets_key() && *mission_resource_archive()) {
+			static const bool cleanup_registered = std::atexit(xl_clear_level_preflight) == 0;
+			if (cleanup_registered) {
+				android_lifecycle_diagnostic_snapshot lifecycle;
+				android_lifecycle_diagnostics_get_snapshot(&lifecycle);
+				translation->transition = std::make_unique<PreparedTransition>(PreparedTransition{
+				    filename, android_mission_assets_key(), android_mission_assets_generation(), lifecycle.context_generation, ordinal, std::move(resources) });
+			}
+		}
+#endif
 		preflight_translation = std::move(translation);
 		return 1;
 	} catch (const std::exception &error) {
 		rejection = std::string(filename) + "\n" + error.what();
 		return 0;
 	}
+}
+
+extern "C" int xl_level_supported_at(const char *filename, int multiplayer, int ordinal)
+{
+	return level_supported(filename, multiplayer, ordinal, false);
+}
+
+extern "C" int xl_prepare_level_transition(const char *filename, int multiplayer, int ordinal)
+{
+	return level_supported(filename, multiplayer, ordinal, true);
+}
+
+extern "C" void xl_clear_level_preflight(void)
+{
+	preflight_translation.reset();
 }
 
 extern "C" int xl_test_stop_after_level(void)
@@ -780,7 +840,7 @@ extern "C" int xl_classic_lighting_color(int vertex, float rgb[3])
 
 extern "C" void xl_preview_clear_mission(void)
 {
-	preflight_translation.reset();
+	xl_clear_level_preflight();
 	xl_slow_motion_reset();
 	xl_disarm_clear();
 	xl_countdown_clear();
@@ -946,7 +1006,16 @@ extern "C" int xl_preview_load_level_at(const char *filename, int ordinal)
 		auto translation = translate_level(std::move(bytes), (Game_mode & GM_MULTI) != 0);
 		const bool arena = translation->arena;
 		auto &probe = translation->probe;
-		auto resources = std::make_unique<XlPreparedResources>(filename, &probe.source, ordinal);
+		std::unique_ptr<XlPreparedResources> resources;
+#ifdef __ANDROID__
+		if (original && translation->transition && translation->transition->matches(filename, ordinal)) {
+			XlPreparedResources::check_selected_definitions();
+			resources = std::move(translation->transition->resources);
+			debug_log_force(DLOG_PROFILING, "XL reused prepared level resources: ordinal=%d file=%s", ordinal, filename);
+		}
+		translation->transition.reset();
+#endif
+		if (!resources) resources = std::make_unique<XlPreparedResources>(filename, &probe.source, ordinal);
 		validate_requirements(probe.source, (Game_mode & GM_MULTI) != 0, arena, resources->dependencies(), nullptr, nullptr, resources->has_scoped_textures(), resources->mission_replaces_robots());
 		if (original) {
 			if (!PHYSFS_mkdir("xl_preview_cache")) throw std::runtime_error("cannot create private pilot translation directory");

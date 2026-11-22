@@ -24,6 +24,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #endif
 
 #include "android_sound_trace.h"
+#include "android_loading_progress.h"
 #endif
 
 #include <stdio.h>
@@ -1009,6 +1010,11 @@ void LoadLevel(int level_num,int page_in_textures)
 	int d1_assets;
 	const int skip_level_presentation = newdemo_dump_active() || GameArg.SysInputDemoNoRender;
 #ifdef __ANDROID__
+	const int owns_loading_progress = !skip_level_presentation && !android_loading_progress_is_active();
+	if (owns_loading_progress) {
+		android_loading_progress_begin("Loading level", 0);
+		android_loading_progress_update("Loading level", 0, 0);
+	}
 	struct android_profile_level_load_metrics load_profile = { 0 };
 	const long long load_profile_start_us = android_profile_monotonic_us();
 	long long load_profile_phase_us = load_profile_start_us;
@@ -1139,6 +1145,9 @@ void LoadLevel(int level_num,int page_in_textures)
 #endif
 
 	if ( page_in_textures && !skip_level_presentation ) {
+#ifdef __ANDROID__
+		if (owns_loading_progress) android_loading_progress_update("Caching level textures", 0, 0);
+#endif
 		piggy_load_level_data();
 #ifdef OGL
 		ogl_cache_level_textures();
@@ -1193,6 +1202,7 @@ void LoadLevel(int level_num,int page_in_textures)
 	load_profile.total_us = load_profile_phase_us - load_profile_start_us;
 	android_profile_log_level_load("d2", Current_level_num, level_name,
 	                               Game_mode, &load_profile);
+	if (owns_loading_progress) android_loading_progress_end();
 #endif
 
 //	WIN(HideCursorW());
@@ -1956,7 +1966,7 @@ void AdvanceLevel(int secret_flag)
 		// The completed flyout may have replaced mission models with exit scenery
 		// Reload clean mission definitions before preflighting the committed travel
 		if (xl_progression) reset_level_robots_file();
-		if (!xl_level_supported_at(Level_names[Next_level_num - 1], Game_mode & GM_MULTI, Next_level_num)) {
+		if (!xl_prepare_level_transition(Level_names[Next_level_num - 1], Game_mode & GM_MULTI, Next_level_num)) {
 			nm_messagebox("Cannot continue to XL level", 1, TXT_OK, "%s", xl_level_rejection());
 			if (Game_wind) window_close(Game_wind);
 			return;
@@ -1971,6 +1981,7 @@ void AdvanceLevel(int secret_flag)
 #ifdef DXX_XL_RUNTIME
 		const int xl_reentered = xl_progression ? xl_mission_progress_reenter() : 0;
 		if (xl_reentered < 0) {
+			xl_clear_level_preflight();
 			nm_messagebox("Cannot revisit XL level", 1, TXT_OK, "%s", xl_mission_progress_error());
 			if (Game_wind) window_close(Game_wind);
 			return;
@@ -1978,6 +1989,9 @@ void AdvanceLevel(int secret_flag)
 		if (!xl_reentered)
 #endif
 			StartNewLevel(Next_level_num);
+#ifdef DXX_XL_RUNTIME
+		xl_clear_level_preflight();
+#endif
 #ifdef __ANDROID__
 		if (Game_mode & GM_MULTI_COOP)
 			COOPLOG("AdvanceLevel returned: game=d2 current=%d next=%d game_window=%d",
