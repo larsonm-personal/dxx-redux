@@ -65,15 +65,18 @@ The three bio/etomb archives require multiple segment behaviors and are a
 larger project. The 16 light-index bounds include truly out-of-range packed
 data and need a pinned source rule. The 34 missing advertised members include
 27 FFYL ordinals whose levelpack archive contains a descriptor but no FFYL
-HOG or RL2. Keep the separate `FFYL.rar` distribution separate while auditing
-the seven other missing members. Use one local gameplay worker, read its receipts,
+HOG or RL2. The [other seven](../XL_compat/evidence/gameplay-missing-seven-audit-20261123.json)
+were audited against their exact archives and original reference: four mission
+rejections and three missing advertised-member lookups, with no runnable-original
+recovery target. Keep the separate `FFYL.rar` distribution separate. Use one
+local gameplay worker, read its receipts,
 validate focused changes with Windows builds and exact archive replays, and
 use hosted Linux fork CI for routine cross-platform checks. Use the S21 for
 Android behavior. Keep private game assets, profiles, saves and logs off Git.
 
 ## Fork and handoff
 
-The ready-for-review personal-fork PRs #726-#738 are registered in
+The ready-for-review personal-fork PRs #726-#739 are registered in
 [stack 720](https://github.com/larsonm-personal/dxx-redux/stack/720), each
 based on its immediate predecessor. Check the final execution report for
 exact heads and CI results. The private XL workflow may skip a PR below the

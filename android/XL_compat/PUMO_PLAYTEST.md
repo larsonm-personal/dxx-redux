@@ -7,7 +7,7 @@ for the next physical-phone session. The ordinary universal APK is
 `com.dxxredux.app`, SHA-256
 `732981f93d7d30a4bb4039f0d237d269c83411ae70ddd1389797c4b9cc665bb7`.
 It keeps the original earned checkpoints with their individual digests. The
-APK and all 11 checkpoint digests match the local manifest. Version 32320
+APK and all 11 checkpoint digests match the local manifest. Version 32321
 was installed and hash-verified on SM-G996U (Android 15). The isolated diagnostic
 package passed the original Pumo Rookie hub-to-Crauphel 35-step route twice,
 including a room 129 missile before and after quickload. The ordinary package

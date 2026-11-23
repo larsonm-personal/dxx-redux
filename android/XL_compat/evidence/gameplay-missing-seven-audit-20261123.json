@@ -1,0 +1,56 @@
+{
+  "schema": 1,
+  "date": "2026-11-23",
+  "scope": "Seven non-FFYL advertised-file misses in the exact 95/120 current-head cohort; read-only original-archive member audit",
+  "reference": "all-startup-misses-reference-20261119.json",
+  "original_outcomes": {
+    "mission_rejected": 4,
+    "advertised_member_lookup_empty": 3,
+    "started_and_ran": 0
+  },
+  "cases": [
+    {
+      "id": "levelpack.7z/missions/danwentz/dffusion.mn2:1",
+      "original_observation": "mission_rejected",
+      "advertised_file": "dffusion.rl2",
+      "archive_member_audit": "No same-directory HOG; a different darkhorse/dffusion.hog contains dffusion.rl2."
+    },
+    {
+      "id": "levelpack.7z/missions/diedel/wfc.mn2:1",
+      "original_observation": "mission_rejected",
+      "advertised_file": "wfc.rl2",
+      "archive_member_audit": "No wfc.hog; same directory has wfc20.hog with wfc20.rl2."
+    },
+    {
+      "id": "levelpack.7z/missions/sidewinder/picasso.mn2:1",
+      "original_observation": "advertised_member_lookup_empty",
+      "advertised_file": "picasso.rl2",
+      "archive_member_audit": "Same-directory picasso.hog contains picaso.rl2, not advertised picasso.rl2."
+    },
+    {
+      "id": "levelpack.7z/missions/single/reflux.mn2:1",
+      "original_observation": "mission_rejected",
+      "advertised_file": "reflux.rl2",
+      "archive_member_audit": "No reflux HOG or standalone reflux.rl2 in the levelpack."
+    },
+    {
+      "id": "levels_multiplayer/dmentia2.zip/DMENTIA2.MN2:2",
+      "original_observation": "advertised_member_lookup_empty",
+      "advertised_file": "dmentia5.rl2",
+      "archive_member_audit": "DMENTIA2.HOG contains dmentia4.rl2, not advertised dmentia5.rl2."
+    },
+    {
+      "id": "levels_multiplayer/nocturnl.zip/d1nctrlnl.msn:1",
+      "original_observation": "mission_rejected",
+      "advertised_file": "d1nctrnl.rdl",
+      "archive_member_audit": "d1nctrnl.hog contains d1nctrnl.rdl; the original rejected this descriptor at mission selection."
+    },
+    {
+      "id": "levels_multiplayer/picasso.zip/Picasso.mn2:1",
+      "original_observation": "advertised_member_lookup_empty",
+      "advertised_file": "picasso.rl2",
+      "archive_member_audit": "picasso.hog contains picaso.rl2, not advertised picasso.rl2."
+    }
+  ],
+  "conclusion": "None of these seven is a runnable-original recovery target under the same distribution, ordinal and inputs. Do not alias a different author package or a misspelled HOG member into a census gain."
+}

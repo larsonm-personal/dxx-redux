@@ -40,15 +40,16 @@ are native log phase times, not human stopwatch times. See
 The latest ordinary test kit is version **32321**, package `com.dxxredux.app`,
 APK SHA-256 `732981f93d7d30a4bb4039f0d237d269c83411ae70ddd1389797c4b9cc665bb7`.
 It built for ARM64, ARMv7 and x86_64. Its 11 earned checkpoint files and the
-APK match the local manifest. This build adds a dark backing panel, amber fill
+APK match the local manifest. The ordinary APK installed on the S21 as
+version 32321; the installed APK SHA-256 matches that manifest. This build
+adds a dark backing panel, amber fill
 and white label to the Android loading indicator after the prior S21 capture
 showed the bar was present but difficult to see on the score art. Scoped
 Android quality, ktlint, the layout unit test and the three-ABI build passed.
 The protected S21 visual check awaits the device display: two initial attempts
 failed during import while the screen was off or showing NotificationShade;
 profile hashes restored after each. No gameplay conclusion was drawn from
-those attempts. The prior ordinary version 32320 was installed and hash-verified
-on the S21. That ordinary package had no active test pilot or manual save, so
+those attempts. The ordinary package had no active test pilot or manual save, so
 the checkpoint install dry run stopped at its documented prerequisite before
 writing. The private kits and saves remain in ignored `temp/`. After the
 earlier phone experiments, the S21's `stay_on_while_plugged_in` setting was
@@ -162,6 +163,14 @@ Of the 34 missing advertised members, **27** are FFYL ordinals advertised by
 descriptor but no matching FFYL HOG or RL2 members. A separate `FFYL.rar`
 exists on the build machine and remains a separate distribution, so none of
 those 27 was credited as a same-distribution engine pass.
+The other seven were checked against their exact archives and the pinned
+original-engine observations. Four were rejected at mission selection and
+three had no advertised member lookup; **none of the seven was a
+runnable-original case**. Two Picasso distributions contain `picaso.rl2`
+where their descriptors advertise `picasso.rl2`, while DMENTIA2 advertises
+`dmentia5.rl2` but its HOG contains `dmentia4.rl2`. These author-package
+mismatches remain in the denominator without a fabricated engine gain.
+[Seven-member audit](../XL_compat/evidence/gameplay-missing-seven-audit-20261123.json).
 
 | First-blocker category                         | Remaining / 1,654 |
 | ---------------------------------------------- | ----------------: |
@@ -213,12 +222,15 @@ and registered in [stack 720](https://github.com/larsonm-personal/dxx-redux/stac
 | [#736](https://github.com/larsonm-personal/dxx-redux/pull/736) | `3a0ac3e1a` | S21 report and 120-case census | 37 success, 6 skipped  |
 | [#737](https://github.com/larsonm-personal/dxx-redux/pull/737) | `a1209084b` | Bay32 source-identity proof    | CI pending             |
 | [#738](https://github.com/larsonm-personal/dxx-redux/pull/738) | `0de66ae13` | Loading indicator contrast     | CI pending             |
+| [#739](https://github.com/larsonm-personal/dxx-redux/pull/739) | this report commit | Execution and next tranche | CI pending |
 
 Fork workflow admission can skip private XL qualification below the native
 stack tip. The private smoke on #729 actually ran sampled and expanded
 readiness and passed. On #737, the private workflow admitted and completed
-both the fixed sample and expanded 64-case readiness jobs; its Linux tests
-were still running at this checkpoint. The #734 Windows build was cancelled
+both the fixed sample (**8/8 at 120 frames**) and expanded readiness
+(**64/64 at 120 frames**) jobs at the exact `a1209084b` head; its private Linux
+tests passed. Public Linux headed replay remained in progress at this checkpoint.
+The #734 Windows build was cancelled
 after its test steps passed in [run 45180936407, attempt 1](https://github.com/larsonm-personal/dxx-redux/actions/runs/45180936407/attempts/1);
 the targeted [attempt 2](https://github.com/larsonm-personal/dxx-redux/actions/runs/45180936407/attempts/2)
 succeeded. Final head checks and admission evidence must be updated here
