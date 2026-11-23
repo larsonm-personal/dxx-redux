@@ -276,6 +276,13 @@ static GameplayProbe prepare_probe(const Bytes &original, bool water_segments, i
 				patch(out, start + 1, object.reader_id, 1);
 				patch(out, start + 4, 0, 1); // Effect payload and enable state remain source-owned
 			}
+			if (object.reader_type == 0 && object.type == 255 &&
+			    (object.segment < 0 || std::size_t(object.segment) >= v.segments.size())) {
+				// XL deactivates invalid wall placeholders before object linking.
+				// The stock graph validator runs earlier and needs the same inactive slot.
+				patch(out, start, 255, 1);
+				patch(out, start + 3, 0, 1); // Unsupported authored movement has no payload
+			}
 		}
 	}
 	if (v.game_version >= 37) {

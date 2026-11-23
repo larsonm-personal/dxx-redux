@@ -488,6 +488,7 @@ static Inventory read_level_inventory(const Bytes &bytes, bool allow_classic)
 			Object o{};
 			o.source_offset = r.position();
 			o.type = r.u8();
+			o.reader_type = o.type;
 			o.id = r.u8();
 			o.control = r.u8();
 			o.movement = r.u8();
@@ -500,7 +501,11 @@ static Inventory read_level_inventory(const Bytes &bytes, bool allow_classic)
 				if (o.multiplayer) issue(out.unsupported, "multiplayer_only_object", i, std::to_string(o.multiplayer));
 			}
 			o.segment = r.s16();
-			require(o.segment >= 0 && o.segment < segment_count, "invalid object segment " + std::to_string(i));
+			const bool inactive_wall = (o.segment < 0 || o.segment >= segment_count) && o.type == 0 && modern_runtime_layout(out);
+			if (inactive_wall) {
+				issue(out.observations, "inactive_invalid_wall_object", i, "segment " + std::to_string(o.segment));
+				o.type = 255;
+			} else require(o.segment >= 0 && o.segment < segment_count, "invalid object segment " + std::to_string(i));
 			for (auto &v : o.position) v = r.s32();
 			for (auto &v : o.orientation) v = r.s32();
 			o.size = r.s32();
@@ -523,7 +528,7 @@ static Inventory read_level_inventory(const Bytes &bytes, bool allow_classic)
 			} else if (o.movement == 255 && o.control == 255 && o.type == 7 && o.render == 5) {
 				// Audited original powerup records: source warns and consumes no payload
 				issue(out.unsupported, "powerup_sentinel_controller", i, "movement/control 255 require runtime lifecycle qualification");
-			} else if (o.movement != 0) r.fail("unsupported movement layout " + std::to_string(o.movement) + " at object " + std::to_string(i));
+			} else if (o.movement != 0 && !inactive_wall) r.fail("unsupported movement layout " + std::to_string(o.movement) + " at object " + std::to_string(i));
 			switch (o.control) {
 				case 1:
 					for (int j = 0; j < 12; ++j) o.control_data.push_back(r.u8());
@@ -840,6 +845,7 @@ std::string inventory_json(const Inventory &v)
 		array_json(s, o.last_position);
 		s << ", \"size\": " << o.size << ", \"shields\": " << o.shields << ", \"contains_type\": " << o.contains_type << ", \"contains_id\": " << o.contains_id
 		  << ", \"contains_count\": " << o.contains_count;
+		if (o.reader_type >= 0 && o.reader_type != o.type) s << ", \"reader_type\": " << o.reader_type;
 		if (v.game_version == 40) s << ", \"multiplayer\": " << o.multiplayer;
 		if (o.render >= 8 || o.control == 17 || o.movement == 2 || (o.type >= 18 && o.type <= 20)) {
 			s << ", \"source_offset\": " << o.source_offset << ", \"source_end\": " << o.source_end
