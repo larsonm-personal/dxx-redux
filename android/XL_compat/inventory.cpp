@@ -629,7 +629,12 @@ static Inventory read_level_inventory(const Bytes &bytes, bool allow_classic)
 		for (auto &v : segments) v = r.s16();
 		for (auto &v : sides) v = r.s16();
 		for (int i = 0; i < count; ++i) {
-			require(segments[i] >= 0 && segments[i] < segment_count && sides[i] >= 0 && sides[i] < 6, "invalid reactor target");
+			if (segments[i] < 0 || segments[i] >= segment_count || sides[i] < 0 || sides[i] >= 6) {
+				require(modern_runtime_layout(out), "invalid reactor target");
+				issue(out.observations, "ignored_invalid_reactor_target", i,
+				      std::to_string(segments[i]) + "/" + std::to_string(sides[i]));
+				continue;
+			}
 			out.reactor_targets.push_back({ segments[i], sides[i] });
 		}
 	}

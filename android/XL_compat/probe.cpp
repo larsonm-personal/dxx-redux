@@ -206,11 +206,15 @@ static GameplayProbe prepare_probe(const Bytes &original, bool water_segments, i
 	};
 	rebase(27); // Legacy unused player block
 	for (std::size_t i = 0; i < 9; ++i) rebase(35 + i * 12);
-	// The classic reader does not apply XL CTriggerTargets::Check
-	// Translate only the inspected count, retaining the original input as evidence
+	// The classic reader does not apply XL CTriggerTargets::Check. Compact the
+	// inspected wall links into its fixed slots, retaining the original input.
 	if (modern_layout && v.reactor_authored_count != static_cast<int>(v.reactor_targets.size())) {
 		const auto reactor_offset = read_offset(out, new_game_offset + 35 + 5 * 12);
 		patch(out, reactor_offset, static_cast<int>(v.reactor_targets.size()), 2);
+		for (std::size_t i = 0; i < v.reactor_targets.size(); ++i) {
+			patch(out, reactor_offset + 2 + i * 2, v.reactor_targets[i][0], 2);
+			patch(out, reactor_offset + 22 + i * 2, v.reactor_targets[i][1], 2);
+		}
 	}
 	if (!v.matcens.empty()) {
 		// XL initializes producers in geometry order, then reads row i for maker i

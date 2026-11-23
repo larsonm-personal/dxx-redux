@@ -167,15 +167,25 @@ void reactor_count_contract()
 			auto bad = bytes;
 			if (count > 0)
 				for (int slot : { 0, std::min(count, 10) - 1 }) {
-					bad = bytes;
-					patch(bad, offset + 2 + slot * 2, 1, 2);
-					rejects([&] { xl_compat::inspect_level(bad); });
-					bad = bytes;
-					patch(bad, offset + 22 + slot * 2, 6, 2);
-					rejects([&] { xl_compat::inspect_level(bad); });
-					bad = bytes;
-					patch(bad, offset + 22 + slot * 2, 65535, 2);
-					rejects([&] { xl_compat::inspect_level(bad); });
+					for (int invalid : { 1, 6, 65535 }) {
+						bad = bytes;
+						patch(bad, offset + (invalid == 1 ? 2 : 22) + slot * 2, invalid, 2);
+						if (version < 21) {
+							rejects([&] { xl_compat::inspect_level(bad); });
+							continue;
+						}
+						const auto filtered = xl_compat::inspect_level(bad);
+						check(filtered.reactor_authored_count == count && filtered.reactor_targets.size() + 1 == decoded.reactor_targets.size(), "Invalid reactor link not filtered");
+						check(filtered.observations.size() == 1 && filtered.observations[0].feature == "ignored_invalid_reactor_target" && filtered.observations[0].record == slot, "Invalid reactor link observation lost");
+						const auto filtered_probe = xl_compat::prepare_gameplay_probe(bad);
+						const auto filtered_read32 = [&](std::size_t at) { unsigned n=0; for(int i=0;i<4;++i)n|=unsigned(filtered_probe.stock_level.at(at+i))<<(8*i); return n; };
+						const auto filtered_at = filtered_read32(filtered_read32(12) + 95);
+						check(filtered_probe.stock_level.at(filtered_at) == filtered.reactor_targets.size(), "Filtered reactor count not translated");
+						for (std::size_t i = 0; i < filtered.reactor_targets.size(); ++i) {
+							const auto read16 = [&](std::size_t at) { return int(filtered_probe.stock_level.at(at)) | (int(filtered_probe.stock_level.at(at + 1)) << 8); };
+							check(read16(filtered_at + 2 + i * 2) == filtered.reactor_targets[i][0] && read16(filtered_at + 22 + i * 2) == filtered.reactor_targets[i][1], "Filtered reactor links not compacted in stock shadow");
+						}
+					}
 				}
 			for (std::size_t end = offset; end < bytes.size(); ++end) {
 				bad = bytes;
