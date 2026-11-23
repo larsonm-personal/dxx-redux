@@ -23,15 +23,24 @@ entry, the bar disappeared during a remaining 2.6-second level-music start
 while **PREPARE FOR DESCENT** still showed. The nested texture-cache progress
 owner ended before the outer level load completed. Version 32322 keeps that
 owner active and changes the label to **STARTING LEVEL MUSIC**. Its S21 video
-shows the amber bar moving through that interval until flight. The ordinary
-package and the unidentified green page still need human play.
+shows the amber bar moving through that interval until flight. A protected
+ordinary-package S21 recording also shows the bar through **STARTING LEVEL
+MUSIC** immediately before Crauphel flight. This staged loose-HOG run leaves
+the reporter's original archive import and unidentified green page for human
+play.
 [Version 32322 recording receipt](../XL_compat/evidence/pumo-s21-loading-tail-32322-20261123.json).
 
 The original Mineral Valley briefing script has a plausible contrast
 candidate: the mainframe page beginning “And there it is!” requests bright
 green foreground (`96 255 96`) over a picture with green displays. The text
-box may overlap that imagery. The reporter has not identified this as the page
-they saw, so the ordinary-kit direction asks for its words or a screenshot.
+box may overlap that imagery. The reporter does not remember the page, so the
+ordinary-kit direction asks for its words or a screenshot only if it reappears.
+An inspection of the original `mv14b.pcx` artwork confirms green text on three
+monitors and a large green foreground character under the script's bright
+green foreground request. Its nearest palette entry to the requested text
+color is also present on 3,932 picture pixels. This strengthens the contrast
+hypothesis but does not establish which page the reporter saw.
+[Original script and artwork hashes](../XL_compat/evidence/pumo-briefing-green-candidate-20261123.json).
 
 ## Loading speed
 
@@ -45,6 +54,17 @@ and the original Pumo texture audit checked hashes and decoded pixels. These
 are native log phase times, not human stopwatch times. See
 [the scoped pipeline report](xl_pumo_s21_scoped_pipeline_20261123.md).
 
+The remaining wait has distinct phases. On the protected build 32322 S21 run,
+Crauphel's prebriefing resource check took **7.50 seconds**. After the last
+briefing page, native level loading took **5.88 seconds**, including **3.23
+seconds** caching textures and **1.33 seconds** starting level music. The hub's
+corresponding load took **8.32 seconds**, with **4.13 seconds** of textures and
+**2.54 seconds** of music. The first archive import also extracts a roughly
+1.56 GiB cache; that is separate from each level transition. The progress bar
+now spans these visible waits. These phase times come from the protected S21
+run, not a human stopwatch or the reporter's SM-S931U.
+[Build 32322 profiling receipt](../XL_compat/evidence/pumo-s21-loading-tail-32322-20261123.json).
+
 The latest ordinary test kit is version **32322**, package `com.dxxredux.app`,
 APK SHA-256 `057e01208c8fd26a87d8fcd835410c4646e5655b95b94d4626406e6e51e3b91c`.
 It built for ARM64, ARMv7 and x86_64. Its 11 earned checkpoint files and APK
@@ -55,11 +75,33 @@ showed poor contrast over score art. Version 32322 keeps the bar visible through
 level music startup. Both diagnostic and ordinary three-ABI APK builds passed.
 The protected S21 version 32322 run imported the original archive, completed
 35/35 gameplay actions including a room 129 concussion shot before and after
-quickload, and restored profile hashes. The ordinary package had no active
-test pilot or manual save, so its checkpoint install dry run stopped at the
-documented prerequisite before writing. The private kits and saves remain in
-ignored `temp/`. The S21's `stay_on_while_plugged_in` setting was restored to
-its original value 0 and read back as 0.
+quickload, and restored profile hashes. The ordinary package initially had no
+active test pilot or manual save, so its checkpoint install dry run stopped at
+the documented prerequisite. At the owner's request, I then staged verified
+retail data and the original Pumo HOG as a loose mission in the ordinary
+32322 package. On the same SM-G996U, Android 15, Rookie and 640 x 480, it
+passed **35/35** scripted steps: a concussion shot toward side 0 from room
+129, quickload, then the same shot. The app stayed in game and ammo fell from
+six to five both times. This covers the ordinary APK and its native S21
+renderer, but uses fixed-view gamepad injection and loose HOG content, not
+the reported human touch aim or the ordinary-package 7z import. ADB taps
+while automation held input did not consume a missile. After a fresh 31/31
+approach and quickload, with automation released, a double tap on the default
+look stick fired one Concussion missile through the ordinary touch overlay.
+At 1.83 seconds, the screenshot showed five missiles, shields 37, two lives
+and active Crauphel flight. The original human steering and impact remain
+unknown. The ordinary package's six original files were restored with a
+byte-identical backup archive. The same ordinary APK then passed a filmed
+35/35 hub-to-Crauphel route. Its 90.011-second private recording (SHA-256
+`dac2c91d5d78e531e644ddcbc8ae3ff8536bec1607f47333af29d3ada64dc94`)
+shows the progress bar at mission verification, both resource checks, level
+loading and **STARTING LEVEL MUSIC** at about 46 seconds, followed by
+Crauphel flight at about 47 seconds. After filming, its six original files
+again matched the before-run backup archive byte for byte.
+[Ordinary-package S21 receipt](../XL_compat/evidence/pumo-s21-ordinary-32322-20261123.json).
+The private kits, source data, saves and captures remain in ignored `temp/`.
+The S21's `stay_on_while_plugged_in` setting was restored to its original
+value 0 and read back as 0.
 
 ## Original XL census and cluster comparison
 
@@ -165,8 +207,14 @@ only binds objects after translated extended-level loads; classic levels pass
 through `prepare_classic_member` and the stock loader. The pinned XL reader
 uses those objects, so clearing the classic admission error alone would lose
 their behavior. The separately passing multiplayer archive is a different
-distribution. The next implementation needs a source-owned classic effect
-load and an original-cluster replay.
+distribution. Inspection of the exact original `standoff.rl2` found both
+objects at indices 51 and 52 with the implemented lightning shape; a direct
+runtime requirement walk then exposed an additional **7/31 serialization
+qualification** blocker. The native stock reader does not consume render-12
+payload bytes, while the existing translated probe rejects version 7. The next
+implementation needs an audited source-owned classic effect load, native
+object identity and save/load checks, and an original-cluster replay. No
+start was credited. [Exact original audit](../XL_compat/evidence/gameplay-levelpack-chaos-classic-effect-audit-20261123.json).
 
 The split-Anthology OOF blocker is also more specific than its first error.
 Six of its seven original model files overstate the TXTR chunk length by
@@ -258,9 +306,10 @@ and registered in [stack 720](https://github.com/larsonm-personal/dxx-redux/stac
 | [#737](https://github.com/larsonm-personal/dxx-redux/pull/737) | `a1209084b` | Bay32 source-identity proof    | 36 success, 7 skipped  |
 | [#738](https://github.com/larsonm-personal/dxx-redux/pull/738) | `0de66ae13` | Loading indicator contrast     | 36 success, 7 skipped  |
 | [#739](https://github.com/larsonm-personal/dxx-redux/pull/739) | `4eeb29e24` | Execution and next tranche    | 37 success, 6 skipped  |
-| [#740](https://github.com/larsonm-personal/dxx-redux/pull/740) | `c0c6100e9` | Robotless Subspace D3 + guard  | CI in progress         |
-| [#741](https://github.com/larsonm-personal/dxx-redux/pull/741) | `ffc59e1a0` | S21 execution and next tranche | CI in progress         |
-| [#742](https://github.com/larsonm-personal/dxx-redux/pull/742) | pending     | Loading bar through music      | CI pending             |
+| [#740](https://github.com/larsonm-personal/dxx-redux/pull/740) | `c0c6100e9` | Robotless Subspace D3 + guard  | 23 success, 15 skipped |
+| [#741](https://github.com/larsonm-personal/dxx-redux/pull/741) | `ffc59e1a0` | S21 execution and next tranche | 34 success, 9 skipped  |
+| [#742](https://github.com/larsonm-personal/dxx-redux/pull/742) | `f050a4ae2` | Loading bar through music      | 36 success, 7 skipped |
+| [#743](https://github.com/larsonm-personal/dxx-redux/pull/743) | `f68bfe4db` | S21 audit, ordinary touch and filmed loading | 36 success, 7 skipped before this report-only update |
 
 Fork workflow admission can skip private XL qualification below the native
 stack tip. The private smoke on #729 actually ran sampled and expanded
@@ -277,13 +326,46 @@ The first #740 private Linux run and one retry failed `xl_water_arena` at
 After the guard fix, the #740 exact-head private workflow reported success
 with native jobs intentionally skipped because #740 was below the native
 stack tip; its [admission log](https://github.com/larsonm-personal/dxx-redux/actions/runs/45218960729/job/137847672746)
-says so. The #741 private Linux owner is running at the fixed inherited head.
-The #740-#742 final checks still require an update here.
+says so. The #741 exact-head private Linux owner completed with 113 required
+XL tests, including `xl_water_arena`; the fixed sample was 8/8 and the
+expanded set was 64/64 at 120 frames. #741 public checks completed, including
+selected Android and JVM tests. The #742 exact-head private Linux owner also
+passed 113 required XL tests (including `xl_water_arena`), fixed 8/8 and
+expanded 64/64 original load/tick samples. Its first selected Android job
+completed the 151/151-step shareware scenario, but the emulator disappeared
+during the final recording listing (`adb: device 'emulator-5554' not found`).
+The retained [attempt 1 artifact](https://github.com/larsonm-personal/dxx-redux/actions/runs/45222810844/attempts/1)
+identifies this as a runner/device loss after gameplay; failed jobs were
+retried as attempt 2 on the same head and passed. Its public headed replay
+parity job also passed. The first #743 private exact-head workflow passed Linux
+tests, fixed 8/8 and expanded 64/64 original load/tick samples on
+`43a4f1c65`. Its public selected Android and JVM jobs passed: the Android game
+script completed 151/151 actions and JVM reported 1,325 passing tests with 12
+skipped. The first public #743 Linux-tests attempt failed before source tests
+because Gradle could not resolve the Kotlin 2.4.20 plugin; its retained host
+artifact records setup failure. Failed jobs were retried on the identical
+head in [attempt 2](https://github.com/larsonm-personal/dxx-redux/actions/runs/45229138155/attempts/2),
+which passed.
+
+The subsequent `f68bfe4db` #743 head documented the ordinary S21 touch and
+filmed loading checks. Its [private XL workflow](https://github.com/larsonm-personal/dxx-redux/actions/runs/45235143202)
+passed host tests with `attempted_tests: true`, fixed **8/8** and expanded
+**64/64** original load/tick cases at 120 frames. Its [public selected tests](https://github.com/larsonm-personal/dxx-redux/actions/runs/45235110960)
+passed five attempted Android tests, including **151/151** Descent 2 game
+actions; JVM ran **1,325 passing** tests with 12 declared fixture skips.
+The [ASan workload](https://github.com/larsonm-personal/dxx-redux/actions/runs/45235110704)
+ran D1 and D2 instrumented public cases and passed. The [public replay run](https://github.com/larsonm-personal/dxx-redux/actions/runs/45235110699)
+passed both headless and headed jobs: each ran 17 public scenes twice,
+**34/34** native runs per backend, and headed negative controls passed. The
+replay reports limit broader imported/paired simulation qualification; the
+passing checks do not claim full gameplay parity. All current #726-#743
+check lists were rechecked before this report-only update and contained only
+successes and intentional skips. This update creates a newer #743 commit;
+qualify that exact head separately before handoff.
 The #734 Windows build was cancelled
 after its test steps passed in [run 45180936407, attempt 1](https://github.com/larsonm-personal/dxx-redux/actions/runs/45180936407/attempts/1);
 the targeted [attempt 2](https://github.com/larsonm-personal/dxx-redux/actions/runs/45180936407/attempts/2)
-succeeded. Final head checks and admission evidence must be updated here
-after active runs complete. Leave all PRs open for review.
+succeeded. Leave all PRs open for review.
 
 ## Handoff
 

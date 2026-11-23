@@ -9,8 +9,14 @@ The reported failure was a missile shot in Crauphel Scilab, near room 129,
 on SM-S931U, Android SDK 37, Play internal build 31950. Record the missile,
 aim landmark, last successful action and whether saving before the shot,
 closing, loading and repeating produces the same exit. Preserve the original
-save. Fixed-pose and S21 automated shots passed, but neither reproduces human
-steering. This touch shot remains the first unresolved gameplay action.
+save. The ordinary kit 32322 passed 35/35 fixed-view S21 actions with a
+concussion shot before and after quickload; its app data was restored. The
+protected original-archive diagnostic route also passed. The ordinary S21
+test used the original loose HOG and did not cover its 7z import or mission
+track. An ADB-driven double tap on the ordinary touch overlay after automation
+ended consumed one Concussion missile and left the S21 in active flight after
+quickload. These fixed-view inputs do not reproduce human steering or the
+reported aim. That touch shot remains the first unresolved gameplay action.
 
 Keep **Show progress bars** enabled. Time difficulty selection to the first
 briefing, score-screen advance to the next briefing and final briefing-page
@@ -19,12 +25,23 @@ the bar moves and approximate elapsed time. The score-to-briefing and
 last-page-to-flight bars have an
 [S21 diagnostic visual witness](../XL_compat/evidence/pumo-s21-loading-tail-32322-20261123.json).
 Build 32322 retains the dark panel and high-contrast label and keeps the bar
-moving with **STARTING LEVEL MUSIC** through the gap seen on 32321. Check the
-same intervals on the ordinary phone kit. Ask for the first words or a screenshot
-of the green-on-green briefing page. Each report needs kit version, phone,
+moving with **STARTING LEVEL MUSIC** through the gap seen on 32321. A filmed
+S21 ordinary-kit run shows the bar through that music interval immediately
+before Crauphel flight. Check the same intervals on the reporter's phone. Ask
+for the first words or a screenshot
+of the green-on-green briefing page if it reappears; the reporter does not
+remember which page. Each report needs kit version, phone,
 Android version,
 difficulty, input method, episode, checkpoint, last successful action and
 save/load result.
+
+For speed work, keep the two waits separate. The protected build 32322 S21
+log measured Crauphel's prebriefing resource check at 7.50 seconds, split
+roughly between level preparation (3.71 seconds) and scoped images (3.78
+seconds). The postbriefing native load took 5.88 seconds, including 3.23
+seconds of texture caching and 1.33 seconds of synchronous music startup.
+Compare those phases on the ordinary phone report before selecting another
+optimization; retain the asset-generation identity and source-order checks.
 
 ## Independent engineering while waiting
 
@@ -50,9 +67,14 @@ two type-20 effect objects and two lightning payloads in a classic 7/31
 level. The original multiplayer Chaos Theory archive passing level 4 is a
 separate distribution. The existing lightning runtime binds translated
 extended levels; the classic stock-load path does not bind those objects.
-Prove a source-owned classic effect path, including native object identity and
-save/load, before changing admission. Then replay the exact levelpack cluster
-and record newly exposed blockers. The split-Anthology OOF cluster is a
+An [exact original audit](../XL_compat/evidence/gameplay-levelpack-chaos-classic-effect-audit-20261123.json)
+also exposed an unqualified 7/31 serialization pair. The native stock reader
+does not consume render-12 payloads, and the current translator rejects
+classic level version 7. Prove a source-owned classic effect path and its
+serialization, including native object identity and save/load, before changing
+admission. Then replay all six ordinals of the exact levelpack descriptor and
+record newly exposed blockers. Confirm an ordinary classic mission still uses
+the stock path. The split-Anthology OOF cluster is a
 separate lead: six original TXTR chunks overstate length, but bounded parser
 resynchronization exposed `GPNT`; gun-point and animation behavior remains
 unqualified. The [model audit](../XL_compat/evidence/gameplay-anthology-oof-audit-20261123.json)
@@ -83,7 +105,7 @@ Android behavior. Keep private game assets, profiles, saves and logs off Git.
 
 ## Fork and handoff
 
-The ready-for-review personal-fork PRs #726-#742 are registered in
+The ready-for-review personal-fork PRs #726-#743 are registered in
 [stack 720](https://github.com/larsonm-personal/dxx-redux/stack/720), each
 based on its immediate predecessor. Check the final execution report for
 exact heads and CI results. The private XL workflow may skip a PR below the
@@ -106,12 +128,16 @@ original `stay_on_while_plugged_in` value after phone experiments.
 > feedback on ordinary kit 32322. Record kit version, phone/Android version,
 > difficulty, input method, episode, checkpoint, last successful action and
 > save/load result. Reproduce the Crauphel Scilab room-129 human missile exit
-> with the same aim and missile; fixed-pose and automated S21 shots do not
-> close it. Check score-to-briefing and last-briefing-to-flight progress bars
-> separately and identify the green-on-green briefing page. While waiting,
+> with the same aim and missile; the ordinary 32322 S21 fixed-view touch
+> double tap fired successfully after quickload, but does not close the
+> reported human aim. Check score-to-briefing and
+> last-briefing-to-flight progress bars separately. If green-on-green text
+> reappears, capture its first words or a screenshot; the reporter does not
+> recall the original page. While waiting,
 > investigate a runnable-original XL entry from the measured 94/120 remaining
 > prior misses (94/1,654 if the prior 1,534 passes still hold), beginning with
-> levelpack Chaos Theory level 4 effect objects and lightning. Bay32's source
+> levelpack Chaos Theory level 4's classic 7/31 effect serialization, object
+> identity and lightning. Bay32's source
 > identity is resolved. Preserve
 > exact archive, ordinal and inputs;
 > replay the entire affected cluster and record newly exposed blockers. Use

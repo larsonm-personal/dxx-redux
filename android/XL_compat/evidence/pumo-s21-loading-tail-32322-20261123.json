@@ -32,6 +32,19 @@
     ],
     "comparison": "Version 32321 hid the bar after hub texture caching for about 2.6 seconds of level music startup; version 32322's S21 video shows the music phase with a moving bar."
   },
+  "measured_loading_phases": {
+    "private_log_sha256": "d0783879cf7f94c3c6a34f31c2d93b6d40a2468a4d5cf2c5112f05fc3353b1",
+    "unit": "microseconds, native profiling on this protected S21 run",
+    "hub_prebriefing_resources": 7337961,
+    "hub_level_load": 8321958,
+    "hub_level_load_textures": 4134696,
+    "hub_level_load_music": 2540867,
+    "crauphel_prebriefing_resources": 7498001,
+    "crauphel_level_load": 5879400,
+    "crauphel_level_load_textures": 3225681,
+    "crauphel_level_load_music": 1331084,
+    "interpretation": "Resource validation and scoped image preparation happen before the briefing. Texture caching and synchronous full-PCM level music startup happen after the last briefing page. These are distinct waits, not a single stopwatch interval."
+  },
   "ordinary_kit": {
     "version": 32322,
     "package": "com.dxxredux.app",

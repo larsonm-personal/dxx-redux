@@ -1,0 +1,60 @@
+{
+  "schema": 1,
+  "date": "2026-11-23",
+  "phone": {
+    "model": "SM-G996U",
+    "android_release": "15",
+    "serial_recorded_privately": true,
+    "stay_on_while_plugged_in_after": 0
+  },
+  "kit": {
+    "version_code": 32322,
+    "package": "com.dxxredux.app",
+    "apk_sha256": "057e01208c8fd26a87d8fcd835410c4646e5655b95b94d4626406e6e51e3b91c",
+    "source": "ordinary APK from the version 32322 phone kit"
+  },
+  "test": {
+    "episode": "Mineral Valley",
+    "level": "Crauphel Scilab, ordinal 2",
+    "difficulty": "Rookie",
+    "render_resolution": "640x480",
+    "input": "automated ordinary gamepad button 101 for secondary fire; fixed view pose, not human touch steering",
+    "checkpoint": "normal quicksave in room 129, then quickload",
+    "last_successful_action": "second concussion shot toward side 0 from eight units in room 129 after quickload",
+    "result": "PASS, 35/35 scripted steps; ammo 6 to 5 before and after quickload, app remained in game and player_alive was asserted",
+    "run_id": "2d81fe3cc4054aae88ed13e595c76b3b",
+    "duration_ms": 50107,
+    "mission_hog_sha256": "6e3e723e549897188a8fdc19db8b04630de9d428d2b31f8e3f48af108915b043",
+    "mission_source": "loose original HOG and companion resources staged in the ordinary package; the original 7z import and mission soundtrack on this package were not exercised by this run",
+    "automation_log_sha256": "c92ef69374ccc15208228e61d94d5c9630cbb4e12d2a99f5508362a816fdd71c"
+  },
+  "touch_followup": {
+    "screen_weapon_icon_tap": "did not consume a missile; the icon selects the weapon",
+    "during_automation_attempt": "A default look-stick double tap while the script still owned input did not consume a missile; its harness assertion failed with six remaining.",
+    "after_automation_result": "PASS: after a fresh 31/31-step scripted approach and quickload, two Android touchscreen taps on the default look stick fired one Concussion missile. A screenshot 1.83 seconds later showed ammo five, shields 37, two lives and active Crauphel flight; the game process remained alive.",
+    "after_automation_run_id": "80b65ae8317b487496f6ae62e12395b1",
+    "after_automation_log_sha256": "5dc225878b3ac55dea98e32a2de17fcfd350982ebd9659683366a333a0d93b5",
+    "after_touch_screenshot_sha256": "6eec593b0337813bce93a4bd9d7a6ee267a58a9337741d5235439be8fd586f17",
+    "interpretation": "The ordinary package's actual touch overlay fired successfully on the S21 at a fixed pose after quickload. The original human steering, missile aim and impact on the SM-S931U remain unknown."
+  },
+  "visual_loading_followup": {
+    "package": "same ordinary com.dxxredux.app version 32322",
+    "recording_sha256": "dac2c91d5d78e531e644ddcbc8ae3ff8536bec1607f47333af29d3ada64dc94",
+    "recording_duration_seconds": 90.011,
+    "recording_retention": "ignored temp on the build machine; no video or private assets committed",
+    "scripted_route": "35/35 steps through hub and Crauphel, 50389 ms",
+    "observations": [
+      "Amber bar and white label visible at mission verification and difficulty-to-hub resource checking (recording about 16 and 20 seconds).",
+      "Amber bar visible during hub level loading (about 24 seconds) and score-to-Crauphel resource checking (about 40-41 seconds).",
+      "At about 46 seconds the label reads STARTING LEVEL MUSIC above the visible amber bar, immediately before Crauphel flight at about 47 seconds."
+    ],
+    "scope": "S21 screen capture of a staged loose original HOG in the ordinary package; does not measure the reporter's SM-S931U or the first-time 7z import."
+  },
+  "profile_protection": {
+    "ordinary_before_tar_sha256": "d8828cbc8235ddfcbfd91b6618aac7c9ebdd68cf5df7d153b70b524ad46f515a",
+    "ordinary_after_tar_sha256": "d8828cbc8235ddfcbfd91b6618aac7c9ebdd68cf5df7d153b70b524ad46f515a",
+    "file_count": 6,
+    "restored": true,
+    "private_assets_saves_and_screen_captures": "retained only in ignored temp on the build machine"
+  }
+}
