@@ -1578,13 +1578,19 @@ void XlPreparedResources::prepare_scoped_textures(const xl_compat::Inventory &le
 	if (!state->banks) throw std::runtime_error("Scoped textures require retained native banks");
 	dependencies.require_owned_banks = true;
 	xl_collect_incoming_dependencies(level, false, dependencies);
+	xl_compat::ScopedTexturePreparationTiming *timing = nullptr;
 #ifdef __ANDROID__
 	const auto images_started = android_profile_monotonic_us();
+	xl_compat::ScopedTexturePreparationTiming texture_timing;
+	timing = &texture_timing;
 #endif
 	auto textures = std::make_unique<const xl_compat::ScopedTextureResources>(
-	    xl_compat::ScopedTextureResources::prepare(target, dependencies, ordinal, state->pog.get()));
+	    xl_compat::ScopedTextureResources::prepare(target, dependencies, ordinal, state->pog.get(), timing));
 #ifdef __ANDROID__
 	const auto playback_started = android_profile_monotonic_us();
+	debug_log_force(DLOG_PROFILING, "XL scoped image phases: ordinal=%d count=%zu headers_us=%lld reads_us=%lld decode_us=%lld shrink_us=%lld hash_us=%lld",
+	                ordinal, textures->images.size(), texture_timing.headers_us, texture_timing.reads_us, texture_timing.decode_us,
+	                texture_timing.shrink_us, texture_timing.hash_us);
 #endif
 	if (textures->texture_target)
 		con_printf(CON_NORMAL, "XL scoped textures: selected %u pixel target for %zu authored images\n", textures->texture_target, textures->images.size());
