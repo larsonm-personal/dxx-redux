@@ -482,15 +482,15 @@ void verify_depth_transfer()
 			glReadPixels(0, 0, 1, 1, GL_RGBA, GL_FLOAT, direct);
 			errors("Fog direct-depth sampling check");
 			diagnostics.direct_depth_bits = buffers.bits;
-			auto verify_direct = [](float observed, float expected, const char *stage) {
+			auto verify_direct = [](float observed, float expected, float tolerance, const char *stage) {
 #ifdef __ANDROID__
 				debug_log_force(DLOG_GRAPHICS, "[XL-FOG] direct depth %s bits=24 expected=%.9g observed=%.9g", stage, expected, observed);
 #endif
 				char message[160];
 				std::snprintf(message, sizeof(message), "XL fog depth check failed\n24-bit %s\nGot: %.9g\nExpected: %.9g\nRequired fog unavailable", stage, observed, expected);
-				require(std::abs(observed - expected) < .0001f, message);
+				require(std::abs(observed - expected) < tolerance, message);
 			};
-			verify_direct(direct[0], .625f, "sampling");
+			verify_direct(direct[0], .625f, .0001f, "sampling");
 			// A failed copy is not permission to omit depth. Qualify actual raster
 			// writes into the same texture before selecting direct scene rendering
 			glBindFramebuffer(GL_FRAMEBUFFER, buffers.depth_fbo);
@@ -504,7 +504,9 @@ void verify_depth_transfer()
 			draw(quad, 6);
 			glReadPixels(0, 0, 1, 1, GL_RGBA, GL_FLOAT, direct);
 			errors("Fog direct raster depth check");
-			verify_direct(direct[0], .5f, "raster");
+			// The S21 returns the adjacent 12-bit step for a rasterized 0.5 depth.
+			// Stay below two steps; direct sampling and the raster write still must work.
+			verify_direct(direct[0], .5f, 1.f / 2048.f, "raster");
 			direct_depth = true;
 			diagnostics.direct_depth = 1;
 		}
