@@ -26,6 +26,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "key.h"
 #include "gr.h"
 #include "../../android/XL_compat/briefing_color.h"
+#ifdef __ANDROID__
+#include "../../android/XL_compat/runtime/preview.h"
+#endif
 #include "mission.h"
 #include "../../android/app/src/main/cpp/shared/briefing_canvas.h"
 #include "palette.h"
@@ -1547,6 +1550,9 @@ void do_briefing_screens(char *filename, int level_num)
 		window_close(wind);
 		return;
 	}
+	#ifdef __ANDROID__
+	xl_briefing_progress_end();
+	#endif
 
 	// Stay where we are in the stack frame until briefing done
 	// Too complicated otherwise

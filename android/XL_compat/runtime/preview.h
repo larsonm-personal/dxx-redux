@@ -42,6 +42,11 @@ int xl_level_supported_at(const char *filename, int multiplayer, int ordinal);
 /* A synchronous new-game or level transition may carry its preflight through the briefing */
 int xl_prepare_level_transition(const char *filename, int multiplayer, int ordinal);
 void xl_clear_level_preflight(void);
+#ifdef __ANDROID__
+/* Keep the prepared XL transition visible until its first briefing page is ready. */
+void xl_briefing_progress_begin(void);
+void xl_briefing_progress_end(void);
+#endif
 int xl_secret_restore_clock(int ordinal, int64_t saved_epoch, int64_t *clock);
 int xl_level_segment_group(int segment);
 /* Authored owner identity; -1 when no XL source segment is retained */
