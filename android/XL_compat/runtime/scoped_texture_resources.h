@@ -1,11 +1,5 @@
 #ifndef DXX_XL_SCOPED_TEXTURE_RESOURCES_H
 #define DXX_XL_SCOPED_TEXTURE_RESOURCES_H
-#include "../scoped_texture_image.h"
-#include "../scoped_texture.h"
-#include "asset_dependencies.h"
-#include "pog_resources.h"
-#include "target_sources.h"
-#include "picosha2.h"
 #include <cstdio>
 #include <deque>
 #include <future>
@@ -14,6 +8,12 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include "../scoped_texture_image.h"
+#include "../scoped_texture.h"
+#include "asset_dependencies.h"
+#include "pog_resources.h"
+#include "target_sources.h"
+#include "picosha2.h"
 
 namespace xl_compat
 {
