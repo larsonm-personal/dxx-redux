@@ -1,0 +1,54 @@
+{
+  "schema": 1,
+  "date": "2026-11-23",
+  "criterion": "Exact advertised ordinal runs 120 unassisted simulation frames at 60 Hz with seed 1",
+  "id": "levels_multiplayer/subspace.7z/missions/diedel/d3/subspace.mn2:1",
+  "archive_sha256": "0572f4c9c38e7762eaec82ead1a0abff483060ccdbcbc027d36b22465ef5cf9e",
+  "descriptor_sha256": "38edaa85830cc72f1fd84a2b875b3257e906a584bde09ef836a9e7122e227c79",
+  "selected_hog_sha256": "9293ea0def3852f958507ea6b5ccefe25a9aa98bbd501bd8834e3857f6d5a3e9",
+  "level_sha256": "1cccc465972eb8c016ac4b274d600a724bcc5c7dcd5c6dda4b8c09940ec17a64",
+  "source": {
+    "descriptor_declares_custom_robots": true,
+    "hxm_members": 0,
+    "levels": 1,
+    "secret_levels": 0,
+    "level_version": 27,
+    "game_version": 40,
+    "segments": 758,
+    "robot_objects": 0,
+    "contained_robots": 0,
+    "robot_generators": 0,
+    "object_trigger_actions": 0,
+    "wall_trigger_actions": {
+      "named_sound_type_30": 28,
+      "other": 0
+    }
+  },
+  "pinned_original_observation": "started_and_ran",
+  "redux_before": "load_failed: mission declares custom robots, but no level HXM or validated mission robot replacements were found",
+  "cohort_binary_sha256": "ea441154fd60ebde26f9e18c1dabec21ef2e2a78999298371d09a01a648048ff",
+  "final_cluster_binary_sha256": "949d1cd3c330e4e63a0f261b95834e41623f518da69e994b7ebcb80c3ef435d7",
+  "catalog_sha256": "304660efeaa0626593cdfd652fb30302592679aa2066ad28b02b0267088fd531",
+  "candidate_cluster": {
+    "subspace": "loaded_ticked; 120 frames; xl_active=true",
+    "forest_control": "load_failed at the original custom-robot declaration because a robot generator is present"
+  },
+  "exact_120_case_cohort": {
+    "baseline_passed": 25,
+    "candidate_passed": 26,
+    "denominator": 120,
+    "candidate_remaining": 94,
+    "candidate_outcomes": {
+      "load_failed": 86,
+      "loaded_ticked": 26,
+      "simulation_failed": 4,
+      "timeout": 1,
+      "unsupported_format": 3,
+      "infrastructure_error": 0
+    },
+    "only_changed_case": "levels_multiplayer/subspace.7z/missions/diedel/d3/subspace.mn2:1",
+    "integrated_if_other_1534_unchanged": "1560/1654"
+  },
+  "retry": "Initial full-cohort attempt had 70 levelpack staging infrastructure errors after a Windows archive-cache rename sharing violation. Clean full-cohort retry had zero infrastructure errors and is the reported result.",
+  "limits": "Startup and 120 idle frames do not establish rendered sound parity, traversal or save/load behavior. The separate Forest package was a guard control, not a same-distribution gain."
+}
