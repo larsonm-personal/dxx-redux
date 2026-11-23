@@ -411,7 +411,21 @@ std::vector<xl_compat::ScopedTextureDoor> xl_pog_bind_animation(xl_pog_resources
 	std::map<int, int> owners;
 	const auto frames = [&](std::size_t row) { return resources.entries[row].frames; };
 	const auto effects = xl_compat::ScopedTexturePlayback::texture_effects(tables, bitmap_count, selected, {}, frames, owners);
-	const auto doors = xl_compat::ScopedTexturePlayback::wall_effects(tables, bitmap_count, selected, {}, frames, owners);
+	// The original loads replacement strips for all wall clocks, including clips
+	// that have no wall in this level. Bind only a retained first-frame strip;
+	// wall clips used by this level still require their actual door/blastable use.
+	auto wall_tables = tables;
+	for (int id = 0; id < tables.wall_clip_count; ++id) {
+		if (tables.wall_clips.count(id)) continue;
+		const auto &clip = tables.wall_clip_data[id];
+		if (clip.num_frames < 1 || clip.num_frames > MAX_CLIP_FRAMES) continue;
+		const int texture = clip.frames[0];
+		if (texture < 0 || texture >= tables.texture_count) continue;
+		if (!clocked.count(tables.texture_data[texture].index)) continue;
+		wall_tables.wall_clips.insert(id);
+		wall_tables.door_clips.insert(id);
+	}
+	const auto doors = xl_compat::ScopedTexturePlayback::wall_effects(wall_tables, bitmap_count, selected, {}, frames, owners);
 	std::map<int, xl_pog_bitmap> wall_aliases;
 	PogClockTables sprite_or_effect(tables);
 	sprite_or_effect.wall_clip_count = 0;

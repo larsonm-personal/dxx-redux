@@ -156,5 +156,31 @@ static void descriptor_door_view_controls()
 	require(xl_pog_install(nullptr) && !xl_pog_door_frames(0) && !xl_pog_side_frame(image.index, 0) &&
 	            gameplay_definitions() == definitions,
 	        "Packed wall strip survived retirement");
+	auto dormant_graph = graph;
+	dormant_graph.wall_clips.clear();
+	dormant_graph.door_clips.clear();
+	dormant_graph.blastable_clips.clear();
+	dormant_graph.other_wall_clips.clear();
+	Owner dormant(xl_pog_prepare_rgba({ image }, dormant_graph.resource_banks->bitmap_count()), xl_pog_free);
+	const auto dormant_plan = xl_pog_bind_animation(*dormant, dormant_graph, dormant_graph.resource_banks->bitmap_count());
+	require(dormant_plan.size() == 1 && dormant_plan[0].clip == 0 && xl_pog_count(dormant.get()) == int(aliases.size()) &&
+	            xl_pog_install(dormant.get()) && xl_pog_door_frames(0) == 16,
+	        "Unused original wall clock did not retain its qualified first-frame POG strip");
+	for (int bitmap : aliases)
+		require(xl_pog_side_frame(bitmap, 15) == xl_pog_side_frame(image.index, 15),
+		        "Unused original wall clock lost a POG frame alias");
+	require(xl_pog_install(nullptr) && !xl_pog_door_frames(0) && !xl_pog_side_frame(image.index, 0),
+	        "Unused original wall clock survived retirement");
+	auto unsupported_graph = dormant_graph;
+	unsupported_graph.wall_clips.insert(0);
+	unsupported_graph.other_wall_clips.insert(0);
+	Owner unsupported(xl_pog_prepare_rgba({ image }, unsupported_graph.resource_banks->bitmap_count()), xl_pog_free);
+	bool rejected_other_wall = false;
+	try {
+		xl_pog_bind_animation(*unsupported, unsupported_graph, unsupported_graph.resource_banks->bitmap_count());
+	} catch (const std::runtime_error &) {
+		rejected_other_wall = true;
+	}
+	require(rejected_other_wall, "Active unsupported wall use was mistaken for an unused original clock");
 	std::cout << "Packed wall strip: alias installation, independent pixel and collision phases, restore and retirement passed\n";
 }
