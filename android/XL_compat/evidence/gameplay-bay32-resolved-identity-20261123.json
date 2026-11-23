@@ -9,17 +9,26 @@
     "advertised_member": "missions/lotw/bay32.rdl",
     "advertised_member_sha256": "e43093837215f2a57b14fba9838321e02b2e49057737b3cda9de2f60a5530dd8",
     "original_engine_observation": "started_and_ran",
-    "current_engine_sha256": "696b4ce6e2de49b4067d552ccf262f1e18930049d2e4f9b00741b8b63424799e",
-    "current_results_sha256": "6cb83ccc0b83c892e671c40521977241c0f7dfb7aa8cfa57f882a818092c17c0",
-    "current_load_sha256": "f909fccf854ffa0b1d8d1ca8f7f5a05bf778c5aaa45e12cd4665ce2b015954df",
-    "current_proof": {
+    "prior_engine_sha256": "696b4ce6e2de49b4067d552ccf262f1e18930049d2e4f9b00741b8b63424799e",
+    "prior_results_sha256": "6cb83ccc0b83c892e671c40521977241c0f7dfb7aa8cfa57f882a818092c17c0",
+    "prior_load_sha256": "f909fccf854ffa0b1d8d1ca8f7f5a05bf778c5aaa45e12cd4665ce2b015954df",
+    "prior_proof": {
         "phase": "loaded_ticked",
         "frames": 120,
         "level_file": "missions/BAY32.rdl",
         "segments": 301,
         "xl_active": false
     },
-    "census_outcome": "simulation_failed",
-    "reason": "The readiness classifier requires the proof level_file string to equal the advertised basename after lowercase conversion. The staged mission search directory is prefixed in this proof. A byte-level engine load identity has not yet been added to the receipt.",
-    "classification": "Unresolved identity proof; retained in the 96/1654 projected misses despite 120 simulated frames. Do not infer a gameplay defect or count a gained start solely from the loose filename match."
+    "prior_census_outcome": "simulation_failed",
+    "reason": "The earlier classifier required the proof level_file string to equal the advertised basename after lowercase conversion. The staged mission search directory was prefixed in the engine proof.",
+    "validated_source_identity": {
+        "engine_sha256": "677bdad06afc0b8bace92e6026b01bbe2b8a3c4acb2f2c70013fcc966a6a3594",
+        "advertised_member_sha256": "e43093837215f2a57b14fba9838321e02b2e49057737b3cda9de2f60a5530dd8",
+        "staged_member_sha256": "e43093837215f2a57b14fba9838321e02b2e49057737b3cda9de2f60a5530dd8",
+        "engine_read_source_sha256": "e43093837215f2a57b14fba9838321e02b2e49057737b3cda9de2f60a5530dd8",
+        "resolved_level_file": "missions/BAY32.rdl",
+        "frames": 120,
+        "negative_control": "The same engine command failed during level load when the staged source file header was corrupted. Original archive bytes were not changed."
+    },
+    "classification": "25/120 prior misses now pass at 120 frames; Bay32 is the sole change from the prior current-head cohort. The conditional integrated result is 1559/1654."
 }

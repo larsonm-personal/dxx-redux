@@ -2195,6 +2195,18 @@ class ReadinessTests(unittest.TestCase):
         }
         self.assertEqual(readiness.classify(0, proof, "", case), "loaded_ticked")
         self.assertEqual(readiness.classify(0, {**proof, "mission": "SAMPLE"}, "", case), "loaded_ticked")
+        prefixed = {**proof, "level_file": "missions/TWO.rl2", "level_source_sha256": "a" * 64}
+        self.assertNotEqual(readiness.classify(0, prefixed, "", case), "loaded_ticked")
+        self.assertEqual(readiness.classify(0, prefixed, "", case, "a" * 64), "loaded_ticked")
+        self.assertNotEqual(readiness.classify(0, prefixed, "", case, "b" * 64), "loaded_ticked")
+        self.assertNotEqual(
+            readiness.classify(0, {**prefixed, "level_file": "other/TWO.rl2"}, "", case, "a" * 64),
+            "loaded_ticked",
+        )
+        self.assertNotEqual(
+            readiness.classify(0, {**prefixed, "level_file": "missions/WRONG.rl2"}, "", case, "a" * 64),
+            "loaded_ticked",
+        )
         self.assertNotEqual(readiness.classify(0, {**proof, "mission": None}, "", case), "loaded_ticked")
         for key, value in (("frames", 0), ("mission", "wrong"), ("level", 1), ("assisted", True)):
             self.assertNotEqual(readiness.classify(0, {**proof, key: value}, "", case), "loaded_ticked")

@@ -105,7 +105,7 @@ def summarize(work, catalog_path, *, require_full_inventory=False, expected_targ
         proof_path = directory / "load.json"
         proof = read(proof_path) if proof_path.exists() else {}
         if row["outcome"] == "loaded_ticked":
-            if readiness.classify(0, proof, "", cases[row["id"]]) != "loaded_ticked":
+            if readiness.classify(0, proof, "", cases[row["id"]], row.get("staged_level_sha256")) != "loaded_ticked":
                 raise ValueError(f"Missing 120-frame proof at index {index}")
             continue
         path = directory / "engine.log"

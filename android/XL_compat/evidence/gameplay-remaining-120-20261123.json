@@ -7,25 +7,25 @@
         "missed": 120
     },
     "current_cohort": {
-        "passed": 24,
+        "passed": 25,
         "denominator": 120,
-        "remaining": 96
+        "remaining": 95
     },
     "integrated_if_other_1534_unchanged": {
-        "passed": 1558,
+        "passed": 1559,
         "denominator": 1654,
-        "remaining": 96
+        "remaining": 95
     },
     "identity": {
-        "target_commit": "f25069202",
-        "engine_sha256": "696b4ce6e2de49b4067d552ccf262f1e18930049d2e4f9b00741b8b63424799e",
+        "target_basis": "local candidate based on 3a0ac3e1a",
+        "engine_sha256": "677bdad06afc0b8bace92e6026b01bbe2b8a3c4acb2f2c70013fcc966a6a3594",
         "catalog_sha256": "304660efeaa0626593cdfd652fb30302592679aa2066ad28b02b0267088fd531"
     },
     "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
     "outcomes": {
         "load_failed": 87,
-        "loaded_ticked": 24,
-        "simulation_failed": 5,
+        "loaded_ticked": 25,
+        "simulation_failed": 4,
         "timeout": 1,
         "unsupported_format": 3
     },
@@ -39,7 +39,6 @@
         "Lightning effects": 5,
         "Non-hexahedral geometry": 4,
         "OOF model decoding": 4,
-        "Resolved level filename differs": 1,
         "Robot definitions": 3,
         "Robot fire killed the idle pilot": 4,
         "Segment flags": 1,
@@ -58,6 +57,7 @@
         "levelpack.7z/missions/diedel/playgdxl.mn2:1",
         "levelpack.7z/missions/diedel/ptech-d3.mn2:1",
         "levelpack.7z/missions/diedel/toxic-d3.mn2:1",
+        "levelpack.7z/missions/lotw/bay32.msn:1",
         "levelpack.7z/missions/sirius/antho1-3.mn2:1",
         "levelpack.7z/missions/sirius/antho1-3.mn2:3",
         "levels/kore.zip/kore/kore.mn2:1",
@@ -124,6 +124,11 @@
         {
             "id": "levelpack.7z/missions/diedel/toxic-d3.mn2:1",
             "baseline_first_blocker": "Animated replacement textures",
+            "current_first_blocker": "passed"
+        },
+        {
+            "id": "levelpack.7z/missions/lotw/bay32.msn:1",
+            "baseline_first_blocker": "Resolved level filename differs",
             "current_first_blocker": "passed"
         },
         {
@@ -207,10 +212,20 @@
             "current_first_blocker": "passed"
         }
     ],
+    "bay32": {
+        "id": "levelpack.7z/missions/lotw/bay32.msn:1",
+        "advertised_member_sha256": "e43093837215f2a57b14fba9838321e02b2e49057737b3cda9de2f60a5530dd8",
+        "staged_member_sha256": "e43093837215f2a57b14fba9838321e02b2e49057737b3cda9de2f60a5530dd8",
+        "engine_read_source_sha256": "e43093837215f2a57b14fba9838321e02b2e49057737b3cda9de2f60a5530dd8",
+        "resolved_level_file": "missions/BAY32.rdl",
+        "frames": 120,
+        "negative_control": "Corrupting the staged level header made the same engine command fail at level load"
+    },
     "notes": [
-        "All 120 original missed IDs were replayed with the same advertised distribution, ordinal, and unassisted input criterion.",
-        "The private original archives and individual process logs remain on the build machine.",
+        "All 120 prior missed IDs were replayed with the same original archive, ordinal, and unassisted input criterion.",
+        "Bay32 is the sole changed outcome from the immediately preceding 120-case run.",
+        "The private original archives, negative-control copies, and individual process logs remain on the build machine.",
         "This targeted replay does not rerun the 1534 baseline passes; the integrated total is conditional.",
-        "The effect-object and additive-wall labels use the preserved private logs where the generic classifier was too coarse."
+        "The effect-object and additive-wall labels use preserved private logs where the generic classifier was too coarse."
     ]
 }
