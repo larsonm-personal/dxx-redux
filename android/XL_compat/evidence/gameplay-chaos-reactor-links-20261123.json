@@ -1,0 +1,38 @@
+{
+  "schema": "xl-original-reactor-links-v1",
+  "date": "2026-11-23",
+  "archive": "levels_multiplayer/chaos-theory-xl.7z",
+  "archive_sha256": "5cbe34d9ff56bace946f1ec5c51c3dfdd3f24da2bddc2c165f6e3b16f657c73e",
+  "mission": "missions/darkflamewolf/ctheo-xl.mn2",
+  "distribution": "unchanged original archive; same ordinal and unassisted inputs in both runs",
+  "criterion": "level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+  "baseline": {
+    "engine_sha256": "7622e26063e0e3e74524adf01a77faecb861f3ed7469c3ff9f2b8f05d65e1bbe",
+    "results_sha256": "97d71fdfab21c63bc0b310c6bcb805382003a333618cc38c30da18d10c5daeed",
+    "passed": 3,
+    "denominator": 6
+  },
+  "candidate": {
+    "engine_sha256": "a156745c7d7d3d916631069bd8c46f7a5276b93f94cba1ee65cc1d6e7105807e",
+    "results_sha256": "9e6c362cbbf7ae0d3dbba34b5a4df7b35e6a236f31405673fc6ecb40424c98c7",
+    "passed": 6,
+    "denominator": 6
+  },
+  "levels": [
+    { "ordinal": 1, "file": "catalyst.rl2", "before": "loaded_ticked", "after": "loaded_ticked" },
+    { "ordinal": 2, "file": "initiati.rl2", "before": "load_failed", "after": "loaded_ticked", "authored_links": [[0, 0], [88, -1]], "ignored_links": [[88, -1]] },
+    { "ordinal": 3, "file": "unbridle.rl2", "before": "loaded_ticked", "after": "loaded_ticked" },
+    { "ordinal": 4, "file": "standoff.rl2", "before": "loaded_ticked", "after": "loaded_ticked" },
+    { "ordinal": 5, "file": "brekthru.rl2", "before": "load_failed", "after": "loaded_ticked", "authored_links": [[0, -1], [-256, -1]], "ignored_links": [[0, -1], [-256, -1]] },
+    { "ordinal": 6, "file": "clminate.rl2", "before": "load_failed", "after": "loaded_ticked", "authored_links": [[-1, -256], [0, -1], [-1, 1535]], "ignored_links": [[-1, -256], [0, -1], [-1, 1535]] }
+  ],
+  "interpretation": "Only geometric wall links are placed in the classic reactor shadow. Invalid authored links remain in the original archive and are reported as observations. Redux's native reactor wall dispatch already requires geometric links. This 120-frame start criterion does not establish reactor destruction or door-opening behavior.",
+  "validation": ["xl_inventory_test", "Windows d2 headless-route build", "entire original six-level archive replay"],
+  "aggregate_projection": {
+    "reference": "gameplay-census-integrated-20261120.json",
+    "original_baseline": "1534/1654",
+    "after_prior_pog_and_antho_layers": "1550/1654",
+    "with_this_cluster_if_no_other_changes": "1553/1654",
+    "not_a_full_census_rerun": true
+  }
+}
