@@ -1,5 +1,15 @@
 #ifndef DXX_XL_SCOPED_TEXTURE_RESOURCES_H
 #define DXX_XL_SCOPED_TEXTURE_RESOURCES_H
+#ifdef min
+#pragma push_macro("min")
+#undef min
+#define DXX_XL_RESTORE_MIN
+#endif
+#ifdef max
+#pragma push_macro("max")
+#undef max
+#define DXX_XL_RESTORE_MAX
+#endif
 #include <cstdio>
 #include <deque>
 #include <future>
@@ -14,6 +24,14 @@
 #include "pog_resources.h"
 #include "target_sources.h"
 #include "picosha2.h"
+#ifdef DXX_XL_RESTORE_MAX
+#pragma pop_macro("max")
+#undef DXX_XL_RESTORE_MAX
+#endif
+#ifdef DXX_XL_RESTORE_MIN
+#pragma pop_macro("min")
+#undef DXX_XL_RESTORE_MIN
+#endif
 
 namespace xl_compat
 {
