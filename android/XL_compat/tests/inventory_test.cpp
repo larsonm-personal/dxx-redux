@@ -514,6 +514,30 @@ void teleport_inventory_contract()
 	}
 }
 
+void open_wall_invalid_target_contract()
+{
+	for (const int version : { 15, 17, 23 }) {
+		auto bytes = fixture(version);
+		const auto inventory = xl_compat::inspect_level(bytes);
+		const auto section = std::find_if(inventory.sections.begin(), inventory.sections.end(), [](const xl_compat::Section &s) { return s.name == "triggers"; });
+		check(section != inventory.sections.end(), "missing fixture trigger section");
+		const auto offset = static_cast<std::size_t>(section->offset);
+		bytes.insert(bytes.begin() + offset, 52, 0);
+		patch(bytes, inventory.game_offset + 75, 1);
+		patch(bytes, offset, 9, 1);
+		patch(bytes, offset + 2, 2, 1);
+		patch(bytes, offset + 12, 0xffff, 2);
+		patch(bytes, offset + 32, 2, 2);
+		const auto decoded = xl_compat::inspect_level(bytes);
+		check(decoded.triggers.size() == 1 && decoded.triggers[0].targets == std::vector<std::array<int, 2>>{ { 0, 0 } },
+		      "Open-wall trigger did not retain its valid target after the invalid link");
+		check(std::any_of(decoded.observations.begin(), decoded.observations.end(), [](const xl_compat::Issue &issue) {
+			      return issue.feature == "ignored_invalid_open_wall_target" && issue.detail == "link 0 -1/2";
+		      }),
+		      "Dropped open-wall link lost its source observation");
+	}
+}
+
 void object_trigger_inventory_contract(const char *directory = nullptr)
 {
 	for (const int profile : { 15, 17, 23, 34 }) {
@@ -568,6 +592,16 @@ void object_trigger_inventory_contract(const char *directory = nullptr)
 		check(decoded.object_trigger_records[2].action.type == 31 && decoded.object_trigger_records[2].action.value == 5 * 65536 && decoded.object_trigger_records[2].action.time == 1000, "inspection normalized authored object fields");
 		check(decoded.object_trigger_records[1].previous == (version == 23 ? -1 : 32767) && decoded.object_trigger_records[1].next == (version == 23 ? -1 : -2), "legacy inert links changed");
 		check(decoded.object_trigger_heads.size() == (version == 15 ? 700u : 0u) && decoded.object_trigger_sparse_heads.size() == (version == 17 ? 2u : 0u), "reference layout changed");
+		auto invalid_open = bytes;
+		patch(invalid_open, trigger + 4 + 53, 9, 1);
+		patch(invalid_open, trigger + 4 + 53 + 13, 0xffff, 2);
+		patch(invalid_open, trigger + 4 + 53 + 33, 2, 2);
+		const auto normalized_open = xl_compat::inspect_level(invalid_open);
+		check(normalized_open.object_trigger_records[1].action.targets.empty(), "object open-wall retained an invalid target");
+		check(std::any_of(normalized_open.observations.begin(), normalized_open.observations.end(), [](const xl_compat::Issue &issue) {
+			      return issue.feature == "ignored_invalid_open_wall_target" && issue.record == 1 && issue.detail == "link 0 -1/2";
+		      }),
+		      "object open-wall lost its dropped target observation");
 		const auto report = xl_compat::compatibility_json("objects.rl2", bytes);
 		check(feature_row(report, "attached_trigger_count").find("\"count\": 3") != std::string::npos, "decoded object count remains unknown");
 		check(feature_row(report, "object_triggers").find("\"status\": \"blocked\"") != std::string::npos && !xl_compat::runtime_blockers(decoded).empty(), "parsing enabled unverified object events");
@@ -1655,6 +1689,7 @@ int main(int argc, char **argv)
 		version_23_contract();
 		serialization_17_contract();
 		teleport_inventory_contract();
+		open_wall_invalid_target_contract();
 		trigger_chain_inventory_contract();
 		object_trigger_inventory_contract();
 		feature_contract();

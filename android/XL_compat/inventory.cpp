@@ -239,6 +239,15 @@ Trigger read_trigger(Reader &r, Inventory &out, int index, int segment_count, bo
 	for (auto &v : sides) v = r.s16();
 	const std::string prefix = attached ? "object_" : "";
 	for (int j = 0; j < count; ++j) {
+		// D2X-XL's target reader drops invalid wall links before an open-wall
+		// action can run, including object-attached open-wall actions. Preserve
+		// the source in the archive and keep the remaining targets in order.
+		if (t.type == 9 && sides[j] >= 0 &&
+		    (segments[j] < 0 || segments[j] >= segment_count || sides[j] >= 6)) {
+			issue(out.observations, "ignored_invalid_open_wall_target", index,
+			      "link " + std::to_string(j) + " " + std::to_string(segments[j]) + "/" + std::to_string(sides[j]));
+			continue;
+		}
 		// Object teleports use only the segment; their serialized side is inert
 		if (attached && t.type == 14) require(segments[j] >= 0 && segments[j] < segment_count, "invalid object action destination " + std::to_string(index));
 		else if (attached && t.type == 26 && j == 0) require(segments[j] < segment_count, "invalid spawn-bot selection destination " + std::to_string(index));

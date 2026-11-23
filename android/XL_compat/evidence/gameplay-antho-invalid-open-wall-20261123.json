@@ -1,0 +1,58 @@
+{
+    "schema": "dxx-xl-antho-open-wall-cluster-20261123-v1",
+    "date": "2026-11-23",
+    "criterion": "Select the exact advertised level from the original archive and tick 120 unassisted simulation frames. This does not establish campaign completion or ordinary-input playability.",
+    "distribution": "missions/d2xxl_downloads/levelpack.7z",
+    "distribution_sha256": "b4b519dc5755b795fd49cc3786a0421b96cd099dcc8f002925ddfd7c038b2719",
+    "input_provenance": "byte-identical original archive",
+    "baseline_engine_sha256": "b8c465a42531682c0b9b91fc39796dd8ea4524a0e048bfeae0f0189fbdb47e39",
+    "candidate_engine_sha256": "346aa5a325b281b96ca9a3019e241a0d8bbfd616c05f980efd6",
+    "baseline_results_sha256": "28cc76e583c232232927028d6456935bf70b61ad4c7c1aabe7662e023b668db4",
+    "candidate_results_sha256": "83f6dde510cd7e8a9f0a319999fc34407099c22f7d0f4a1dca8325c4e8b9c58c",
+    "source_reference": "Original D2X-XL CTriggerTargets::Check drops invalid wall links; CTrigger::Read applies Check to object triggers. Source reviewed in temp/d2x-xl-reference/main/trigger.cpp, not copied into Git.",
+    "authored_target": "Level 3 object-attached OPEN_WALL trigger record 6 on object 65 has four positive-side links with segment -1. The candidate ignores those invalid links, records each one, and retains any valid links in source order.",
+    "comparison": {
+        "cluster_baseline_starts": 1,
+        "cluster_candidate_starts": 2,
+        "cluster_denominator": 3,
+        "new_starts": 1,
+        "integrated_windows_baseline_starts": 1534,
+        "integrated_denominator": 1654,
+        "prior_pog_layer_projected_starts": 1549,
+        "candidate_projected_starts_if_other_clusters_unchanged": 1550,
+        "candidate_projected_remaining_if_other_clusters_unchanged": 104,
+        "full_census_rerun": false
+    },
+    "rows": [
+        {
+            "case": "levelpack.7z/missions/sirius/antho1-3.mn2:1",
+            "level_file": "antho-d1.rl2",
+            "original_observation": "started_and_ran",
+            "baseline_outcome": "load_failed",
+            "baseline_first_blocker": "object triggers at record 0: spawn-bot action requires a robot boss owner",
+            "candidate_outcome": "load_failed",
+            "candidate_frames": 0,
+            "candidate_first_blocker": "object triggers at record 0: spawn-bot action requires a robot boss owner"
+        },
+        {
+            "case": "levelpack.7z/missions/sirius/antho1-3.mn2:2",
+            "level_file": "antho-d2.rl2",
+            "original_observation": "started_and_ran",
+            "baseline_outcome": "loaded_ticked",
+            "baseline_first_blocker": null,
+            "candidate_outcome": "loaded_ticked",
+            "candidate_frames": 120,
+            "candidate_first_blocker": null
+        },
+        {
+            "case": "levelpack.7z/missions/sirius/antho1-3.mn2:3",
+            "level_file": "antho-d3.rl2",
+            "original_observation": "started_and_ran",
+            "baseline_outcome": "load_failed",
+            "baseline_first_blocker": "invalid trigger target 6",
+            "candidate_outcome": "loaded_ticked",
+            "candidate_frames": 120,
+            "candidate_first_blocker": null
+        }
+    ]
+}
