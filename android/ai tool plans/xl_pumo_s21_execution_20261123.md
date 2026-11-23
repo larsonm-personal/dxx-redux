@@ -65,16 +65,33 @@ XL entries add two; an inert Anthology powerup action adds one; and the
 byte-identical Playground HOG in the separate levelpack distribution adds
 one; Bay32's resolved source identity adds one. A current-head targeted rerun
 of **all 120 exact previously missed IDs**
-measured **25/120** new passing starts and **95/120** still blocked. This
-supports **1,559/1,654**, with **95/1,654** remaining, provided the 1,534
+measured **25/120** new passing starts and **95/120** still blocked at #737.
+The subsequent robotless Subspace D3 fix repeated that exact cohort with the
+same catalog and inputs: **26/120** now pass and **94/120** remain. This
+supports **1,560/1,654**, with **94/1,654** remaining, provided the 1,534
 prior passes still pass. It is **not a complete 1,654-start census rerun**.
 The rerun preserved original distributions, advertised ordinals and unassisted
 inputs. Its catalog SHA-256 is
 `304660efeaa0626593cdfd652fb30302592679aa2066ad28b02b0267088fd531`;
-the route engine SHA-256 is
+the #737 route engine SHA-256 is
 `677bdad06afc0b8bace92e6026b01bbe2b8a3c4acb2f2c70013fcc966a6a3594`.
-All 25 passing receipts attest 120 frames. Alternate distributions and missing
+The later Subspace 120-case retry used route engine SHA-256
+`ea441154fd60ebde26f9e18c1dabec21ef2e2a78999298371d09a01a648048ff`;
+its final formatted build repeated the Subspace/Forest cluster with SHA-256
+`949d1cd3c330e4e63a0f261b95834e41623f518da69e994b7ebcb80c3ef435d7`.
+All 26 current passing receipts attest 120 frames. Alternate distributions and missing
 advertised members remain separate. [Targeted rerun evidence](../XL_compat/evidence/gameplay-remaining-120-20261123.json).
+
+The original `levels_multiplayer/subspace.7z` D3 mission declares custom
+robots but ships no HXM. Its sole level has no robot objects, robot contents,
+robotmakers or object triggers; all 28 wall actions are named-sound actions.
+A narrow inventory check now permits this robotless, single-level shape.
+The original start changed from declaration failure to a 120-frame XL-active
+pass. The original Forest robot-generator control still rejects. The clean
+120-case retry changed only Subspace; an earlier attempt with 70 Windows
+archive-cache sharing errors was discarded and retried. Startup does not
+establish traversal, sound parity or save/load. [Original hashes and retry
+evidence](../XL_compat/evidence/gameplay-subspace-robotless-20261123.json).
 
 The byte-identical original Chaos Theory XL archive, SHA-256
 `5cbe34d9ff56bace946f1ec5c51c3dfdd3f24da2bddc2c165f6e3b16f657c73e`,
@@ -123,7 +140,7 @@ load. Repeating the entire 120-miss cohort changed only Bay32, from a strict
 identity failure to a 120-frame pass. It is included among the 25 gains.
 [Bay32 identity audit](../XL_compat/evidence/gameplay-bay32-resolved-identity-20261123.json).
 
-Follow-up inspection did not change the measured 95. Levelpack Chaos Theory
+The other follow-up inspections did not change the measured cohort. Levelpack Chaos Theory
 level 4 is a **classic 7/31** level with two stationary, uncontrolled type-20,
 ID-1, render-12 lightning objects. The existing source-owned lightning path
 only binds objects after translated extended-level loads; classic levels pass
@@ -139,7 +156,7 @@ Six of its seven original model files overstate the TXTR chunk length by
 a bounded local decoder experiment reached `GPNT` on all six, while the
 seventh still exposes `GRND`. Authored gun points and animation chunks need
 runtime qualification before these models can be admitted. The exploratory
-decoder change was removed and all four OOF-blocked starts remain in the 95.
+decoder change was removed and all four OOF-blocked starts remain in the 94.
 [Original model hashes and chunk audit](../XL_compat/evidence/gameplay-anthology-oof-audit-20261123.json).
 
 The levelpack Sphere level 1 HXM contains 27 replacement robot records.
@@ -154,7 +171,7 @@ silently dropped and no Sphere start was credited.
 ### Remaining first blockers
 
 The targeted 120-case rerun measured the following current first blockers.
-It totals **95/120 prior misses**, or **95/1,654** in the integrated denominator
+It totals **94/120 prior misses**, or **94/1,654** in the integrated denominator
 provided the prior 1,534 passes remain passing. The texture fixes exposed an
 effect-object and lightning requirement in levelpack Chaos Theory level 4 and
 additive wall rendering plus 14 other requirements in its level 6.
@@ -182,7 +199,7 @@ mismatches remain in the denominator without a fabricated engine gain.
 | Non-hexahedral geometry                        |                 4 |
 | OOF model decoding                             |                 4 |
 | Robot fire killed the idle pilot               |                 4 |
-| Robot definitions                              |                 3 |
+| Robot definitions                              |                 2 |
 | Segment ownership and groups                   |                 3 |
 | Unsupported level format                       |                 3 |
 | Wall types                                     |                 3 |
@@ -191,7 +208,7 @@ mismatches remain in the denominator without a fabricated engine gain.
 | Effect object types and lightning              |                 1 |
 | Segment flags                                  |                 1 |
 | Timeout                                        |                 1 |
-| **Total**                                      |            **95** |
+| **Total**                                      |            **94** |
 
 ## Local validation and fork integration
 
@@ -220,16 +237,21 @@ and registered in [stack 720](https://github.com/larsonm-personal/dxx-redux/stac
 | [#734](https://github.com/larsonm-personal/dxx-redux/pull/734) | `cb3b7796a` | Playground invalid wall        | 34 success, 9 skipped  |
 | [#735](https://github.com/larsonm-personal/dxx-redux/pull/735) | `f25069202` | Anthology inert powerup action | 37 success, 6 skipped  |
 | [#736](https://github.com/larsonm-personal/dxx-redux/pull/736) | `3a0ac3e1a` | S21 report and 120-case census | 37 success, 6 skipped  |
-| [#737](https://github.com/larsonm-personal/dxx-redux/pull/737) | `a1209084b` | Bay32 source-identity proof    | CI pending             |
-| [#738](https://github.com/larsonm-personal/dxx-redux/pull/738) | `0de66ae13` | Loading indicator contrast     | CI pending             |
-| [#739](https://github.com/larsonm-personal/dxx-redux/pull/739) | this report commit | Execution and next tranche | CI pending |
+| [#737](https://github.com/larsonm-personal/dxx-redux/pull/737) | `a1209084b` | Bay32 source-identity proof    | 36 success, 7 skipped  |
+| [#738](https://github.com/larsonm-personal/dxx-redux/pull/738) | `0de66ae13` | Loading indicator contrast     | CI in progress         |
+| [#739](https://github.com/larsonm-personal/dxx-redux/pull/739) | `4eeb29e24` | Execution and next tranche    | CI in progress         |
+| [#740](https://github.com/larsonm-personal/dxx-redux/pull/740) | `dbdd23c67` | Robotless Subspace D3          | CI in progress         |
 
 Fork workflow admission can skip private XL qualification below the native
 stack tip. The private smoke on #729 actually ran sampled and expanded
 readiness and passed. On #737, the private workflow admitted and completed
 both the fixed sample (**8/8 at 120 frames**) and expanded readiness
 (**64/64 at 120 frames**) jobs at the exact `a1209084b` head; its private Linux
-tests passed. Public Linux headed replay remained in progress at this checkpoint.
+tests passed. Its public checks have since completed successfully. At the
+`0de66ae13` #738 head, Android JVM tests ran 1,251 tests with zero failures and
+8 skipped; `LoadingProgressOverlayLayoutTest` ran 3/3. Its private smoke again
+ran fixed **8/8** and expanded **64/64** 120-frame jobs, both successful.
+The exact #738-#740 public checks were still running at this checkpoint.
 The #734 Windows build was cancelled
 after its test steps passed in [run 45180936407, attempt 1](https://github.com/larsonm-personal/dxx-redux/actions/runs/45180936407/attempts/1);
 the targeted [attempt 2](https://github.com/larsonm-personal/dxx-redux/actions/runs/45180936407/attempts/2)

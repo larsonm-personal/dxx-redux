@@ -27,15 +27,18 @@ save/load result.
 ## Independent engineering while waiting
 
 The frozen integrated Windows baseline is 1,534/1,654 starts at 120 frames.
-The current-head rerun of all 120 prior misses measured 25/120 passing and
-95/120 still blocked. Together with the 1,534 prior passes, this supports
-**1,559/1,654**, leaving **95/1,654** if those prior passes remain unchanged.
+The current-head rerun of all 120 prior misses measured 26/120 passing and
+94/120 still blocked. Together with the 1,534 prior passes, this supports
+**1,560/1,654**, leaving **94/1,654** if those prior passes remain unchanged.
 This is not a full 1,654-start census rerun. Keep missing
 advertised members and alternate distributions separate. The original Kore
 archive is 1/1, Chaos Theory XL is 6/6, Playground XL is 8/8 and Anthology
 `antho1-3` is 3/3 after this stack. The levelpack Playground equivalent also
 passes at its separate advertised ordinal. These tests establish startup, not
 complete gameplay or visual parity.
+Original robotless Subspace D3 is the latest single-entry gain; its original
+archive cluster, Forest robot-generator guard and complete 120-case retry are
+recorded in [the Subspace evidence](../XL_compat/evidence/gameplay-subspace-robotless-20261123.json).
 
 The next runnable-original lead is
 `levelpack.7z/missions/darkflamewolf/ctheo-xl.mn2:4`. The texture fix exposed
@@ -76,7 +79,7 @@ Android behavior. Keep private game assets, profiles, saves and logs off Git.
 
 ## Fork and handoff
 
-The ready-for-review personal-fork PRs #726-#739 are registered in
+The ready-for-review personal-fork PRs #726-#740 are registered in
 [stack 720](https://github.com/larsonm-personal/dxx-redux/stack/720), each
 based on its immediate predecessor. Check the final execution report for
 exact heads and CI results. The private XL workflow may skip a PR below the
@@ -102,8 +105,8 @@ original `stay_on_while_plugged_in` value after phone experiments.
 > with the same aim and missile; fixed-pose and automated S21 shots do not
 > close it. Check score-to-briefing and last-briefing-to-flight progress bars
 > separately and identify the green-on-green briefing page. While waiting,
-> investigate a runnable-original XL entry from the measured 95/120 remaining
-> prior misses (95/1,654 if the prior 1,534 passes still hold), beginning with
+> investigate a runnable-original XL entry from the measured 94/120 remaining
+> prior misses (94/1,654 if the prior 1,534 passes still hold), beginning with
 > levelpack Chaos Theory level 4 effect objects and lightning. Bay32's source
 > identity is resolved. Preserve
 > exact archive, ordinal and inputs;
