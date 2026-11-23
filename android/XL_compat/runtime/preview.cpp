@@ -549,6 +549,20 @@ void collect_dependencies(const xl_compat::Inventory &level, bool multiplayer, b
 	for (std::size_t i = 0; i < level.object_trigger_records.size(); ++i) texture_action(level.object_trigger_records[i].action, int(i), "object texture action");
 }
 
+// The original Subspace D3 release declares custom robots without an HXM,
+// but its only level has no robot producers and only named-sound actions.
+// Keep companion validation for other single-level packages, including an
+// incomplete Water Arena package whose HXM was removed.
+bool robotless_single_level(const Mission *mission, const xl_compat::Inventory &level)
+{
+	return mission && mission->last_level == 1 && mission->n_secret_levels == 0 && !level.triggers.empty() && level.matcens.empty() &&
+	       level.object_trigger_records.empty() &&
+	       std::none_of(level.objects.begin(), level.objects.end(), [](const auto &object) {
+		       return object.type == OBJ_ROBOT || (object.contains_count > 0 && object.contains_type == OBJ_ROBOT);
+	       }) &&
+	       std::none_of(level.segments.begin(), level.segments.end(), [](const auto &segment) { return xl_compat::producer_function(segment) == 4; }) && std::all_of(level.triggers.begin(), level.triggers.end(), [](const auto &action) { return action.type == 30; });
+}
+
 void validate_requirements(const xl_compat::Inventory &level, bool multiplayer, bool water_pilot, xl_assets::ObjectDependencies &graph,
                            mission_preparation *incoming = nullptr, xl_compat::TargetSources *target = nullptr, bool owned_scoped_textures = false, bool mission_robot_replacements = false)
 {
@@ -620,7 +634,7 @@ void validate_requirements(const xl_compat::Inventory &level, bool multiplayer, 
 			}
 			return false;
 		};
-		if (custom_robots && !mission_robot_replacements && !has_companion(".HXM"))
+		if (custom_robots && !mission_robot_replacements && !has_companion(".HXM") && !robotless_single_level(mission, level))
 			throw std::runtime_error("mission declares custom robots, but no level HXM or validated mission robot replacements were found");
 		if (custom_textures && !has_companion(".POG") && !owned_scoped_textures)
 			throw std::runtime_error("mission declares custom textures, but no level POG or qualified scoped TGA set was found; install the complete mission package (custom PIG replacements remain unqualified)");
