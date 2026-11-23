@@ -1,5 +1,33 @@
 # Original Pumo gameplay playtest
 
+## November 23 ordinary phone kit
+
+Use [version 32320 and its checked manifest](../../temp/xl-pumo-phone-s21-20261123/README.md)
+for the next physical-phone session. The ordinary universal APK is
+`com.dxxredux.app`, SHA-256
+`8a5621e0cd601a4e39d04b742779be3a6be6a6c6198a337458fbc2e2b3dcece3`.
+It keeps the original earned checkpoints with their individual digests. The
+SM-G996U (Android 15) installed this exact APK as an ordinary package and
+verified its package version and installed SHA-256. The isolated diagnostic
+package passed the original Pumo Rookie hub-to-Crauphel 35-step route twice,
+including a room 129 missile before and after quickload. The ordinary package
+has no active pilot on that S21, so its checkpoint installer correctly stopped
+at the manual-save prerequisite during a dry run. Those automated inputs do
+not resolve the separate SM-S931U touch report on Play build 31950.
+
+Keep **Show progress bars** enabled. From a fresh Mineral Valley start, record
+the time and visible label from difficulty selection to the first briefing,
+from advancing the level 1 score screen to the Crauphel briefing, and from
+dismissing the last briefing page to flight. The score-to-briefing transition
+now shows a moving bar on the S21 diagnostic recording. The
+last-briefing-to-flight gap needs a human observation on the ordinary kit.
+For the reported exit, save before the Crauphel Scilab level 2 missile shot,
+repeat the same aim and missile after a load, and note whether control
+returns. Include a screenshot or first words of the green-on-green briefing
+text. Record kit **32320**, phone, Android version, difficulty, input method,
+episode, checkpoint, last successful action and save/load result with each
+report. Keep the original issue save intact.
+
 ## November 22 loading retest
 
 Build 32123 (`com.dxxredux.app`, SHA-256

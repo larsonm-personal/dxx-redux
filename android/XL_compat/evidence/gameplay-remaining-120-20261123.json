@@ -1,0 +1,216 @@
+{
+    "date": "2026-11-23",
+    "scope": "exact 120 missed advertised starts from the frozen integrated Windows census",
+    "baseline": {
+        "passed": 1534,
+        "denominator": 1654,
+        "missed": 120
+    },
+    "current_cohort": {
+        "passed": 24,
+        "denominator": 120,
+        "remaining": 96
+    },
+    "integrated_if_other_1534_unchanged": {
+        "passed": 1558,
+        "denominator": 1654,
+        "remaining": 96
+    },
+    "identity": {
+        "target_commit": "f25069202",
+        "engine_sha256": "696b4ce6e2de49b4067d552ccf262f1e18930049d2e4f9b00741b8b63424799e",
+        "catalog_sha256": "304660efeaa0626593cdfd652fb30302592679aa2066ad28b02b0267088fd531"
+    },
+    "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+    "outcomes": {
+        "load_failed": 87,
+        "loaded_ticked": 24,
+        "simulation_failed": 5,
+        "timeout": 1,
+        "unsupported_format": 3
+    },
+    "remaining_first_blockers": {
+        "Additive wall rendering and other requirements": 1,
+        "Advertised level file missing": 34,
+        "Custom base definitions": 2,
+        "Effect object types and lightning": 1,
+        "Fluid behavior": 4,
+        "Light index bounds": 16,
+        "Lightning effects": 5,
+        "Non-hexahedral geometry": 4,
+        "OOF model decoding": 4,
+        "Resolved level filename differs": 1,
+        "Robot definitions": 3,
+        "Robot fire killed the idle pilot": 4,
+        "Segment flags": 1,
+        "Segment functions": 6,
+        "Segment ownership and groups": 3,
+        "Unsupported level format": 3,
+        "Wall types": 3,
+        "timeout": 1
+    },
+    "passed_original_ids": [
+        "boilpnt.7z/missions/single/boilpnt.mn2:1",
+        "boilpnt.7z/missions/single/boilpnt.mn2:3",
+        "boilpnt.7z/missions/single/boilpnt.mn2:4",
+        "boilpnt.7z/missions/single/boilpnt.mn2:6",
+        "boilpnt.7z/missions/single/boilpnt.mn2:7",
+        "levelpack.7z/missions/diedel/playgdxl.mn2:1",
+        "levelpack.7z/missions/diedel/ptech-d3.mn2:1",
+        "levelpack.7z/missions/diedel/toxic-d3.mn2:1",
+        "levelpack.7z/missions/sirius/antho1-3.mn2:1",
+        "levelpack.7z/missions/sirius/antho1-3.mn2:3",
+        "levels/kore.zip/kore/kore.mn2:1",
+        "levels/lor-xl.7z/missions/single/lor-xl.mn2:1",
+        "levels_multiplayer/chaos-theory-xl.7z/missions/darkflamewolf/ctheo-xl.mn2:1",
+        "levels_multiplayer/chaos-theory-xl.7z/missions/darkflamewolf/ctheo-xl.mn2:2",
+        "levels_multiplayer/chaos-theory-xl.7z/missions/darkflamewolf/ctheo-xl.mn2:3",
+        "levels_multiplayer/chaos-theory-xl.7z/missions/darkflamewolf/ctheo-xl.mn2:4",
+        "levels_multiplayer/chaos-theory-xl.7z/missions/darkflamewolf/ctheo-xl.mn2:5",
+        "levels_multiplayer/chaos-theory-xl.7z/missions/darkflamewolf/ctheo-xl.mn2:6",
+        "levels_multiplayer/cs-dust.7z/dust.mn2:1",
+        "levels_multiplayer/playgrnd.7z/missions/diedel/XL/playgdxl.mn2:1",
+        "levels_multiplayer/playgrnd.7z/playgdxl.mn2:1",
+        "levels_multiplayer/pyrotech.7z/missions/diedel/d3/ptech-d3.mn2:1",
+        "levels_multiplayer/pyrotech.7z/ptech-d3.mn2:1",
+        "levels_multiplayer/toxic.7z/missions/diedel/d3/toxic-d3.mn2:1"
+    ],
+    "changed_first_blockers": [
+        {
+            "id": "boilpnt.7z/missions/single/boilpnt.mn2:1",
+            "baseline_first_blocker": "Animated replacement textures",
+            "current_first_blocker": "passed"
+        },
+        {
+            "id": "boilpnt.7z/missions/single/boilpnt.mn2:3",
+            "baseline_first_blocker": "Animated replacement textures",
+            "current_first_blocker": "passed"
+        },
+        {
+            "id": "boilpnt.7z/missions/single/boilpnt.mn2:4",
+            "baseline_first_blocker": "Animated replacement textures",
+            "current_first_blocker": "passed"
+        },
+        {
+            "id": "boilpnt.7z/missions/single/boilpnt.mn2:6",
+            "baseline_first_blocker": "Animated replacement textures",
+            "current_first_blocker": "passed"
+        },
+        {
+            "id": "boilpnt.7z/missions/single/boilpnt.mn2:7",
+            "baseline_first_blocker": "Animated replacement textures",
+            "current_first_blocker": "passed"
+        },
+        {
+            "id": "levelpack.7z/missions/darkflamewolf/ctheo-xl.mn2:4",
+            "baseline_first_blocker": "Animated replacement textures",
+            "current_first_blocker": "Effect object types and lightning"
+        },
+        {
+            "id": "levelpack.7z/missions/darkflamewolf/ctheo-xl.mn2:6",
+            "baseline_first_blocker": "Animated replacement textures",
+            "current_first_blocker": "Additive wall rendering and other requirements"
+        },
+        {
+            "id": "levelpack.7z/missions/diedel/playgdxl.mn2:1",
+            "baseline_first_blocker": "Object placement",
+            "current_first_blocker": "passed"
+        },
+        {
+            "id": "levelpack.7z/missions/diedel/ptech-d3.mn2:1",
+            "baseline_first_blocker": "Animated replacement textures",
+            "current_first_blocker": "passed"
+        },
+        {
+            "id": "levelpack.7z/missions/diedel/toxic-d3.mn2:1",
+            "baseline_first_blocker": "Animated replacement textures",
+            "current_first_blocker": "passed"
+        },
+        {
+            "id": "levelpack.7z/missions/sirius/antho1-3.mn2:1",
+            "baseline_first_blocker": "Object trigger actions",
+            "current_first_blocker": "passed"
+        },
+        {
+            "id": "levelpack.7z/missions/sirius/antho1-3.mn2:3",
+            "baseline_first_blocker": "Trigger targets",
+            "current_first_blocker": "passed"
+        },
+        {
+            "id": "levels/kore.zip/kore/kore.mn2:1",
+            "baseline_first_blocker": "Robot contents",
+            "current_first_blocker": "passed"
+        },
+        {
+            "id": "levels/lor-xl.7z/missions/single/lor-xl.mn2:1",
+            "baseline_first_blocker": "Animated replacement textures",
+            "current_first_blocker": "passed"
+        },
+        {
+            "id": "levels_multiplayer/chaos-theory-xl.7z/missions/darkflamewolf/ctheo-xl.mn2:1",
+            "baseline_first_blocker": "Animated replacement textures",
+            "current_first_blocker": "passed"
+        },
+        {
+            "id": "levels_multiplayer/chaos-theory-xl.7z/missions/darkflamewolf/ctheo-xl.mn2:2",
+            "baseline_first_blocker": "Reactor triggers",
+            "current_first_blocker": "passed"
+        },
+        {
+            "id": "levels_multiplayer/chaos-theory-xl.7z/missions/darkflamewolf/ctheo-xl.mn2:3",
+            "baseline_first_blocker": "Animated replacement textures",
+            "current_first_blocker": "passed"
+        },
+        {
+            "id": "levels_multiplayer/chaos-theory-xl.7z/missions/darkflamewolf/ctheo-xl.mn2:4",
+            "baseline_first_blocker": "Animated replacement textures",
+            "current_first_blocker": "passed"
+        },
+        {
+            "id": "levels_multiplayer/chaos-theory-xl.7z/missions/darkflamewolf/ctheo-xl.mn2:5",
+            "baseline_first_blocker": "Reactor triggers",
+            "current_first_blocker": "passed"
+        },
+        {
+            "id": "levels_multiplayer/chaos-theory-xl.7z/missions/darkflamewolf/ctheo-xl.mn2:6",
+            "baseline_first_blocker": "Reactor triggers",
+            "current_first_blocker": "passed"
+        },
+        {
+            "id": "levels_multiplayer/cs-dust.7z/dust.mn2:1",
+            "baseline_first_blocker": "Animated replacement textures",
+            "current_first_blocker": "passed"
+        },
+        {
+            "id": "levels_multiplayer/playgrnd.7z/missions/diedel/XL/playgdxl.mn2:1",
+            "baseline_first_blocker": "Particle effects",
+            "current_first_blocker": "passed"
+        },
+        {
+            "id": "levels_multiplayer/playgrnd.7z/playgdxl.mn2:1",
+            "baseline_first_blocker": "Object placement",
+            "current_first_blocker": "passed"
+        },
+        {
+            "id": "levels_multiplayer/pyrotech.7z/missions/diedel/d3/ptech-d3.mn2:1",
+            "baseline_first_blocker": "Animated replacement textures",
+            "current_first_blocker": "passed"
+        },
+        {
+            "id": "levels_multiplayer/pyrotech.7z/ptech-d3.mn2:1",
+            "baseline_first_blocker": "Animated replacement textures",
+            "current_first_blocker": "passed"
+        },
+        {
+            "id": "levels_multiplayer/toxic.7z/missions/diedel/d3/toxic-d3.mn2:1",
+            "baseline_first_blocker": "Animated replacement textures",
+            "current_first_blocker": "passed"
+        }
+    ],
+    "notes": [
+        "All 120 original missed IDs were replayed with the same advertised distribution, ordinal, and unassisted input criterion.",
+        "The private original archives and individual process logs remain on the build machine.",
+        "This targeted replay does not rerun the 1534 baseline passes; the integrated total is conditional.",
+        "The effect-object and additive-wall labels use the preserved private logs where the generic classifier was too coarse."
+    ]
+}
