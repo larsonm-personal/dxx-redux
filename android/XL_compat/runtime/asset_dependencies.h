@@ -274,7 +274,10 @@ struct ObjectDependencies {
 		}
 		clip(r.exp1_vclip_num);
 		clip(r.exp2_vclip_num);
-		if (r.contains_count > 0) contents(r.contains_type, r.contains_id);
+		// The source DropPowerup returns without creating an object for an
+		// unspawnable definition payload, so it has no asset dependency.
+		if (r.contains_count > 0 && !xl_unspawnable_robot_payload(r.contains_type, r.contains_id))
+			contents(r.contains_type, r.contains_id);
 		if (r.smart_blobs || r.energy_blobs) weapon(ROBOT_SMART_HOMING_ID);
 		if (r.boss_flag && !(xl_boss_spawning && xl_compat::supported_boss_profile(r.boss_flag)))
 			throw std::runtime_error("boss profile " + std::to_string(int(r.boss_flag)) + " requires an implemented XL boss runtime");

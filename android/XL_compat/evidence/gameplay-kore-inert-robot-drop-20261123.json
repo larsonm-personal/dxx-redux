@@ -1,0 +1,47 @@
+{
+  "schema": "xl-original-inert-robot-drop-v1",
+  "date": "2026-11-23",
+  "archive": "levels/kore.zip",
+  "archive_sha256": "73f946be4c29ab0aaf9665b75b3db474365a4cecc6e3ecf1b86e1a84f15fdf23",
+  "level": "kore/kore.rl2",
+  "level_sha256": "ce23019d4a894a0a0b64c886252a0b665814d0fc9ce8a6043165097e8367f36e",
+  "mission_ordinal": 1,
+  "original_engine_observation": "started_and_ran",
+  "source_comparison": {
+    "revision": "2576a98b5de310e3ac7c9777df2677d1627b8bae",
+    "file": "main/dropobject.cpp",
+    "local_source_sha256": "f1d186ac0fead42edb47d3f2b94daa449405cdc9aefa109862df0ca65b788907",
+    "behavior": "DropPowerup receives an unsigned object type; an unrecognized type reaches the default case and returns -1 without creating an object"
+  },
+  "authored_dependency": {
+    "placed_robot_object": 553,
+    "robot_definition": 54,
+    "contained_type_signed": -1,
+    "contained_id": 2,
+    "prior_first_blocker": "object 553: unknown contained object dependency"
+  },
+  "criterion": "unchanged original archive, ordinal and unassisted input; level loads and executes 120 simulation frames at 60 Hz",
+  "baseline": {
+    "engine_sha256": "ec182502ca7ec31b02b0339d44f83252358559e9c15be3ec8af21f7d8affb094",
+    "results_sha256": "75eaae816cbefc7613c18e53923c4757527d9fda7009d356f0d19be1f9a1af26",
+    "outcome": "load_failed",
+    "frames": 0
+  },
+  "candidate": {
+    "engine_sha256": "cd607f6211c756fc2f5ceae120fa494f5b2bb92543901357ed5c735acd31b6b8",
+    "results_sha256": "58f13290e805a7f9acd5a00af9e6d6cd8c7d09e27ce869e15d68b9b771cac12a",
+    "outcome": "loaded_ticked",
+    "frames": 120,
+    "xl_active": true
+  },
+  "control": "The candidate engine repeated all six original Chaos Theory XL ordinals at loaded_ticked/120 frames",
+  "scope": "The resource dependency graph omits only robot-definition payloads that the existing XL runtime and pinned source cannot spawn. Valid robot and powerup payloads still add their normal dependencies. The original archive and HXM are unchanged.",
+  "aggregate_projection": {
+    "reference": "gameplay-census-integrated-20261120.json",
+    "baseline": "1534/1654",
+    "with_prior_layers": "1553/1654",
+    "with_this_entry_if_other_clusters_unchanged": "1554/1654",
+    "remaining": "100/1654",
+    "full_census_rerun": false
+  }
+}
