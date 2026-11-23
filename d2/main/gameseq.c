@@ -2496,6 +2496,10 @@ void ShowLevelIntro(int level_num)
 
 		ubyte save_pal[sizeof(gr_palette)];
 
+		#ifdef __ANDROID__
+		if (!PLAYING_BUILTIN_MISSION && !EMULATING_D1)
+			xl_briefing_progress_begin();
+		#endif
 		d1_in_d2_prepare_intro_assets();
 		memcpy(save_pal,gr_palette,sizeof(gr_palette));
 
@@ -2532,6 +2536,9 @@ void ShowLevelIntro(int level_num)
 		}
 
 		memcpy(gr_palette,save_pal,sizeof(gr_palette));
+		#ifdef __ANDROID__
+		xl_briefing_progress_end();
+		#endif
 	}
 }
 

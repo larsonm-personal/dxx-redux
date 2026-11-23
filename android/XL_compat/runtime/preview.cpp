@@ -318,6 +318,9 @@ struct LevelTranslation {
 #endif
 };
 std::unique_ptr<LevelTranslation> preflight_translation;
+#ifdef __ANDROID__
+bool briefing_progress_owned = false;
+#endif
 
 std::unique_ptr<LevelTranslation> translate_level(xl_compat::Bytes bytes, bool multiplayer)
 {
@@ -765,8 +768,30 @@ extern "C" int xl_prepare_level_transition(const char *filename, int multiplayer
 
 extern "C" void xl_clear_level_preflight(void)
 {
+#ifdef __ANDROID__
+	xl_briefing_progress_end();
+#endif
 	preflight_translation.reset();
 }
+
+#ifdef __ANDROID__
+extern "C" void xl_briefing_progress_begin(void)
+{
+	if (briefing_progress_owned || !preflight_translation || !preflight_translation->transition ||
+	    android_loading_progress_is_active())
+		return;
+	android_loading_progress_begin("Opening briefing", 0);
+	android_loading_progress_update("Preparing first page", 0, 0);
+	briefing_progress_owned = true;
+}
+
+extern "C" void xl_briefing_progress_end(void)
+{
+	if (!briefing_progress_owned) return;
+	briefing_progress_owned = false;
+	android_loading_progress_end();
+}
+#endif
 
 extern "C" int xl_test_stop_after_level(void)
 {
