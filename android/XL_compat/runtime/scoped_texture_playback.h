@@ -104,6 +104,56 @@ struct ScopedTexturePlayback {
 		}
 		return effects;
 	}
+	template <typename FrameCount>
+	static std::vector<ScopedTextureDoor> wall_effects(const xl_assets::ObjectDependencies &graph, int bitmap_count,
+	                                                   const std::map<int, std::size_t> &selected, const std::set<int> &protected_bitmaps,
+	                                                   FrameCount frames, const std::map<int, int> &clock_owner)
+	{
+		const auto has_strip = [&](int bitmap) {
+			const auto found = selected.find(bitmap);
+			return found != selected.end() && frames(found->second) > 1;
+		};
+		std::vector<ScopedTextureDoor> doors;
+		std::map<int, std::size_t> door_images;
+		for (int id : graph.wall_clips) {
+			if (id < 0 || id >= graph.wall_clip_count) throw std::runtime_error("Scoped wall clock is outside retained definitions");
+			const auto &clip = graph.wall_clip_data[id];
+			if (clip.num_frames < 1 || clip.num_frames > MAX_CLIP_FRAMES) throw std::runtime_error("Scoped wall clock has invalid frames");
+			bool strip = false;
+			for (int frame = 0; frame < clip.num_frames; ++frame) {
+				const int texture = clip.frames[frame];
+				if (texture < 0 || texture >= graph.texture_count) throw std::runtime_error("Scoped wall clock has a missing texture");
+				strip = strip || has_strip(graph.texture_data[texture].index);
+			}
+			if (!strip) continue;
+			const auto first = selected.find(graph.texture_data[clip.frames[0]].index);
+			if ((!graph.door_clips.count(id) && !graph.blastable_clips.count(id)) || graph.other_wall_clips.count(id) || first == selected.end() ||
+			    frames(first->second) < 2)
+				throw std::runtime_error("Scoped wall strip lacks a qualified first-frame door binding: clip " + std::to_string(id) +
+				                         ", door use " + std::to_string(graph.door_clips.count(id)) + ", other wall use " + std::to_string(graph.other_wall_clips.count(id)) +
+				                         ", first image frames " + std::to_string(first == selected.end() ? 0 : frames(first->second)));
+			const auto replacement_frames = frames(first->second);
+			if (replacement_frames > 128 || clip.play_time < int(replacement_frames))
+				throw std::runtime_error("Scoped door period cannot represent every replacement frame");
+			ScopedTextureDoor door;
+			door.clip = id;
+			door.frames = int(replacement_frames);
+			door.image = first->second;
+			for (int frame = 0; frame < clip.num_frames; ++frame) {
+				const int bitmap = graph.texture_data[clip.frames[frame]].index;
+				const auto binding = selected.find(bitmap);
+				if (bitmap <= 0 || bitmap >= bitmap_count || protected_bitmaps.count(bitmap) ||
+				    clock_owner.count(bitmap) || (binding != selected.end() && binding->second != door.image))
+					throw std::runtime_error("Scoped door alias conflicts with retained image ownership");
+				const auto owner = door_images.emplace(bitmap, door.image);
+				if (!owner.second && owner.first->second != door.image)
+					throw std::runtime_error("Scoped doors select conflicting images");
+				door.bitmaps.push_back(bitmap);
+			}
+			doors.push_back(std::move(door));
+		}
+		return doors;
+	}
 	static ScopedTexturePlayback prepare(const ScopedTextureResources &resources,
 	                                     const xl_assets::ObjectDependencies &graph)
 	{
@@ -122,48 +172,10 @@ struct ScopedTexturePlayback {
 		result.effects = texture_effects(graph, graph.resource_banks->bitmap_count(), selected, resources.pog_indices, [&](std::size_t i) { return resources.images[i].bitmap.frames; }, clock_owner);
 		for (const auto &clock : result.effects)
 			for (int bitmap : clock.bitmaps) selected[bitmap] = clock.image;
-		const auto has_strip = [&](int bitmap) {
-			const auto found = selected.find(bitmap);
-			return found != selected.end() && resources.images[found->second].bitmap.frames > 1;
-		};
+		result.doors = wall_effects(graph, graph.resource_banks->bitmap_count(), selected, resources.pog_indices, [&](std::size_t row) { return resources.images[row].bitmap.frames; }, clock_owner);
 		std::map<int, std::size_t> door_images;
-		for (int id : graph.wall_clips) {
-			if (id < 0 || id >= graph.wall_clip_count) throw std::runtime_error("Scoped wall clock is outside retained definitions");
-			const auto &clip = graph.wall_clip_data[id];
-			if (clip.num_frames < 1 || clip.num_frames > MAX_CLIP_FRAMES) throw std::runtime_error("Scoped wall clock has invalid frames");
-			bool strip = false;
-			for (int frame = 0; frame < clip.num_frames; ++frame) {
-				const int texture = clip.frames[frame];
-				if (texture < 0 || texture >= graph.texture_count) throw std::runtime_error("Scoped wall clock has a missing texture");
-				strip = strip || has_strip(graph.texture_data[texture].index);
-			}
-			if (!strip) continue;
-			const auto first = selected.find(graph.texture_data[clip.frames[0]].index);
-			if ((!graph.door_clips.count(id) && !graph.blastable_clips.count(id)) || graph.other_wall_clips.count(id) || first == selected.end() ||
-			    resources.images[first->second].bitmap.frames < 2)
-				throw std::runtime_error("Scoped wall strip lacks a qualified first-frame door binding: clip " + std::to_string(id) +
-				                         ", door use " + std::to_string(graph.door_clips.count(id)) + ", other wall use " + std::to_string(graph.other_wall_clips.count(id)) +
-				                         ", first image frames " + std::to_string(first == selected.end() ? 0 : resources.images[first->second].bitmap.frames));
-			const auto frames = resources.images[first->second].bitmap.frames;
-			if (frames > 128 || clip.play_time < int(frames))
-				throw std::runtime_error("Scoped door period cannot represent every replacement frame");
-			ScopedTextureDoor door;
-			door.clip = id;
-			door.frames = int(frames);
-			door.image = first->second;
-			for (int frame = 0; frame < clip.num_frames; ++frame) {
-				const int bitmap = graph.texture_data[clip.frames[frame]].index;
-				const auto binding = selected.find(bitmap);
-				if (bitmap <= 0 || bitmap >= graph.resource_banks->bitmap_count() || resources.pog_indices.count(bitmap) ||
-				    clock_owner.count(bitmap) || (binding != selected.end() && binding->second != door.image))
-					throw std::runtime_error("Scoped door alias conflicts with retained image ownership");
-				const auto owner = door_images.emplace(bitmap, door.image);
-				if (!owner.second && owner.first->second != door.image)
-					throw std::runtime_error("Scoped doors select conflicting images");
-				door.bitmaps.push_back(bitmap);
-			}
-			result.doors.push_back(std::move(door));
-		}
+		for (const auto &door : result.doors)
+			for (int bitmap : door.bitmaps) door_images.emplace(bitmap, door.image);
 		for (int id = 0; id < graph.effect_count; ++id) {
 			const auto &effect = graph.effect_data[id];
 			if (effect.changing_wall_texture < 0 && effect.changing_object_texture < 0) continue;

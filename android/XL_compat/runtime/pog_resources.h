@@ -89,6 +89,7 @@ namespace xl_compat
 {
 struct PogBitmap;
 struct ScopedTextureResources;
+struct ScopedTextureDoor;
 } // namespace xl_compat
 // Decode once through the existing image codec; never synthesize a POG file
 xl_pog_resources *xl_pog_prepare_rgba(const std::vector<xl_compat::PogBitmap> &images, unsigned max_bitmaps, bool scoped_texture = false);
@@ -97,7 +98,7 @@ namespace xl_assets
 struct ObjectDependencies;
 }
 int xl_pog_target_strip_clock(unsigned bitmap, const xl_assets::ObjectDependencies &tables);
-void xl_pog_bind_texture_effects(xl_pog_resources &resources, const xl_assets::ObjectDependencies &tables, int bitmap_count);
+extern "C++" std::vector<xl_compat::ScopedTextureDoor> xl_pog_bind_animation(xl_pog_resources &resources, const xl_assets::ObjectDependencies &tables, int bitmap_count);
 xl_pog_resources *xl_pog_prepare_scoped(const xl_compat::ScopedTextureResources &textures,
                                         const xl_assets::ObjectDependencies &tables, const xl_pog_resources *pog);
 #endif

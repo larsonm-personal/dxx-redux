@@ -176,6 +176,7 @@ xl_pog_resources *xl_pog_prepare_scoped(const xl_compat::ScopedTextureResources 
 	if (pog) {
 		result->effects = pog->effects;
 		result->effect_bitmaps = pog->effect_bitmaps;
+		result->doors = pog->doors;
 		if (pog->pixels.size() > 2 * xl_compat::pog_file_limit - result->pixels.size())
 			throw std::runtime_error("Combined scoped texture arena exceeds its resource bound");
 		const auto offset = unsigned(result->pixels.size());
@@ -245,7 +246,7 @@ extern "C" int xl_pog_effect_bitmap(const xl_pog_resources *resources, int row, 
 }
 extern "C" int xl_pog_scope_matches_live(const xl_pog_resources *resources)
 {
-	if (!resources || (!resources->scoped && resources->effects.empty())) return 1;
+	if (!resources || (!resources->scoped && resources->effects.empty() && resources->doors.empty())) return 1;
 	if (!resources->doors.empty() && (Num_wall_anims != int(resources->door_definitions.size()) ||
 	                                  NumTextures != int(resources->door_textures.size()))) return 0;
 	for (const auto &door : resources->doors) {
@@ -394,7 +395,7 @@ extern "C" int xl_pog_non_effect_clock(unsigned bitmap)
 	return strip_clock(bitmap, live);
 }
 
-void xl_pog_bind_texture_effects(xl_pog_resources &resources, const xl_assets::ObjectDependencies &tables, int bitmap_count)
+std::vector<xl_compat::ScopedTextureDoor> xl_pog_bind_animation(xl_pog_resources &resources, const xl_assets::ObjectDependencies &tables, int bitmap_count)
 {
 	std::map<int, std::size_t> selected;
 	std::set<int> clocked;
@@ -406,11 +407,27 @@ void xl_pog_bind_texture_effects(xl_pog_resources &resources, const xl_assets::O
 		if (clock < 0) throw std::runtime_error("POG: native bitmap animation tables exceed supported bounds");
 		if (clock) clocked.insert(entry.index);
 	}
-	if (clocked.empty()) return;
+	if (clocked.empty()) return {};
 	std::map<int, int> owners;
-	const auto effects = xl_compat::ScopedTexturePlayback::texture_effects(tables, bitmap_count, selected, {}, [&](std::size_t row) { return resources.entries[row].frames; }, owners);
+	const auto frames = [&](std::size_t row) { return resources.entries[row].frames; };
+	const auto effects = xl_compat::ScopedTexturePlayback::texture_effects(tables, bitmap_count, selected, {}, frames, owners);
+	const auto doors = xl_compat::ScopedTexturePlayback::wall_effects(tables, bitmap_count, selected, {}, frames, owners);
+	std::map<int, xl_pog_bitmap> wall_aliases;
+	PogClockTables sprite_or_effect(tables);
+	sprite_or_effect.wall_clip_count = 0;
+	for (const auto &door : doors) {
+		resources.doors.emplace_back(door.clip, door.frames);
+		for (int bitmap : door.bitmaps) {
+			if (strip_clock(bitmap, sprite_or_effect)) throw std::runtime_error("POG: wall clip shares a sprite or texture effect clock");
+			auto entry = resources.entries[door.image];
+			entry.index = bitmap;
+			entry.side_frames = 1;
+			wall_aliases.emplace(bitmap, entry);
+		}
+	}
 	for (int bitmap : clocked)
-		if (!owners.count(bitmap)) throw std::runtime_error("POG: RGBA bitmap " + std::to_string(bitmap) + " has clocked animation frames without a texture effect");
+		if (!owners.count(bitmap) && !wall_aliases.count(bitmap))
+			throw std::runtime_error("POG: RGBA bitmap " + std::to_string(bitmap) + " has clocked animation frames without a qualified owner");
 	PogClockTables other(tables);
 	other.effect_count = 0;
 	for (const auto &clock : effects) {
@@ -428,6 +445,20 @@ void xl_pog_bind_texture_effects(xl_pog_resources &resources, const xl_assets::O
 			else resources.entries[row.first->second] = entry;
 		}
 	}
+	for (const auto &alias : wall_aliases) {
+		const auto row = selected.emplace(alias.first, resources.entries.size());
+		if (row.second) resources.entries.push_back(alias.second);
+		else resources.entries[row.first->second] = alias.second;
+	}
+	// Earlier rows targeting a door alias are replaced by the selected strip.
+	resources.entries.erase(std::remove_if(resources.entries.begin(), resources.entries.end(),
+	                                       [&](const xl_pog_bitmap &entry) { return !entry.side_frames && wall_aliases.count(entry.index); }),
+	                        resources.entries.end());
 	resources.effect_definitions.assign(tables.effect_data, tables.effect_data + tables.effect_count);
 	resources.clip_definitions.assign(tables.clip_data, tables.clip_data + tables.clip_count);
+	if (!doors.empty()) {
+		resources.door_definitions.assign(tables.wall_clip_data, tables.wall_clip_data + tables.wall_clip_count);
+		resources.door_textures.assign(tables.texture_data, tables.texture_data + tables.texture_count);
+	}
+	return doors;
 }

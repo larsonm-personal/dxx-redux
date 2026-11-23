@@ -77,6 +77,7 @@ class XlPreparedResources
 	const xl_compat::Inventory &level_inventory() const;
 	const xl_compat::ScopedTextureResources *scoped_textures() const;
 	const xl_compat::ScopedTexturePlayback *scoped_texture_playback() const;
+	const xl_compat::ScopedTexturePlayback *wall_texture_playback() const;
 	std::map<int, int> effect_frame_counts() const;
 	bool has_scoped_textures() const;
 	const std::map<std::string, std::string> &sources() const;
@@ -89,7 +90,7 @@ class XlPreparedResources
 	std::string prepare_vham(PHYSFS_file *file);
 	std::string prepare_vham(std::vector<unsigned char> bytes);
 	void prepare_banks(const std::string &palette);
-	void prepare_pog(PHYSFS_file *file);
+	void prepare_pog(PHYSFS_file *file, const xl_compat::Inventory *level = nullptr);
 	void install_hxm();
 	void install_pog();
 	void install_messages();
