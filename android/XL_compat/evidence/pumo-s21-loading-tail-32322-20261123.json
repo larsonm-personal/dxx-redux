@@ -1,0 +1,49 @@
+{
+  "schema": 1,
+  "date": "2026-11-23",
+  "phone": {
+    "model": "SM-G996U",
+    "android_version": 15,
+    "difficulty": "Rookie",
+    "input": "protected fixed-route automation",
+    "episode": "Mineral Valley",
+    "levels": [1, 2]
+  },
+  "original_pumo_archive_sha256": "82c8cc4cfc740c8169f9d21a961c9ac5d2518342b3e27ac3ac438c91ca8f2ddf",
+  "diagnostic_build": {
+    "version": 32322,
+    "package": "com.dxxredux.app.nsdtest",
+    "apk_sha256": "23db2e05704bf00df85e1ecd9787406c2b66223c1bf8a243d360084376d89730",
+    "run_id": "edc9da4ee8b24404a088cac27e126da4",
+    "result": "PASS",
+    "steps": "35/35",
+    "room_129_concussion_missile_before_and_after_quickload": "passed",
+    "profile_hashes_restored": true
+  },
+  "visual_recording": {
+    "private_ignored_path": "temp/xl-pumo-s21-20261123/s21-visual-32322-r2-game.mp4",
+    "sha256": "4a5f8b0607e647fe52baf02529478602b693ccbd03c15161262dedad4e0a2f67",
+    "duration_seconds": 75.394,
+    "observations": [
+      "Difficulty to first briefing retained CHECKING LEVEL RESOURCES AND GRAPHICS over the difficulty art.",
+      "After the final level 1 briefing page, PREPARE FOR DESCENT showed moving amber texture progress, then STARTING LEVEL MUSIC with moving amber fill while the level title remained; the next sampled second showed flight.",
+      "Level 1 score to Crauphel briefing retained the progress panel and label over the score art.",
+      "After the final Crauphel briefing page, PREPARE FOR DESCENT showed texture progress through the last sampled loading frame, followed by flight."
+    ],
+    "comparison": "Version 32321 hid the bar after hub texture caching for about 2.6 seconds of level music startup; version 32322's S21 video shows the music phase with a moving bar."
+  },
+  "ordinary_kit": {
+    "version": 32322,
+    "package": "com.dxxredux.app",
+    "apk_sha256": "057e01208c8fd26a87d8fcd835410c4646e5655b95b94d4626406e6e51e3b91c",
+    "arm_abis_and_x86_64_built": true,
+    "earned_checkpoint_digests_matching_manifest": "11/11",
+    "s21_installed_apk_hash_matches_manifest": true
+  },
+  "device_cleanup": {
+    "stay_on_while_plugged_in_original_and_restored": 0,
+    "raw_recording_removed_from_phone": true,
+    "original_archive_staging_removed_from_phone": true
+  },
+  "limits": "The diagnostic route uses fixed steering and was recorded on a different phone from the SM-S931U Play 31950 touch report. It does not identify the reported missile aim or prove that the ordinary kit's loading bar is visible during human play. Raw recording, logs, assets, profile data and saves remain outside Git."
+}

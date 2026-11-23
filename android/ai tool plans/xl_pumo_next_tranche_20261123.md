@@ -2,8 +2,8 @@
 
 ## First action: physical phone feedback
 
-Use ordinary kit **32321** and its manifest in ignored
-`temp/xl-pumo-phone-s21-20261123-32321`. Start Mineral Valley on Rookie with
+Use ordinary kit **32322** and its manifest in ignored
+`temp/xl-pumo-phone-s21-20261123-32322`. Start Mineral Valley on Rookie with
 touch.
 The reported failure was a missile shot in Crauphel Scilab, near room 129,
 on SM-S931U, Android SDK 37, Play internal build 31950. Record the missile,
@@ -17,11 +17,10 @@ briefing, score-screen advance to the next briefing and final briefing-page
 dismissal to ship control as separate waits. Record the visible label, whether
 the bar moves and approximate elapsed time. The score-to-briefing and
 last-page-to-flight bars have an
-[S21 diagnostic visual witness](../XL_compat/evidence/pumo-s21-progress-32321-20261123.json).
-Build 32321 makes the bar and label higher contrast, but the bar disappears
-for about 2.6 seconds while level music starts after texture caching. Keep
-the bar visible through the whole level load, then retest on S21 and the
-ordinary phone kit. Ask for the first words or a screenshot
+[S21 diagnostic visual witness](../XL_compat/evidence/pumo-s21-loading-tail-32322-20261123.json).
+Build 32322 retains the dark panel and high-contrast label and keeps the bar
+moving with **STARTING LEVEL MUSIC** through the gap seen on 32321. Check the
+same intervals on the ordinary phone kit. Ask for the first words or a screenshot
 of the green-on-green briefing page. Each report needs kit version, phone,
 Android version,
 difficulty, input method, episode, checkpoint, last successful action and
@@ -42,6 +41,8 @@ complete gameplay or visual parity.
 Original robotless Subspace D3 is the latest single-entry gain; its original
 archive cluster, Forest robot-generator guard and complete 120-case retry are
 recorded in [the Subspace evidence](../XL_compat/evidence/gameplay-subspace-robotless-20261123.json).
+The later Water Arena CI guard again repeated the entire 120-case cohort with
+the same 26 passes and no new blocker.
 
 The next runnable-original lead is
 `levelpack.7z/missions/darkflamewolf/ctheo-xl.mn2:4`. The texture fix exposed
@@ -82,7 +83,7 @@ Android behavior. Keep private game assets, profiles, saves and logs off Git.
 
 ## Fork and handoff
 
-The ready-for-review personal-fork PRs #726-#741 are registered in
+The ready-for-review personal-fork PRs #726-#742 are registered in
 [stack 720](https://github.com/larsonm-personal/dxx-redux/stack/720), each
 based on its immediate predecessor. Check the final execution report for
 exact heads and CI results. The private XL workflow may skip a PR below the
@@ -102,7 +103,7 @@ original `stay_on_while_plugged_in` value after phone experiments.
 > `.github/copilot-instructions.md`,
 > `android/ai tool plans/xl_pumo_s21_execution_20261123.md`, this next
 > tranche plan and `android/XL_compat/PUMO_PLAYTEST.md`. Begin with physical
-> feedback on ordinary kit 32321. Record kit version, phone/Android version,
+> feedback on ordinary kit 32322. Record kit version, phone/Android version,
 > difficulty, input method, episode, checkpoint, last successful action and
 > save/load result. Reproduce the Crauphel Scilab room-129 human missile exit
 > with the same aim and missile; fixed-pose and automated S21 shots do not

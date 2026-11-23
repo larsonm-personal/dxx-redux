@@ -2,14 +2,14 @@
 
 ## November 23 ordinary phone kit
 
-Use [version 32321 and its checked manifest](../../temp/xl-pumo-phone-s21-20261123-32321/README.md)
+Use [version 32322 and its checked manifest](../../temp/xl-pumo-phone-s21-20261123-32322/README.md)
 for the next physical-phone session. The ordinary universal APK is
 `com.dxxredux.app`, SHA-256
-`732981f93d7d30a4bb4039f0d237d269c83411ae70ddd1389797c4b9cc665bb7`.
+`057e01208c8fd26a87d8fcd835410c4646e5655b95b94d4626406e6e51e3b91c`.
 It keeps the original earned checkpoints with their individual digests. The
-APK and all 11 checkpoint digests match the local manifest. Version 32321
+APK and all 11 checkpoint digests match the local manifest. Version 32322
 was installed and hash-verified on SM-G996U (Android 15). The isolated diagnostic
-package passed the original Pumo Rookie hub-to-Crauphel 35-step route three times,
+package passed the original Pumo Rookie hub-to-Crauphel 35-step route,
 including a room 129 missile before and after quickload. The ordinary package
 has no active pilot on that S21, so its checkpoint installer correctly stopped
 at the manual-save prerequisite during a dry run. Those automated inputs do
@@ -20,16 +20,16 @@ the time and visible label from difficulty selection to the first briefing,
 from advancing the level 1 score screen to the Crauphel briefing, and from
 dismissing the last briefing page to flight. The score-to-briefing and
 briefing-to-flight transitions show moving bars on the
-[S21 diagnostic recording](evidence/pumo-s21-progress-32321-20261123.json);
-version 32321 gives the bar a dark backing panel, amber fill and white label.
-On hub entry the bar vanishes while **PREPARE FOR DESCENT** remains for about
-2.6 seconds of music startup. Note whether the ordinary kit shows that gap.
+[S21 diagnostic recording](evidence/pumo-s21-loading-tail-32322-20261123.json);
+version 32322 gives the bar a dark backing panel, amber fill and white label.
+On hub entry it changes to **STARTING LEVEL MUSIC** and keeps moving until
+flight. Note whether the ordinary kit shows the same continuous bar.
 For the reported exit, save before the Crauphel Scilab level 2 missile shot,
 repeat the same aim and missile after a load, and note whether control
 returns. Include a screenshot or first words of the green-on-green briefing
 text. One candidate in the original Mineral Valley script is the page that
 begins **“And there it is!”** over the mainframe picture, but please identify
-the page you actually see. Record kit **32321**, phone, Android version,
+the page you actually see. Record kit **32322**, phone, Android version,
 difficulty, input method, episode, checkpoint, last successful action and
 save/load result with each report. Keep the original issue save intact.
 

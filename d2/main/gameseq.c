@@ -1187,6 +1187,7 @@ void LoadLevel(int level_num,int page_in_textures)
 	set_sound_sources();
 #ifdef __ANDROID__
 	load_profile.sound_us = android_profile_take_elapsed_us(&load_profile_phase_us);
+	if (owns_loading_progress) android_loading_progress_update("Starting level music", 0, 0);
 #endif
 
 	songs_play_level_song( Current_level_num, 0 );

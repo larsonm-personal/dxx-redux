@@ -13,16 +13,19 @@ is the **first unresolved gameplay action**. A fixed-pose emulator shot and two
 protected S21 automated shots before and after quickload stayed in control;
 those inputs do not reproduce the reported aim or prove the human issue closed.
 
-The S21 diagnostic route used the exact original Pumo v1.1 archive, Rookie,
-640 x 480, and returned 35/35 actions on both speed-pipeline runs and the
-later version 32321 visual run. Profile hashes were restored. The recording
+The S21 diagnostic route used the exact original Pumo v1.1 archive, Rookie
+and 640 x 480. It returned 35/35 actions on both speed-pipeline runs, the
+version 32321 visual run and the version 32322 follow-up. Profile hashes were
+restored. [Version 32321's recording](../XL_compat/evidence/pumo-s21-progress-32321-20261123.json)
 shows a moving amber bar and readable white label at mission verification,
 difficulty-to-briefing, score-to-next-briefing, and briefing-to-flight. On hub
-entry, the bar disappears during a remaining 2.6-second level-music start
-while **PREPARE FOR DESCENT** still shows. The nested texture-cache progress
-owner ends before the outer level load completes. This is a real remaining
-visible-gap defect; the ordinary package and the unidentified green page
-still need human play. [S21 recording receipt](../XL_compat/evidence/pumo-s21-progress-32321-20261123.json).
+entry, the bar disappeared during a remaining 2.6-second level-music start
+while **PREPARE FOR DESCENT** still showed. The nested texture-cache progress
+owner ended before the outer level load completed. Version 32322 keeps that
+owner active and changes the label to **STARTING LEVEL MUSIC**. Its S21 video
+shows the amber bar moving through that interval until flight. The ordinary
+package and the unidentified green page still need human play.
+[Version 32322 recording receipt](../XL_compat/evidence/pumo-s21-loading-tail-32322-20261123.json).
 
 The original Mineral Valley briefing script has a plausible contrast
 candidate: the mainframe page beginning “And there it is!” requests bright
@@ -42,24 +45,21 @@ and the original Pumo texture audit checked hashes and decoded pixels. These
 are native log phase times, not human stopwatch times. See
 [the scoped pipeline report](xl_pumo_s21_scoped_pipeline_20261123.md).
 
-The latest ordinary test kit is version **32321**, package `com.dxxredux.app`,
-APK SHA-256 `732981f93d7d30a4bb4039f0d237d269c83411ae70ddd1389797c4b9cc665bb7`.
-It built for ARM64, ARMv7 and x86_64. Its 11 earned checkpoint files and the
-APK match the local manifest. The ordinary APK installed on the S21 as
-version 32321; the installed APK SHA-256 matches that manifest. This build
-adds a dark backing panel, amber fill
-and white label to the Android loading indicator after the prior S21 capture
-showed the bar was present but difficult to see on the score art. Scoped
-Android quality, ktlint, the layout unit test and the three-ABI build passed.
-The protected S21 visual check subsequently passed after the display was
-unlocked: the original archive imported, all 35 gameplay actions completed,
-and the profile hashes restored. Two earlier attempts failed during import
-while the screen was off or showing NotificationShade; profile hashes restored
-after each, and no gameplay conclusion was drawn from them. The ordinary package had no active test pilot or manual save, so
-the checkpoint install dry run stopped at its documented prerequisite before
-writing. The private kits and saves remain in ignored `temp/`. After the
-earlier phone experiments, the S21's `stay_on_while_plugged_in` setting was
-restored to its original value 0 and read back as 0.
+The latest ordinary test kit is version **32322**, package `com.dxxredux.app`,
+APK SHA-256 `057e01208c8fd26a87d8fcd835410c4646e5655b95b94d4626406e6e51e3b91c`.
+It built for ARM64, ARMv7 and x86_64. Its 11 earned checkpoint files and APK
+match the local manifest. The ordinary APK installed on the S21 as version
+32322; the installed APK SHA-256 matches that manifest. Version 32321 added
+the dark backing panel, amber fill and white label after an earlier S21 capture
+showed poor contrast over score art. Version 32322 keeps the bar visible through
+level music startup. Both diagnostic and ordinary three-ABI APK builds passed.
+The protected S21 version 32322 run imported the original archive, completed
+35/35 gameplay actions including a room 129 concussion shot before and after
+quickload, and restored profile hashes. The ordinary package had no active
+test pilot or manual save, so its checkpoint install dry run stopped at the
+documented prerequisite before writing. The private kits and saves remain in
+ignored `temp/`. The S21's `stay_on_while_plugged_in` setting was restored to
+its original value 0 and read back as 0.
 
 ## Original XL census and cluster comparison
 
@@ -87,6 +87,18 @@ its final formatted build repeated the Subspace/Forest cluster with SHA-256
 `949d1cd3c330e4e63a0f261b95834e41623f518da69e994b7ebcb80c3ef435d7`.
 All 26 current passing receipts attest 120 frames. Alternate distributions and missing
 advertised members remain separate. [Targeted rerun evidence](../XL_compat/evidence/gameplay-remaining-120-20261123.json).
+
+The first #740 private Linux run and its retry exposed an overbroad robotless
+exception: removing Water Arena's declared HXM companion no longer caused the
+expected rejection. The exception now additionally requires a nonempty set of
+named-sound-only wall actions. The local Water Arena test passed its missing
+HXM, recovery and native traversal checks. The original Subspace/Forest pair
+remained one pass and one expected rejection. A new complete 120-case rerun
+at engine SHA-256
+`84279290127b784ca3b12cf9579195bb56273ebae5fc131d73bb8a8bb0baaa40`
+matched all 120 prior outcomes, frame counts and XL-active states: 26/120 pass,
+94/120 remain, zero infrastructure errors and no newly exposed blocker.
+[Guard and replay receipt](../XL_compat/evidence/gameplay-robotless-ci-guard-20261123.json).
 
 The original `levels_multiplayer/subspace.7z` D3 mission declares custom
 robots but ships no HXM. Its sole level has no robot objects, robot contents,
@@ -244,9 +256,11 @@ and registered in [stack 720](https://github.com/larsonm-personal/dxx-redux/stac
 | [#735](https://github.com/larsonm-personal/dxx-redux/pull/735) | `f25069202` | Anthology inert powerup action | 37 success, 6 skipped  |
 | [#736](https://github.com/larsonm-personal/dxx-redux/pull/736) | `3a0ac3e1a` | S21 report and 120-case census | 37 success, 6 skipped  |
 | [#737](https://github.com/larsonm-personal/dxx-redux/pull/737) | `a1209084b` | Bay32 source-identity proof    | 36 success, 7 skipped  |
-| [#738](https://github.com/larsonm-personal/dxx-redux/pull/738) | `0de66ae13` | Loading indicator contrast     | CI in progress         |
-| [#739](https://github.com/larsonm-personal/dxx-redux/pull/739) | `4eeb29e24` | Execution and next tranche    | CI in progress         |
-| [#740](https://github.com/larsonm-personal/dxx-redux/pull/740) | `dbdd23c67` | Robotless Subspace D3          | CI in progress         |
+| [#738](https://github.com/larsonm-personal/dxx-redux/pull/738) | `0de66ae13` | Loading indicator contrast     | 36 success, 7 skipped  |
+| [#739](https://github.com/larsonm-personal/dxx-redux/pull/739) | `4eeb29e24` | Execution and next tranche    | 37 success, 6 skipped  |
+| [#740](https://github.com/larsonm-personal/dxx-redux/pull/740) | `c0c6100e9` | Robotless Subspace D3 + guard  | CI in progress         |
+| [#741](https://github.com/larsonm-personal/dxx-redux/pull/741) | `ffc59e1a0` | S21 execution and next tranche | CI in progress         |
+| [#742](https://github.com/larsonm-personal/dxx-redux/pull/742) | pending     | Loading bar through music      | CI pending             |
 
 Fork workflow admission can skip private XL qualification below the native
 stack tip. The private smoke on #729 actually ran sampled and expanded
@@ -257,7 +271,14 @@ tests passed. Its public checks have since completed successfully. At the
 `0de66ae13` #738 head, Android JVM tests ran 1,251 tests with zero failures and
 8 skipped; `LoadingProgressOverlayLayoutTest` ran 3/3. Its private smoke again
 ran fixed **8/8** and expanded **64/64** 120-frame jobs, both successful.
-The exact #738-#740 public checks were still running at this checkpoint.
+The #738 and #739 public and applicable private checks completed successfully.
+The first #740 private Linux run and one retry failed `xl_water_arena` at
+`dbdd23c67`; local reproduction found an incomplete-package admission error.
+After the guard fix, the #740 exact-head private workflow reported success
+with native jobs intentionally skipped because #740 was below the native
+stack tip; its [admission log](https://github.com/larsonm-personal/dxx-redux/actions/runs/45218960729/job/137847672746)
+says so. The #741 private Linux owner is running at the fixed inherited head.
+The #740-#742 final checks still require an update here.
 The #734 Windows build was cancelled
 after its test steps passed in [run 45180936407, attempt 1](https://github.com/larsonm-personal/dxx-redux/actions/runs/45180936407/attempts/1);
 the targeted [attempt 2](https://github.com/larsonm-personal/dxx-redux/actions/runs/45180936407/attempts/2)
