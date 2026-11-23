@@ -274,7 +274,7 @@ void compare_emitter(const xl_compat::ParticleEffect &effect)
 		const auto actual = xl_compat::particle_emitter_definition(effect, forward, disperse);
 		CObject object;
 		auto &p = object.rType.particleInfo;
-		p = { effect.life, { effect.size[0], effect.size[1] }, effect.particles, effect.speed, effect.drift, effect.brightness, effect.side, int(effect.kind), 1, { effect.color } };
+		p = { effect.life, { effect.size[0], effect.size[1] }, effect.particles, effect.speed, effect.drift, effect.brightness, effect.side, effect.authored_type >= 0 ? effect.authored_type : int(effect.kind), 1, { effect.color } };
 		object.info.position.mOrient.m.dir.f = { { { forward[0], forward[1], forward[2] } } };
 		gameOpts->render.particles.bDisperse = int(disperse);
 		particleManager = {};
@@ -315,7 +315,7 @@ void compare(const std::vector<int> &payload, int version, float face_size, bool
 	source.SetupSmoke();
 	if (actual.life != p.nLife || actual.size[0] != p.nSize[0] || actual.size[1] != p.nSize[1] ||
 	    actual.particles != p.nParts || actual.speed != p.nSpeed || actual.drift != p.nDrift || actual.brightness != p.nBrightness ||
-	    actual.side != p.nSide || int(actual.kind) != p.nType || actual.enabled != bool(payload[12]) ||
+	    actual.side != p.nSide || actual.authored_type != p.nType || actual.enabled != bool(payload[12]) ||
 	    actual.color != std::array<int, 4>{ payload[6], payload[7], payload[8], payload[9] })
 		throw std::runtime_error("Actual source particle preparation differs");
 	compare_emitter(actual);
@@ -493,7 +493,9 @@ void particle_source_controls()
 	particle_reference::compare({ 1, 4, 7, 8, 1, 10, 180, 200, 255, 60, 2, 4, 1 }, 21, 1.0f, false);
 	particle_reference::compare({ 4, 2, 5, 4, 1, 10, 0, 0, 0, 0, 2, 6, 1 }, 21, 1.0f, false);
 	particle_reference::compare({ 10, 6, 10, 6, 1, 10, 255, 255, 255, 128, 5, 5, 1 }, 21, 1.0f, false);
-	count += 8;
+	// Original Playground XL particle subtype 20 follows DoStaticParticles' smoke fallback.
+	particle_reference::compare({ 2, 4, 2, 2, 3, 3, 64, 64, 64, 32, 4, 20, 1 }, 26, 1.0f, false);
+	count += 9;
 	for (const auto &change : std::vector<std::pair<unsigned, int>>{ { 0, -1 }, { 0, INT32_MAX }, { 1, INT32_MAX }, { 2, 11 }, { 3, 31 }, { 4, INT32_MAX }, { 5, INT32_MAX }, { 6, 256 }, { 10, 7 }, { 11, 7 } }) {
 		xl_compat::Object object{};
 		object.render = 11;

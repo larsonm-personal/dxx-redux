@@ -13,7 +13,7 @@ inline bool authored_particle_shape(const Object &object)
 {
 	return object.type == 20 && object.reader_id == 0 && object.render == 11 && object.reader_render == 11 &&
 	       !object.control && !object.movement && !object.multiplayer && object.render_data.size() == 13 &&
-	       object.render_data[11] >= 0 && object.render_data[11] <= 6;
+	       object.render_data[11] >= 0 && (object.render_data[11] <= 6 || object.render_data[11] == 20);
 }
 inline bool fire_particle_shape(const Object &object)
 {
