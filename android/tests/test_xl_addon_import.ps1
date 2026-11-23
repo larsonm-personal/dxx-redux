@@ -604,8 +604,15 @@ try {
                 Write-Output 'PASS: UI-imported original Pumo opening gates and fresh-process save restoration'
             }
         } elseif (!$PumoUiDisabledOwner) {
-            if ($PumoUiCrauphel) { Write-Output 'PASS: Original Crauphel Scilab missile shot before and after reload' }
-            else { Write-Output 'PASS: UI-imported original Pumo normal firing, hub transition and save restoration' }
+            if ($PumoUiCrauphel) {
+                $gameLog = Invoke-AddonAdb -Arguments @('logcat', '-d', '-v', 'brief', 'DXX-DLOG:D', '*:S')
+                $reused = @($gameLog -split '\r?\n' | Select-String 'XL reused prepared level resources: ordinal=(-?\d+) file=(\S+)$' |
+                        ForEach-Object { '{0}/{1}' -f $_.Matches[0].Groups[1].Value, $_.Matches[0].Groups[2].Value })
+                if (($reused -join ',') -cne '1/pm-hub.rl2,2/mvlev1.rl2') {
+                    throw "Expected one prepared owner each for New Game and Crauphel travel only, saw: $($reused -join ',')"
+                }
+                Write-Output 'PASS: Original Crauphel Scilab reused travel preparation and passed a missile shot before and after reload'
+            } else { Write-Output 'PASS: UI-imported original Pumo normal firing, hub transition and save restoration' }
         }
     } else {
         if (!$TimeEquipment) {

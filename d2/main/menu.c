@@ -964,7 +964,7 @@ int do_new_game_menu()
 	android_loading_progress_begin("Preparing level", 0);
 	android_loading_progress_update("Checking level resources and graphics", 0, 0);
 #endif
-	const int xl_supported = xl_level_supported_at(Level_names[new_level_num - 1], 0, new_level_num);
+	const int xl_supported = xl_prepare_level_transition(Level_names[new_level_num - 1], 0, new_level_num);
 #ifdef __ANDROID__
 	android_loading_progress_end();
 #endif
@@ -974,6 +974,9 @@ int do_new_game_menu()
 	}
 #endif
 	StartNewGame(new_level_num);
+#ifdef DXX_XL_RUNTIME
+	xl_clear_level_preflight();
+#endif
 
 	return 1;	// exit mission listbox
 }
