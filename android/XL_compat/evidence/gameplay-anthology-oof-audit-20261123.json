@@ -1,0 +1,134 @@
+{
+  "schema": 1,
+  "date": "2026-11-23",
+  "source_archive": "anthology(split).7z",
+  "source_archive_sha256": "636b07e2cb1f52f5263b558ed0abb40724553d2b3d67cfdd4728f4addac68481",
+  "models": [
+    {
+      "model": "mods/antho1-3/models/model49.oof",
+      "size": 53413,
+      "sha256": "8753579788d3ad09326d1f96e2e74d1d2a0e6822a3c97e8820dc85c23a344563",
+      "txtr_declared_bytes": 296,
+      "txtr_decoded_bytes": 191,
+      "next_decoded_chunk": "OHDR/36",
+      "chunk_types": [
+        "GPNT",
+        "OHDR",
+        "PANI",
+        "PINF",
+        "RANI",
+        "SOBJ",
+        "SPCL",
+        "WBAT"
+      ]
+    },
+    {
+      "model": "mods/antho1-3/models/model70.oof",
+      "size": 49270,
+      "sha256": "eb33040f94e861b49b128d8a5c885689eafb9fae837e59c45d0cac5fe797e29e",
+      "txtr_declared_bytes": 298,
+      "txtr_decoded_bytes": 218,
+      "next_decoded_chunk": "OHDR/36",
+      "chunk_types": [
+        "GPNT",
+        "OHDR",
+        "PANI",
+        "PINF",
+        "RANI",
+        "SOBJ",
+        "SPCL",
+        "WBAT"
+      ]
+    },
+    {
+      "model": "mods/antho1-3/models/model82.oof",
+      "size": 61020,
+      "sha256": "7157eda5a24a982a490ec1bc16208dfb8997ee2dd87492124b9ab371bf4dac3a",
+      "txtr_declared_bytes": 163,
+      "txtr_decoded_bytes": 104,
+      "next_decoded_chunk": "OHDR/36",
+      "chunk_types": [
+        "GPNT",
+        "OHDR",
+        "PANI",
+        "PINF",
+        "RANI",
+        "SOBJ",
+        "SPCL",
+        "WBAT"
+      ]
+    },
+    {
+      "model": "mods/antho1-3/models/model83.oof",
+      "size": 25524,
+      "sha256": "02b6e37cc39481c2405c1897ae71396a61660ea484d54da275ccdf4becc2bf3b",
+      "txtr_declared_bytes": 321,
+      "txtr_decoded_bytes": 223,
+      "next_decoded_chunk": "OHDR/36",
+      "chunk_types": [
+        "GPNT",
+        "OHDR",
+        "PANI",
+        "PINF",
+        "RANI",
+        "SOBJ",
+        "WBAT"
+      ]
+    },
+    {
+      "model": "mods/antho1-3/models/model85.oof",
+      "size": 13890,
+      "sha256": "ff6bab88e9fa424c6b96af0c941bf62853a0650151fbda7235079b691d2ca792",
+      "txtr_declared_bytes": 243,
+      "txtr_decoded_bytes": 176,
+      "next_decoded_chunk": "OHDR/36",
+      "chunk_types": [
+        "GPNT",
+        "OHDR",
+        "PANI",
+        "PINF",
+        "RANI",
+        "SOBJ",
+        "SPCL",
+        "WBAT"
+      ]
+    },
+    {
+      "model": "mods/antho1-3/models/model86.oof",
+      "size": 23308,
+      "sha256": "1a2e81cd5487d77e486d40b67416668b3d920540ff6661beac93cae7959a2ecd",
+      "txtr_declared_bytes": 169,
+      "txtr_decoded_bytes": 116,
+      "next_decoded_chunk": "OHDR/36",
+      "chunk_types": [
+        "GPNT",
+        "OHDR",
+        "PANI",
+        "PINF",
+        "RANI",
+        "SOBJ",
+        "SPCL",
+        "WBAT"
+      ]
+    },
+    {
+      "model": "mods/antho1-3/models/model87.oof",
+      "size": 5033,
+      "sha256": "7673abb7ee11615942e653410459f447c605a75e4f08c6a1e414fc97cb411fce",
+      "txtr_declared_bytes": 34,
+      "txtr_decoded_bytes": 34,
+      "next_decoded_chunk": "OHDR/36",
+      "chunk_types": [
+        "GRND",
+        "OHDR",
+        "PANI",
+        "PINF",
+        "RANI",
+        "SOBJ"
+      ]
+    }
+  ],
+  "pinned_source": "arbruijn/d2x-xl 2576a98b5de310e3ac7c9777df2677d1627b8bae",
+  "observation": "The pinned CModel::Read follows decoded data for known chunks and uses declared length for unknown chunks. Six original models overstate TXTR length; a bounded local parser experiment reached GPNT rather than producing a playable level. The seventh retained GRND; all seven have PANI and RANI. No runtime admission was changed.",
+  "cluster_outcomes": "The three split-Anthology advertised ordinals remain load_failed at original inputs; the separate anthology.7z entry also remains load_failed. This audit makes no census gain."
+}

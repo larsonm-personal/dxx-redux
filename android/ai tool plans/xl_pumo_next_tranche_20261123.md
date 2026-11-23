@@ -2,8 +2,9 @@
 
 ## First action: physical phone feedback
 
-Use ordinary kit **32320** and its manifest in ignored
-`temp/xl-pumo-phone-s21-20261123`. Start Mineral Valley on Rookie with touch.
+Use ordinary kit **32321** and its manifest in ignored
+`temp/xl-pumo-phone-s21-20261123-32321`. Start Mineral Valley on Rookie with
+touch.
 The reported failure was a missile shot in Crauphel Scilab, near room 129,
 on SM-S931U, Android SDK 37, Play internal build 31950. Record the missile,
 aim landmark, last successful action and whether saving before the shot,
@@ -15,18 +16,20 @@ Keep **Show progress bars** enabled. Time difficulty selection to the first
 briefing, score-screen advance to the next briefing and final briefing-page
 dismissal to ship control as separate waits. Record the visible label, whether
 the bar moves and approximate elapsed time. The score-to-briefing bar has an
-S21 diagnostic witness; the last-page-to-flight gap still needs ordinary-phone
-observation. Ask for the first words or a screenshot of the green-on-green
-briefing page. Each report needs kit version, phone, Android version,
+S21 diagnostic witness. Build 32321 makes the bar and label higher contrast,
+but still needs an ordinary-phone visual check. The last-page-to-flight gap
+also needs ordinary-phone observation. Ask for the first words or a screenshot
+of the green-on-green briefing page. Each report needs kit version, phone,
+Android version,
 difficulty, input method, episode, checkpoint, last successful action and
 save/load result.
 
 ## Independent engineering while waiting
 
 The frozen integrated Windows baseline is 1,534/1,654 starts at 120 frames.
-The current-head rerun of all 120 prior misses measured 24/120 passing and
-96/120 still blocked. Together with the 1,534 prior passes, this supports
-**1,558/1,654**, leaving **96/1,654** if those prior passes remain unchanged.
+The current-head rerun of all 120 prior misses measured 25/120 passing and
+95/120 still blocked. Together with the 1,534 prior passes, this supports
+**1,559/1,654**, leaving **95/1,654** if those prior passes remain unchanged.
 This is not a full 1,654-start census rerun. Keep missing
 advertised members and alternate distributions separate. The original Kore
 archive is 1/1, Chaos Theory XL is 6/6, Playground XL is 8/8 and Anthology
@@ -34,29 +37,43 @@ archive is 1/1, Chaos Theory XL is 6/6, Playground XL is 8/8 and Anthology
 passes at its separate advertised ordinal. These tests establish startup, not
 complete gameplay or visual parity.
 
-The next narrow runnable-original lead is
-`levelpack.7z/missions/lotw/bay32.msn:1`. The frozen survey ran 120 frames but
-reported `missions/BAY32.rdl` for advertised `bay32.rdl`; determine whether
-this is a case-insensitive resolution difference, a different member, or a
-survey identity error before changing either engine behavior or the census.
-If a change is justified, replay the exact levelpack descriptor and its
-related cases with unchanged ordinal and unassisted inputs. Record the first
-newly exposed blocker. The already fixed Anthology powerup and levelpack
-Playground entries should not be counted again.
+The next runnable-original lead is
+`levelpack.7z/missions/darkflamewolf/ctheo-xl.mn2:4`. The texture fix exposed
+two type-20 effect objects and two lightning payloads in a classic 7/31
+level. The original multiplayer Chaos Theory archive passing level 4 is a
+separate distribution. The existing lightning runtime binds translated
+extended levels; the classic stock-load path does not bind those objects.
+Prove a source-owned classic effect path, including native object identity and
+save/load, before changing admission. Then replay the exact levelpack cluster
+and record newly exposed blockers. The split-Anthology OOF cluster is a
+separate lead: six original TXTR chunks overstate length, but bounded parser
+resynchronization exposed `GPNT`; gun-point and animation behavior remains
+unqualified. The [model audit](../XL_compat/evidence/gameplay-anthology-oof-audit-20261123.json)
+retains hashes and chunk evidence without private model bytes.
+Levelpack Sphere level 1 is another original lead: its HXM robot 2 has an
+out-of-range model and gun submodel. A derived structural correction passed
+the validator, but static absence in objects, containment and matcens is not
+a complete spawn proof. Preserve its [HXM audit](../XL_compat/evidence/gameplay-sphere-hxm-audit-20261123.json)
+and keep the original blocked until full runtime reachability and save/load
+semantics are shown.
+Levelpack Chaos Theory level 6 separately needs additive wall rendering plus
+14 other requirements. The fixed Anthology, Playground and Bay32 entries
+should not be counted again. Bay32's filename discrepancy is resolved by a
+hash of the engine-read source and an isolated negative control.
 
-The levelpack Chaos Theory level 4 now reaches XL effect objects and lightning;
-level 6 reaches additive wall rendering plus 14 other requirements. The three
-bio/etomb archives require multiple segment behaviors and are a
+The three bio/etomb archives require multiple segment behaviors and are a
 larger project. The 16 light-index bounds include truly out-of-range packed
-data and need a pinned source rule. The 34 missing advertised members need
-distribution analysis. Use one local gameplay worker, read its receipts,
+data and need a pinned source rule. The 34 missing advertised members include
+27 FFYL ordinals whose levelpack archive contains a descriptor but no FFYL
+HOG or RL2. Keep the separate `FFYL.rar` distribution separate while auditing
+the seven other missing members. Use one local gameplay worker, read its receipts,
 validate focused changes with Windows builds and exact archive replays, and
 use hosted Linux fork CI for routine cross-platform checks. Use the S21 for
 Android behavior. Keep private game assets, profiles, saves and logs off Git.
 
 ## Fork and handoff
 
-The ready-for-review personal-fork PRs #726-#735 are registered in
+The ready-for-review personal-fork PRs #726-#738 are registered in
 [stack 720](https://github.com/larsonm-personal/dxx-redux/stack/720), each
 based on its immediate predecessor. Check the final execution report for
 exact heads and CI results. The private XL workflow may skip a PR below the
@@ -66,7 +83,7 @@ and confirm selected tests ran. Register any new immediate-parent PR in the
 stack. Leave all PRs open; merges need explicit authorization.
 
 Maintain [the dated execution report](xl_pumo_s21_execution_20261123.md),
-[remaining categories](xl_pumo_s21_execution_20261123.md#remaining-first-blocker-projection)
+[remaining categories](xl_pumo_s21_execution_20261123.md#remaining-first-blockers)
 and [human directions](../XL_compat/PUMO_PLAYTEST.md). Restore the S21's
 original `stay_on_while_plugged_in` value after phone experiments.
 
@@ -76,15 +93,16 @@ original `stay_on_while_plugged_in` value after phone experiments.
 > `.github/copilot-instructions.md`,
 > `android/ai tool plans/xl_pumo_s21_execution_20261123.md`, this next
 > tranche plan and `android/XL_compat/PUMO_PLAYTEST.md`. Begin with physical
-> feedback on ordinary kit 32320. Record kit version, phone/Android version,
+> feedback on ordinary kit 32321. Record kit version, phone/Android version,
 > difficulty, input method, episode, checkpoint, last successful action and
 > save/load result. Reproduce the Crauphel Scilab room-129 human missile exit
 > with the same aim and missile; fixed-pose and automated S21 shots do not
 > close it. Check score-to-briefing and last-briefing-to-flight progress bars
 > separately and identify the green-on-green briefing page. While waiting,
-> investigate a runnable-original XL entry from the measured 96/120 remaining
-> prior misses (96/1,654 if the prior 1,534 passes still hold),
-> remaining, beginning with the Bay32 resolved filename discrepancy. Preserve
+> investigate a runnable-original XL entry from the measured 95/120 remaining
+> prior misses (95/1,654 if the prior 1,534 passes still hold), beginning with
+> levelpack Chaos Theory level 4 effect objects and lightning. Bay32's source
+> identity is resolved. Preserve
 > exact archive, ordinal and inputs;
 > replay the entire affected cluster and record newly exposed blockers. Use
 > one local gameplay worker, hosted Linux CI and the S21 as needed. Keep

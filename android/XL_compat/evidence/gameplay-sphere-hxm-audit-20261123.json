@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "date": "2026-11-23",
+  "id": "levelpack.7z/missions/single/sphere.mn2:1",
+  "source_archive_sha256": "b4b519dc5755b795fd49cc3786a0421b96cd099dcc8f002925ddfd7c038b2719",
+  "mission_hog_sha256": "26d925e2b70a34b7179d5204d3c7c9d0e889e3745228423259756c9e4e243c36",
+  "level_sha256": "5b4ac91a472acf5a2f2e2fc06eaefa447777eedd7af8b60234bcecc8429f55cd",
+  "level_hxm_sha256": "66f5205c1d6895c0a18ce75ed1b25913ecc58e70e43147d29c463ac38e6f6872",
+  "level_hxm_robot_replacements": 27,
+  "first_invalid_record": {
+    "robot_id": 2,
+    "model_num": 17524,
+    "guns": 7,
+    "gun_submodel_6": 21,
+    "native_model_limit": "below 17524",
+    "native_submodel_limit": 10
+  },
+  "static_level1_checks": {
+    "direct_robot_objects_id2": 0,
+    "robot_containment_id2": 0,
+    "matcen_bit_id2": 0,
+    "full_runtime_reachability_proven": false
+  },
+  "derived_structural_probe": "A private copy changed only robot 2 model_num to 4 and gun_submodel_6 to 0; the standalone XL HXM validator with generous table bounds then passed. The original did not pass. This is not original gameplay admission or proof that robot 2 cannot be spawned.",
+  "current_result": "load_failed; HXM definitions are malformed or require unsupported normalization: sp-01.HXM; unchanged in the 95/120 targeted cohort"
+}
