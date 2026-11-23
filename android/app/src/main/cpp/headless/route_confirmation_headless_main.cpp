@@ -10,6 +10,8 @@
 
 #ifdef DXX_XL_RUNTIME
 #include "preview.h"
+#include "picosha2.h"
+#include <vector>
 #endif
 
 #include <physfs.h>
@@ -66,6 +68,24 @@ extern int test_guidebot_live_navigation(const char *output, const char *return_
 namespace
 {
 unsigned char *Headless_screen_pixels = nullptr;
+
+#ifdef DXX_XL_RUNTIME
+std::string readiness_level_source_sha256(const char *filename)
+{
+	if (!filename || !*filename) return {};
+	PHYSFS_File *file = PHYSFS_openRead(filename);
+	if (!file) return {};
+	const PHYSFS_sint64 size = PHYSFS_fileLength(file);
+	if (size < 0 || size > 64 * 1024 * 1024) {
+		PHYSFS_close(file);
+		return {};
+	}
+	std::vector<unsigned char> bytes(static_cast<size_t>(size));
+	const bool complete = PHYSFS_readBytes(file, bytes.data(), size) == size;
+	PHYSFS_close(file);
+	return complete ? picosha2::hash256_hex_string(bytes) : std::string{};
+}
+#endif
 
 const char *find_arg_value(int argc, char *argv[], const char *name)
 {
@@ -344,6 +364,8 @@ int main(int argc, char *argv[])
 		readiness["level_file"] = Gamesave_current_filename;
 		readiness["segments"] = Num_segments;
 #ifdef DXX_XL_RUNTIME
+		const auto level_source_sha256 = readiness_level_source_sha256(Gamesave_current_filename);
+		if (!level_source_sha256.empty()) readiness["level_source_sha256"] = level_source_sha256;
 		readiness["xl_active"] = xl_level_extensions_active() != 0;
 		readiness["level_version"] = xl_source_level_version();
 #else

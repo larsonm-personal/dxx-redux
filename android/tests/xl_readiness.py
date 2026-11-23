@@ -266,7 +266,20 @@ def stage_case(assets, archive, case, work, seven_zip, unpack_cache=None):
     return extra
 
 
-def classify(returncode, proof, log, case):
+def level_file_matches(proof, case, staged_level_sha256=None):
+    resolved = proof.get("level_file", "")
+    if not isinstance(resolved, str):
+        return False
+    if resolved.lower() == case["level_file"]:
+        return True
+    return bool(
+        staged_level_sha256
+        and resolved.replace("\\", "/").lower() == "missions/" + case["level_file"]
+        and proof.get("level_source_sha256") == staged_level_sha256
+    )
+
+
+def classify(returncode, proof, log, case, staged_level_sha256=None):
     if returncode is not None and returncode < 0:
         return "crash"
     if returncode is None:
@@ -277,7 +290,7 @@ def classify(returncode, proof, log, case):
         and isinstance(proof.get("mission"), str)
         and proof["mission"].lower() == case["mission"].lower()
         and proof.get("level") == case["level"]
-        and proof.get("level_file", "").lower() == case["level_file"]
+        and level_file_matches(proof, case, staged_level_sha256)
         and proof.get("frames") == 120
         and proof.get("segments", 0) > 0
         and proof.get("fixed_hz") == 60
@@ -370,11 +383,18 @@ def run(
                 except subprocess.TimeoutExpired:
                     code = None
             proof = json.loads((area / "load.json").read_text()) if (area / "load.json").exists() else {}
+            staged_level_sha256 = None
+            resolved = proof.get("level_file")
+            if isinstance(resolved, str) and resolved.replace("\\", "/").lower() == "missions/" + case["level_file"]:
+                staged_level = extra / "missions" / Path(resolved.replace("\\", "/")).name
+                if staged_level.is_file():
+                    staged_level_sha256 = digest(staged_level)
+                    row["staged_level_sha256"] = staged_level_sha256
             # Raw engine messages remain private; publish only fixed classifications.
             with (area / "engine.log").open("rb") as log:
                 log.seek(max(0, (area / "engine.log").stat().st_size - 65536))
                 output = log.read(65536).decode("utf-8", errors="replace")
-            row["outcome"] = classify(code, proof, output, case)
+            row["outcome"] = classify(code, proof, output, case, staged_level_sha256)
             row["frames"] = (
                 proof.get("frames", 0) if type(proof.get("frames")) is int and 0 <= proof["frames"] <= 120 else 0
             )
@@ -411,7 +431,7 @@ def run(
                             and 0 < route.get("frames", 0) <= 1800
                             and loaded.get("mission") == case["mission"]
                             and loaded.get("level") == case["level"]
-                            and loaded.get("level_file", "").lower() == case["level_file"]
+                            and level_file_matches(loaded, case, staged_level_sha256)
                             and loaded.get("visited_segments", 0) >= 3
                         )
                         row["assisted_navigation"] = (
