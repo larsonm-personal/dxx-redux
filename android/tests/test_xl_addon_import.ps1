@@ -1,5 +1,5 @@
 #!/usr/bin/env pwsh
-param([string]$Serial, [ValidatePattern('^[A-Za-z0-9_.-]+\.7z$')][string]$DistributionName = '', [switch]$PumoUiImport, [switch]$PumoUiCold, [switch]$PumoUiIsolation, [switch]$PumoUiDisabledOwner, [switch]$TimeEquipment, [switch]$Warp5, [switch]$Dinter, [switch]$BoilingPoint, [ValidateSet(2, 3, 5, 7)][int]$BoilingPointLevel = 7, [switch]$Sphere, [switch]$OriginalLifecycle, [string]$TimeEquipmentPilot, [switch]$CaptureLive, [string]$OutputDirectory)
+param([string]$Serial, [ValidatePattern('^[A-Za-z0-9_.-]+\.7z$')][string]$DistributionName = '', [switch]$PumoUiImport, [switch]$PumoUiCrauphel, [switch]$PumoUiCold, [switch]$PumoUiIsolation, [switch]$PumoUiDisabledOwner, [switch]$TimeEquipment, [switch]$Warp5, [switch]$Dinter, [switch]$BoilingPoint, [ValidateSet(2, 3, 5, 7)][int]$BoilingPointLevel = 7, [switch]$Sphere, [switch]$OriginalLifecycle, [string]$TimeEquipmentPilot, [switch]$CaptureLive, [string]$OutputDirectory)
 $ErrorActionPreference = 'Stop'
 if ($PSBoundParameters.ContainsKey('BoilingPointLevel') -and !$BoilingPoint) { throw 'BoilingPointLevel requires the protected BoilingPoint mode' }
 if ($OriginalLifecycle -and (!$TimeEquipment -or !($BoilingPoint -or $Sphere))) { throw 'OriginalLifecycle requires a protected original archive gameplay mode' }
@@ -14,6 +14,7 @@ if ($TimeEquipment -and ($PumoUiImport -or !$DistributionName -or !(Test-Path -L
 if ($PumoUiCold -and !$PumoUiImport) { throw 'PumoUiCold requires PumoUiImport' }
 if ($PumoUiIsolation -and (!$PumoUiImport -or $PumoUiCold)) { throw 'PumoUiIsolation requires PumoUiImport in its own mode' }
 if ($PumoUiDisabledOwner -and (!$PumoUiImport -or $PumoUiCold -or $PumoUiIsolation)) { throw 'PumoUiDisabledOwner requires PumoUiImport in its own mode' }
+if ($PumoUiCrauphel -and (!$PumoUiImport -or $PumoUiCold -or $PumoUiIsolation -or $PumoUiDisabledOwner)) { throw 'PumoUiCrauphel requires PumoUiImport in its own mode' }
 $saveMode = $PumoUiIsolation -or $PumoUiDisabledOwner
 . "$PSScriptRoot/../helpers/test_helpers.ps1"
 $previousSerial = $env:ANDROID_SERIAL
@@ -481,8 +482,31 @@ try {
                 if (!$accepted) { throw "Original 7z mission toggle did not reach enabled=$enabled" }
             }
         }
-        $scriptName = if ($saveMode) { 'test_xl_pumo_save_isolation.jsonc' } elseif ($PumoUiCold) { 'test_xl_pumo_opening_gates.jsonc' } else { 'test_xl_pumo_hub_activation.jsonc' }
+        if ($PumoUiCrauphel) {
+            # Both settings files are included in the protected profile. Match the phone's surface aspect and render size
+            Invoke-AddonPrivate 'for f in files/descent.cfg files/d2x-redux/descent.cfg; do touch $f && sed -i -e "/^Resolution[XY]=/d" -e "/^Aspect[XY]=/d" $f && echo >> $f || exit 1; for option in ResolutionX=640 ResolutionY=480 AspectX=6 AspectY=13; do echo $option >> $f || exit 1; done; done' | Out-Null
+        }
+        $scriptName = if ($PumoUiCrauphel) { 'test_xl_pumo_crauphel_missile.jsonc' } elseif ($saveMode) { 'test_xl_pumo_save_isolation.jsonc' } elseif ($PumoUiCold) { 'test_xl_pumo_opening_gates.jsonc' } else { 'test_xl_pumo_hub_activation.jsonc' }
         $steps = @(Get-Content "$PSScriptRoot/../game_scripts/$scriptName" -Raw | ConvertFrom-Json)
+        if (!$saveMode -and !$PumoUiCold -and !$PumoUiCrauphel) {
+            # The original high-resolution hub PCX maps authored pink to palette RGB (56, 56, 59)
+            $intro = 0
+            while ($intro -lt $steps.Count -and $steps[$intro].action -ne 'skip_briefing') { $intro++ }
+            if ($intro -lt 1 -or $intro -eq $steps.Count) { throw 'Original opening briefing boundary missing' }
+            $steps = @($steps[0..($intro - 1)]) + @(
+                @{ action = 'wait_for'; expect = @{ 'briefing_text.background' = 'hb00b.pcx'; 'briefing_text.custom_glyph_rgb' = 3684411 }; timeout_ms = 60000 }
+            ) + @($steps[$intro..($steps.Count - 1)])
+            $at = 0
+            while ($at -lt $steps.Count -and $steps[$at].action -ne 'face_view') { $at++ }
+            if ($at -ge $steps.Count) { throw 'Hub pose boundary missing' }
+            $steps = @($steps[0..($at - 1)]) + @(
+                @{ action = 'assert'; expect = @{ 'music.prefer_mission' = $true; 'music.active' = $true; 'music.name' = 'R.a.M. Land - Alone - Ambient Remix' } },
+                @{ action = 'music_control'; operation = 'source'; source = 'midi' },
+                @{ action = 'wait_for'; expect = @{ 'music.prefer_mission' = $false; 'music.active' = $true }; timeout_ms = 15000 },
+                @{ action = 'music_control'; operation = 'source'; source = 'mission' },
+                @{ action = 'wait_for'; expect = @{ 'music.prefer_mission' = $true; 'music.name' = 'R.a.M. Land - Alone - Ambient Remix' }; timeout_ms = 15000 }
+            ) + @($steps[$at..($steps.Count - 1)])
+        }
         if ($saveMode) { Set-ImportedOwnerExpectations -Steps $steps }
         if ($PumoUiDisabledOwner) {
             # Stop the existing isolation seed after its first ordinary stock manual save
@@ -580,7 +604,8 @@ try {
                 Write-Output 'PASS: UI-imported original Pumo opening gates and fresh-process save restoration'
             }
         } elseif (!$PumoUiDisabledOwner) {
-            Write-Output 'PASS: UI-imported original Pumo normal firing, hub transition and save restoration'
+            if ($PumoUiCrauphel) { Write-Output 'PASS: Original Crauphel Scilab missile shot before and after reload' }
+            else { Write-Output 'PASS: UI-imported original Pumo normal firing, hub transition and save restoration' }
         }
     } else {
         if (!$TimeEquipment) {

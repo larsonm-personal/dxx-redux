@@ -59,6 +59,17 @@
             "cheats_enabled": false,
             "player.primary_weapon_flags": 1,
             "player.laser_level": 0,
+            "player.secondary_ammo[0]": 7,
+        },
+    },
+    { "action": "send_button", "button": 101 },
+    { "action": "wait_ms", "ms": 1500 },
+    {
+        "action": "assert",
+        "expect": {
+            "game_window_is_front": true,
+            "player_dead": false,
+            "player.secondary_ammo[0]": 6,
         },
     },
     {

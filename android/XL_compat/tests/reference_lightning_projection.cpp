@@ -75,8 +75,9 @@ void lightning_projection_controls()
 							point.Set(x, y, z);
 							tScreenPos expected{};
 							if (ProjectPoint(point, expected, 0, 0) != PF_PROJECTED) throw std::runtime_error("Pinned lightning projection did not project");
-							const auto actual = xl_compat::lightning_screen_point({ x, y, z }, projection, canvas[0], canvas[1]);
-							if (actual != std::array<int, 2>{ expected.x, expected.y }) throw std::runtime_error("Lightning viewport point differs from pinned projection");
+							std::array<int, 4> extent{ INT32_MAX, INT32_MAX, INT32_MIN, INT32_MIN };
+							xl_compat::extend_glow_viewport(extent, { x, y, z }, projection, canvas[0], canvas[1]);
+							if (extent != std::array<int, 4>{ expected.x, expected.y, expected.x, expected.y }) throw std::runtime_error("Lightning viewport point differs from pinned projection");
 							const auto old = xl_compat::lightning_clip_vertex({ x, y, -z }, {}, projection);
 							old_mismatches += int(CCanvas::fCanvW2 * (1 + old.position[0] / std::abs(z))) != expected.x || int(CCanvas::fCanvH2 * (1 + old.position[1] / std::abs(z))) != expected.y;
 							++cases;
@@ -84,14 +85,21 @@ void lightning_projection_controls()
 			}
 	if (!old_mismatches) throw std::runtime_error("Projection control failed to distinguish the old MVP bounds");
 	const std::array<float, 16> identity{ 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 };
-	for (const auto point : { xl_compat::LightningVertex{ 0, 0, 0 }, xl_compat::LightningVertex{ 1, 0, 1e-30f }, xl_compat::LightningVertex{ std::numeric_limits<float>::infinity(), 0, 1 } }) {
+	for (const auto point : { xl_compat::LightningVertex{ 0, 0, 0 }, xl_compat::LightningVertex{ 1, 0, 1e-30f }, xl_compat::LightningVertex{ 0, -1, -1e-30f } }) {
+		std::array<int, 4> extent{ 12, 20, 25, 30 };
+		xl_compat::extend_glow_viewport(extent, point, identity, 481, 273);
+		xl_compat::extend_glow_viewport(extent, { 0, 0, 1 }, identity, 481, 273);
+		if (extent != std::array<int, 4>{ 0, 0, 481, 273 }) throw std::runtime_error("Eye-plane glow lost part of the canvas");
+	}
+	{
+		std::array<int, 4> extent{};
 		bool rejected = false;
 		try {
-			(void) xl_compat::lightning_screen_point(point, identity, 64, 64);
+			xl_compat::extend_glow_viewport(extent, { std::numeric_limits<float>::infinity(), 0, 1 }, identity, 64, 64);
 		} catch (const std::runtime_error &) {
 			rejected = true;
 		}
-		if (!rejected) throw std::runtime_error("Lightning projection accepted an undefined source integer conversion");
+		if (!rejected) throw std::runtime_error("Glow projection accepted a non-finite vertex");
 	}
 	std::cout << "Pinned lightning projection: " << cases << " front/behind/near-plane/canvas cases passed; " << old_mismatches << " distinguish old MVP bounds\n";
 }

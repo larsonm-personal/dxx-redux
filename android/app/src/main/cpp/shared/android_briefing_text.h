@@ -9,6 +9,7 @@ typedef struct android_briefing_text_state {
 	int overflow_page;
 	int fits_height;
 	int overlaps;
+	int custom_glyph_rgb; /* palette RGB, six bits per channel in three bytes */
 	char background[32];
 	char text[2049];
 } android_briefing_text_state;

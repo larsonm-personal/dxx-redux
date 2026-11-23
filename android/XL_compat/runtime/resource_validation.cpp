@@ -63,6 +63,7 @@ extern "C" {
 #include "strutil.h"
 #include "dxxerror.h"
 #include "mission.h"
+#include "songs.h"
 #include "switch.h"
 #include "palette.h"
 #include "gauges.h"
@@ -93,6 +94,9 @@ std::map<std::string, TrustedBankSource> startup_bank_sources;
 // Retain only the latest immutable pair; individual candidates own their references
 std::shared_ptr<const XlResourceBanks> prepared_bank_cache;
 bool mission_requires_xl = false;
+std::map<std::string, std::string> mission_music_paths;
+std::map<int, int> mission_secret_songs;
+int mission_normal_songs;
 std::map<int, std::shared_ptr<xl_compat::OofResource>> mission_oof_models;
 std::map<std::string, std::string> mission_mod_sources;
 std::map<std::string, std::string> mission_definition_sources;
@@ -570,6 +574,9 @@ extern "C" void xl_resource_note_startup_ham(const char *name, PHYSFS_file *file
 
 extern "C" void xl_resource_select_mission(int requires_xl)
 {
+	mission_music_paths.clear();
+	mission_secret_songs.clear();
+	mission_normal_songs = 0;
 	xl_oof_renderer_clear();
 	mission_oof_models.clear();
 	mission_mod_sources.clear();
@@ -784,20 +791,22 @@ xl_compat::OwnedModelSet prepare_owned_models(int ordinal, mission_preparation *
 		folders.push_back(std::string("models/") + (ordinal < 0 ? "slevel" : "level") + (number.size() < 2 ? "0" : "") + number + "/");
 	}
 	folders.push_back("models/");
-	// Check absent directories once per preparation instead of walking them for
-	// every optional model name. Existing files still pass the owned-file checks
-	if (!target
-#ifdef __ANDROID__
-	    && !*android_mission_assets_key()
-#endif
-	) {
-		folders.erase(std::remove_if(folders.begin(), folders.end(), [](const std::string &folder) {
-			              auto path = owned_mod_path("", folder.substr(0, folder.size() - 1), nullptr);
-			              return path.empty() || PHYSFSEXT_locateCorrectCase(path.data()) != 0;
-		              }),
-		              folders.end());
+	// A missing optional filename otherwise enumerates the same directory for
+	// each model ID. Index the live view once and validate every match normally.
+	std::map<std::string, std::set<std::string>> available;
+	if (!target) {
+		for (const auto &folder : folders) {
+			auto path = owned_mod_path("", folder.substr(0, folder.size() - 1), nullptr);
+			if (path.empty() || PHYSFSEXT_locateCorrectCase(path.data()) != 0) {
+				available[folder];
+				continue;
+			}
+			std::unique_ptr<char *, decltype(&PHYSFS_freeList)> entries(PHYSFS_enumerateFiles(path.c_str()), PHYSFS_freeList);
+			if (!entries) continue;
+			auto &names = available[folder];
+			for (auto entry = entries.get(); *entry; ++entry) names.insert(resource_key(*entry));
+		}
 	}
-	if (folders.empty()) return result;
 	std::map<std::string, std::shared_ptr<xl_compat::OofResource>> by_path;
 	std::map<std::string, std::shared_ptr<const xl_compat::PogBitmap>> skins_by_path;
 	for (int id = 0; id < MAX_POLYGON_MODELS; ++id) {
@@ -812,7 +821,9 @@ xl_compat::OwnedModelSet prepare_owned_models(int ordinal, mission_preparation *
 		std::string path;
 		std::string selected_folder;
 		for (const auto &folder : folders) {
+			const auto listing = available.find(folder);
 			for (const auto &candidate : xl_compat::model_candidates(id)) {
+				if (listing != available.end() && !listing->second.count(resource_key(candidate))) continue;
 				path = owned_mod_file("", folder + candidate, target);
 				if (!path.empty()) {
 					selected_folder = folder;
@@ -907,6 +918,85 @@ xl_compat::OwnedModelSet xl_prepare_owned_models(int ordinal)
 	if (!mission_requires_xl || !Current_mission || Current_mission->descent_version != 2) return {};
 	if (ordinal > Last_level || ordinal < Last_secret_level) throw std::runtime_error("Invalid XL model level ordinal");
 	return prepare_owned_models(ordinal);
+}
+
+extern "C" int xl_mission_music_path(const char *track, char *path, size_t capacity)
+{
+	const auto found = mission_music_paths.find(track);
+	if (found == mission_music_paths.end() || found->second.size() >= capacity) return 0;
+	std::memcpy(path, found->second.c_str(), found->second.size() + 1);
+	return 1;
+}
+
+extern "C" void xl_apply_mission_music(bim_song_info **songs, int *count, const char *song_list_owner, int enabled)
+{
+	mission_music_paths.clear();
+	mission_secret_songs.clear();
+	mission_normal_songs = 0;
+	if (!enabled || !mission_requires_xl || !Current_mission || !*songs || *count <= SONG_FIRST_LEVEL_SONG ||
+	    mission_owns_resource_archive(song_list_owner) || mission_owns_resource_directory(song_list_owner)) return;
+#ifdef __ANDROID__
+	if (song_list_owner && *android_mission_assets_key()) {
+		char resolved[PATH_MAX];
+		for (const char *name : { "dxx-r.sng", "descent.sng" })
+			if (android_mission_assets_find_owned_file(name, resolved, sizeof(resolved))) return;
+	}
+#endif
+	try {
+		const auto original = *songs;
+		std::vector<bim_song_info> selected(original, original + SONG_FIRST_LEVEL_SONG);
+		std::map<std::string, std::string> paths;
+		const auto select = [&](bim_song_info &song, const std::string &name) {
+			const auto path = owned_mod_file("", "music/" + name);
+			if (path.empty()) return false;
+			paths.emplace(name, path);
+			std::snprintf(song.filename, sizeof(song.filename), "%s", name.c_str());
+			return true;
+		};
+		select(selected[SONG_TITLE], "title.ogg");
+		select(selected[SONG_BRIEFING], "briefing.ogg");
+		select(selected[SONG_CREDITS], "credits.ogg");
+		bool level_music = false;
+		for (int level = 1; level <= Last_level; ++level) {
+			char name[16];
+			std::snprintf(name, sizeof(name), "level%02d.ogg", level);
+			selected.push_back(original[SONG_FIRST_LEVEL_SONG + (level - 1) % (*count - SONG_FIRST_LEVEL_SONG)]);
+			if (select(selected.back(), name)) level_music = true;
+		}
+		if (!level_music) {
+			selected.resize(SONG_FIRST_LEVEL_SONG);
+			selected.insert(selected.end(), original + SONG_FIRST_LEVEL_SONG, original + *count);
+		}
+		const int normal_songs = static_cast<int>(selected.size()) - SONG_FIRST_LEVEL_SONG;
+		std::map<int, int> secret_songs;
+		for (int level = -1; level >= Last_secret_level; --level) {
+			char name[16];
+			std::snprintf(name, sizeof(name), "slevel%02u.ogg", unsigned(-level));
+			bim_song_info song{};
+			if (select(song, name)) {
+				secret_songs.emplace(level, static_cast<int>(selected.size()));
+				selected.push_back(song);
+			}
+		}
+		if (paths.empty()) return;
+		auto *replacement = static_cast<bim_song_info *>(d_realloc(*songs, selected.size() * sizeof(bim_song_info)));
+		if (!replacement) return;
+		std::copy(selected.begin(), selected.end(), replacement);
+		*songs = replacement;
+		*count = static_cast<int>(selected.size());
+		mission_music_paths.swap(paths);
+		mission_secret_songs.swap(secret_songs);
+		mission_normal_songs = normal_songs;
+	} catch (const std::exception &error) {
+		con_printf(CON_URGENT, "XL mission music: %s", error.what());
+	}
+}
+
+extern "C" int xl_secret_music_slot(int ordinal, int fallback)
+{
+	if (ordinal >= 0 || !mission_normal_songs) return fallback;
+	const auto match = mission_secret_songs.find(ordinal);
+	return match == mission_secret_songs.end() ? SONG_FIRST_LEVEL_SONG + (-ordinal % mission_normal_songs) : match->second;
 }
 
 extern "C" int xl_resource_load_mod_data(void)

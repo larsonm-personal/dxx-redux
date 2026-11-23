@@ -25,6 +25,8 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "timer.h"
 #include "key.h"
 #include "gr.h"
+#include "../../android/XL_compat/briefing_color.h"
+#include "mission.h"
 #include "../../android/app/src/main/cpp/shared/briefing_canvas.h"
 #include "palette.h"
 #include "iff.h"
@@ -72,7 +74,7 @@ int DefineBriefingBox (char **buf);
 #define	SHAREWARE_ENDING_FILENAME	"ending.tex"
 #define DEFAULT_BRIEFING_BKG		"brief03.pcx"
 
-int	Briefing_text_colors[MAX_BRIEFING_COLORS];
+int	Briefing_text_colors[MAX_BRIEFING_COLORS + 1]; // final slot holds XL's custom foreground
 int	Current_color = 0;
 int	Erase_color;
 
@@ -474,6 +476,7 @@ typedef struct msgstream {
 	int x;
 	int y;
 	int color;
+	int shadow;
 	int ch;
 } __pack__ msgstream;
 
@@ -492,6 +495,8 @@ typedef struct briefing
 	msgstream messagestream[2048];
 	int		streamcount;
 	int rendered_line_height;
+	ubyte custom_foreground[3], custom_background[3];
+	int custom_shadow;
 	short	tab_stop;
 	ubyte	flashing_cursor;
 	ubyte	new_page;
@@ -521,6 +526,8 @@ void briefing_init(briefing *br, short level_num)
 
 	br->cur_screen = 0;
 	br->rendered_line_height = 0;
+	memset(br->custom_foreground, 255, sizeof(br->custom_foreground));
+	memset(br->custom_background, 0, sizeof(br->custom_background));
 	br->screen = NULL;
 	gr_init_bitmap_data (&br->background);
 	strncpy(br->background_name, DEFAULT_BRIEFING_BKG, sizeof(br->background_name));
@@ -689,6 +696,7 @@ void put_char_delay(briefing *br, int ch)
 	br->messagestream[br->streamcount].x = br->text_x;
 	br->messagestream[br->streamcount].y = br->text_y;
 	br->messagestream[br->streamcount].color = Briefing_text_colors[Current_color];
+	br->messagestream[br->streamcount].shadow = Current_color == MAX_BRIEFING_COLORS ? br->custom_shadow : -1;
 	br->messagestream[br->streamcount].ch = ch;
 	br->streamcount++;
 
@@ -730,11 +738,17 @@ int briefing_process_char(briefing *br)
 			init_char_pos(br, br->screen->text_ulx, br->screen->text_uly);
 			br->prev_ch = 10;                                   // read to eoln
 		} else if (ch == 'C') {
-			Current_color = get_message_num(&br->message)-1;
-			if (Current_color < 0)
-				Current_color = 0;
-			else if (Current_color > MAX_BRIEFING_COLORS-1)
-				Current_color = MAX_BRIEFING_COLORS-1;
+			if (Current_mission && Current_mission->enhanced == MISSION_ENHANCED_XL &&
+			    xl_briefing_read_color(&br->message, br->custom_foreground, br->custom_background)) {
+				set_briefing_fontcolor(br);
+				Current_color = MAX_BRIEFING_COLORS;
+			} else {
+				Current_color = get_message_num(&br->message)-1;
+				if (Current_color < 0)
+					Current_color = Current_mission && Current_mission->enhanced == MISSION_ENHANCED_XL ? MAX_BRIEFING_COLORS : 0;
+				else if (Current_color > MAX_BRIEFING_COLORS-1)
+					Current_color = MAX_BRIEFING_COLORS-1;
+			}
 			br->prev_ch = 10;
 		} else if (ch == 'F') {     // toggle flashing cursor
 			br->flashing_cursor = !br->flashing_cursor;
@@ -905,6 +919,8 @@ int briefing_process_char(briefing *br)
 
 void set_briefing_fontcolor (briefing *br)
 {
+	Briefing_text_colors[MAX_BRIEFING_COLORS] = gr_find_closest_color_current(br->custom_foreground[0] >> 2, br->custom_foreground[1] >> 2, br->custom_foreground[2] >> 2);
+	br->custom_shadow = gr_find_closest_color_current(br->custom_background[0] >> 2, br->custom_background[1] >> 2, br->custom_background[2] >> 2);
 	Briefing_text_colors[0] = gr_find_closest_color_current( 0, 40, 0);
 	Briefing_text_colors[1] = gr_find_closest_color_current( 40, 33, 35);
 	Briefing_text_colors[2] = gr_find_closest_color_current( 8, 31, 54);
@@ -937,7 +953,11 @@ void redraw_messagestream(msgstream *stream, int count)
 	for (i=0; i<count; i++) {
 		msgbuf[0] = stream[i].ch;
 		msgbuf[1] = 0;
-		if (stream[i-1].color != stream[i].color)
+		if (stream[i].shadow >= 0) {
+			gr_set_fontcolor(stream[i].shadow,-1);
+			gr_printf(stream[i].x,stream[i].y,"%s",msgbuf);
+		}
+		if (!i || stream[i].shadow >= 0 || stream[i-1].color != stream[i].color)
 			gr_set_fontcolor(stream[i].color,-1);
 		gr_printf(stream[i].x+1,stream[i].y,"%s",msgbuf);
 	}
@@ -1451,6 +1471,10 @@ void android_briefing_text_snapshot(android_briefing_text_state *state)
 		if (br->messagestream[i].y < 0 || br->messagestream[i].y + br->rendered_line_height > window_get_canvas(front)->cv_bitmap.bm_h)
 			state->fits_height = 0;
 		state->text[i] = br->messagestream[i].ch;
+		if (br->messagestream[i].shadow >= 0) {
+			const unsigned char *rgb = &gr_current_pal[3 * br->messagestream[i].color];
+			state->custom_glyph_rgb = (rgb[0] << 16) | (rgb[1] << 8) | rgb[2];
+		}
 		if (br->messagestream[i].ch == ' ') continue;
 		for (int j = 0; j < i; ++j)
 			if (br->messagestream[j].ch != ' ' &&
