@@ -4,6 +4,7 @@
 #include "shield_renderer.h"
 #include "resource_validation.h"
 #include "../inventory.h"
+#include "../particle_effect.h"
 #include "../particle_image.h"
 #include "../lightning_effect.h"
 #include "../lightning_admission.h"
@@ -173,12 +174,14 @@ std::shared_ptr<const ParticleImageResource> prepare_particle_image(const Invent
 	bool required = false;
 	for (const auto &object : level.objects) {
 		if (object.render != 11) continue;
-		if (object.render_data.size() != 13 || object.render_data[11] < 0 || object.render_data[11] > 6)
+		if (object.render_data.size() != 13 || object.render_data[11] < 0 ||
+		    (object.render_data[11] > 6 && object.render_data[11] != 20))
 			throw std::runtime_error("XL particle image preparation requires a supported authored stationary particle payload");
+		const int kind = particle_runtime_kind(object.render_data[11]);
 		// Source spray uses the smoke particle image and fade profile
-		required |= (object.render_data[11] == 1 || object.render_data[11] == 4 ? 0 : object.render_data[11]) == subtype;
+		required |= (kind == 1 || kind == 4 ? 0 : kind) == subtype;
 		// The non-array bubble shader also binds the active smoke/spark images
-		required |= subtype == 0 && object.render_data[11] == 2;
+		required |= subtype == 0 && kind == 2;
 	}
 	if (!required) return {};
 	if (subtype == 2) return prepare_addon_image(bubble_image_name, "bubble", bubble_image_atlas_side, true, target);

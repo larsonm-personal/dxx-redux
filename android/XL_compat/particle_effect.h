@@ -21,6 +21,11 @@ enum class ParticleKind { smoke,
 	                      rain,
 	                      snow };
 
+inline int particle_runtime_kind(int authored)
+{
+	return authored == 20 ? int(ParticleKind::smoke) : authored;
+}
+
 struct ParticleEffect {
 	int life, particles, speed, drift, brightness;
 	std::array<int, 2> size;
@@ -28,6 +33,7 @@ struct ParticleEffect {
 	int side;
 	ParticleKind kind;
 	bool enabled;
+	int authored_type = -1;
 };
 
 struct ParticleEmitterDefinition {
@@ -64,7 +70,9 @@ inline ParticleEffect decode_particle_effect(const Object &object, int level_ver
 	for (unsigned i = 6; i < 13; ++i)
 		if (p[i] < 0 || p[i] > 255) throw std::runtime_error("XL particle payload contains a non-byte value");
 	if (p[10] > 6) throw std::runtime_error("XL particle emitter references an invalid side");
-	if (p[11] > int(ParticleKind::snow)) throw std::runtime_error("XL particle subtype is unsupported");
+	// The pinned DoStaticParticles maps this authored out-of-range subtype to
+	// its ordinary smoke emitter. Other unqualified subtypes remain blocked.
+	if (p[11] > int(ParticleKind::snow) && p[11] != 20) throw std::runtime_error("XL particle subtype is unsupported");
 	const int life = p[0] ? p[0] : 5, size = p[1] ? p[1] : 5;
 	const int density = p[2] ? p[2] : 5, speed = p[3] ? p[3] : 5;
 	if (density >= 11 || speed >= 31)
@@ -79,7 +87,8 @@ inline ParticleEffect decode_particle_effect(const Object &object, int level_ver
 	result.particles = checked(90LL + checked(std::int64_t(count) * (std::int64_t(1) << speed)) / (11 - density));
 	result.color = { p[6], p[7], p[8], p[9] };
 	result.side = p[10];
-	result.kind = ParticleKind(p[11]);
+	result.authored_type = p[11];
+	result.kind = ParticleKind(particle_runtime_kind(p[11]));
 	result.enabled = p[12] != 0;
 	if (result.side > 0) {
 		if (!std::isfinite(face_size) || face_size < 0)

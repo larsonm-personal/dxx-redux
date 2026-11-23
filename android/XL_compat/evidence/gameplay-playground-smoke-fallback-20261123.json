@@ -1,0 +1,58 @@
+{
+  "schema": "xl-original-particle-smoke-fallback-v1",
+  "date": "2026-11-23",
+  "archive": "levels_multiplayer/playgrnd.7z",
+  "archive_sha256": "5d9a61d9367e164edd3147e498db99dc9bc309c46b785f9ec7d28786352d3c1e",
+  "affected_distribution": "missions/diedel/XL/playgdxl.mn2:1",
+  "affected_hog_sha256": "88845ac3fe27aa6bede8f2b87dc5630e88c1c31de7f9f23486367e6ef9ff09b0",
+  "original_engine_observation": "started_and_ran",
+  "source_comparison": {
+    "revision": "2576a98b5de310e3ac7c9777df2677d1627b8bae",
+    "file": "effects/objsmoke.cpp",
+    "local_source_sha256": "ce39fc41866b703f0978af4ec0af6b4b98e30071b6c8015eaa60b719f8d32b80",
+    "rule": "DoStaticParticles maps unrecognized authored particle subtypes to its ordinary smoke emitter",
+    "test": "xl_effect_reference on the original nested HOG: 9081 setup and 18162 emitter comparisons passed; 79 object ends and one effect payload matched"
+  },
+  "authored_object": {
+    "index": 78,
+    "type": 20,
+    "control": 0,
+    "movement": 0,
+    "render": 11,
+    "segment": 42,
+    "subtype": 20,
+    "effective_kind": "smoke"
+  },
+  "criterion": "same byte-identical archive, eight advertised ordinals and unassisted inputs; level loads and executes 120 simulation frames at 60 Hz",
+  "baseline": {
+    "engine_sha256": "ec182502ca7ec31b02b0339d44f83252358559e9c15be3ec8af21f7d8affb094",
+    "results_sha256": "912d565fce7784a1f666dc579032acd9422ac835ed9c849143bb641e8ea6a4f6",
+    "passed": 6,
+    "denominator": 8,
+    "affected_first_blocker": "effect_particles at record 78: unsupported subtype"
+  },
+  "candidate": {
+    "engine_sha256": "9fa15aca94ba0e296fc853dec5505e2d37674ad8c9cbbe5c953cb034a2c60c28",
+    "results_sha256": "16650d3fdd8ecb8f8e4662f33701558df3a4c4a98795ef4c8f581c49f1f459b9",
+    "passed": 7,
+    "denominator": 8,
+    "affected_outcome": "loaded_ticked",
+    "affected_frames": 120
+  },
+  "remaining_failure": {
+    "distribution": "playgdxl.mn2:1",
+    "hog": "root playgdxl.hog",
+    "first_blocker": "invalid object segment 78",
+    "same_blocker_before_and_after": true
+  },
+  "other_controls": "The other six advertised entries remained loaded_ticked/120 frames",
+  "scope": "Only authored subtype 20 receives the original smoke fallback. The raw byte remains in inspection and source comparison; other unqualified subtype bytes remain rejected. This result establishes startup, not a multiplayer match or full visual parity.",
+  "aggregate_projection": {
+    "reference": "gameplay-census-integrated-20261120.json",
+    "baseline": "1534/1654",
+    "with_prior_layers": "1554/1654",
+    "with_this_entry_if_other_clusters_unchanged": "1555/1654",
+    "remaining": "99/1654",
+    "full_census_rerun": false
+  }
+}
