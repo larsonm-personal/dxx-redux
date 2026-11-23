@@ -1,0 +1,43 @@
+{
+  "schema": "xl-original-invalid-wall-placeholder-v1",
+  "date": "2026-11-23",
+  "archive": "levels_multiplayer/playgrnd.7z",
+  "archive_sha256": "5d9a61d9367e164edd3147e498db99dc9bc309c46b785f9ec7d28786352d3c1e",
+  "affected_distribution": "playgdxl.mn2:1",
+  "affected_hog_sha256": "b667b47e4bd340cd084b2eabf84e5787d8da8034e15504ecc26acb08deb4343c",
+  "original_engine_observation": "started_and_ran",
+  "source_comparison": {
+    "revision": "2576a98b5de310e3ac7c9777df2677d1627b8bae",
+    "file": "gameio/loadobjects.cpp",
+    "local_source_sha256": "01fe3cbc1cf781d1180921c9e235593f1b79d68924c0d49a42502ef8c3ffcd3c",
+    "rule": "CheckAndLinkObjects changes a non-OBJ_NONE object with an out-of-range segment to OBJ_NONE before linking it",
+    "reader_check": "Original root HOG object stream contains 80 records; record 78 starts at byte 96796, has raw type 0 (OBJ_WALL), movement 11 and segment -31744, and consumes no movement payload"
+  },
+  "criterion": "same byte-identical archive, eight advertised ordinals and unassisted inputs; level loads and executes 120 simulation frames at 60 Hz",
+  "baseline": {
+    "engine_sha256": "9fa15aca94ba0e296fc853dec5505e2d37674ad8c9cbbe5c953cb034a2c60c28",
+    "results_sha256": "16650d3fdd8ecb8f8e4662f33701558df3a4c4a98795ef4c8f581c49f1f459b9",
+    "passed": 7,
+    "denominator": 8,
+    "affected_first_blocker": "invalid object segment 78"
+  },
+  "candidate": {
+    "engine_sha256": "cede9860d7b71050ad22e8927d566e3d7daf074cb6b996e8933aa8ed93f00b87",
+    "results_sha256": "260b4148e2828ad5efc27294b983196b96cf9f36bf844e32fc61e6fda681431f",
+    "passed": 8,
+    "denominator": 8,
+    "affected_outcome": "loaded_ticked",
+    "affected_frames": 120,
+    "affected_segments": 280
+  },
+  "controls": "The other seven advertised entries remained loaded_ticked/120 frames; xl_inventory_contract and xl_effect_payloads passed",
+  "scope": "Only a modern-layout OBJ_WALL with an invalid segment is marked inactive in XL inspection and the stock probe shadow. The raw reader type and invalid segment remain visible in inspection. Other invalid object placements still reject. This establishes startup, not a multiplayer match or full visual parity.",
+  "aggregate_projection": {
+    "reference": "gameplay-census-integrated-20261120.json",
+    "baseline": "1534/1654",
+    "with_prior_layers": "1555/1654",
+    "with_this_entry_if_other_clusters_unchanged": "1556/1654",
+    "remaining": "98/1654",
+    "full_census_rerun": false
+  }
+}
