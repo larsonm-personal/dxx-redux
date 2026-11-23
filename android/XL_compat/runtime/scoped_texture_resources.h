@@ -7,6 +7,8 @@
 #include "target_sources.h"
 #include "picosha2.h"
 #include <cstdio>
+#include <deque>
+#include <future>
 #include <map>
 #include <set>
 #include <string>
@@ -26,6 +28,7 @@ struct ScopedTextureBinding {
 struct ScopedTexturePreparationTiming {
 	long long (*now)() = nullptr;
 	long long headers_us = 0, reads_us = 0, decode_us = 0, shrink_us = 0, hash_us = 0;
+	std::size_t parallel_images = 0;
 };
 
 // Retain authored inputs independently of live registry, paging and GL state
@@ -106,38 +109,71 @@ struct ScopedTextureResources {
 			if (target == 64) throw std::runtime_error("Scoped texture decoded pixels exceed the resource bound");
 		}
 		if (timing) timing->headers_us = now() - headers_started;
-		for (const auto &source : inputs) {
-			const auto started = timing ? now() : 0;
-			const auto bytes = sources.directory_bytes(source.path, pog_file_limit + 65536);
-			if (timing) timing->reads_us += now() - started;
-			if (!bytes) throw std::runtime_error("Incoming scoped texture disappeared: " + source.path);
-			PogBitmap image;
+		struct Decoded {
+			ScopedTextureImage image;
+			long long decode_us = 0, shrink_us = 0, hash_us = 0;
+		};
+		const auto decode = [target = result.texture_target, clock = timing ? timing->now : nullptr](Source source, std::vector<unsigned char> bytes) {
+			const auto tick = [clock] { return clock ? clock() : 0LL; };
+			Decoded decoded;
+			decoded.image.path = std::move(source.path);
 			try {
-				const auto decoded = timing ? now() : 0;
-				image = read_scoped_texture_image(bytes->data(), bytes->size());
-				if (timing) timing->decode_us += now() - decoded;
-				if (image.width != source.width || image.height != source.height)
+				const auto started = tick();
+				decoded.image.bitmap = read_scoped_texture_image(bytes.data(), bytes.size());
+				decoded.decode_us = tick() - started;
+				if (decoded.image.bitmap.width != source.width || decoded.image.bitmap.height != source.height)
 					throw std::runtime_error("Source dimensions changed after size selection");
-				const auto shrunk = timing ? now() : 0;
-				shrink_scoped_texture(image, scoped_texture_factor(image.width, image.height, result.texture_target));
-				if (timing) timing->shrink_us += now() - shrunk;
+				const auto shrunk = tick();
+				shrink_scoped_texture(decoded.image.bitmap, scoped_texture_factor(source.width, source.height, target));
+				decoded.shrink_us = tick() - shrunk;
 			} catch (const std::exception &error) {
-				throw std::runtime_error("XL scoped texture decode failed for " + source.path + ": " + error.what());
+				throw std::runtime_error("XL scoped texture decode failed for " + decoded.image.path + ": " + error.what());
 			}
-			const auto hashed = timing ? now() : 0;
+			const auto hashed = tick();
 			// PicoSHA2's container overload copies the entire input into its
 			// working buffer. Bound each batch while preserving the same SHA-256.
 			picosha2::hash256_one_by_one digest;
-			for (std::size_t offset = 0; offset < bytes->size();) {
-				const auto count = (std::min) (std::size_t(65536), bytes->size() - offset);
-				digest.process(bytes->data() + offset, bytes->data() + offset + count);
+			for (std::size_t offset = 0; offset < bytes.size();) {
+				const auto count = (std::min) (std::size_t(65536), bytes.size() - offset);
+				digest.process(bytes.data() + offset, bytes.data() + offset + count);
 				offset += count;
 			}
 			digest.finish();
-			auto hash = picosha2::get_hash_hex_string(digest);
-			if (timing) timing->hash_us += now() - hashed;
-			result.images.push_back({ source.path, std::move(hash), std::move(image) });
+			decoded.image.hash = picosha2::get_hash_hex_string(digest);
+			decoded.hash_us = tick() - hashed;
+			return decoded;
+		};
+		std::deque<std::future<Decoded>> pending;
+		const auto retain = [&](Decoded decoded) {
+			if (timing) {
+				timing->decode_us += decoded.decode_us;
+				timing->shrink_us += decoded.shrink_us;
+				timing->hash_us += decoded.hash_us;
+			}
+			result.images.push_back(std::move(decoded.image));
+		};
+		const auto collect = [&] {
+			auto decoded = pending.front().get();
+			pending.pop_front();
+			retain(std::move(decoded));
+		};
+		for (const auto &source : inputs) {
+			const auto started = timing ? now() : 0;
+			auto bytes = sources.directory_bytes(source.path, pog_file_limit + 65536);
+			if (timing) timing->reads_us += now() - started;
+			if (!bytes) throw std::runtime_error("Incoming scoped texture disappeared: " + source.path);
+			// Keep at most two small images in flight. Large authored TGAs stay
+			// serial so the existing source and decoded-pixel bounds remain useful.
+			if (bytes->size() > 8 * 1024 * 1024) {
+				while (!pending.empty()) collect();
+				retain(decode(source, std::move(*bytes)));
+			} else {
+				if (pending.size() == 2) collect();
+				pending.push_back(std::async(std::launch::async, decode, source, std::move(*bytes)));
+				if (timing) ++timing->parallel_images;
+			}
 		}
+		while (!pending.empty()) collect();
 		return result;
 	}
 };
