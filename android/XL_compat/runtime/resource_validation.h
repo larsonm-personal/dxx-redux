@@ -41,6 +41,7 @@ int xl_camera_hitbox_query(const struct object *camera, const struct object *mov
 #include <memory>
 #include <map>
 #include <string>
+#include <vector>
 #include "particle_resources.h"
 const std::map<std::string, std::string> &xl_resource_mod_sources();
 bool xl_resource_same_mod_sources(const std::map<std::string, std::string> &saved, const std::map<std::string, std::string> &incoming);
@@ -130,6 +131,15 @@ class XlPreparedResources
 	struct State;
 	std::unique_ptr<State> state;
 };
+#ifdef __ANDROID__
+// One restore transaction may consume the owner already verified for save identity.
+void xl_restore_resources_begin();
+void xl_restore_resources_approve(bool sources_match);
+void xl_restore_resources_finished();
+std::unique_ptr<XlPreparedResources> xl_take_restore_resources(const char *filename, int ordinal,
+                                                               const std::vector<unsigned char> &bytes,
+                                                               const xl_compat::Inventory &level);
+#endif
 void xl_set_prepared_resources(const char *level_filename, std::unique_ptr<XlPreparedResources> resources);
 xl_compat::AfterburnerModel xl_prepared_afterburner_model(int model, bool player);
 const xl_compat::ParticleImageResource *xl_prepared_particle_image(int subtype = 3);

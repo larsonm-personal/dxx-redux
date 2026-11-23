@@ -475,6 +475,9 @@ int mod_save_prepare(rewind_file *file, int level, int version, int swap)
 		const auto saved_xl_sources = saved.value("xl_mod_sources", json::object());
 		const auto incoming = xl_resource_sources_for_level(level, &scoped_effect_frames);
 		const bool same_sources = saved_xl_sources.is_object() && xl_resource_same_mod_sources(saved_xl_sources.get<std::map<std::string, std::string>>(), incoming);
+#ifdef __ANDROID__
+		xl_restore_resources_approve(same_sources);
+#endif
 		if (!same_sources) {
 			const json current_xl_sources = incoming;
 			debug_log_force(DLOG_GAME, "XL mod save source mismatch: saved=%zu current=%zu", saved_xl_sources.size(), current_xl_sources.size());
@@ -686,6 +689,9 @@ int mod_save_adapt_world(void)
 }
 void mod_save_begin(void)
 {
+#if defined(__ANDROID__) && defined(DXX_XL_RUNTIME) && defined(DXX_BUILD_DESCENT_II)
+	xl_restore_resources_begin();
+#endif
 	status = "none";
 	reason.clear();
 	error_pending = false;
@@ -694,6 +700,9 @@ void mod_save_begin(void)
 }
 void mod_save_finished(int success)
 {
+#if defined(__ANDROID__) && defined(DXX_XL_RUNTIME) && defined(DXX_BUILD_DESCENT_II)
+	xl_restore_resources_finished();
+#endif
 	error_pending = !success && status == "incompatible";
 	if (!success) return;
 	status = adapted || changed ? "presentation_adapted" : "exact";
