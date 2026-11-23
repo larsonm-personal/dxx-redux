@@ -1,5 +1,5 @@
 #!/usr/bin/env pwsh
-param([string]$Serial, [ValidatePattern('^[A-Za-z0-9_.-]+\.7z$')][string]$DistributionName = '', [switch]$PumoUiImport, [switch]$PumoUiCrauphel, [switch]$PumoUiCold, [switch]$PumoUiIsolation, [switch]$PumoUiDisabledOwner, [switch]$TimeEquipment, [switch]$Warp5, [switch]$Dinter, [switch]$BoilingPoint, [ValidateSet(2, 3, 5, 7)][int]$BoilingPointLevel = 7, [switch]$Sphere, [switch]$OriginalLifecycle, [string]$TimeEquipmentPilot, [switch]$CaptureLive, [string]$OutputDirectory)
+param([string]$Serial, [ValidatePattern('^[A-Za-z0-9_.-]+\.7z$')][string]$DistributionName = '', [switch]$PumoUiImport, [switch]$PumoUiCrauphel, [switch]$PumoUiCold, [switch]$PumoUiIsolation, [switch]$PumoUiDisabledOwner, [switch]$TimeEquipment, [switch]$Warp5, [switch]$Dinter, [switch]$BoilingPoint, [ValidateSet(2, 3, 5, 7)][int]$BoilingPointLevel = 7, [switch]$Sphere, [switch]$OriginalLifecycle, [string]$TimeEquipmentPilot, [switch]$CaptureLive, [ValidateRange(30, 600)][int]$WarmTimeoutSeconds = 600, [string]$OutputDirectory)
 $ErrorActionPreference = 'Stop'
 if ($PSBoundParameters.ContainsKey('BoilingPointLevel') -and !$BoilingPoint) { throw 'BoilingPointLevel requires the protected BoilingPoint mode' }
 if ($OriginalLifecycle -and (!$TimeEquipment -or !($BoilingPoint -or $Sphere))) { throw 'OriginalLifecycle requires a protected original archive gameplay mode' }
@@ -524,7 +524,7 @@ try {
         $steps | ConvertTo-Json -Depth 30 | Set-Content $runtimeScript -Encoding utf8
         $phase = 'warm'
         # The first game launch extracts the original mission resources before the game surface exists
-        & "$PSScriptRoot/../helpers/run_test.ps1" -ScriptName $runtimeScript -Game d2 -Serial $Serial -PreserveState -NoEmulatorRecovery -LeaveRunning -GameStartupTimeoutSeconds 300 -TimeoutSeconds 600
+        & "$PSScriptRoot/../helpers/run_test.ps1" -ScriptName $runtimeScript -Game d2 -Serial $Serial -PreserveState -NoEmulatorRecovery -LeaveRunning -GameStartupTimeoutSeconds 300 -TimeoutSeconds $WarmTimeoutSeconds
         $runtimeExit = $LASTEXITCODE
         Invoke-AddonPrivate 'cat files/automation_result.json' | Set-Content "$output/runtime-result.json" -Encoding utf8
         Invoke-AddonPrivate 'cat files/automation_log.jsonl' | Set-Content "$output/runtime-steps.jsonl" -Encoding utf8
@@ -611,7 +611,12 @@ try {
                 if (($reused -join ',') -cne '1/pm-hub.rl2,2/mvlev1.rl2') {
                     throw "Expected one prepared owner each for New Game and Crauphel travel only, saw: $($reused -join ',')"
                 }
-                Write-Output 'PASS: Original Crauphel Scilab reused travel preparation and passed a missile shot before and after reload'
+                $restoreReused = @($gameLog -split '\r?\n' | Select-String 'XL reused save-verified level resources: ordinal=(-?\d+) file=(\S+)$' |
+                        ForEach-Object { '{0}/{1}' -f $_.Matches[0].Groups[1].Value, $_.Matches[0].Groups[2].Value })
+                if (($restoreReused -join ',') -cne '2/mvlev1.rl2') {
+                    throw "Expected one save-verified owner for Crauphel quickload only, saw: $($restoreReused -join ',')"
+                }
+                Write-Output 'PASS: Original Crauphel Scilab reused travel and save preparation and passed a missile shot before and after reload'
             } else { Write-Output 'PASS: UI-imported original Pumo normal firing, hub transition and save restoration' }
         }
     } else {

@@ -713,14 +713,23 @@ static int level_supported(const char *filename, int multiplayer, int ordinal, b
 		}
 #ifdef __ANDROID__
 		LevelPreparationProgress progress("Checking level resources and graphics", !multiplayer && !GameArg.SysInputDemoNoRender);
+		const auto translate_started = android_profile_monotonic_us();
 #endif
 		auto translation = translate_level(std::move(bytes), multiplayer != 0);
 		const auto &probe = translation->probe;
+#ifdef __ANDROID__
+		const auto resources_started = android_profile_monotonic_us();
+#endif
 		auto resources = std::make_unique<XlPreparedResources>(filename, &probe.source, ordinal);
 		// Leave the prepared owner's dependency walk fresh for validation at load
 		auto dependencies = resources->dependencies();
+#ifdef __ANDROID__
+		const auto validation_started = android_profile_monotonic_us();
+#endif
 		validate_requirements(probe.source, multiplayer != 0, translation->arena, dependencies, nullptr, nullptr, resources->has_scoped_textures(), resources->mission_replaces_robots());
 #ifdef __ANDROID__
+		debug_log_force(DLOG_PROFILING, "XL preflight phases: level=%s ordinal=%d translate_us=%lld resources_us=%lld validation_us=%lld", filename, ordinal,
+		                resources_started - translate_started, validation_started - resources_started, android_profile_monotonic_us() - validation_started);
 		// Published mission contexts stay fixed for the lifetime of this activation
 		if (transition && !multiplayer && !GameArg.SysInputDemoNoRender &&
 		    *android_mission_assets_key() && *mission_resource_archive()) {
@@ -736,6 +745,9 @@ static int level_supported(const char *filename, int multiplayer, int ordinal, b
 		preflight_translation = std::move(translation);
 		return 1;
 	} catch (const std::exception &error) {
+#ifdef __ANDROID__
+		debug_log_force(DLOG_PROFILING, "XL preflight rejected: level=%s ordinal=%d reason=%s", filename, ordinal, error.what());
+#endif
 		rejection = std::string(filename) + "\n" + error.what();
 		return 0;
 	}
@@ -1014,6 +1026,8 @@ extern "C" int xl_preview_load_level_at(const char *filename, int ordinal)
 			debug_log_force(DLOG_PROFILING, "XL reused prepared level resources: ordinal=%d file=%s", ordinal, filename);
 		}
 		translation->transition.reset();
+		if (!resources && original && !(Game_mode & GM_MULTI) && !GameArg.SysInputDemoNoRender)
+			resources = xl_take_restore_resources(filename, ordinal, translation->bytes, probe.source);
 #endif
 		if (!resources) resources = std::make_unique<XlPreparedResources>(filename, &probe.source, ordinal);
 		validate_requirements(probe.source, (Game_mode & GM_MULTI) != 0, arena, resources->dependencies(), nullptr, nullptr, resources->has_scoped_textures(), resources->mission_replaces_robots());

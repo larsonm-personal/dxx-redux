@@ -48,6 +48,11 @@
 #ifdef __ANDROID__
 #include "../../app/src/main/cpp/shared/android_mission_assets.h"
 #include "../../app/src/main/cpp/shared/android_sound_trace.h"
+extern "C" {
+#include "../../app/src/main/cpp/shared/android_profile.h"
+#include "../../app/src/main/cpp/shared/android_log.h"
+#include "../../app/src/main/cpp/shared/android_lifecycle_diagnostics.h"
+}
 #endif
 #if defined(__ANDROID__) || defined(DXX_XL_CHECKPOINT_EXPORT)
 #include "../../app/src/main/cpp/shared/mod_save_compat.h"
@@ -1086,9 +1091,67 @@ bool xl_resource_same_mod_sources(const std::map<std::string, std::string> &save
 	return expected && expected == canonical(incoming);
 }
 
+#ifdef __ANDROID__
+namespace
+{
+struct RestoreSourceCandidate {
+	std::string filename, mission_key;
+	std::vector<unsigned char> level_bytes;
+	unsigned mission_generation = 0;
+	uint64_t context_generation = 0;
+	int ordinal = 0;
+	std::size_t object_count = 0;
+	bool approved = false;
+	std::unique_ptr<XlPreparedResources> resources;
+};
+bool restore_resources_active = false;
+std::unique_ptr<RestoreSourceCandidate> restore_source_candidate;
+} // namespace
+
+void xl_restore_resources_begin()
+{
+	restore_source_candidate.reset();
+	restore_resources_active = true;
+}
+
+void xl_restore_resources_approve(bool sources_match)
+{
+	if (!sources_match) restore_source_candidate.reset();
+	else if (restore_source_candidate) restore_source_candidate->approved = true;
+}
+
+void xl_restore_resources_finished()
+{
+	restore_source_candidate.reset();
+	restore_resources_active = false;
+}
+
+std::unique_ptr<XlPreparedResources> xl_take_restore_resources(const char *filename, int ordinal,
+                                                               const std::vector<unsigned char> &bytes,
+                                                               const xl_compat::Inventory &level)
+{
+	auto candidate = std::move(restore_source_candidate);
+	if (!restore_resources_active || !candidate || !candidate->approved ||
+	    candidate->ordinal != ordinal || candidate->filename != filename ||
+	    candidate->level_bytes != bytes || candidate->object_count != level.objects.size() ||
+	    candidate->mission_key != android_mission_assets_key() ||
+	    candidate->mission_generation != android_mission_assets_generation())
+		return {};
+	android_lifecycle_diagnostic_snapshot lifecycle;
+	android_lifecycle_diagnostics_get_snapshot(&lifecycle);
+	if (candidate->context_generation != lifecycle.context_generation) return {};
+	XlPreparedResources::check_selected_definitions();
+	debug_log_force(DLOG_PROFILING, "XL reused save-verified level resources: ordinal=%d file=%s", ordinal, filename);
+	return std::move(candidate->resources);
+}
+#endif
+
 std::map<std::string, std::string> xl_resource_sources_for_level(int ordinal, std::map<int, int> *effect_frames)
 {
 	if (effect_frames) effect_frames->clear();
+#ifdef __ANDROID__
+	if (restore_resources_active) restore_source_candidate.reset();
+#endif
 	if (!mission_requires_xl || !Current_mission || Current_mission->descent_version != 2) return {};
 	if (!ordinal || ordinal > Last_level || ordinal < Last_secret_level)
 		throw std::runtime_error("Invalid XL save source level ordinal");
@@ -1099,9 +1162,29 @@ std::map<std::string, std::string> xl_resource_sources_for_level(int ordinal, st
 	const auto level = Current_mission->enhanced == MISSION_ENHANCED_XL ? xl_compat::inspect_mission_level(*bytes) : xl_compat::inspect_level(*bytes);
 	// Reconstruct the same retained source set as level entry, including scoped
 	// texture precedence and native HXM/bank dependencies, without installing it
-	XlPreparedResources resources(filename, &level, ordinal);
-	if (effect_frames) *effect_frames = resources.effect_frame_counts();
-	return resources.sources();
+	auto resources = std::make_unique<XlPreparedResources>(filename, &level, ordinal);
+	if (effect_frames) *effect_frames = resources->effect_frame_counts();
+	auto sources = resources->sources();
+#ifdef __ANDROID__
+	// Mission publication is fixed during one restore. Keep this freshly read
+	// owner only when single-player translation will retain every source object.
+	if (restore_resources_active && level.level_version > 8 &&
+	    std::none_of(level.objects.begin(), level.objects.end(), [](const auto &object) { return object.multiplayer != 0; })) {
+		android_lifecycle_diagnostic_snapshot lifecycle;
+		android_lifecycle_diagnostics_get_snapshot(&lifecycle);
+		auto candidate = std::make_unique<RestoreSourceCandidate>();
+		candidate->filename = filename;
+		candidate->mission_key = android_mission_assets_key();
+		candidate->level_bytes = *bytes;
+		candidate->mission_generation = android_mission_assets_generation();
+		candidate->context_generation = lifecycle.context_generation;
+		candidate->ordinal = ordinal;
+		candidate->object_count = level.objects.size();
+		candidate->resources = std::move(resources);
+		restore_source_candidate = std::move(candidate);
+	}
+#endif
+	return sources;
 }
 
 extern "C" int xl_model_gun_point(int model, int gun, vms_vector *point)
@@ -1495,13 +1578,22 @@ void XlPreparedResources::prepare_scoped_textures(const xl_compat::Inventory &le
 	if (!state->banks) throw std::runtime_error("Scoped textures require retained native banks");
 	dependencies.require_owned_banks = true;
 	xl_collect_incoming_dependencies(level, false, dependencies);
+#ifdef __ANDROID__
+	const auto images_started = android_profile_monotonic_us();
+#endif
 	auto textures = std::make_unique<const xl_compat::ScopedTextureResources>(
 	    xl_compat::ScopedTextureResources::prepare(target, dependencies, ordinal, state->pog.get()));
+#ifdef __ANDROID__
+	const auto playback_started = android_profile_monotonic_us();
+#endif
 	if (textures->texture_target)
 		con_printf(CON_NORMAL, "XL scoped textures: selected %u pixel target for %zu authored images\n", textures->texture_target, textures->images.size());
 	for (const auto &image : textures->images) state->owned_models.sources.emplace(image.path, image.hash);
 	state->texture_playback = std::make_unique<const xl_compat::ScopedTexturePlayback>(
 	    xl_compat::ScopedTexturePlayback::prepare(*textures, dependencies));
+#ifdef __ANDROID__
+	const auto storage_started = android_profile_monotonic_us();
+#endif
 	if (level.level_version == 7 && (!state->texture_playback->effects.empty() || !state->texture_playback->clips.empty() || !state->texture_playback->doors.empty()))
 		throw std::runtime_error("Clocked animation frames on a classic mine require XL texture playback");
 	validate_blastable_strips(level, state->texture_playback->doors);
@@ -1522,6 +1614,10 @@ void XlPreparedResources::prepare_scoped_textures(const xl_compat::Inventory &le
 		state->pog = std::move(pixels);
 	}
 	state->scoped_textures = std::move(textures);
+#ifdef __ANDROID__
+	debug_log_force(DLOG_PROFILING, "XL scoped phases: ordinal=%d images_us=%lld playback_us=%lld storage_us=%lld", ordinal,
+	                playback_started - images_started, storage_started - playback_started, android_profile_monotonic_us() - storage_started);
+#endif
 }
 
 const xl_compat::Inventory &XlPreparedResources::level_inventory() const
@@ -1718,11 +1814,29 @@ XlPreparedResources::XlPreparedResources(const char *level_filename, const xl_co
 	check_selected_definitions();
 	state = std::make_unique<State>(*mission_base);
 	state->mission_hxm_robots = mission_hxm_robot_replacements;
-	prepare_level_resources(level_filename, level, ordinal, nullptr, nullptr);
-	if (level && xl_resource_texture_scope_enabled() && *mission_resource_archive()) {
-		xl_compat::TargetSources target(startup_origin);
-		prepare_scoped_textures(*level, target.ordinal(level_filename, ordinal), target);
+#ifdef __ANDROID__
+	const auto level_started = android_profile_monotonic_us();
+	const char *phase = "level";
+	try {
+#endif
+		prepare_level_resources(level_filename, level, ordinal, nullptr, nullptr);
+#ifdef __ANDROID__
+		const auto scoped_started = android_profile_monotonic_us();
+		phase = "scoped";
+#endif
+		if (level && xl_resource_texture_scope_enabled() && *mission_resource_archive()) {
+			xl_compat::TargetSources target(startup_origin);
+			prepare_scoped_textures(*level, target.ordinal(level_filename, ordinal), target);
+		}
+#ifdef __ANDROID__
+		debug_log_force(DLOG_PROFILING, "XL resource phases: level=%s ordinal=%d level_us=%lld scoped_us=%lld", level_filename, ordinal,
+		                scoped_started - level_started, android_profile_monotonic_us() - scoped_started);
+	} catch (const std::exception &error) {
+		debug_log_force(DLOG_PROFILING, "XL resource phase rejected: level=%s ordinal=%d phase=%s elapsed_us=%lld reason=%s", level_filename,
+		                ordinal, phase, android_profile_monotonic_us() - level_started, error.what());
+		throw;
 	}
+#endif
 }
 
 void XlPreparedResources::prepare_level_resources(const char *level_filename, const xl_compat::Inventory *level, int ordinal, mission_preparation *mission, xl_compat::TargetSources *target)
