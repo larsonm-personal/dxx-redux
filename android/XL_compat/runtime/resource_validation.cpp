@@ -787,6 +787,10 @@ std::vector<uint8_t> read_model_resource(const std::string &path, mission_prepar
 
 xl_compat::OwnedModelSet prepare_owned_models(int ordinal, mission_preparation *target = nullptr)
 {
+#ifdef __ANDROID__
+	const auto started = android_profile_monotonic_us();
+	unsigned reused_count = 0;
+#endif
 	xl_compat::OwnedModelSet result;
 	auto &pending = result.models;
 	auto &sources = result.sources;
@@ -844,10 +848,49 @@ xl_compat::OwnedModelSet prepare_owned_models(int ordinal, mission_preparation *
 			pending.emplace(id, cached->second);
 			continue;
 		}
+		const auto model_bytes = read_model_resource(path, target);
+		const auto model_hash = picosha2::hash256_hex_string(model_bytes);
+		sources[path] = model_hash;
+		// The published mission model is an immutable CPU owner. Reuse global
+		// geometry only after rereading and hashing its model and every skin.
+		// Level-local folders still take the normal decode path.
+		if (!target && selected_folder == "models/") {
+			const auto previous = mission_oof_models.find(id);
+			const auto prior_model_hash = mission_mod_sources.find(path);
+			if (previous != mission_oof_models.end() && previous->second->path == path && previous->second->ase == ase &&
+			    prior_model_hash != mission_mod_sources.end() && prior_model_hash->second == model_hash) {
+				bool same_skins = true;
+				std::map<std::string, std::string> verified_skins;
+				for (auto texture : previous->second->model.textures) {
+					if (resource_key(texture).size() < 4 || resource_key(texture).substr(texture.size() - 4) != ".tga") texture += ".tga";
+					const auto skin_path = owned_mod_file("", "models/" + texture, target);
+					const auto prior_skin_hash = mission_mod_sources.find(skin_path);
+					if (skin_path.empty() || prior_skin_hash == mission_mod_sources.end()) {
+						same_skins = false;
+						break;
+					}
+					const auto bytes = read_model_resource(skin_path, target);
+					const auto hash = picosha2::hash256_hex_string(bytes);
+					if (hash != prior_skin_hash->second) {
+						same_skins = false;
+						break;
+					}
+					verified_skins.emplace(skin_path, hash);
+				}
+				if (same_skins) {
+					for (const auto &entry : verified_skins) sources[entry.first] = entry.second;
+					by_path.emplace(path, previous->second);
+					pending.emplace(id, previous->second);
+#ifdef __ANDROID__
+					++reused_count;
+#endif
+					continue;
+				}
+			}
+		}
 		auto resource = std::make_shared<xl_compat::OofResource>();
 		resource->path = path;
 		resource->ase = ase;
-		const auto model_bytes = read_model_resource(path, target);
 		if (ase) {
 			const std::string text(model_bytes.begin(), model_bytes.end());
 			auto compiled = xl_compat::compile_ase_mesh(xl_compat::decode_ase_model(xl_compat::read_ase_records(text)));
@@ -859,7 +902,6 @@ xl_compat::OwnedModelSet prepare_owned_models(int ordinal, mission_preparation *
 			resource->model = xl_compat::read_oof(model_bytes);
 			resource->mesh = xl_compat::compile_oof_mesh(resource->model, mapping.flip_v);
 		}
-		sources[path] = picosha2::hash256_hex_string(model_bytes);
 		for (auto texture : resource->model.textures) {
 			if (texture.empty() || texture == "." || texture == ".." || texture.find_first_of("/\\:") != std::string::npos)
 				throw std::runtime_error("Invalid owned OOF skin name: " + path);
@@ -878,6 +920,11 @@ xl_compat::OwnedModelSet prepare_owned_models(int ordinal, mission_preparation *
 		by_path.emplace(path, resource);
 		pending.emplace(id, std::move(resource));
 	}
+#ifdef __ANDROID__
+	if (reused_count)
+		debug_log_force(DLOG_PROFILING, "XL reused verified model resources: ordinal=%d count=%u elapsed_us=%lld", ordinal, reused_count,
+		                android_profile_monotonic_us() - started);
+#endif
 	return result;
 }
 

@@ -323,6 +323,7 @@ static int mod_data_test(int argc, char **argv)
 			for (int ordinal = 1; ordinal <= Last_level; ++ordinal) {
 				const auto staged = xl_prepare_owned_models(ordinal);
 				require(!staged.models.empty() && !staged.sources.empty(), "Level model preparation returned no resources");
+				if (ordinal == 1) require(staged.models.at(108) == installed_ship, "Unchanged global model did not reuse its verified CPU owner");
 				if (ordinal == 2) require(staged.models.at(108)->path == "mods/pmines/models/level02/pyrogl.ase", "Level ship did not override mission ship");
 				if (ordinal == 9) require(staged.models.at(49)->gunpoints.size() == 3, "Level robot gunpoints were not staged");
 				if (ordinal == 11) require(staged.models.at(99)->path == "mods/pmines/models/level11/model99.ase", "Level reactor override was not staged");
@@ -465,6 +466,9 @@ static int mod_data_test(int argc, char **argv)
 			changed.back() ^= 1;
 			write_bytes(path.string().c_str(), changed);
 			try {
+				const auto staged = xl_prepare_owned_models(1);
+				require(staged.sources.at("mods/pmines/models/emberbody.tga") != original_sources.at("mods/pmines/models/emberbody.tga"),
+				        "Changed skin reused stale model source identity");
 				require(load_base_mission("pmines", error, sizeof(error)), error);
 				require(!*xl_resource_base_rejection(), xl_resource_base_rejection());
 				require(xl_resource_mod_sources() != original_sources, "Changed owned skin retained original save identity");
