@@ -52,5 +52,6 @@ and was discarded before this change.
 The serial reference is the clean 32217 run reported in
 [model reuse](xl_pumo_s21_model_reuse_20261123.md). The profile was protected,
 and private game assets, saves and logs remain in ignored local workspaces.
-The ordinary phone kit needs rebuilding from the final stack before requesting
-a human report on the missing bar and missile exit.
+The ordinary kit was rebuilt from the later stack tip as version 32320 and
+installed on the S21 with a matching package hash. Its physical touch report
+on the missing bar and missile exit remains open.
