@@ -7,7 +7,6 @@
 #include "target_sources.h"
 #include "picosha2.h"
 #include <cstdio>
-#include <chrono>
 #include <map>
 #include <set>
 #include <string>
@@ -25,6 +24,7 @@ struct ScopedTextureBinding {
 	std::size_t image;
 };
 struct ScopedTexturePreparationTiming {
+	long long (*now)() = nullptr;
 	long long headers_us = 0, reads_us = 0, decode_us = 0, shrink_us = 0, hash_us = 0;
 };
 
@@ -38,8 +38,9 @@ struct ScopedTextureResources {
 	                                      int ordinal, const xl_pog_resources *pog = nullptr,
 	                                      ScopedTexturePreparationTiming *timing = nullptr)
 	{
-		const auto now = [] { return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now().time_since_epoch()).count(); };
-		const auto headers_started = timing ? now() : 0;
+		const auto now = [timing] { return timing ? timing->now() : 0LL; };
+		if (timing && !timing->now) throw std::runtime_error("Scoped texture timing requires a clock");
+		const auto headers_started = now();
 		if (!graph.resource_banks || !graph.require_owned_banks || !ordinal || ordinal < -1000 || ordinal > 1000)
 			throw std::runtime_error("Scoped texture preparation requires owned banks and a bounded level ordinal");
 		ScopedTextureResources result;

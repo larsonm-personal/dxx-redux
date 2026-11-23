@@ -1582,6 +1582,7 @@ void XlPreparedResources::prepare_scoped_textures(const xl_compat::Inventory &le
 #ifdef __ANDROID__
 	const auto images_started = android_profile_monotonic_us();
 	xl_compat::ScopedTexturePreparationTiming texture_timing;
+	texture_timing.now = android_profile_monotonic_us;
 	timing = &texture_timing;
 #endif
 	auto textures = std::make_unique<const xl_compat::ScopedTextureResources>(
