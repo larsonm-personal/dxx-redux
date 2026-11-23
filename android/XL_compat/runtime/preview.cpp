@@ -392,6 +392,7 @@ void collect_dependencies(const xl_compat::Inventory &level, bool multiplayer, b
 		if (entry.object < 0) continue;
 		if (entry.action.type == 26) {
 			const auto &owner = level.objects.at(entry.object);
+			if (owner.type == OBJ_POWERUP && !(entry.action.flags & 128)) continue;
 			if (owner.type != OBJ_ROBOT || owner.id < 0 || owner.id >= robot_count || !graph.robot_data[owner.id].boss_flag)
 				throw std::runtime_error("spawn-bot action requires a robot boss owner: object " + std::to_string(entry.object) + ", robot definition " + std::to_string(owner.id));
 			graph.robot(owner.id);

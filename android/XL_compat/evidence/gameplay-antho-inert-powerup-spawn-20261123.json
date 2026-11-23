@@ -1,0 +1,57 @@
+{
+  "schema": "xl-original-inert-powerup-spawn-v1",
+  "date": "2026-11-23",
+  "archive": "missions/d2xxl_downloads/levelpack.7z",
+  "archive_sha256": "b4b519dc5755b795fd49cc3786a0421b96cd099dcc8f002925ddfd7c038b2719",
+  "descriptor": "missions/sirius/antho1-3.mn2",
+  "descriptor_sha256": "0cea5acd2280ae70ebb93b96359eeeefe25c35e4d67f00372d05311fb2718113",
+  "hog_sha256": "dd7dc745ffa67f97e8b12be8911ef02a19bedbd96a7800c3caed31b3ac03f9c8",
+  "affected_level_sha256": "85f95e124fde4d33b2ff3aabc9df5ad1da0da6548834071c00eeb051b0510759",
+  "affected_distribution": "levelpack.7z/missions/sirius/antho1-3.mn2:1",
+  "original_engine_observation": "started_and_ran",
+  "source_comparison": {
+    "revision": "2576a98b5de310e3ac7c9777df2677d1627b8bae",
+    "trigger_sha256": "74f1284260fb4a4bb7396bc45eeb83868a7f2dfa5e3fdf0bcb767b94f1b12852",
+    "producers_sha256": "c79263fcd98f686d99dfcc8f5e12aade60f70f75cc25544795fbab71c93318b6",
+    "boss_sha256": "6ee8d46cb9211dde69cdd4ed1d2f1a4efde7dc13c862a3ec4c0206f1a2e29e99",
+    "rule": "DoExecObjTrigger only delivers SPAWN_BOT on damage; pickup/removal is not a damage event. DoSpawnBots calls BossSpewRobot, whose CreateGatedRobot requires an existing boss record before creating a robot. The observed non-autoplay powerup action cannot spawn."
+  },
+  "authored_action": {
+    "record": 0,
+    "type": 26,
+    "flags": 9,
+    "value": 5,
+    "owner_object": 118,
+    "owner_type": 7,
+    "owner_id": 17,
+    "owner_segment": 290,
+    "selection_target": -1
+  },
+  "criterion": "same byte-identical archive, three advertised ordinals and unassisted inputs; level loads and executes 120 simulation frames at 60 Hz",
+  "baseline": {
+    "engine_sha256": "cede9860d7b71050ad22e8927d566e3d7daf074cb6b996e8933aa8ed93f00b87",
+    "results_sha256": "0ec4dbe711733a2779837176c8826eb6f3d21b2d1f8bcd2d553997a172668196",
+    "passed": 2,
+    "denominator": 3,
+    "affected_first_blocker": "object triggers at record 0: spawn-bot action requires a robot boss owner"
+  },
+  "candidate": {
+    "engine_sha256": "696b4ce6e2de49b4067d552ccf262f1e18930049d2e4f9b00741b8b63424799e",
+    "results_sha256": "f012f24200a3a6345fe491fb0954f99b93e6b407b4cf41213c715715c40d9b19",
+    "passed": 3,
+    "denominator": 3,
+    "affected_outcome": "loaded_ticked",
+    "affected_frames": 120,
+    "affected_segments": 2342
+  },
+  "controls": "The other two advertised entries remained loaded_ticked/120 frames. xl_inventory_contract and xl_effect_payloads passed; the contract retains rejection of autoplay powerup spawns and other nonrobot owners.",
+  "scope": "Only damage-only non-autoplay SPAWN_BOT actions owned by powerups bypass the boss-owner and spawn-resource requirement. The original action remains in the runtime table and is consumed on pickup. This establishes startup, not all authored interactions or a completed Anthology flight.",
+  "aggregate_projection": {
+    "reference": "gameplay-census-integrated-20261120.json",
+    "baseline": "1534/1654",
+    "with_prior_layers": "1556/1654",
+    "with_this_entry_if_other_clusters_unchanged": "1557/1654",
+    "remaining": "97/1654",
+    "full_census_rerun": false
+  }
+}

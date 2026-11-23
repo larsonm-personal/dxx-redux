@@ -743,7 +743,12 @@ void object_trigger_inventory_contract(const char *directory = nullptr)
 			check(xl_compat::prepare_gameplay_probe(spawn).source.object_trigger_records[0].action.targets[1][0] == 32767, "inert extra spawn link was interpreted as geometry");
 			auto owner = prepared.source;
 			owner.objects[1].type = 7;
-			check(xl_compat::blocker_message(xl_compat::runtime_blockers(owner)).find("robot boss owner") != std::string::npos, "spawn action accepted a nonrobot owner");
+			check(xl_compat::runtime_blockers(owner).empty(), "damage-only powerup spawn was rejected despite having no damage event");
+			owner.object_trigger_records[0].action.flags |= 128;
+			check(xl_compat::blocker_message(xl_compat::runtime_blockers(owner)).find("robot boss owner") != std::string::npos, "autoplay powerup spawn was admitted");
+			owner.object_trigger_records[0].action.flags &= ~128;
+			owner.objects[1].type = 3;
+			check(xl_compat::blocker_message(xl_compat::runtime_blockers(owner)).find("robot boss owner") != std::string::npos, "other nonrobot spawn owner was admitted");
 		}
 		for (const int flags : { 32, 64, 96, 255 }) {
 			auto supported = eligible;

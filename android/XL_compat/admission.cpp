@@ -201,7 +201,13 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 		const auto &action = record.action;
 		const auto block = [&](bool condition, const char *detail) { if (condition) result.push_back({ "object triggers", static_cast<int>(i), detail }); };
 		if (action.type == 26) {
-			block(record.object >= 0 && (static_cast<std::size_t>(record.object) >= level.objects.size() || level.objects[record.object].type != 2), "spawn-bot action requires a robot boss owner");
+			// Damage-only spawn actions on powerups cannot fire: pickup/removal is
+			// not a damage event, and the pinned source only gates from boss objects.
+			const bool inert_powerup = record.object >= 0 && static_cast<std::size_t>(record.object) < level.objects.size() &&
+			                           level.objects[record.object].type == 7 && !(action.flags & 128);
+			block(record.object >= 0 && (static_cast<std::size_t>(record.object) >= level.objects.size() ||
+			                             (level.objects[record.object].type != 2 && !inert_powerup)),
+			      "spawn-bot action requires a robot boss owner");
 			if (!action.targets.empty()) {
 				const int segment = action.targets[0][0];
 				block(segment >= 0 && (static_cast<std::size_t>(segment) >= level.segments.size() || level.segments[segment].function != 4), "spawn-bot selection target must be a robotmaker segment or negative for arbitrary selection");
