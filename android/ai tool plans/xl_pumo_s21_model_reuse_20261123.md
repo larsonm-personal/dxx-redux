@@ -60,3 +60,19 @@ resource bound.
 
 Private archives, game data, profiles, saves and phone logs remain only in
 ignored local workspaces and on the build machine.
+
+## Hosted workflow admission, November 23
+
+On this PR's first head, the private XL smoke
+[run 45166807311](https://github.com/larsonm-personal/dxx-redux/actions/runs/45166807311)
+failed before game execution: the hosted apt mirror stalled and the build job
+was canceled after 30 minutes. The sampled and expanded readiness check runs
+retained two `ERROR` badges. Attempt 2 of that workflow concluded success,
+but its admission step explicitly said "Skipping private XL qualification
+below the native stack tip"; no private gameplay test ran on the retry. The
+public selected sweep
+[run 45166775272](https://github.com/larsonm-personal/dxx-redux/actions/runs/45166775272)
+also needed an infrastructure retry after Kotlin plugin resolution and apt
+timeouts; its selected jobs passed on attempt 2. The stale private error
+badges require a fresh PR head and workflow admission evidence, rather than
+being reported as passing tests.
