@@ -23,6 +23,10 @@ struct ScopedTextureBinding {
 	int bitmap;
 	std::size_t image;
 };
+struct ScopedTexturePreparationTiming {
+	long long (*now)() = nullptr;
+	long long headers_us = 0, reads_us = 0, decode_us = 0, shrink_us = 0, hash_us = 0;
+};
 
 // Retain authored inputs independently of live registry, paging and GL state
 struct ScopedTextureResources {
@@ -31,8 +35,12 @@ struct ScopedTextureResources {
 	std::set<int> pog_indices;
 	unsigned texture_target = 0;
 	static ScopedTextureResources prepare(TargetSources &sources, const xl_assets::ObjectDependencies &graph,
-	                                      int ordinal, const xl_pog_resources *pog = nullptr)
+	                                      int ordinal, const xl_pog_resources *pog = nullptr,
+	                                      ScopedTexturePreparationTiming *timing = nullptr)
 	{
+		const auto now = [timing] { return timing ? timing->now() : 0LL; };
+		if (timing && !timing->now) throw std::runtime_error("Scoped texture timing requires a clock");
+		const auto headers_started = now();
 		if (!graph.resource_banks || !graph.require_owned_banks || !ordinal || ordinal < -1000 || ordinal > 1000)
 			throw std::runtime_error("Scoped texture preparation requires owned banks and a bounded level ordinal");
 		ScopedTextureResources result;
@@ -97,19 +105,38 @@ struct ScopedTextureResources {
 			}
 			if (target == 64) throw std::runtime_error("Scoped texture decoded pixels exceed the resource bound");
 		}
+		if (timing) timing->headers_us = now() - headers_started;
 		for (const auto &source : inputs) {
+			const auto started = timing ? now() : 0;
 			const auto bytes = sources.directory_bytes(source.path, pog_file_limit + 65536);
+			if (timing) timing->reads_us += now() - started;
 			if (!bytes) throw std::runtime_error("Incoming scoped texture disappeared: " + source.path);
 			PogBitmap image;
 			try {
+				const auto decoded = timing ? now() : 0;
 				image = read_scoped_texture_image(bytes->data(), bytes->size());
+				if (timing) timing->decode_us += now() - decoded;
 				if (image.width != source.width || image.height != source.height)
 					throw std::runtime_error("Source dimensions changed after size selection");
+				const auto shrunk = timing ? now() : 0;
 				shrink_scoped_texture(image, scoped_texture_factor(image.width, image.height, result.texture_target));
+				if (timing) timing->shrink_us += now() - shrunk;
 			} catch (const std::exception &error) {
 				throw std::runtime_error("XL scoped texture decode failed for " + source.path + ": " + error.what());
 			}
-			result.images.push_back({ source.path, picosha2::hash256_hex_string(*bytes), std::move(image) });
+			const auto hashed = timing ? now() : 0;
+			// PicoSHA2's container overload copies the entire input into its
+			// working buffer. Bound each batch while preserving the same SHA-256.
+			picosha2::hash256_one_by_one digest;
+			for (std::size_t offset = 0; offset < bytes->size();) {
+				const auto count = (std::min) (std::size_t(65536), bytes->size() - offset);
+				digest.process(bytes->data() + offset, bytes->data() + offset + count);
+				offset += count;
+			}
+			digest.finish();
+			auto hash = picosha2::get_hash_hex_string(digest);
+			if (timing) timing->hash_us += now() - hashed;
+			result.images.push_back({ source.path, std::move(hash), std::move(image) });
 		}
 		return result;
 	}
