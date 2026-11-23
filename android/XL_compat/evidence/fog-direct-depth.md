@@ -1,5 +1,36 @@
 # Direct scene depth for XL fog
 
+## November 23 S21 raster precision
+
+The connected Samsung SM-G996U (Android 15) reproduced a new original-Pumo
+`pm-hub.rl2` rejection on the isolated diagnostic package. Its D24 depth copy
+and clear sample returned exactly 0.625; the D16 copy returned 0.624511719,
+and an actual D24 raster write of 0.5 sampled as 0.499755859. The old
+0.0001 raster tolerance rejected that one-step result after a 9.7-second
+resource check. The D24 raster qualification now allows less than two 12-bit
+steps while preserving the strict clear-sample check and actual raster test.
+
+That adjustment admitted Pumo, but the authored fog scene check exposed a
+second precision effect: the S21 discarded coincident volume caps because
+their fragment depth exceeded the sampled scene depth by a step. The volume
+shader now permits a difference of at most two steps. The same protected
+S21 fixture first failed at step 24/208 with zero covered or changed pixels;
+after this change it passed all 208 steps (run
+`8ed61fdf9e29424da57878da94693e75`, 106732 ms). The run covers visible
+fog, closed-wall occlusion, save/reload, presentation samples, context rebuild
+and stock rendering. The test restored its protected profile files.
+
+Exact isolated APK: version 32140, SHA-256
+`931d26293f31c7f7f062744d13071098b0d97257f37caa4dd296ca0494f3405c`.
+The same APK passed the protected original Pumo hub-to-Crauphel route, including
+a concussion shot before and after quickload: 35/35 steps, run
+`64999bfa20e444238eece8de5aa181f8`, 98916 ms, with profile hashes
+restored. Its pre-briefing checks measured 9.129 and 11.470 seconds; this fog
+fix does not claim to shorten them.
+This is physical-device fixed-position automation, not a human touch
+playtest. The private original Pumo archive and phone profiles remain outside
+Git.
+
 The reported Adreno 830 rejects the numeric depth-transfer check. The owned
 legacy SwiftShader emulator reproduces that failure: depth blits leave the
 destination unchanged, while direct texture clears and raster writes work.

@@ -29,7 +29,9 @@ inline constexpr const char *xl_fog_volume_glsl = R"glsl(
 uniform sampler2D sceneDepthTex;
 uniform vec2 windowSize;
 void main() {
-    if (gl_FragCoord.z > texture2D(sceneDepthTex, gl_FragCoord.xy / windowSize).r) discard;
+    // Some mobile depth rasterizers resolve the same surface one 12-bit step
+    // below gl_FragCoord.z. Keep coincident caps, but reject caps farther away.
+    if (gl_FragCoord.z > texture2D(sceneDepthTex, gl_FragCoord.xy / windowSize).r + 1.0 / 2048.0) discard;
     gl_FragColor = vec4(gl_FragCoord.z);
 }
 )glsl";
