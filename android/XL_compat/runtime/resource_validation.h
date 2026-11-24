@@ -125,6 +125,9 @@ class XlPreparedResources
 	bool time_equipment_required() const;
 
   private:
+#ifdef __ANDROID__
+	friend void xl_restore_resources_begin();
+#endif
 	void prepare_scoped_textures(const xl_compat::Inventory &level, int ordinal, xl_compat::TargetSources &target);
 	void prepare_level_resources(const char *filename, const xl_compat::Inventory *level, int ordinal, mission_preparation *mission, xl_compat::TargetSources *target);
 	void validate_camera_query(const object &camera, const object &moving) const;
