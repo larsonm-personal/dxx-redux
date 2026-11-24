@@ -1519,7 +1519,7 @@ void serialization_17_contract()
 
 void segment_flags_contract()
 {
-	for (const int version : { 17, 18 })
+	for (const int version : { 17, 18, 19 })
 		for (int flags = 0; flags < 256; ++flags) {
 			const auto bytes = fixture(version, flags);
 			const auto v = xl_compat::inspect_level(bytes);

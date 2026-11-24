@@ -1,0 +1,208 @@
+{
+    "schema": 1,
+    "date": "2026-11-24",
+    "relative_mode": "unassisted Hotshot at matching advertised ordinal",
+    "reference_head": "2576a98b5de310e3ac7c9777df2677d1627b8bae",
+    "reference": {
+        "engine_sha256": "bd5d7cffa62941e7adc77dc1c5b5bd6bb8ae4b71a927ea7ab2e36427e051daf0",
+        "trace_sha256": "7f1c2713a0413ba966af7473cb958ccae568fc69a612c18e280b9e83865ec912",
+        "ordinal": 1,
+        "frames": 120,
+        "descriptor_sha256": "326fd8f88180cdcf722d6a3aa2963a0f84c514930a5e9106565807aced2af232",
+        "status": "started_and_ran",
+        "windowed": true,
+        "display_preserved": true
+    },
+    "reference_reserved_bits": {
+        "segments": 245,
+        "nonzero_reserved": 48,
+        "compared_all": true,
+        "recomputed_low_ambient_bits": 44
+    },
+    "reference_startup_retry": {
+        "first_result": "reference_startup_unverified",
+        "first_receipt_sha256": "4344448f13f17503d0b8a129e0c7120267c028d6f64f2f9a03c806165ffc6d82",
+        "reason": "Startup stopped at an optional data warning before the mission loaded",
+        "configuration_sha256": "10d88940ef788d1aa3d9d9972b4b90f78b548d7f6ec0e45a009478c33b0c3afd",
+        "same_engine_and_archive": true
+    },
+    "source_oracle_all_256_bytes_passed": true,
+    "source_oracle_sha256": "0aeb550486fff38df22d57efda5d1d14cdcc4abbc1530e4138422ace662c9797",
+    "windows_identities": {
+        "local": {
+            "source_head": "8658e1622d5fac2f4481e991d82d586b213d0d04",
+            "engine_sha256": "b66ad6aad74a7eaa6730579f36d6ff10e3d084784edd424cf230d2e35bfb7f6b",
+            "catalog_sha256": "e7d480aa401522d37f6ec75da01f6cec7c314c901728f1b291131e52a62818df",
+            "receipt_sha256": "3624b47685898834c328d70a805fc2215ea7d12bc347db516348ca4b05861e1f"
+        },
+        "pinned": {
+            "source_head": "8658e1622d5fac2f4481e991d82d586b213d0d04",
+            "engine_sha256": "b66ad6aad74a7eaa6730579f36d6ff10e3d084784edd424cf230d2e35bfb7f6b",
+            "catalog_sha256": "bf4356a7a5fbe64832a40d7065ea02d8b81276ebd8bbba6874012f7851fa0cf8",
+            "receipt_sha256": "cd2c3c68619bd399946985c91ca2f01968e98f84f621fcf9bc91d136f539e017"
+        }
+    },
+    "windows_cases": [
+        {
+            "catalog": "local",
+            "case": "levels_multiplayer/pmanicd2.zip/pmanicd2.mn2:1",
+            "level": "pmanicd2.rl2",
+            "previous": "load_failed",
+            "current": "loaded_ticked",
+            "frames": 120,
+            "load_receipt_sha256": "0620ff4a458365cc7934d3c562e0dcb02bef61b2bda1d41a54823b690ddb14fa",
+            "level_source_sha256": "6da07b887271ba4c7946935375079d11405ce980640dd39287a2eb9d3a305f66"
+        },
+        {
+            "catalog": "local",
+            "case": "prophxl131beta.zip/missions/sapphire wolf sp/PROPHXL.MN2:1",
+            "level": "aqunia.rl2",
+            "previous": "load_failed",
+            "current": "load_failed",
+            "frames": 0,
+            "load_receipt_sha256": "61df3a7f777b97b494998533256c5c29e8935aed7f7da9fbf3a05ce6f778840f"
+        },
+        {
+            "catalog": "local",
+            "case": "prophxl131beta.zip/missions/sapphire wolf sp/PROPHXL.MN2:2",
+            "level": "phoenix.rl2",
+            "previous": "loaded_ticked",
+            "current": "loaded_ticked",
+            "frames": 120,
+            "load_receipt_sha256": "0575ba5ef147c5b2824373b8e36adc23c6ef1969df3d7f4d66926db90090636d",
+            "level_source_sha256": "5d4c0dc3cc2c569929c781d93914552de4b2336613e7b6502b6c103c52ddea19"
+        },
+        {
+            "catalog": "local",
+            "case": "prophxl131beta.zip/missions/sapphire wolf sp/PROPHXL.MN2:3",
+            "level": "auora1.rl2",
+            "previous": "loaded_ticked",
+            "current": "loaded_ticked",
+            "frames": 120,
+            "load_receipt_sha256": "7b07287f243278409c1be6511e943e2309eb226cf2d164f5f4703800154231be",
+            "level_source_sha256": "f1b67a7d715fcf9eae077b3899972e52b2b97dbf42c4fe9bec6c8e4b92eaa1cc"
+        },
+        {
+            "catalog": "local",
+            "case": "prophxl131beta.zip/missions/sapphire wolf sp/PROPHXL.MN2:4",
+            "level": "delta.rl2",
+            "previous": "loaded_ticked",
+            "current": "loaded_ticked",
+            "frames": 120,
+            "load_receipt_sha256": "495a16c34eb59da0824d1f585fb7b752679725b0ea9ce951e6e6bef930c6cd66",
+            "level_source_sha256": "3847ce9ac711d210ae6d13e102fcd61ab60c70bf7cfc6b7b179bd755579ec4fe"
+        },
+        {
+            "catalog": "local",
+            "case": "prophxl131beta.zip/missions/sapphire wolf sp/PROPHXL.MN2:5",
+            "level": "hyperion.rl2",
+            "previous": "loaded_ticked",
+            "current": "loaded_ticked",
+            "frames": 120,
+            "load_receipt_sha256": "de1a2e06c85ee1329deb58454e6fd9e1728500369edd7570c5095c6ca002e2ad",
+            "level_source_sha256": "e2931fbb9d9b0e943bfe17bbfd2b81ca66983d23043b19719d33f6ff7ffe100d"
+        },
+        {
+            "catalog": "local",
+            "case": "prophxl131beta.zip/missions/sapphire wolf sp/PROPHXL.MN2:-1",
+            "level": "bps1.rl2",
+            "previous": "loaded_ticked",
+            "current": "loaded_ticked",
+            "frames": 120,
+            "load_receipt_sha256": "8c7079309af31b068ea6a16b067c2e18f549dd739531ecba50b44f95a29ee0c2",
+            "level_source_sha256": "1e1665bfe8baecbd63c045e569227add604deb053825f7102f998ec69d8d3d01"
+        },
+        {
+            "catalog": "local",
+            "case": "prophxl131beta.zip/missions/sapphire wolf sp/PROPHXL.MN2:-2",
+            "level": "bps2.rl2",
+            "previous": "loaded_ticked",
+            "current": "loaded_ticked",
+            "frames": 120,
+            "load_receipt_sha256": "a357dd841a9a185d937de8791e03226cc7f08f7a3a1507f426730c3c03a13bbe",
+            "level_source_sha256": "609471a98857ed1f28ad5feec3ef7b202b01ec4f509194e76b026892e1163b49"
+        },
+        {
+            "catalog": "local",
+            "case": "prophxl131beta.zip/missions/sapphire wolf sp/PROPHXL.MN2:-3",
+            "level": "bps3.rl2",
+            "previous": "loaded_ticked",
+            "current": "loaded_ticked",
+            "frames": 120,
+            "load_receipt_sha256": "023488010b487b838d4a5eab2fb48412ea1b3251d9c2599735e4fffe8e1b6bf8",
+            "level_source_sha256": "fed0e533929e8dc1f7fc2a3f9f61c535af2cf85a86fff81df815715550ec4067"
+        },
+        {
+            "catalog": "pinned",
+            "case": "levelpack.7z/missions/diedel/pmanicd2.mn2:1",
+            "level": "pmanicd2.rl2",
+            "previous": "loaded_ticked",
+            "current": "loaded_ticked",
+            "frames": 120,
+            "load_receipt_sha256": "9ebfec7cbcff4a73b1e32669c8d39e2582226882c8ca9e4d7fc66771fdc3697b",
+            "level_source_sha256": "74d287ff4eee46163c085855ef977bacacf5bff9b012994259b02b3e297cb163"
+        },
+        {
+            "catalog": "pinned",
+            "case": "levelpack.7z/missions/single/prophecy.mn2:1",
+            "level": "aqunia.rl2",
+            "previous": "loaded_ticked",
+            "current": "loaded_ticked",
+            "frames": 120,
+            "load_receipt_sha256": "a43cc0c5305b07b90f2cbaeb3a6486fcc02b8fc236571ac75fc1878fdb0f7586",
+            "level_source_sha256": "64af4a977cb5f1bb914c843393569925396f03cdc364bb2703725f5074e93277"
+        },
+        {
+            "catalog": "pinned",
+            "case": "levelpack.7z/missions/single/prophecy.mn2:2",
+            "level": "phoenix.rl2",
+            "previous": "loaded_ticked",
+            "current": "loaded_ticked",
+            "frames": 120,
+            "load_receipt_sha256": "b19dac34c07c207030f0adaac10845be13a5d90d88fcf2ab1351765befc46fc6",
+            "level_source_sha256": "09fcdca578a7f30b8b31ef1be8b2756c90353903e27e6460cff18960c9095b76"
+        },
+        {
+            "catalog": "pinned",
+            "case": "levelpack.7z/missions/single/prophecy.mn2:3",
+            "level": "auora1.rl2",
+            "previous": "loaded_ticked",
+            "current": "loaded_ticked",
+            "frames": 120,
+            "load_receipt_sha256": "ffc16f62d0b4e831a384afb26699ceac385105985744f28046fdaec2a748f15f",
+            "level_source_sha256": "8c57cc2ffaa67cbfd99cc4a74685c8bd9a62d0ed416590a33d9efe35b94b86e7"
+        },
+        {
+            "catalog": "pinned",
+            "case": "levelpack.7z/missions/single/prophecy.mn2:4",
+            "level": "delta.rl2",
+            "previous": "loaded_ticked",
+            "current": "loaded_ticked",
+            "frames": 120,
+            "load_receipt_sha256": "9ea0033f507ddbcb8488e1ac4e6cf17e7404553939b2583d6acd68df2956cb33",
+            "level_source_sha256": "a80b6b7e361a1f5c50bdc7d8deafc27d5928102162fd623e541eae59136823ac"
+        },
+        {
+            "catalog": "pinned",
+            "case": "levelpack.7z/missions/single/prophecy.mn2:5",
+            "level": "hyperion.rl2",
+            "previous": "loaded_ticked",
+            "current": "loaded_ticked",
+            "frames": 120,
+            "load_receipt_sha256": "9db681091af3d441305aa89b2d1e72276f9cec1b26e750333c4ae13b7e2ddc7e",
+            "level_source_sha256": "7af2de2576dfe01f4eb614ab8aca5e47b0721ab46e42be5aea1e9839d7d33716"
+        },
+        {
+            "catalog": "pinned",
+            "case": "levelpack.7z/missions/sirius/sclairxl.mn2:1",
+            "level": "sclairxl.rl2",
+            "previous": "loaded_ticked",
+            "current": "loaded_ticked",
+            "frames": 120,
+            "load_receipt_sha256": "7a37713027dba211a2a6b4a47599e8d946c11f709bc4e46c9fbf4d72e24db6ec",
+            "level_source_sha256": "8021461d63b5d2276eb6e6464e8b2b1765bcef22d8631a1431da951fe0523bed"
+        }
+    ],
+    "new_starts": 1,
+    "losses": 0
+}
