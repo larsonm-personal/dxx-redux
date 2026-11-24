@@ -80,6 +80,7 @@
             "xl_pilot.unresolved_emitters": 0,
         },
     },
+    { "action": "set_debug", "field": "xl_wall_light_glow", "value": "1" },
     {
         "action": "set_debug",
         "field": "xl_corona_pixels",
@@ -181,4 +182,5 @@
     {
         "action": "introspect",
     },
+    { "action": "set_debug", "field": "xl_wall_light_glow", "value": "0" },
 ]

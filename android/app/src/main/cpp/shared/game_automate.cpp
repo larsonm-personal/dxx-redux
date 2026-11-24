@@ -7591,6 +7591,13 @@ extern "C" void game_automate_tick(void)
 #else
 				stop_script_fail("XL corona scene probe requires the opt-in Android pilot");
 #endif
+			} else if (s.field == "xl_wall_light_glow") {
+#if defined(DXX_BUILD_DESCENT_II) && defined(DXX_XL_RUNTIME)
+				if (s.value != "0" && s.value != "1") stop_script_fail("XL wall light glow expects 0 or 1");
+				else PlayerCfg.XlWallLightGlow = s.value == "1";
+#else
+				stop_script_fail("XL wall light glow requires the Descent II XL runtime");
+#endif
 			} else if (s.field == "xl_corona_pixels") {
 #if defined(DXX_XL_RUNTIME) && defined(__ANDROID__)
 				xl_corona_pixel_probe();

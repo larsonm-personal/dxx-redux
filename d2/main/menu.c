@@ -1523,9 +1523,16 @@ void graphics_config()
 	snprintf(framerate_string,sizeof(char)*4,"%d",PlayerCfg.maxFps);
 	m[nitems].type = NM_TYPE_INPUT; m[nitems].text=framerate_string; m[nitems].text_len=5;  nitems++;
 
+#if defined(OGL) && defined(DXX_XL_RUNTIME)
+	const int opt_gr_xl_wall_light_glow = nitems;
+	m[nitems].type = NM_TYPE_CHECK; m[nitems].text = "XL Wall Light Glow"; m[nitems].value = PlayerCfg.XlWallLightGlow; nitems++;
+#endif
 
 	newmenu_do1( NULL, "Graphics Options", nitems, m, graphics_config_menuset, NULL, 1 );
 
+#if defined(OGL) && defined(DXX_XL_RUNTIME)
+	PlayerCfg.XlWallLightGlow = m[opt_gr_xl_wall_light_glow].value;
+#endif
 #ifdef OGL
 	#ifndef ANDROID
 	if (GameCfg.VSync != m[opt_gr_vsync].value || GameCfg.Multisample != m[opt_gr_multisample].value)

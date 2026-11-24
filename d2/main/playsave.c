@@ -184,6 +184,9 @@ int new_player_config()
 	PlayerCfg.CycleAutoselectOnly = 0;
 	PlayerCfg.AlphaEffects = 0;
 	PlayerCfg.DynLightColor = 0;
+#ifdef DXX_XL_RUNTIME
+	PlayerCfg.XlWallLightGlow = 0;
+#endif
 	PlayerCfg.DisableCockpit = 0;  /* DisableCockpit */ 
 	PlayerCfg.StickyRearview = 0; /* StickyRearview */ 
 	PlayerCfg.SelectAfterFire = 1;  /* SelectAfterFire */
@@ -618,6 +621,10 @@ int read_player_d2x(char *filename)
 					PlayerCfg.AlphaEffects = atoi(line);
 				if(!strcmp(word,"DYNLIGHTCOLOR"))
 					PlayerCfg.DynLightColor = atoi(line);
+#ifdef DXX_XL_RUNTIME
+				if(!strcmp(word,"XLWALLLIGHTGLOW"))
+					PlayerCfg.XlWallLightGlow = atoi(line) != 0;
+#endif
 				d_free(word);
 				PHYSFSX_fgets(line,50,f);
 				word=splitword(line,'=');
@@ -895,6 +902,9 @@ int write_player_d2x(char *filename)
 		PHYSFSX_printf(fout,"[graphics]\n");
 		PHYSFSX_printf(fout,"alphaeffects=%i\n",PlayerCfg.AlphaEffects);
 		PHYSFSX_printf(fout,"dynlightcolor=%i\n",PlayerCfg.DynLightColor);
+#ifdef DXX_XL_RUNTIME
+		PHYSFSX_printf(fout,"xlwalllightglow=%i\n",PlayerCfg.XlWallLightGlow);
+#endif
 		PHYSFSX_printf(fout,"[end]\n");
 #ifdef ANDROID
 		PHYSFSX_printf(fout,"[music]\n");
