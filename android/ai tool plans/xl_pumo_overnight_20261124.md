@@ -44,3 +44,25 @@ qualified startup bank. The S21 diagnostic steps proved the fixed-view
 Concussion shot and its quickload repeat. The original Play report remains
 open at the phone user's manual shot and aim.
 [Timing and validation receipt](../XL_compat/evidence/pumo-s21-audio-preparation-20261124.json).
+
+## Anthology compatibility result
+
+The local D2X-XL build started all three split levels and the standalone
+release with all seven authored OOF replacements installed. Repeating the
+same four Redux cases moved the first failure from an overstated texture
+chunk length to gun points, batteries and finally submodel properties.
+The completed Windows candidate passed all four 120-frame unassisted starts.
+
+The standalone original built all seven optimized models. The Redux
+compiler matched all 22 robot gun slots and all 66 fixed-point components
+from the running original. Model 85 registers nine file records and eight
+gameplay slots. Robot muzzles follow the faces of the authored parent and
+its parent offsets. Position tracks, batteries and recognized static
+properties retain their source data. The optimized mesh uses static
+geometry. The original replacement table disables V flipping for these
+seven robots. The fourth table column is the model type.
+
+The targeted result accounts for four former OOF misses. The full evening
+census remains the observed 1,563/1,654 baseline until the full candidate
+repeat. Ordinary traversal and matched render captures are separate tests.
+[Exact distributions, stepwise blockers and receipts](../XL_compat/evidence/gameplay-anthology-oof-20261124.json).
