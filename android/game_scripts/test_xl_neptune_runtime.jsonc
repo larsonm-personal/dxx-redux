@@ -37,7 +37,7 @@
         "timeout_ms": 10000,
         "expect": {
             "menu.title": "Cannot run XL level",
-            "menu.subtitle": { "contains": "multiplayer_only_object at record 0: 1" },
+            "menu.subtitle": { "contains": "object_type at record 0: 254" },
             "in_game": false,
             "xl_pilot.runtime_active": false,
         },

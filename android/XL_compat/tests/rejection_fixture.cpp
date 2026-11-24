@@ -1,5 +1,5 @@
 // Private negative controls derived from an original mission; never a conversion
-#include "inventory.h"
+#include "admission.h"
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
@@ -43,7 +43,13 @@ int main(int argc, char **argv)
 					if (!std::any_of(control.unsupported.begin(), control.unsupported.end(), [](const auto &issue) {
 						    return issue.feature == "segment_properties" && issue.detail == "128";
 					    })) throw std::runtime_error("Unknown segment property no longer rejects; update the fixture and Android rejection expectation");
-				} else member.bytes.at(level.objects.front().source_offset + 6) = 1;
+				} else {
+					member.bytes.at(level.objects.front().source_offset) = 254;
+					const auto blockers = xl_compat::runtime_blockers(xl_compat::inspect_level(member.bytes));
+					if (!std::any_of(blockers.begin(), blockers.end(), [](const auto &issue) {
+						    return issue.feature == "object_type" && issue.record == 0 && issue.detail == "254";
+					    })) throw std::runtime_error("Unknown object type no longer rejects; update the fixture and Android rejection expectation");
+				}
 				changed = true;
 			}
 			if (!changed) throw std::runtime_error("negative control did not mutate a requirement");
@@ -60,7 +66,7 @@ int main(int argc, char **argv)
 			const auto descriptor = "d2x-name = Neptune rejected " + std::to_string(variant) + "\nnum_levels = 1\nneptunxl.rl2\n";
 			write(directory / (stem + ".mn2"), Bytes(descriptor.begin(), descriptor.end()));
 		}
-		std::cout << "Created three private negative controls: outdoor property, multiplayer object, malformed CLR\n";
+		std::cout << "Created three private negative controls: outdoor property, unknown object type, malformed CLR\n";
 		return 0;
 	} catch (const std::exception &error) {
 		std::cerr << error.what() << '\n';
