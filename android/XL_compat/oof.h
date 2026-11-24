@@ -49,6 +49,10 @@ struct OofSpecialPoint {
 	OofVector position{};
 	float radius = 0;
 };
+struct OofGunPoint {
+	int parent = -1;
+	OofVector position{}, direction{};
+};
 struct OofRotationFrame {
 	int start = 0, angle = 0;
 	OofVector axis{}, normalized_axis{};
@@ -56,6 +60,17 @@ struct OofRotationFrame {
 struct OofRotationTrack {
 	int first = 0, last = 0;
 	std::vector<OofRotationFrame> frames;
+};
+struct OofPositionFrame {
+	int start = 0;
+	OofVector position{};
+};
+struct OofPositionTrack {
+	int first = 0, last = 0;
+	std::vector<OofPositionFrame> frames;
+};
+struct OofWeaponBattery {
+	std::vector<int> vertices, turrets;
 };
 struct OofModel {
 	int version = 0;
@@ -66,9 +81,13 @@ struct OofModel {
 	std::map<int, OofSubmodel> submodels;
 	// Preserve raw extension bytes even when typed metadata is qualified
 	std::vector<OofChunk> additional_chunks;
-	bool has_special_points = false, has_rotation_tracks = false;
+	bool has_special_points = false, has_rotation_tracks = false, has_gun_points = false;
+	bool has_position_tracks = false, has_weapon_batteries = false;
 	std::vector<OofSpecialPoint> special_points;
 	std::vector<OofRotationTrack> rotation_tracks;
+	std::vector<OofGunPoint> gun_points;
+	std::vector<OofPositionTrack> position_tracks;
+	std::vector<OofWeaponBattery> weapon_batteries;
 };
 
 namespace oof_detail
@@ -143,6 +162,25 @@ class Reader
 	}
 };
 
+inline int timed_track(Reader &r, int &first, int &last, std::size_t &ticks)
+{
+	const int count = r.count(256);
+	first = r.integer();
+	last = r.integer();
+	const auto span = std::int64_t(last) - first + 1;
+	if (span < 1 || span > 1048576 || ticks + std::size_t(span) > 1048576) throw std::runtime_error("OOF animation tick range exceeds bounds");
+	ticks += std::size_t(span);
+	return count;
+}
+
+inline int frame_tick(Reader &r, int &previous, int last)
+{
+	const int next = r.integer();
+	if (next < previous || next > last) throw std::runtime_error("OOF animation frame outside ordered range");
+	previous = next;
+	return next;
+}
+
 inline OofSubmodel submodel(Reader &r)
 {
 	OofSubmodel result;
@@ -210,14 +248,25 @@ inline OofModel read_oof(const std::vector<uint8_t> &bytes)
 		if (++chunks > 1024) throw std::runtime_error("Too many OOF chunks");
 		const std::string type(reinterpret_cast<const char *>(file.take(4)), 4);
 		const auto length = std::size_t(file.count(64 * 1024 * 1024));
-		const auto *data = file.take(length);
-		oof_detail::Reader r(data, length);
 		if (type == "TXTR") {
 			if (textures) throw std::runtime_error("Duplicate OOF textures");
+			auto declared = file;
+			oof_detail::Reader r(declared.take(length), length);
 			textures = true;
 			for (int count = r.count(4096); count; --count) model.textures.push_back(r.string());
-			r.end();
-		} else if (type == "OHDR") {
+			file.take(length - r.remaining());
+			// The reference starts its next chunk after the decoded names. Only
+			// accept an overdeclared length at the model header boundary
+			if (r.remaining()) {
+				auto next = file;
+				if (submodels >= 0 || std::memcmp(next.take(4), "OHDR", 4))
+					throw std::runtime_error("Unexpected bytes after OOF textures");
+			}
+			continue;
+		}
+		const auto *data = file.take(length);
+		oof_detail::Reader r(data, length);
+		if (type == "OHDR") {
 			if (submodels >= 0) throw std::runtime_error("Duplicate OOF header");
 			submodels = r.count(64);
 			model.radius = r.real();
@@ -232,8 +281,8 @@ inline OofModel read_oof(const std::vector<uint8_t> &bytes)
 		} else model.additional_chunks.push_back({ type, { data, data + length } });
 	}
 	if (!textures || submodels < 1 || model.submodels.size() != std::size_t(submodels)) throw std::runtime_error("Incomplete OOF model");
-	// Version 2300 uses timed RANI. These records are retained, not animated: the
-	// pinned static OOF render paths do not consume their frame matrices or tick maps
+	// Version 2300 uses timed animation records. The pinned OOF render paths use
+	// static offsets and do not consume the frame matrices or tick maps
 	for (const auto &chunk : model.additional_chunks) {
 		oof_detail::Reader r(chunk.bytes.data(), chunk.bytes.size());
 		if (chunk.type == "SPCL") {
@@ -249,26 +298,51 @@ inline OofModel read_oof(const std::vector<uint8_t> &bytes)
 				model.special_points.push_back(std::move(point));
 			}
 			r.end();
+		} else if (chunk.type == "GPNT") {
+			if (model.has_gun_points) throw std::runtime_error("Duplicate OOF gun points");
+			model.has_gun_points = true;
+			for (int n = r.count(4096); n; --n) {
+				const int parent = r.integer();
+				if (parent < -1 || parent >= submodels) throw std::runtime_error("Invalid OOF gun point parent");
+				model.gun_points.push_back({ parent, r.vector(), r.vector() });
+			}
+			r.end();
+		} else if (chunk.type == "WBAT") {
+			if (model.has_weapon_batteries) throw std::runtime_error("Duplicate OOF weapon batteries");
+			model.has_weapon_batteries = true;
+			for (int n = r.count(4096); n; --n) {
+				OofWeaponBattery battery;
+				for (int vertices = r.count(4096); vertices; --vertices) battery.vertices.push_back(r.integer());
+				for (int turrets = r.count(64); turrets; --turrets) battery.turrets.push_back(r.count(submodels - 1));
+				model.weapon_batteries.push_back(std::move(battery));
+			}
+			r.end();
+		} else if (chunk.type == "PANI") {
+			if (model.has_position_tracks) throw std::runtime_error("Duplicate OOF position tracks");
+			model.has_position_tracks = true;
+			std::size_t ticks = 0;
+			for (int part = 0; part < submodels; ++part) {
+				OofPositionTrack track;
+				const auto count = oof_detail::timed_track(r, track.first, track.last, ticks);
+				int previous = track.first;
+				for (int i = 0; i < count; ++i)
+					track.frames.push_back({ oof_detail::frame_tick(r, previous, track.last), r.vector() });
+				model.position_tracks.push_back(std::move(track));
+			}
+			r.end();
 		} else if (chunk.type == "RANI") {
 			if (model.has_rotation_tracks) throw std::runtime_error("Duplicate OOF rotation tracks");
 			model.has_rotation_tracks = true;
 			std::size_t ticks = 0;
 			for (int part = 0; part < submodels; ++part) {
 				OofRotationTrack track;
-				const auto count = r.count(256);
-				track.first = r.integer();
-				track.last = r.integer();
-				const auto span = std::int64_t(track.last) - track.first + 1;
-				if (span < 1 || span > 1048576 || ticks + std::size_t(span) > 1048576) throw std::runtime_error("OOF rotation tick range exceeds bounds");
-				ticks += std::size_t(span);
+				const auto count = oof_detail::timed_track(r, track.first, track.last, ticks);
 				int previous = track.first;
 				for (int i = 0; i < count; ++i) {
 					OofRotationFrame frame;
-					frame.start = r.integer();
+					frame.start = oof_detail::frame_tick(r, previous, track.last);
 					frame.axis = r.vector();
 					frame.angle = r.integer();
-					if (frame.start < previous || frame.start > track.last) throw std::runtime_error("OOF rotation frame outside ordered range");
-					previous = frame.start;
 					const float magnitude = std::sqrt(frame.axis[0] * frame.axis[0] + frame.axis[1] * frame.axis[1] + frame.axis[2] * frame.axis[2]);
 					if (!std::isfinite(magnitude)) throw std::runtime_error("OOF rotation axis magnitude exceeds bounds");
 					frame.normalized_axis = frame.axis;

@@ -121,7 +121,7 @@ void calc_gun_point(vms_vector *gun_point,object *obj,int gun_num)
 
 	pnt = r->gun_points[gun_num];
 #ifdef DXX_XL_RUNTIME
-	xl_model_gun_point(obj->rtype.pobj_info.model_num, gun_num, &pnt);
+	xl_model_gun_point(obj, gun_num, &pnt);
 #endif
 	mn = r->gun_submodels[gun_num];
 

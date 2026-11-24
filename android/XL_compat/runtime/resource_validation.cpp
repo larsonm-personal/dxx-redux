@@ -896,11 +896,16 @@ xl_compat::OwnedModelSet prepare_owned_models(int ordinal, mission_preparation *
 			auto compiled = xl_compat::compile_ase_mesh(xl_compat::decode_ase_model(xl_compat::read_ase_records(text)));
 			resource->model.textures = std::move(compiled.textures);
 			resource->mesh = std::move(compiled.geometry);
-			resource->gunpoints = std::move(compiled.gunpoints);
+			for (const auto &entry : compiled.gunpoints) {
+				const auto &point = entry.second;
+				resource->gunpoints.emplace(entry.first, xl_compat::GunVector{ xl_compat::gun_fixed(point[0] * 65536.0),
+				                                                               xl_compat::gun_fixed(point[1] * 65536.0),
+				                                                               xl_compat::gun_fixed(point[2] * 65536.0) });
+			}
 			resource->thrusters = std::move(compiled.thrusters);
 		} else {
 			resource->model = xl_compat::read_oof(model_bytes);
-			resource->mesh = xl_compat::compile_oof_mesh(resource->model, mapping.flip_v);
+			resource->mesh = xl_compat::compile_oof_mesh(resource->model, mapping.flip_v, &resource->gunpoints);
 		}
 		for (auto texture : resource->model.textures) {
 			if (texture.empty() || texture == "." || texture == ".." || texture.find_first_of("/\\:") != std::string::npos)
@@ -1234,18 +1239,19 @@ std::map<std::string, std::string> xl_resource_sources_for_level(int ordinal, st
 	return sources;
 }
 
-extern "C" int xl_model_gun_point(int model, int gun, vms_vector *point)
+extern "C" int xl_model_gun_point(const object *shooter, int gun, vms_vector *point)
 {
-	if (!mission_requires_xl || !point || gun < 0 || gun >= 8) return 0;
-	const auto resource = xl_owned_oof_model(model);
+	if (!mission_requires_xl || !shooter || !point || gun < 0 || gun >= 8) return 0;
+	const auto resource = xl_owned_oof_model(shooter->rtype.pobj_info.model_num);
 	if (!resource || resource->gunpoints.empty()) return 0;
+	if (!resource->ase && shooter->type != OBJ_ROBOT) return 0;
 	// XL selects the model's complete gun array when it has any authored markers
 	*point = {};
 	const auto found = resource->gunpoints.find(gun);
 	if (found != resource->gunpoints.end()) {
-		point->x = fix(found->second[0] * 65536);
-		point->y = fix(found->second[1] * 65536);
-		point->z = fix(found->second[2] * 65536);
+		point->x = found->second[0];
+		point->y = found->second[1];
+		point->z = found->second[2];
 	}
 	return 1;
 }
@@ -1267,7 +1273,7 @@ extern "C" int xl_robot_gun_point(const object *robot, int gun, vms_vector *poin
 			parts[i] = { model.submodel_parents[i], vector(model.submodel_offsets[i]), { angle.p, angle.b, angle.h } };
 		}
 		vms_vector local = definition.gun_points[gun];
-		xl_model_gun_point(robot->rtype.pobj_info.model_num, gun, &local);
+		xl_model_gun_point(robot, gun, &local);
 		const xl_compat::GunMatrix orientation{ vector(robot->orient.rvec), vector(robot->orient.uvec), vector(robot->orient.fvec) };
 		const auto result = xl_compat::robot_gun_point(vector(local), definition.gun_submodels[gun], parts, orientation, vector(robot->pos));
 		*point = { result[0], result[1], result[2] };

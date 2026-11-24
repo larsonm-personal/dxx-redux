@@ -32,7 +32,7 @@ static int original_gun_point_test(const std::filesystem::path &root)
 			set_robot_state(&candidate, state);
 			for (int gun = 0; gun < gun_count; ++gun) {
 				vms_vector local = robot.gun_points[gun], actual{};
-				require(!xl_model_gun_point(robot.model_num, gun, &local), "Gun audit requires original HAM/HXM gun points");
+				require(!xl_model_gun_point(&candidate, gun, &local), "Gun audit requires original HAM/HXM gun points");
 				calc_gun_point(&actual, &candidate, gun);
 				output << "case " << index << ' ' << int(original.id) << ' ' << robot.model_num << ' ' << state << ' ' << gun
 				       << ' ' << model.n_models << ' ' << int(robot.gun_submodels[gun]);

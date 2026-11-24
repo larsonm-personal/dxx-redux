@@ -1,0 +1,246 @@
+{
+    "schema": 1,
+    "date": "2026-11-24",
+    "reference_source": "arbruijn/d2x-xl 2576a98b5de310e3ac7c9777df2677d1627b8bae",
+    "reference_mode": "640x480 window, Rookie, texture quality 2, 120 unassisted rendered iterations",
+    "redux_mode": "120 unassisted simulation frames at 60 Hz, seed 1",
+    "local_inventory_sha256": "e7d480aa401522d37f6ec75da01f6cec7c314c901728f1b291131e52a62818df",
+    "source_archive_sha256": {
+        "anthology(split).7z": "636b07e2cb1f52f5263b558ed0abb40724553d2b3d67cfdd4728f4addac68481",
+        "anthology.7z": "380552e767767147dcbd52f361657acf2a08071e5894c6cd9aa511e6232e0f3f"
+    },
+    "model_checks": {
+        "original_oof_models_decoded_and_compiled": 7,
+        "matched_robot_gun_slots": 22,
+        "matched_fixed_components": 66,
+        "model_85_authored_gun_points": 9,
+        "model_85_original_and_redux_gameplay_slots": 8,
+        "robot_oof_flip_v": false,
+        "coverage": "The standalone original built the optimized replacements for all seven model IDs. The comparison covers their actual optimized robot gun arrays. The model draw comparison covers static geometry and retained metadata."
+    },
+    "variants": [
+        {
+            "layer": "evening baseline",
+            "source_head": "90c1af417cb506a2eb4810a3416f1b3f52411bc9",
+            "engine_sha256": "2eb019f52bd3119d02a4b214fc2a769f3e9b5c0a24a5ec6be03f7297106bf27b",
+            "receipt_sha256": "cdcf2a98eb2a4aaa393ae5248cac5ee816b207daa65a4e4e85e90bc54170e6de",
+            "selected": [
+                "anthology(split).7z/missions/single/antho1-3.mn2:1",
+                "anthology(split).7z/missions/single/antho1-3.mn2:2",
+                "anthology(split).7z/missions/single/antho1-3.mn2:3",
+                "anthology.7z/missions/sirius/antholgy.mn2:1"
+            ],
+            "retail_resources": {
+                "commit": "dc6565f6b5400d7c700fa8378e766b2354b6ceb6",
+                "files": [
+                    {
+                        "path": "d2x.hog",
+                        "sha256": "97a4433833ec1f2fbdd2becc144a1e9726ca78b1210a71a49ddbec6182665fe6",
+                        "size": 4371791,
+                        "source": "descent_2_vertigo/d2x.hog"
+                    },
+                    {
+                        "path": "d2x-xl.hog",
+                        "sha256": "e7351d66d534c3fdb400f03b91b771ad2d0c0d2b0100cf48718d504008ada7e6",
+                        "size": 3815963,
+                        "source": "xl-resources/d2x-xl.hog"
+                    }
+                ],
+                "profile": "authentic-vertigo-xl-v1",
+                "repository": "larsonm-personal/dxx-redux-test-assets"
+            },
+            "passed": 0,
+            "first_blocker": "Unexpected bytes in OOF record"
+        },
+        {
+            "layer": "decoded texture boundary",
+            "source_head": "c1ac9b8e18b21e7d9261e8153b6154e9acd7e1d9",
+            "engine_sha256": "76ea957907deee5e30010daaea1db0e6c74ee0167c7b9f6609b7ba09da7e4563",
+            "receipt_sha256": "17f29ab8148971ff224922a3e8f97691971b7f67b2bf8bd5ce6b5092dc3e26f7",
+            "selected": [
+                "anthology(split).7z/missions/single/antho1-3.mn2:1",
+                "anthology(split).7z/missions/single/antho1-3.mn2:2",
+                "anthology(split).7z/missions/single/antho1-3.mn2:3",
+                "anthology.7z/missions/sirius/antholgy.mn2:1"
+            ],
+            "retail_resources": {
+                "commit": "dc6565f6b5400d7c700fa8378e766b2354b6ceb6",
+                "files": [
+                    {
+                        "path": "d2x.hog",
+                        "sha256": "97a4433833ec1f2fbdd2becc144a1e9726ca78b1210a71a49ddbec6182665fe6",
+                        "size": 4371791,
+                        "source": "descent_2_vertigo/d2x.hog"
+                    },
+                    {
+                        "path": "d2x-xl.hog",
+                        "sha256": "e7351d66d534c3fdb400f03b91b771ad2d0c0d2b0100cf48718d504008ada7e6",
+                        "size": 3815963,
+                        "source": "xl-resources/d2x-xl.hog"
+                    }
+                ],
+                "profile": "authentic-vertigo-xl-v1",
+                "repository": "larsonm-personal/dxx-redux-test-assets"
+            },
+            "passed": 0,
+            "first_blocker": "OOF runtime does not support chunk GPNT"
+        },
+        {
+            "layer": "gun point decoder observation",
+            "source_head": "31ce7b9bea9773238ea044d4fa59064ed4f2c86e",
+            "engine_sha256": "ad85e5fed97dc068e80bd65d40693cfc3b10162af31ce627b63013fd52ecf8da",
+            "receipt_sha256": "b09dd870dc58381b81f44c85cb2ef66c658ed48540112a7a8bb8b89a363eb723",
+            "selected": [
+                "anthology(split).7z/missions/single/antho1-3.mn2:1",
+                "anthology(split).7z/missions/single/antho1-3.mn2:2",
+                "anthology(split).7z/missions/single/antho1-3.mn2:3",
+                "anthology.7z/missions/sirius/antholgy.mn2:1"
+            ],
+            "retail_resources": {
+                "commit": "dc6565f6b5400d7c700fa8378e766b2354b6ceb6",
+                "files": [
+                    {
+                        "path": "d2x.hog",
+                        "sha256": "97a4433833ec1f2fbdd2becc144a1e9726ca78b1210a71a49ddbec6182665fe6",
+                        "size": 4371791,
+                        "source": "descent_2_vertigo/d2x.hog"
+                    },
+                    {
+                        "path": "d2x-xl.hog",
+                        "sha256": "e7351d66d534c3fdb400f03b91b771ad2d0c0d2b0100cf48718d504008ada7e6",
+                        "size": 3815963,
+                        "source": "xl-resources/d2x-xl.hog"
+                    }
+                ],
+                "profile": "authentic-vertigo-xl-v1",
+                "repository": "larsonm-personal/dxx-redux-test-assets"
+            },
+            "passed": 0,
+            "first_blocker": "OOF runtime does not support chunk WBAT"
+        },
+        {
+            "layer": "typed position and weapon metadata",
+            "source_head": "2417c774ea9371c4474007c90f629ae18dddf12a",
+            "engine_sha256": "ad6ff5942b575cf02a9a76d9d363a99cdbc709923c64980d5faf8f91b8ab2012",
+            "receipt_sha256": "53f9cf78407d671947e7a67ba41b1330ce6637d87ef29921232b018b3ac8ee14",
+            "selected": [
+                "anthology(split).7z/missions/single/antho1-3.mn2:1",
+                "anthology(split).7z/missions/single/antho1-3.mn2:2",
+                "anthology(split).7z/missions/single/antho1-3.mn2:3",
+                "anthology.7z/missions/sirius/antholgy.mn2:1"
+            ],
+            "retail_resources": {
+                "commit": "dc6565f6b5400d7c700fa8378e766b2354b6ceb6",
+                "files": [
+                    {
+                        "path": "d2x.hog",
+                        "sha256": "97a4433833ec1f2fbdd2becc144a1e9726ca78b1210a71a49ddbec6182665fe6",
+                        "size": 4371791,
+                        "source": "descent_2_vertigo/d2x.hog"
+                    },
+                    {
+                        "path": "d2x-xl.hog",
+                        "sha256": "e7351d66d534c3fdb400f03b91b771ad2d0c0d2b0100cf48718d504008ada7e6",
+                        "size": 3815963,
+                        "source": "xl-resources/d2x-xl.hog"
+                    }
+                ],
+                "profile": "authentic-vertigo-xl-v1",
+                "repository": "larsonm-personal/dxx-redux-test-assets"
+            },
+            "passed": 0,
+            "first_blocker": "OOF runtime requires property/facing-list support for turret"
+        },
+        {
+            "layer": "static properties and reference robot muzzle geometry",
+            "source_head": "2a5092ce9924b621f403fe59e15e5668b469afec",
+            "engine_sha256": "09d67a3d6e5416e7c0f22d205c710b22b45b96171c448892776af92813078195",
+            "receipt_sha256": "62578368044a6151e08cdf145a03c4ce212fd7d4ef076fc86e47b53cdebcdc47",
+            "selected": [
+                "anthology(split).7z/missions/single/antho1-3.mn2:1",
+                "anthology(split).7z/missions/single/antho1-3.mn2:2",
+                "anthology(split).7z/missions/single/antho1-3.mn2:3",
+                "anthology.7z/missions/sirius/antholgy.mn2:1"
+            ],
+            "retail_resources": {
+                "commit": "dc6565f6b5400d7c700fa8378e766b2354b6ceb6",
+                "files": [
+                    {
+                        "path": "d2x.hog",
+                        "sha256": "97a4433833ec1f2fbdd2becc144a1e9726ca78b1210a71a49ddbec6182665fe6",
+                        "size": 4371791,
+                        "source": "descent_2_vertigo/d2x.hog"
+                    },
+                    {
+                        "path": "d2x-xl.hog",
+                        "sha256": "e7351d66d534c3fdb400f03b91b771ad2d0c0d2b0100cf48718d504008ada7e6",
+                        "size": 3815963,
+                        "source": "xl-resources/d2x-xl.hog"
+                    }
+                ],
+                "profile": "authentic-vertigo-xl-v1",
+                "repository": "larsonm-personal/dxx-redux-test-assets"
+            },
+            "passed": 4,
+            "first_blocker": null
+        }
+    ],
+    "cases": [
+        {
+            "id": "anthology(split).7z/missions/single/antho1-3.mn2:1",
+            "descriptor_sha256": "0cea5acd2280ae70ebb93b96359eeeefe25c35e4d67f00372d05311fb2718113",
+            "level_file": "antho-d1.rl2",
+            "level_sha256": "85f95e124fde4d33b2ff3aabc9df5ad1da0da6548834071c00eeb051b0510759",
+            "segments": 2342,
+            "reference_engine_sha256": "3808f785bf16c701d8fd7e87811c32ba4ec3813e9090714c12b2689debd5ea8a",
+            "reference_receipt_sha256": "c3b0be76804cdd78b97139a5880717a7abb820a8b125fa7d684fb503b4383f25",
+            "reference_custom_oof_models_at_start_and_frame_120": 7,
+            "redux_load_receipt_sha256": "338dd31a9d27715da741fdcd76d1e17b2db34badc20fe180aca0ab5ab60416ae",
+            "redux_frames": 120,
+            "redux_xl_active": true,
+            "redux_assisted": false
+        },
+        {
+            "id": "anthology(split).7z/missions/single/antho1-3.mn2:2",
+            "descriptor_sha256": "0cea5acd2280ae70ebb93b96359eeeefe25c35e4d67f00372d05311fb2718113",
+            "level_file": "antho-d2.rl2",
+            "level_sha256": "8d3381c785698ec3984a4723da7fd0ead9bbe9c208808ba1b6e93b1659d1de2f",
+            "segments": 2475,
+            "reference_engine_sha256": "3808f785bf16c701d8fd7e87811c32ba4ec3813e9090714c12b2689debd5ea8a",
+            "reference_receipt_sha256": "7b005ed9f83b248c04f0a11e051930a5d3c559b117d1b94ac3dea9ef89c5e409",
+            "reference_custom_oof_models_at_start_and_frame_120": 7,
+            "redux_load_receipt_sha256": "e274b036e7fe70fbff4954d946604e9510c0ddf4e4bf59bc6a722e7e66843960",
+            "redux_frames": 120,
+            "redux_xl_active": true,
+            "redux_assisted": false
+        },
+        {
+            "id": "anthology(split).7z/missions/single/antho1-3.mn2:3",
+            "descriptor_sha256": "0cea5acd2280ae70ebb93b96359eeeefe25c35e4d67f00372d05311fb2718113",
+            "level_file": "antho-d3.rl2",
+            "level_sha256": "15287ba9c218aa0344e9adabef0cd5826398f050469f9c791c5b9d2da45cea98",
+            "segments": 706,
+            "reference_engine_sha256": "3808f785bf16c701d8fd7e87811c32ba4ec3813e9090714c12b2689debd5ea8a",
+            "reference_receipt_sha256": "099d6e492bc1475d5db79eb1e7f4e36e23fc6101d80c0238061a6625e7329c9c",
+            "reference_custom_oof_models_at_start_and_frame_120": 7,
+            "redux_load_receipt_sha256": "b5e18c41b57aa1c3f8e45f4790657b398a8fa97db7e9ecf5472736581e120eac",
+            "redux_frames": 120,
+            "redux_xl_active": true,
+            "redux_assisted": false
+        },
+        {
+            "id": "anthology.7z/missions/sirius/antholgy.mn2:1",
+            "descriptor_sha256": "04fc68d1babb53df330b88a400dabc0e478a61dc7f8c57ea8e5b4eb1c7ce6d46",
+            "level_file": "antholgy.rl2",
+            "level_sha256": "bf37473e89feac022ec223c9e53f866c8e0db7ec81b3e9d902f6c640d022e20c",
+            "segments": 5501,
+            "reference_engine_sha256": "3808f785bf16c701d8fd7e87811c32ba4ec3813e9090714c12b2689debd5ea8a",
+            "reference_receipt_sha256": "5b85db9da0bd69e0f9fff9edbc4c9f596f6d4781f661050e7f8a2c80d41256c6",
+            "reference_custom_oof_models_at_start_and_frame_120": 7,
+            "redux_load_receipt_sha256": "2e8010340e546a92ffc5b8ae63ac79fc0e0621bef01819056d0c1168d2021c64",
+            "redux_frames": 120,
+            "redux_xl_active": true,
+            "redux_assisted": false
+        }
+    ]
+}

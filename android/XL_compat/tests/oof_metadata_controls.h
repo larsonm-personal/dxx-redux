@@ -30,6 +30,35 @@ inline void metadata_controls()
 	const auto base = fixture(-1, 2, 0, "", 1, 1);
 	const auto original = xl_compat::compile_oof_mesh(xl_compat::read_oof(base), false);
 	const auto rejects = [&](const Bytes &b) {bool failed=false;try{(void)xl_compat::compile_oof_mesh(xl_compat::read_oof(b),false);}catch(const std::runtime_error&){failed=true;}require(failed,"Malformed or unsupported OOF metadata admitted"); };
+	{
+		Bytes points;
+		integer(points, 9);
+		for (int index = 0; index < 9; ++index) {
+			integer(points, index == 8 ? uint32_t(-1) : 0);
+			vector(points, float(index) + 0.5f, -2, 1);
+			vector(points, 0, 0, -1);
+		}
+		auto bytes = base;
+		chunk(bytes, "GPNT", points);
+		const auto model = xl_compat::read_oof(bytes);
+		std::map<int, xl_compat::GunVector> guns;
+		const auto mesh = xl_compat::compile_oof_mesh(model, false, &guns);
+		require(model.gun_points.size() == 9 && model.gun_points[8].parent == -1 &&
+		            model.gun_points[8].direction == xl_compat::OofVector{ 0, 0, -1 } &&
+		            model.additional_chunks[0].bytes == points,
+		        "OOF gun point parsing lost the ninth record or direction");
+		require(guns.size() == 8 && guns.at(0) == xl_compat::GunVector{ 163840, 229376, 262144 } &&
+		            guns.at(7) == guns.at(0) && same_mesh(original, mesh),
+		        "OOF gun point slot limit, parent offset or geometry changed");
+		chunk(bytes, "GPNT", points);
+		rejects(bytes);
+		bytes = base;
+		patch32(points, 4, 1);
+		chunk(bytes, "GPNT", points);
+		rejects(bytes);
+		bytes.pop_back();
+		rejects(bytes);
+	}
 	for (int variant : { 0, 1 }) {
 		const auto bytes = metadata_fixture(variant);
 		const auto parsed = xl_compat::read_oof(bytes);
@@ -89,12 +118,51 @@ inline void metadata_controls()
 		chunk(b, "RANI", p);
 		require(xl_compat::read_oof(b).rotation_tracks[0].frames[0].normalized_axis == xl_compat::OofVector{}, "Zero axis was invented");
 	}
-	for (const char *tag : { "PANI", "ANIM", "ATCH", "WBAT", "NATH" }) {
+	{
+		Bytes position;
+		for (int header : { 2, 0, 9, 0 }) integer(position, header);
+		vector(position, 1, 2, 3);
+		integer(position, 9);
+		vector(position, 3, 2, 1);
+		Bytes batteries;
+		for (int row : { 1, 2, 1, 2, 1, 0 }) integer(batteries, row);
+		const Bytes ground{ 0, 0, 0, 0 };
+		auto b = base;
+		chunk(b, "PANI", position);
+		chunk(b, "WBAT", batteries);
+		chunk(b, "GRND", ground);
+		const auto model = xl_compat::read_oof(b);
+		require(model.position_tracks.size() == 1 && model.position_tracks[0].frames.size() == 2 &&
+		            model.position_tracks[0].frames[1].start == 9 && model.position_tracks[0].frames[1].position == xl_compat::OofVector{ 3, 2, 1 },
+		        "OOF position animation lost its authored frames");
+		require(model.weapon_batteries.size() == 1 && model.weapon_batteries[0].vertices == std::vector<int>{ 1, 2 } &&
+		            model.weapon_batteries[0].turrets == std::vector<int>{ 0 } && model.additional_chunks[2].bytes == ground,
+		        "OOF weapon battery or opaque ground record changed");
+		require(same_mesh(original, xl_compat::compile_oof_mesh(model, false)), "Unused OOF metadata changed the static reference mesh");
+		chunk(b, "WBAT", batteries);
+		rejects(b);
+		b = base;
+		patch32(batteries, batteries.size() - 4, 1);
+		chunk(b, "WBAT", batteries);
+		rejects(b);
+		b = base;
+		patch32(position, 12, 10);
+		chunk(b, "PANI", position);
+		rejects(b);
+	}
+	for (const char *tag : { "PANI", "ANIM", "ATCH", "NATH" }) {
 		auto b = base;
 		chunk(b, tag, Bytes{ 0, 0, 0, 0 });
 		rejects(b);
 	}
-	for (const char *property : { "$rotate=1", "$turret=1", "$facing" }) {
+	for (const char *property : { "$rotate=1", "$facing\r\n", "$FOV=0.0,1.0,1.0", "$glow=0.2,0.2,0.2,0.95", "\r\n" }) {
+		auto b = fixture(-1, 2, 0, property, 1, 1);
+		chunk(b, "RANI", rotation_tracks());
+		const auto model = xl_compat::read_oof(b);
+		require(model.submodels.at(0).properties == property && same_mesh(original, xl_compat::compile_oof_mesh(model, false)),
+		        "Static OOF property lost authored data or changed the optimized mesh");
+	}
+	for (const char *property : { "$rotate=21", "$rotate=1 extra", "$turret=1", "$facing=1", "$fov=0,1", "$glow=0.2,0.2,nan,1" }) {
 		auto b = fixture(-1, 2, 0, property, 1, 1);
 		chunk(b, "RANI", rotation_tracks());
 		rejects(b);

@@ -530,8 +530,15 @@ static int mod_data_test(int argc, char **argv)
 			}
 			write_bytes(path.string().c_str(), original);
 			require(!*xl_resource_base_rejection(), xl_resource_base_rejection());
+			object robot{};
+			robot.type = OBJ_ROBOT;
+			robot.id = 68;
+			robot.render_type = RT_POLYOBJ;
+			robot.rtype.pobj_info.model_num = 17;
+			robot.orient = vmd_identity_matrix;
+			robot.pos = { 10 * F1_0, 20 * F1_0, 30 * F1_0 };
 			vms_vector local{};
-			require(xl_model_gun_point(17, 0, &local) && local.x == 2 * F1_0 && local.y == 3 * F1_0 && local.z == -3 * F1_0,
+			require(xl_model_gun_point(&robot, 0, &local) && local.x == 2 * F1_0 && local.y == 3 * F1_0 && local.z == -3 * F1_0,
 			        "Owned ASE gunpoint was not selected");
 			const auto original_robot = Robot_info[68];
 			const auto original_model = Polygon_models[17];
@@ -539,12 +546,6 @@ static int mod_data_test(int argc, char **argv)
 			Robot_info[68].gun_submodels[0] = 1;
 			Polygon_models[17].submodel_parents[1] = 0;
 			Polygon_models[17].submodel_offsets[1] = { 4 * F1_0, 5 * F1_0, 6 * F1_0 };
-			object robot{};
-			robot.id = 68;
-			robot.render_type = RT_POLYOBJ;
-			robot.rtype.pobj_info.model_num = 17;
-			robot.orient = vmd_identity_matrix;
-			robot.pos = { 10 * F1_0, 20 * F1_0, 30 * F1_0 };
 			vms_vector world{};
 			calc_gun_point(&world, &robot, 0);
 			Robot_info[68] = original_robot;
@@ -553,7 +554,7 @@ static int mod_data_test(int argc, char **argv)
 			        "ASE gunpoint skipped native robot submodel or world transforms");
 			require(load_base_mission("d2", error, sizeof(error)), error);
 			local = { 7, 8, 9 };
-			require(!xl_model_gun_point(17, 0, &local) && local.x == 7 && local.y == 8 && local.z == 9,
+			require(!xl_model_gun_point(&robot, 0, &local) && local.x == 7 && local.y == 8 && local.z == 9,
 			        "XL gunpoint changed stock fallback");
 			require(load_base_mission("pmines", error, sizeof(error)), error);
 			require(xl_resource_mod_sources() == original_sources, "Gunpoint fixture did not restore original identity");
