@@ -4,6 +4,8 @@
 #include "admission.h"
 #include "hog.h"
 #include "capacity.h"
+#include "camera_admission.h"
+#include "camera_bindings.h"
 #include "classic_segment_function.h"
 #include "wide_wall_fixture.h"
 #include "trigger_capacity_fixture.h"
@@ -1510,23 +1512,49 @@ void serialization_17_contract()
 
 void segment_flags_contract()
 {
-	for (int flags = 0; flags < 256; ++flags) {
-		const auto bytes = fixture(17, flags);
-		const auto v = xl_compat::inspect_level(bytes);
-		check(v.segments.at(0).flags == flags, "17/36 raw segment flags changed");
-		check(v.observations.size() == (flags & 0xfc ? 1u : 0u), "reserved-bit observation count");
-		if (flags & 0xfc) {
-			check(v.observations[0].feature == "reserved_segment_flags" && v.observations[0].detail == std::to_string(flags), "reserved flags lost source value");
-			check(xl_compat::inventory_json(v).find("reserved_segment_flags") != std::string::npos, "reserved flags omitted from report");
+	for (const int version : { 17, 18 })
+		for (int flags = 0; flags < 256; ++flags) {
+			const auto bytes = fixture(version, flags);
+			const auto v = xl_compat::inspect_level(bytes);
+			check(v.segments.at(0).flags == flags, "Raw segment flags changed in a qualified legacy layout");
+			check(v.observations.size() == (flags & 0xfc ? 1u : 0u), "reserved-bit observation count");
+			if (flags & 0xfc) {
+				check(v.observations[0].feature == "reserved_segment_flags" && v.observations[0].detail == std::to_string(flags), "reserved flags lost source value");
+				check(xl_compat::inventory_json(v).find("reserved_segment_flags") != std::string::npos, "reserved flags omitted from report");
+			}
+			const auto blockers = xl_compat::runtime_blockers(v);
+			check(blockers.empty(), "Reserved flags blocked a qualified legacy layout");
+			check(xl_compat::prepare_gameplay_probe(bytes).source.segments.at(0).flags == flags, "normal translation lost reserved flags");
 		}
-		const auto blockers = xl_compat::runtime_blockers(v);
-		check(blockers.empty(), "reserved flags blocked audited 17/36 serialization");
-		check(xl_compat::prepare_gameplay_probe(bytes).source.segments.at(0).flags == flags, "normal translation lost reserved flags");
-	}
 	const auto legacy_bytes = fixture(15, 255);
 	const auto legacy = xl_compat::inspect_level(legacy_bytes);
-	check(legacy.observations.empty() && std::any_of(legacy.unknown.begin(), legacy.unknown.end(), [](const auto &i) { return i.feature == "segment_flags"; }), "17/36 audit widened another profile");
+	check(legacy.observations.empty() && std::any_of(legacy.unknown.begin(), legacy.unknown.end(), [](const auto &i) { return i.feature == "segment_flags"; }), "Reserved flag qualification widened another profile");
 	rejects([&] { xl_compat::prepare_gameplay_probe(legacy_bytes); });
+}
+
+void legacy_camera_attachment_contract()
+{
+	auto level = xl_compat::inspect_level(fixture(18, 205));
+	level.objects.resize(1);
+	auto &owner = level.objects[0];
+	owner.type = 16;
+	owner.control = 1;
+	owner.render = 1;
+	owner.control_data.resize(16);
+	owner.control_data[0] = 129;
+	owner.render_data.resize(33);
+	level.object_triggers = 1;
+	level.object_trigger_records.push_back({ { 16, 0, 327680, -1, { { 0, 2 } } }, 0 });
+	level.unsupported.push_back({ "object_type", 0, "16" });
+	level.unsupported.push_back({ "object_trigger_type", 0, "16" });
+	check(xl_compat::runtime_blockers(level).empty(), "Qualified 18/36 camera bot and monitor were rejected");
+	const auto bindings = xl_compat::camera_bindings(level);
+	check(bindings.cameras.size() == 1 && bindings.cameras[0].object == 0 && bindings.faces[2] == 0,
+	      "Old camera bot lost its authored monitor face");
+	owner.control_data[0] = 0;
+	check(!xl_compat::runtime_blockers(level).empty(), "An unsupported old camera-bot controller was admitted");
+	owner.type = 2;
+	check(!xl_compat::qualified_camera_binding(level, level.object_trigger_records[0]), "An unrelated legacy camera owner was admitted");
 }
 
 void original_neptune(const char *path)
@@ -1722,6 +1750,7 @@ int main(int argc, char **argv)
 		feature_contract();
 		version_34_contract();
 		segment_flags_contract();
+		legacy_camera_attachment_contract();
 		light_count_contract();
 		invalid_light_row_contract();
 		owned_light_contract();

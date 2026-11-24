@@ -402,7 +402,7 @@ static Inventory read_level_inventory(const Bytes &bytes, bool allow_classic)
 		if (seg.function == 2 || seg.function > 6) issue(out.unsupported, out.level_version >= 21 ? "segment_function_v21" : "segment_function", i, std::to_string(seg.function));
 		if (seg.flags & ~3) {
 			// Pinned source consumes only ambient bits 0/1 in these audited profiles
-			if ((out.level_version == 17 && out.game_version == 36) || (out.level_version == 15 && out.game_version == 34) || (out.level_version == 21 && out.game_version == 40))
+			if (((out.level_version == 17 || out.level_version == 18) && out.game_version == 36) || (out.level_version == 15 && out.game_version == 34) || (out.level_version == 21 && out.game_version == 40))
 				issue(out.observations, "reserved_segment_flags", i, std::to_string(seg.flags));
 			else issue(out.unknown, "segment_flags", i, std::to_string(seg.flags));
 		}
