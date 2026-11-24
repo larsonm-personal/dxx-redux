@@ -2,6 +2,7 @@
 #include "flicker.h"
 #include "preview.h"
 #include "skybox_render.h"
+#include "../inventory.h"
 #include <stdexcept>
 #include <algorithm>
 #include <tuple>
@@ -58,7 +59,8 @@ bool volatile_wall(int segment, int side)
 	const auto wall_index = Segments[segment].sides[side].wall_num;
 	if (wall_index < 0 || wall_index >= Num_walls) return false;
 	const auto &wall = Walls[wall_index];
-	if (wall.type == WALL_OPEN || wall.type == WALL_DOOR || wall.type == WALL_BLASTABLE || (wall.type == WALL_CLOAKED && wall.cloak_value < 31)) return true;
+	if (wall.type == WALL_OPEN || wall.type == WALL_DOOR || wall.type == WALL_BLASTABLE || wall.type == colored_wall_type ||
+	    (wall.type == WALL_CLOAKED && wall.cloak_value < 31)) return true;
 	for (int i = 0; i < Num_triggers; ++i) {
 		const int type = xl_trigger_type(Triggers[i]);
 		if (type != TT_OPEN_DOOR && type != TT_ILLUSION_OFF && type != TT_OPEN_WALL) continue;

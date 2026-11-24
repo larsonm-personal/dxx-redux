@@ -332,12 +332,11 @@ void render_face(int segnum, int sidenum, int nv, int *vp, int tmap1, int tmap2,
 		pointlist[i] = &Segment_points[vp[i]];
 	}
 
-	//handle cloaked walls
-	int xl_cloaked = 0;
+	int flat_wall = wid_flags & WID_CLOAKED_FLAG;
 #ifdef DXX_XL_RUNTIME
-	xl_cloaked = xl_preview_begin_cloak_face(segnum, sidenum);
+	flat_wall |= xl_preview_begin_flat_wall_face(segnum, sidenum, wid_flags);
 #endif
-	if ((wid_flags & WID_CLOAKED_FLAG) || xl_cloaked) {
+	if (flat_wall) {
 		int wall_num = Segments[segnum].sides[sidenum].wall_num;
 		Assert(wall_num != -1);
 		gr_settransblend(Walls[wall_num].cloak_value, GR_BLEND_NORMAL);

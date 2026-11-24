@@ -1,5 +1,6 @@
 #ifndef DXX_XL_DOORWAY_H
 #define DXX_XL_DOORWAY_H
+#define XL_WID_COLORED_FLAG 32
 #ifdef __cplusplus
 extern "C" {
 #endif

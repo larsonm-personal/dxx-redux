@@ -52,6 +52,42 @@ static void doorway_rays(int expected)
 	query.flags = FQ_TRANSWALL;
 	require((find_vector_intersection(&query, &hit) == HIT_NONE) == bool(expected & WID_RENDPAST_FLAG), "Doorway visibility ray differs from flags");
 }
+static void colored_wall_material()
+{
+	auto &wall = Walls[0];
+	const auto saved = wall;
+	wall.type = xl_compat::colored_wall_type;
+	wall.state = WALL_DOOR_CLOSED;
+	wall.cloak_value = static_cast<int8_t>(233);
+	const auto index = 233 * 3;
+	for (const auto &sample : std::array<std::pair<int, float>, 5>{ {
+	         { -F1_0, 1.0f },
+	         { 0, 15.0f / 31.0f },
+	         { 50 * F1_0, 0.5f },
+	         { 100 * F1_0, 0.0f },
+	         { 200 * F1_0, 1.0f },
+	     } }) {
+		wall.hps = sample.first;
+		const int flags = WALL_IS_DOORWAY(&Segments[wall.segnum], wall.sidenum);
+		const int expected = (sample.first < 0 ? WID_TRANSILLUSORY_WALL : WID_TRANSPARENT_WALL) | XL_WID_COLORED_FLAG;
+		require(flags == expected, "Colored wall hit points changed passage or visibility");
+		doorway_rays(flags);
+		const auto flat = xl_preview_begin_flat_wall_face(wall.segnum, wall.sidenum, flags);
+		require(bool(flat) == (sample.second < 1.0f) && std::abs(xl_preview_alpha(1.0f) - sample.second) < 0.000001f,
+		        "Colored wall material differs from source opacity");
+		float r = -1, g = -1, b = -1;
+		xl_preview_flat_wall_color(&r, &g, &b);
+		require((flat && r == gr_palette[index] / 64.0f && g == gr_palette[index + 1] / 64.0f && b == gr_palette[index + 2] / 64.0f) ||
+		            (!flat && r == -1 && g == -1 && b == -1),
+		        "Colored wall lost its unsigned palette index or textured fallback");
+		xl_preview_end_face();
+		r = g = b = -1;
+		xl_preview_flat_wall_color(&r, &g, &b);
+		require(r == -1 && g == -1 && b == -1 && xl_preview_alpha(1.0f) == 1.0f, "Colored material leaked after the draw");
+	}
+	wall = saved;
+	std::cout << "Colored wall opacity, palette index and physical/visibility rays passed\n";
+}
 static void doorway_animation(std::ostream &out)
 {
 	obj_relink(ConsoleObject - Objects, 0);
@@ -129,6 +165,7 @@ static int doorway_test(int argc, char **argv)
 		StartNewGame(1);
 		std::ofstream samples(output / "doorway-samples.txt");
 		doorway_matrix(samples);
+		colored_wall_material();
 		doorway_animation(samples);
 		std::cout << "XL doorway controls passed\n";
 		return 0;

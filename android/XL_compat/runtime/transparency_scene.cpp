@@ -316,7 +316,7 @@ extern "C" int xl_transparency_face(int segment, int side, int count, const int 
 		// Let the native renderer repair invalid texture indices before drawing
 		if (base < 0 || base >= NumTextures || (overlay & 0x3fff) >= NumTextures) return 0;
 		// Ask the same material consumer used at draw time, including XL's fade scale
-		const bool flat = xl_preview_begin_cloak_face(segment, side) || (doorway & WID_CLOAKED_FLAG);
+		const bool flat = xl_preview_begin_flat_wall_face(segment, side, doorway) || (doorway & WID_CLOAKED_FLAG);
 		if (!flat) xl_preview_begin_face(segment, side);
 		const float alpha = xl_preview_alpha(1);
 		const bool authored_additive = xl_preview_additive_face();

@@ -2,6 +2,7 @@
 #include "preview.h"
 #include "resource_validation.h"
 #include "../lighting.h"
+#include "../inventory.h"
 #include "geometry.h"
 #include <stdexcept>
 #include <algorithm>
@@ -205,7 +206,7 @@ bool classic_portal_passable(int segment, int side, bool router)
 	if (surface.wall_num == -1) return true;
 	if (surface.wall_num < -1 || surface.wall_num >= Num_walls) throw std::runtime_error("Invalid classic light portal wall");
 	const auto &wall = Walls[surface.wall_num];
-	if (wall.type == WALL_OPEN || wall.type == WALL_CLOAKED) return true;
+	if (wall.type == WALL_OPEN || wall.type == WALL_CLOAKED || wall.type == colored_wall_type) return true;
 	if (wall.type == WALL_DOOR && (!router || (wall.flags & WALL_DOOR_OPENED) || wall.state == WALL_DOOR_OPENING || wall.state == WALL_DOOR_CLOSING)) return true;
 	if (router && wall.type == WALL_ILLUSION) return true;
 	if (wall.type == WALL_ILLUSION && ((wall.flags & WALL_ILLUSION_OFF) || wall.cloak_value < 31)) return true;
