@@ -4,6 +4,7 @@
 #include "admission.h"
 #include "hog.h"
 #include "capacity.h"
+#include "classic_segment_function.h"
 #include "wide_wall_fixture.h"
 #include "trigger_capacity_fixture.h"
 #include "object_capacity_fixture.h"
@@ -1695,6 +1696,11 @@ int main(int argc, char **argv)
 		xl_compat::Segment property_segment{};
 		const int legacy_properties[] = { 0, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0, 0, 4, 8, 4, 0, 16 };
 		for (int function = 0; function < 17; ++function) {
+			const int solo_function = function == 9 || function == 10 ? 0 : function;
+			check(xl_classic_native_segment_function(7, function, false) == solo_function &&
+			          xl_classic_native_segment_function(7, function, true) == function &&
+			          xl_classic_native_segment_function(8, function, false) == function,
+			      "Classic solo team rooms changed an unrelated segment function");
 			property_segment.function = function;
 			for (int bits = 0; bits < 256; ++bits) {
 				property_segment.properties = bits;

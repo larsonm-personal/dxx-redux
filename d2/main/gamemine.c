@@ -52,6 +52,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "level_section_io.h"
 #include "physfsx_checked_read.h"
 #ifdef DXX_XL_RUNTIME
+#include "../../android/XL_compat/classic_segment_function.h"
 #include "preview.h"
 #endif
 
@@ -855,7 +856,11 @@ int load_mine_data_compiled(PHYSFS_file *LoadFile)
 	for (i=0; i<Num_segments; i++) {
 		if (Gamesave_current_version > 5)
 			segment2_read(&Segment2s[i], LoadFile);
-		fuelcen_activate( &Segments[i], Segment2s[i].special );
+		int special = Segment2s[i].special;
+#ifdef DXX_XL_RUNTIME
+		special = xl_classic_native_segment_function(Gamesave_current_version, special, Game_mode & GM_MULTI);
+#endif
+		fuelcen_activate( &Segments[i], special );
 	}
 
 	reset_objects(1);		//one object, the player
