@@ -647,7 +647,7 @@ void validate_requirements(const xl_compat::Inventory &level, bool multiplayer, 
 	else xl_assets::asset_require(graph.require_owned_banks && graph.resource_banks, "Incoming requirement walk needs retained target banks");
 	// Explicit no-render execution retains skybox geometry/collision and authored
 	// fog state, but does not require a framebuffer for presentation qualification
-	if (!GameArg.SysInputDemoNoRender && std::any_of(level.segments.begin(), level.segments.end(), [](const xl_compat::Segment &segment) { return segment.function == 10; }) && !xl_skybox_renderer_ready())
+	if (!GameArg.SysInputDemoNoRender && std::any_of(level.segments.begin(), level.segments.end(), [&level](const xl_compat::Segment &segment) { return xl_compat::segment_is_skybox(level, segment); }) && !xl_skybox_renderer_ready())
 		throw std::runtime_error("XL skybox requires an active OpenGL renderer");
 	if (xl_compat::volumetric_fog_required(level)) {
 		(void) xl_compat::fog_colors(level);
@@ -1889,6 +1889,7 @@ void xl_compat::skybox_corona_native_controls()
 			}
 		} restore_skybox;
 		auto boxed = *source;
+		boxed.level_version = 23;
 		boxed.segments.at(selected).function = 10;
 		bind_skybox_render(boxed);
 		const auto lights = compile_classic_geometry_lights(strengths, colors);

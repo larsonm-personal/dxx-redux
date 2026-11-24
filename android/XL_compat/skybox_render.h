@@ -68,7 +68,7 @@ inline bool skybox_side_textured(const Inventory &level, int segment, int side)
 inline bool skybox_colored_only_boundary(const Inventory &level, int segment, int side)
 {
 	const auto &owner = level.segments.at(segment);
-	return owner.function == 10 && fog_type(level, segment) != fog_type(level, owner.children.at(side)) && !skybox_side_textured(level, segment, side);
+	return segment_is_skybox(level, owner) && fog_type(level, segment) != fog_type(level, owner.children.at(side)) && !skybox_side_textured(level, segment, side);
 }
 
 // Source traverses every skybox segment, not only the ordinary visibility list

@@ -57,6 +57,7 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 	std::vector<Issue> result;
 	const bool classic_effect = classic_effect_layout(level);
 	const bool colored_walls = modern_runtime_layout(level) || (level.level_version == 18 && level.game_version == 36);
+	const bool legacy_repair_centers = legacy_team_room_layout(level) || (level.level_version == 19 && level.game_version == 40);
 	for (const auto &issue : level.unsupported) {
 		if (classic_effect && issue.feature != "effect_lightning" && issue.feature != "effect_particles" &&
 		    issue.feature != "effect_object_types" && issue.feature != "additive_wall_rendering") {
@@ -78,7 +79,8 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 		    level.walls[issue.record].type == 5) continue;
 		if (issue.feature == "effect_object_types" || issue.feature == "effect_sounds" ||
 		    issue.feature == "effect_trigger_target" || issue.feature == "object_effect_trigger_target") continue;
-		if (level.level_version == 17 && level.game_version == 36 && issue.feature == "segment_function" && issue.detail == "2") continue;
+		if (legacy_repair_centers && issue.feature == "segment_function" && issue.detail == "2") continue;
+		if (legacy_team_room_layout(level) && issue.feature == "segment_function" && (issue.detail == "9" || issue.detail == "10")) continue;
 		if (modern_runtime_layout(level) && issue.feature == "segment_function_v21" && issue.detail == "2") continue;
 		if (modern_runtime_layout(level) && issue.feature == "segment_function_v21" && (issue.detail == "7" || issue.detail == "8")) continue;
 		if (modern_runtime_layout(level) && issue.feature == "segment_function_v21" && issue.detail == "11") continue;
@@ -106,12 +108,15 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 		if (issue.feature != "embedded_lighting" &&
 		    !(issue.feature == "segment_function" && issue.detail == "13")) result.push_back(issue);
 	}
-	for (const auto &issue : level.unknown)
+	for (const auto &issue : level.unknown) {
+		if (issue.feature == "segment_owner_group" && issue.record >= 0 && std::size_t(issue.record) < level.segments.size() &&
+		    qualified_team_ownership(level, level.segments[issue.record])) continue;
 		// These describe validation stages, not serialized unknown features
 		if (issue.feature != "object_dependencies" && issue.feature != "assets" && issue.feature != "runtime_semantics")
 			result.push_back(issue);
+	}
 	for (std::size_t segment = 0; segment < level.segments.size(); ++segment)
-		if (level.segments[segment].function == 10)
+		if (segment_is_skybox(level, level.segments[segment]))
 			for (int side = 0; side < 6; ++side)
 				if (skybox_colored_only_boundary(level, int(segment), side))
 					result.push_back({ "skybox colored boundary", int(segment), "untextured fog boundary on side " + std::to_string(side) + " requires source draw-state qualification" });

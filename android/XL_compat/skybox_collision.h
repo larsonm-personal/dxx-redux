@@ -32,8 +32,9 @@ class SkyboxCollisionWorld
 	explicit SkyboxCollisionWorld(const Inventory &level)
 	{
 		for (const auto &segment : level.segments) {
-			if (segment.function == 10) skyboxes.push_back(int(geometry.size()));
-			geometry.push_back({ segment.function == 10, segment.children });
+			const bool skybox = segment_is_skybox(level, segment);
+			if (skybox) skyboxes.push_back(int(geometry.size()));
+			geometry.push_back({ skybox, segment.children });
 		}
 	}
 	const std::vector<int> &segments() const

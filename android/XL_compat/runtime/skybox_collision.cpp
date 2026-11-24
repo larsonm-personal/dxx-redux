@@ -24,7 +24,7 @@ std::unique_ptr<World> world;
 
 void xl_compat::bind_skybox_collision(const Inventory &level)
 {
-	if (std::none_of(level.segments.begin(), level.segments.end(), [](const auto &segment) { return segment.function == 10; })) {
+	if (std::none_of(level.segments.begin(), level.segments.end(), [&level](const auto &segment) { return segment_is_skybox(level, segment); })) {
 		world.reset();
 		return;
 	}

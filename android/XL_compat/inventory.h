@@ -160,6 +160,22 @@ inline bool modern_runtime_layout(const Inventory &level)
 	return level.game_version == 40 && modern_level_version(level.level_version);
 }
 
+inline bool legacy_team_room_layout(const Inventory &level)
+{
+	return level.level_version == 17 && level.game_version == 36;
+}
+
+inline bool qualified_team_ownership(const Inventory &level, const Segment &segment)
+{
+	const bool layout = legacy_team_room_layout(level) || (level.level_version == 23 && level.game_version == 40);
+	return layout && (segment.owner == 1 || segment.owner == 2) && segment.group >= -1;
+}
+
+inline bool segment_is_skybox(const Inventory &level, const Segment &segment)
+{
+	return level.level_version >= 21 && segment.function == 10;
+}
+
 inline bool supported_xl_layout(const Inventory &level)
 {
 	return (level.level_version == 15 && (level.game_version == 33 || level.game_version == 34)) ||

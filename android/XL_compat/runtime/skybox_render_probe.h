@@ -211,6 +211,7 @@ void skybox_render_gpu_controls(const xl_compat::Inventory &original)
 	FrameTime = 0;
 	gr_set_current_canvas(nullptr);
 	auto derived = original;
+	derived.level_version = 23;
 	for (auto &segment : derived.segments) segment.function = 10;
 	xl_compat::bind_skybox_render(derived);
 	std::fill_n(Automap_visited, MAX_SEGMENTS, 0);

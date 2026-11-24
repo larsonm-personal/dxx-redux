@@ -53,12 +53,12 @@ bool drawing_objects = false;
 void xl_compat::bind_skybox_render(const Inventory &level)
 {
 	world.reset();
-	if (std::none_of(level.segments.begin(), level.segments.end(), [](const Segment &s) { return s.function == 10; })) return;
+	if (std::none_of(level.segments.begin(), level.segments.end(), [&level](const Segment &s) { return segment_is_skybox(level, s); })) return;
 	if (level.segments.size() != std::size_t(Highest_segment_index + 1)) throw std::runtime_error("XL skybox source does not match loaded mine");
 	auto next = std::make_unique<World>();
 	next->segments.resize(level.segments.size());
 	for (std::size_t i = 0; i < level.segments.size(); ++i) {
-		if (!(next->segments[i] = level.segments[i].function == 10)) continue;
+		if (!(next->segments[i] = segment_is_skybox(level, level.segments[i]))) continue;
 		next->order.push_back(int(i));
 		for (unsigned side = 0; side < 6; ++side) {
 			if (!skybox_side_textured(level, int(i), int(side))) continue;
@@ -157,6 +157,7 @@ void xl_compat::skybox_render_native_controls(const Inventory &original)
 		}
 	} restore;
 	Inventory derived = original;
+	derived.level_version = 23;
 	unsigned faces = 0;
 	for (unsigned mask = 0; mask < 3; ++mask) {
 		for (std::size_t i = 0; i < derived.segments.size(); ++i) derived.segments[i].function = mask == 2 || (mask == 1 && i % 2) ? 10 : 0;

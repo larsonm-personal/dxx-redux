@@ -52,6 +52,7 @@ static void skybox_collision_face_native_case(const xl_compat::Inventory &origin
 	con_printf(CON_NORMAL, "XL skybox collision boundary: %u native wall hits retain their actual triangle (%u, %u)\n", checked, triangles[0], triangles[1]);
 	require(control_segment >= 0, "Skybox physics control lacks an empty external segment");
 	auto derived = original;
+	derived.level_version = 23;
 	for (auto &segment : derived.segments) segment.function = 10;
 	xl_compat::bind_skybox_collision(derived);
 	struct Guard {
