@@ -950,16 +950,25 @@ void set_briefing_fontcolor (briefing *br)
 
 void redraw_messagestream(msgstream *stream, int count)
 {
-	char msgbuf[2];
+	char msgbuf[2] = {0};
 	int i;
 
+#ifdef __ANDROID__
+	// Draw all outlines before any foreground so adjacent letters stay intact
+	for (i = 0; i < count; i++) {
+		if (stream[i].shadow < 0 || stream[i].ch == ' ') continue;
+		msgbuf[0] = stream[i].ch;
+		xl_briefing_draw_outline(stream[i].x + 1, stream[i].y, msgbuf, stream[i].shadow);
+	}
+#endif
 	for (i=0; i<count; i++) {
 		msgbuf[0] = stream[i].ch;
-		msgbuf[1] = 0;
+#ifndef __ANDROID__
 		if (stream[i].shadow >= 0) {
 			gr_set_fontcolor(stream[i].shadow,-1);
 			gr_printf(stream[i].x,stream[i].y,"%s",msgbuf);
 		}
+#endif
 		if (!i || stream[i].shadow >= 0 || stream[i-1].color != stream[i].color)
 			gr_set_fontcolor(stream[i].color,-1);
 		gr_printf(stream[i].x+1,stream[i].y,"%s",msgbuf);

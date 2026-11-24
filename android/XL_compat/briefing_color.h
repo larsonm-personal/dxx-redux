@@ -1,5 +1,18 @@
 #pragma once
 
+#ifdef __ANDROID__
+#include "gr.h"
+
+static inline void xl_briefing_draw_outline(int x, int y, const char *glyph, int color)
+{
+	gr_set_fontcolor(color, -1);
+	gr_string(x - 1, y, glyph);
+	gr_string(x + 1, y, glyph);
+	gr_string(x, y - 1, glyph);
+	gr_string(x, y + 1, glyph);
+}
+#endif
+
 /* XL $CF and $CB define the two colors in custom slot zero */
 static inline int xl_briefing_read_color(char **message, unsigned char foreground[3], unsigned char background[3])
 {
