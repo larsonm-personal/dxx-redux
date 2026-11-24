@@ -1,0 +1,58 @@
+{
+  "schema": 1,
+  "date": "2026-11-23",
+  "reference_source": "2576a98b5de310e3ac7c9777df2677d1627b8bae",
+  "reference_rule": "CSegment::ReadExtras upgrades classic types 9 and 10 to the two team room functions. CSegment::CreateGenerator creates no station for either. The candidate maps them to the native ordinary-segment value before producer activation for compiled mine version 7 in single-player.",
+  "original_member": "wfc20.rl2",
+  "ordinal": 1,
+  "baseline_head": "e43512b923774ea11973beeea5e327578101a329",
+  "baseline_engine_sha256": "b3d99cf610e26b46cb507411b7b51d4c8c672a7fc32ba1c345438efeb7e92dd3",
+  "candidate_engine_sha256": "82785eec5268bc71ddba28169937a10dd5ae3375129311fa8808afadba4cc0aa",
+  "inputs": { "frames": 120, "fixed_hz": 60, "seed": 1, "assisted": false },
+  "distributions": [
+    {
+      "archive": "levelpack.7z",
+      "archive_sha256": "b4b519dc5755b795fd49cc3786a0421b96cd099dcc8f002925ddfd7c038b2719",
+      "descriptor": "missions/diedel/wfc20.mn2",
+      "member_sha256": "c408d09a90c00cbeb84986c8670f9f63088701c6b87d1bfe7112d0d7cb545500",
+      "level_version": 23,
+      "game_version": 40,
+      "baseline": "loaded_ticked",
+      "candidate": "loaded_ticked",
+      "baseline_receipt_sha256": "52bac0cfa1a6b0daf17f808d9f9e489ab03ed201d19953ffd9014dc4019c9cb7",
+      "candidate_receipt_sha256": "d8d30df648ebd59bc524b849e947f3ef96ab5291990a83fb54d1b36a59e3b456"
+    },
+    {
+      "archive": "levels_multiplayer/wfc.7z",
+      "archive_sha256": "59c6566828279a30566b04076d9b87aee3207c984264f0a74c379609350da92f",
+      "descriptor": "missions/diedel/wfc20.mn2",
+      "member_sha256": "b09927723e2058e8a12f9842113025a9f860177decb4f0c5f6420ee00dd2bdde",
+      "level_version": 7,
+      "game_version": 31,
+      "team_blue_segments": [8, 187, 756],
+      "team_red_segments": [152, 619, 799],
+      "baseline": "load_failed",
+      "baseline_error": "Invalid station type 9 in fuelcen.c",
+      "candidate": "loaded_ticked",
+      "candidate_xl_runtime_active": false,
+      "baseline_receipt_sha256": "172928013846b290b56a5ae4e2c368adae78b7c257986e9126f1e10ae9fe1268",
+      "candidate_receipt_sha256": "b707159586de34bfd05884241158ae760f785e90d2073fef9cb9ccb141884ea1"
+    }
+  ],
+  "standalone_renderer": {
+    "rendered_frames": 120,
+    "windowed_display_modes_preserved": true,
+    "receipt_sha256": "ae24595fd5ba9e41b051e65e74daa9493755619e90bd14ac10cdb21503c68d09"
+  },
+  "standalone_cold_restore": {
+    "assisted": true,
+    "save_segment": 8,
+    "save_frames": 338,
+    "save_receipt_sha256": "eec33df072542b09d8789c399a46566c808638a3bdf74279c3fc395070583d37",
+    "restored_segment": 8,
+    "continue_to_segment": 187,
+    "continue_frames": 292,
+    "restore_receipt_sha256": "3740e0437ea26f49f92de6d91a0ebc6bbc6a71cd8bd18a3285de36c038837148"
+  },
+  "coverage": "The two exact distributions pass the single-player startup criterion. No new blocker arose during the sampled startup or the assisted cold continuation. The rule leaves multiplayer team behavior outside the qualified scope."
+}
