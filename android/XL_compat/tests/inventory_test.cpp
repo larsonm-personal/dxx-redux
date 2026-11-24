@@ -1873,7 +1873,7 @@ int main(int argc, char **argv)
 			// Original pmlev3 object 318, with only its segment relocated into this fixture
 			nonglow.objects.back().render_data = { 300, 50, 15, 5, 1, -1, 3, 0, 0, 6, 0, 2, 20, 0, 0, 0, 0, 0, 0, 1, 0, 160, 160, 0, 128, 1 };
 			check(xl_compat::runtime_blockers(nonglow).empty(), "Implemented original non-glowing lightning profile rejected");
-			for (const auto &change : std::vector<std::pair<unsigned, int>>{ { 0, 0 }, { 2, 0 }, { 5, 0 }, { 9, 4 }, { 9, 640 }, { 11, 0 }, { 14, 3 }, { 20, 1 }, { 21, 256 } }) {
+			for (const auto &change : std::vector<std::pair<unsigned, int>>{ { 2, 0 }, { 5, 0 }, { 9, 4 }, { 9, 640 }, { 11, 0 }, { 14, 3 }, { 20, 1 }, { 21, 256 } }) {
 				auto invalid = lightning;
 				invalid.objects.back().render_data[change.first] = change.second;
 				check(xl_compat::blocker_message(xl_compat::runtime_blockers(invalid)).find("effect_lightning at record") != std::string::npos,
@@ -1883,6 +1883,13 @@ int main(int argc, char **argv)
 			anchor.objects.back().render_data[6] = 0;
 			anchor.objects.back().render_data[2] = 0;
 			check(xl_compat::runtime_blockers(anchor).empty(), "Target-only lightning required an emitter population");
+			// Original Prophecy auora1 object 186, relocated to the test segment
+			const std::vector<int> dormant{ 0, 0, 2, 3, 0, -1, 5, 0, 1, 3, 5, 7, 3, 0, 1, 0, 0, 1, 0, 0, 1, 255, 0, 0, 0, 1 };
+			anchor.objects.back().render_data = dormant;
+			check(xl_compat::runtime_blockers(anchor).empty() && anchor.objects.back().render_data == dormant, "Zero-lifetime lightning lost its authored anchor");
+			anchor.objects.back().render_data[0] = 300;
+			anchor.objects.back().render_data[9] = 30;
+			check(!xl_compat::runtime_blockers(anchor).empty(), "Live in-plane lightning bypassed the qualified profile");
 			auto fallback = lightning;
 			fallback.objects.back().render_data[19] = 0;
 			check(xl_compat::runtime_blockers(fallback).empty(), "Target-zero lightning rejected its orientation endpoint");

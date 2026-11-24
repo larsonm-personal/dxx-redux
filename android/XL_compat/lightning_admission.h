@@ -15,7 +15,9 @@ inline bool authored_lightning_emits(const Object &object)
 {
 	if (object.render_data.size() != 26 || object.render_data[6] < -32768 || object.render_data[6] > 32767)
 		throw std::runtime_error("XL lightning has an invalid bolt-count payload");
-	return object.render_data[6] > 0;
+	// StaticFrame skips empty bolt populations before calling the emitter
+	// The source emitter also rejects zero lifetime
+	return object.render_data[6] > 0 && object.render_data[0] != 0;
 }
 
 inline int authored_lightning_target(const Inventory &level, const Object &object)
@@ -66,7 +68,7 @@ inline LightningDefinition prepare_authored_lightning(const Inventory &level, co
 	if (object.segment < 0 || std::size_t(object.segment) >= level.segments.size())
 		throw std::runtime_error("XL lightning object references an invalid segment");
 	if (!authored_lightning_emits(object)) {
-		// StaticFrame retains target objects but creates no emitter for nBolts <= 0
+		// Other lightning can still use the authored object as a target
 		LightningDefinition anchor{};
 		anchor.enabled = object.render_data[25] != 0;
 		return anchor;

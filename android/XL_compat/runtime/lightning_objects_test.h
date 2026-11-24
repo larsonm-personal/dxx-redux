@@ -331,8 +331,9 @@ static void lightning_objects_native_case(bool active, int profile = 0)
 		Objects[2] = target_native;
 		Objects[3] = guard.actor;
 		anchors.objects[3] = source.objects[3];
-		anchors.objects[1].render_data[6] = 0;
-		anchors.objects[1].render_data[2] = 0;
+		anchors.objects[1].render_data[0] = 0;
+		anchors.objects[1].render_data[9] = 3;
+		anchors.objects[1].render_data[20] = 1;
 		bind_lightning_objects(anchors);
 		const auto anchor_state = lightning_objects_snapshot();
 		const auto anchor_rng = d_rand_get_stream_call_count(D_RNG_PRESENTATION);
