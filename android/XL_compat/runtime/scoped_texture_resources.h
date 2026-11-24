@@ -38,6 +38,7 @@ namespace xl_compat
 struct ScopedTextureImage {
 	std::string path, hash;
 	PogBitmap bitmap;
+	unsigned source_width = 0, source_height = 0, shrink_factor = 1;
 };
 struct ScopedTextureBinding {
 	int bitmap;
@@ -55,9 +56,11 @@ struct ScopedTextureResources {
 	std::vector<ScopedTextureBinding> bindings;
 	std::set<int> pog_indices;
 	unsigned texture_target = 0;
+	std::size_t reused_images = 0;
 	static ScopedTextureResources prepare(TargetSources &sources, const xl_assets::ObjectDependencies &graph,
 	                                      int ordinal, const xl_pog_resources *pog = nullptr,
-	                                      ScopedTexturePreparationTiming *timing = nullptr)
+	                                      ScopedTexturePreparationTiming *timing = nullptr,
+	                                      const ScopedTextureResources *previous = nullptr)
 	{
 		const auto now = [timing] { return timing ? timing->now() : 0LL; };
 		if (timing && !timing->now) throw std::runtime_error("Scoped texture timing requires a clock");
@@ -65,6 +68,8 @@ struct ScopedTextureResources {
 		if (!graph.resource_banks || !graph.require_owned_banks || !ordinal || ordinal < -1000 || ordinal > 1000)
 			throw std::runtime_error("Scoped texture preparation requires owned banks and a bounded level ordinal");
 		ScopedTextureResources result;
+		result.archive = sources.archive();
+		result.directory = sources.directory();
 		std::map<std::string, std::size_t> retained;
 		auto &pog_indices = result.pog_indices;
 		for (int row = 0; row < xl_pog_count(pog); ++row) pog_indices.insert(int(xl_pog_entry(pog, row)->index));
@@ -127,26 +132,21 @@ struct ScopedTextureResources {
 			if (target == 64) throw std::runtime_error("Scoped texture decoded pixels exceed the resource bound");
 		}
 		if (timing) timing->headers_us = now() - headers_started;
+		std::map<std::string, const ScopedTextureImage *> reusable;
+		if (previous && !result.archive.empty() && !result.directory.empty() && previous->archive == result.archive && previous->directory == result.directory)
+			for (const auto &image : previous->images) reusable.emplace(image.path, &image);
 		struct Decoded {
 			ScopedTextureImage image;
 			long long decode_us = 0, shrink_us = 0, hash_us = 0;
+			bool reused = false;
 		};
-		const auto decode = [target = result.texture_target, clock = timing ? timing->now : nullptr](Source source, std::vector<unsigned char> bytes) {
+		const auto decode = [target = result.texture_target, clock = timing ? timing->now : nullptr](Source source, std::vector<unsigned char> bytes, const ScopedTextureImage *prior) {
 			const auto tick = [clock] { return clock ? clock() : 0LL; };
 			Decoded decoded;
 			decoded.image.path = std::move(source.path);
-			try {
-				const auto started = tick();
-				decoded.image.bitmap = read_scoped_texture_image(bytes.data(), bytes.size());
-				decoded.decode_us = tick() - started;
-				if (decoded.image.bitmap.width != source.width || decoded.image.bitmap.height != source.height)
-					throw std::runtime_error("Source dimensions changed after size selection");
-				const auto shrunk = tick();
-				shrink_scoped_texture(decoded.image.bitmap, scoped_texture_factor(source.width, source.height, target));
-				decoded.shrink_us = tick() - shrunk;
-			} catch (const std::exception &error) {
-				throw std::runtime_error("XL scoped texture decode failed for " + decoded.image.path + ": " + error.what());
-			}
+			decoded.image.source_width = source.width;
+			decoded.image.source_height = source.height;
+			decoded.image.shrink_factor = scoped_texture_factor(source.width, source.height, target);
 			const auto hashed = tick();
 			// PicoSHA2's container overload copies the entire input into its
 			// working buffer. Bound each batch while preserving the same SHA-256.
@@ -159,6 +159,26 @@ struct ScopedTextureResources {
 			digest.finish();
 			decoded.image.hash = picosha2::get_hash_hex_string(digest);
 			decoded.hash_us = tick() - hashed;
+			// The previous owner holds independent decoded pixels. Read the newly
+			// selected source in full before reusing them at the same resolution.
+			if (prior && prior->hash == decoded.image.hash && prior->source_width == source.width && prior->source_height == source.height &&
+			    prior->shrink_factor == decoded.image.shrink_factor) {
+				decoded.image.bitmap = prior->bitmap;
+				decoded.reused = true;
+				return decoded;
+			}
+			try {
+				const auto started = tick();
+				decoded.image.bitmap = read_scoped_texture_image(bytes.data(), bytes.size());
+				decoded.decode_us = tick() - started;
+				if (decoded.image.bitmap.width != source.width || decoded.image.bitmap.height != source.height)
+					throw std::runtime_error("Source dimensions changed after size selection");
+				const auto shrunk = tick();
+				shrink_scoped_texture(decoded.image.bitmap, decoded.image.shrink_factor);
+				decoded.shrink_us = tick() - shrunk;
+			} catch (const std::exception &error) {
+				throw std::runtime_error("XL scoped texture decode failed for " + decoded.image.path + ": " + error.what());
+			}
 			return decoded;
 		};
 		std::deque<std::future<Decoded>> pending;
@@ -168,6 +188,7 @@ struct ScopedTextureResources {
 				timing->shrink_us += decoded.shrink_us;
 				timing->hash_us += decoded.hash_us;
 			}
+			result.reused_images += decoded.reused;
 			result.images.push_back(std::move(decoded.image));
 		};
 		const auto collect = [&] {
@@ -180,20 +201,25 @@ struct ScopedTextureResources {
 			auto bytes = sources.directory_bytes(source.path, pog_file_limit + 65536);
 			if (timing) timing->reads_us += now() - started;
 			if (!bytes) throw std::runtime_error("Incoming scoped texture disappeared: " + source.path);
+			const auto entry = reusable.find(source.path);
+			const auto *prior = entry == reusable.end() ? nullptr : entry->second;
 			// Keep at most two small images in flight. Large authored TGAs stay
 			// serial so the existing source and decoded-pixel bounds remain useful.
 			if (bytes->size() > 8 * 1024 * 1024) {
 				while (!pending.empty()) collect();
-				retain(decode(source, std::move(*bytes)));
+				retain(decode(source, std::move(*bytes), prior));
 			} else {
 				if (pending.size() == 2) collect();
-				pending.push_back(std::async(std::launch::async, decode, source, std::move(*bytes)));
+				pending.push_back(std::async(std::launch::async, decode, source, std::move(*bytes), prior));
 				if (timing) ++timing->parallel_images;
 			}
 		}
 		while (!pending.empty()) collect();
 		return result;
 	}
+
+  private:
+	std::string archive, directory;
 };
 } // namespace xl_compat
 #endif

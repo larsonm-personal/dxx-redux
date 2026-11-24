@@ -19,7 +19,7 @@ static int scoped_texture_live_test(int argc, char **argv, const std::filesystem
 	const auto override_directory = textures / level_directory;
 	const auto override_file = override_directory / image_name;
 	std::vector<unsigned char> malformed{ 'B', 'A', 'D' };
-	const char *malformed_reason = "invalid TGA file size";
+	const char *malformed_reason = "XL scoped texture header truncated";
 	if (incoming_level == 1) {
 		malformed.assign(22, 0);
 		malformed[2] = 10;
@@ -123,7 +123,7 @@ static int scoped_texture_live_test(int argc, char **argv, const std::filesystem
 			rejection = failure.what();
 		}
 		require(rejection.find(missing ? "no level POG or qualified scoped TGA set" : malformed_reason) != std::string::npos,
-		        "Invalid original texture fixture was accepted or rejected for an unrelated reason");
+		        ("Unexpected rejection for the original texture control: " + rejection).c_str());
 		unchanged();
 		if (missing) std::filesystem::rename(held, textures);
 		else {
@@ -181,6 +181,45 @@ static int scoped_texture_live_test(int argc, char **argv, const std::filesystem
 	require(saved_sources.count(original_path) &&
 	            xl_resource_sources_for_level(incoming_level) == saved_sources,
 	        "Original save preflight omitted retained scoped texture identity");
+	target = mission_prepare_by_name("boilpnt");
+	require(target, "Cannot prepare a same-mission texture target");
+	const auto same_mission = XlPreparedResources::prepare_level(target, incoming_level);
+	require(same_mission->scoped_textures(), "Same-mission preparation has no scoped texture owner");
+	const auto &same_textures = *same_mission->scoped_textures();
+	require(!same_textures.images.empty() && same_textures.reused_images == same_textures.images.size(),
+	        ("Same-mission preparation reused " + std::to_string(same_textures.reused_images) + " of " + std::to_string(same_textures.images.size()) + " decoded textures").c_str());
+	for (const auto &image : same_textures.images)
+		require(saved_sources.at(image.path) == image.hash, "Same-mission preparation changed a scoped texture source hash");
+	{
+		const auto selected = textures / image_name;
+		const auto backup = textures / (std::string(image_name) + ".held-cache-control");
+		require(!std::filesystem::exists(backup), "Texture cache control would overwrite a retained fixture");
+		xl_compat::TargetSources sources(target, "");
+		auto changed = sources.directory_bytes(original_path, xl_compat::pog_file_limit + 65536);
+		require(changed && changed->size() > 18, "Texture cache control requires an original header and pixels");
+		(*changed)[2] = 255;
+		std::filesystem::rename(selected, backup);
+		struct RestoreOriginal {
+			std::filesystem::path selected, backup;
+			~RestoreOriginal()
+			{
+				std::error_code ignored;
+				std::filesystem::remove(selected, ignored);
+				std::filesystem::rename(backup, selected, ignored);
+			}
+		} restore_original{ selected, backup };
+		write_bytes(selected.string().c_str(), *changed);
+		std::string failure;
+		try {
+			(void) xl_resource_sources_for_level(incoming_level);
+		} catch (const std::runtime_error &error) {
+			failure = error.what();
+		}
+		require(failure.find("XL scoped texture decode failed for " + original_path) != std::string::npos,
+		        "Same-size changed pixels bypassed source validation");
+	}
+	require(mission_discard_prepared(&target) && xl_resource_sources_for_level(incoming_level) == saved_sources,
+	        "Restoring the same-size texture control did not recover original source identity");
 	std::filesystem::create_directory(override_directory);
 	std::filesystem::copy_file(textures / "ceil002.tga", override_file);
 	const auto different_sources = xl_resource_sources_for_level(incoming_level);
@@ -201,6 +240,6 @@ static int scoped_texture_live_test(int argc, char **argv, const std::filesystem
 	std::filesystem::remove(override_file);
 	std::filesystem::remove(override_directory);
 	require(xl_resource_sources_for_level(incoming_level) == saved_sources, "Restored original texture did not recover save source identity");
-	native_continuation_receipt(root / "texture-dependency-audit.json", { { "outgoing", outgoing }, { "outgoing_level", outgoing_level }, { "incoming", std::string("boilpnt:") + incoming_text }, { "rejections", rejections }, { "equal_count_independence", true }, { "before", before }, { "after_continuation", after_continuation }, { "ordinary_frames", 120 }, { "save_source_controls", { { "original", true }, { "changed_priority", true }, { "malformed_rejected", true }, { "live_state_unchanged", true }, { "recovered", true }, { "source_count", saved_sources.size() } } }, { "limitation", "Controlled incoming preparation and save source preflight; separate from sampled readiness or a full cold restore" } });
+	native_continuation_receipt(root / "texture-dependency-audit.json", { { "outgoing", outgoing }, { "outgoing_level", outgoing_level }, { "incoming", std::string("boilpnt:") + incoming_text }, { "rejections", rejections }, { "equal_count_independence", true }, { "before", before }, { "after_continuation", after_continuation }, { "ordinary_frames", 120 }, { "save_source_controls", { { "original", true }, { "changed_priority", true }, { "malformed_rejected", true }, { "live_state_unchanged", true }, { "recovered", true }, { "source_count", saved_sources.size() }, { "same_size_changed_source_rejected", true }, { "reused_decoded_images", same_textures.reused_images } } }, { "limitation", "Controlled incoming preparation and save source preflight; separate from sampled readiness or a full cold restore" } });
 	return 0;
 }

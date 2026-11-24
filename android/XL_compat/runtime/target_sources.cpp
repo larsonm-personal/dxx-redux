@@ -105,6 +105,10 @@ const std::string &TargetSources::archive() const
 {
 	return state->archive;
 }
+const std::string &TargetSources::directory() const
+{
+	return state->directory;
+}
 int TargetSources::ordinal(const char *level, int requested) const
 {
 	if (!level || !*level) throw std::runtime_error("Incoming level sources require a level name");
