@@ -1,0 +1,94 @@
+{
+    "schema": 1,
+    "date": "2026-11-23",
+    "version": 32325,
+    "package": "com.dxxredux.app",
+    "apk_sha256": "296735f503ecebf43e0d24c492c30dc377980342f96ecb8921d5583ceeafe3f4",
+    "phone": "Samsung Galaxy S21 SM-G996U",
+    "android": 15,
+    "episode": "Mineral Valley",
+    "difficulty": "Rookie",
+    "input_method": "Fixed-view automation and native game input",
+    "level": 2,
+    "checkpoint": "Fresh hub start, then a quicksave in Crauphel Scilab room 129",
+    "last_successful_action": "Fire a Concussion missile using the same fixed aim after quickload and remain in active flight",
+    "save_load_reproduced_exit": false,
+    "result": "PASS",
+    "steps_passed": 35,
+    "run_id": "433d8df2f8e2459fae4c354ba6333553",
+    "log_sha256": "29cf1b4756c75b945caad1382d9aee918e4ba58a1d03017a9e86036be09e8489",
+    "original_loose_hog_sha256": "6e3e723e549897188a8fdc19db8b04630de9d428d2b31f8e3f48af108915b043",
+    "original_archive_run": {
+        "archive_sha256": "82c8cc4cfc740c8169f9d21a961c9ac5d2518342b3e27ac3ac438c91ca8f2ddf",
+        "import_proof_sha256": "c19c6ca6872c900668adedf177f0c28b5bddbc9f7b1e01fdd0db41fddeb1430e",
+        "run_id": "0efecd6e2fd54e99a4bf3ddabf57fb10",
+        "log_sha256": "71a7d963bebeee0a8c62eb9300ea5303a4662478f5ad6f8195b5e529d4b940ba",
+        "steps_passed": 35,
+        "mission_owner": "mod/pmines_v11.7z",
+        "hub_native_load_us": 6060416,
+        "crauphel_native_load_us": 4523770,
+        "crauphel_quickload_native_load_us": 4822476,
+        "ogg_worker_wait_ms": [0, 0, 0],
+        "profile_restored": true
+    },
+    "ending_checkpoints": {
+        "input_method": "Scripted native inputs on physical S21 after cold loading kit saves into free manual slots",
+        "difficulty": "Trainee (difficulty 0 from the earned checkpoint receipts)",
+        "kartsal": {
+            "checkpoint": "kartsal-final-checkpoint",
+            "checkpoint_sha256": "0ea266972771d9d2cc99043c6579181ef8e5677ababe6cf759ec740497a15471",
+            "level": 13,
+            "start_room": 4238,
+            "last_successful_action": "Hold forward aboard the Black Hole, advance score, and reach the MD Vertex9 closing screen",
+            "closing_background": "demoendb.pcx",
+            "closing_text": "MD Vertex9",
+            "closing_screenshot_sha256": "30987c9718fa51bf9ec56ccc18856fa2908f5a9e911ddf23005f3470e071fb78",
+            "run_id": "2519213619764c1c8d53136204d27a9d",
+            "steps_passed": 13,
+            "fits_height": true,
+            "glyph_overlaps": 0,
+            "profile_restored": true
+        },
+        "mineral_valley": {
+            "checkpoint": "mineral-ending",
+            "checkpoint_sha256": "9cbcf0f9f0f2d8c35b8f67648b0a91f220664f3282318a396e551e7501d999f9",
+            "level": 9,
+            "start_room": 1728,
+            "last_successful_action": "Resume into the moving exit, wait until Level 9 Complete can advance, and read through the level 10 closing briefing",
+            "closing_background": "mv17b.pcx",
+            "closing_text": "Thanks for playing this first episode",
+            "closing_screenshot_sha256": "10d9ce111547a224ca987cfa668248a3c9712ebfe0f142be5919c26eb6e7d0a2",
+            "run_id": "606cb139dbac4d74aa1a7ed322a3da76",
+            "steps_passed": 10,
+            "fits_height": true,
+            "glyph_overlaps": 0,
+            "profile_restored": true
+        }
+    },
+    "progress_recording": {
+        "video_sha256": "ed40f6688c59f85363d2012f3168a22178e76c430887937fefa40df7c0adf1c5",
+        "sample_receipt_sha256": "3a0bdcb3342c3a7fe73866d9756bdad8aa527d88b43fe9a3213d34fcbfc6c878",
+        "sample_frames_per_second": 4,
+        "method": "At 640 x 288, sample contiguous amber fill within rows 225 through 251 during the logged transitions",
+        "prebriefing_phases_us": {
+            "hub": { "total": 7246273, "level_resources": 4935453, "scoped_resources": 2268143 },
+            "crauphel": { "total": 7091831, "level_resources": 3599956, "scoped_resources": 3457227 }
+        },
+        "native_texture_cache_us": { "hub": 4169274, "crauphel": 3220356 },
+        "sampled_motion": [
+            { "stage": "Difficulty to hub briefing", "observations": 29, "distinct_left_edges": 29 },
+            { "stage": "Hub briefing to flight", "observations": 12, "distinct_widths": 11 },
+            { "stage": "Score to Crauphel briefing", "observations": 25, "distinct_left_edges": 25 },
+            { "stage": "Crauphel briefing to flight", "observations": 7, "distinct_widths": 7 }
+        ],
+        "scope": "The sampled frames show bar movement during each interval. The older 32322 capture records the distinct music label."
+    },
+    "scope": "The first passing check used a staged original loose HOG. The separate original archive run used the ordinary launcher picker and mission Ogg tracks. Both used the fixed view and Concussion inputs. The reporter's exact aim and reload result remain open.",
+    "initial_attempt": "The first run selected a 1920 x 1080 game render canvas and stopped at the 640 x 480 assertion before firing. The original profile matched on restoration. The passing repeat applied the intended canvas inside the temporary test profile.",
+    "cleanup": {
+        "original_profile_files_restored": 6,
+        "original_file_set_and_hashes_verified": true,
+        "stay_awake_restored": 0,
+        "phone_display_size_and_density_preserved": true
+    }
+}

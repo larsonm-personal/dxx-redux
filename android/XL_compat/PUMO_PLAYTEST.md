@@ -1,9 +1,63 @@
 # Original Pumo gameplay playtest
 
-## November 23 ordinary phone kit
+## November 23 evening ordinary phone kit
 
-Use [version 32322 and its checked manifest](../../temp/xl-pumo-phone-s21-20261123-32322/README.md)
+Use [version 32325 and its checked manifest](../../temp/xl-pumo-phone-s21-20261123-32325/README.md)
 for the next physical-phone session. The ordinary universal APK is
+`com.dxxredux.app`, SHA-256
+`296735f503ecebf43e0d24c492c30dc377980342f96ecb8921d5583ceeafe3f4`.
+All 11 earned checkpoints match their prior digests. The exact APK passed
+35/35 fixed-view Rookie steps on an SM-G996U with Android 15, including a
+Concussion shot near Crauphel room 129, quickload and the same shot again.
+The S21 passed with the original loose HOG and in a separate run after
+importing the original archive and raw addons through the ordinary launcher.
+The archive run played the mission Ogg tracks. Both runs restored their app
+profiles and phone settings.
+[Ordinary S21 receipt](evidence/pumo-s21-ordinary-32325-20261123.json),
+[original archive and music timing](evidence/pumo-s21-mission-ogg-overlap-20261123.json).
+
+Start with the reported missile shot in Mineral Valley level 2, Crauphel
+Scilab. The original Play internal 31950 report used an SM-S931U with Android
+SDK 37, Rookie and touch, with room 129 the last sampled position. In another
+slot, save the approach, fire the same missile toward the same landmark,
+check steering, then close, load and repeat. Keep the original issue save.
+Record kit **32325**, phone, Android version, difficulty, input method, episode,
+checkpoint, last successful action, missile, aim and whether save/load
+reproduces the exit. The S21 checks used fixed views. The reporter's exact
+aim and reload result are still open.
+
+Keep **Show progress bars** enabled and choose **Mission zip** music. Time
+difficulty selection to the first briefing, hub score advance to the Crauphel
+briefing, and final page dismissal to flight. Record the label and whether
+the bar moved. The earlier ordinary S21 recording shows **STARTING LEVEL
+MUSIC** through the wait. Build 32325 overlaps eligible mission Ogg decoding
+with texture caching, so that final label can pass quickly. Its ordinary S21
+recording shows the bar moving during all four measured transitions. Include the first
+words or a screenshot if green text is hard to read against a briefing page.
+The candidate page beginning **And there it is!** was captured on the S21.
+The reporter's page remains unidentified.
+[Candidate page evidence](evidence/pumo-briefing-green-candidate-20261123.json).
+
+For the contrast comparison, use [ordinary 32328](../../temp/xl-pumo-phone-s21-20261123-32328/README.md)
+after recording the 32325 result. It pairs the same 11 checkpoints with an
+outline around custom XL briefing text using the script's shadow color.
+Restart the briefing and record the kit and first words with each observation.
+
+Both original ending checkpoints are included. `mineral-ending` resumes after
+the Mineral Valley level 9 exit and leads to the level 10 closing briefing.
+`kartsal-final-checkpoint` resumes on the level 13 Black Hole ship and leads
+to the MD Vertex9 ending. Both closing screens rendered from cold-loaded kit
+checkpoints on the S21 in 32325 and were also observed on the Android 14
+emulator. For Mineral Valley, wait until **Level 9 Complete** accepts input,
+then advance and read through **Thanks for playing this first episode**.
+These phone checks used scripted controls from the earned saves. Add the kit
+and phone fields to any manually played ending report.
+[S21 ending receipts](evidence/pumo-s21-ordinary-32325-20261123.json).
+
+## November 23 earlier ordinary phone kit
+
+[Version 32322 and its checked manifest](../../temp/xl-pumo-phone-s21-20261123-32322/README.md)
+record the earlier physical-phone comparison. That ordinary universal APK is
 `com.dxxredux.app`, SHA-256
 `057e01208c8fd26a87d8fcd835410c4646e5655b95b94d4626406e6e51e3b91c`.
 It keeps the original earned checkpoints with their individual digests. The
@@ -106,10 +160,10 @@ before and after loading the pre-shot save. The phone retest is open.
 
 | Session                      | Kit   | Start and first action                                                                                                                                                                                 |
 | ---------------------------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Short Kartsal ending         | 32030 | Load `kartsal-final-checkpoint`, fly straight through the checkpoint aboard the Black Hole, then advance the score screen.                                                                             |
-| Short Mineral Valley ending  | 32080 | Load `mineral-ending`. The ship enters the exit as it resumes. Advance **Level 9 Complete** and read through the closing briefing.                                                                     |
-| Longer Mineral Valley flight | 32080 | Load `umbriel-blue` for the red-key grate and boss, or `mercury-arrival` for the full level. Make a manual save at a recognizable landmark, exit to the launcher, then use **Load Game** and continue. |
-| Start from the hub           | 32080 | Start Pumo level 1 with a separate test pilot. Record which episode entrance you take.                                                                                                                 |
+| Short Kartsal ending         | 32325 | Load `kartsal-final-checkpoint`, fly straight through the checkpoint aboard the Black Hole, then advance the score screen.                                                                             |
+| Short Mineral Valley ending  | 32325 | Load `mineral-ending`. The ship enters the exit as it resumes. Advance **Level 9 Complete** and read through the closing briefing.                                                                     |
+| Longer Mineral Valley flight | 32325 | Load `umbriel-blue` for the red-key grate and boss, or `mercury-arrival` for the full level. Make a manual save at a recognizable landmark, exit to the launcher, then use **Load Game** and continue. |
+| Start from the hub           | 32325 | Start Pumo level 1 with a separate test pilot. Record which episode entrance you take.                                                                                                                 |
 
 Check the kit's `manifest.json` for the APK and checkpoint digests. Follow its
 slot installer instructions if you use an earned save. Keep the supplied save
@@ -132,19 +186,19 @@ private transfer is arranged. The existing Windows runs used ordinary-input
 steering through the connected episodes. Android automation and fixed-position
 checks are recorded with the corresponding checkpoint.
 
-For Kartsal level 13, use build 32030. It fixes a flight that could leave the ship trapped in the skybox. The ordinary universal APK includes ARM64, ARMv7 and x86_64. The Android 14 emulator imported the original release and cold-loaded the device-written checkpoints. Choose `kartsal-all-keys` to resume in room 3021 with the blue, gold and red keys, two lives and score 40,220. Choose `iquaxel-from-coldrom` to resume level 5 after the secret mission with score 83,440. The kit includes the APK, save files, a slot installer and a feedback checklist. [Build 32030 kit on the build machine](../../temp/xl-pumo-phone-32030/README.md)
+Build 32030 originally fixed a Kartsal level 13 flight that could leave the ship trapped in the skybox. The Android 14 emulator imported the original release and cold-loaded the device-written checkpoints. In current kit 32325, choose `kartsal-all-keys` to resume in room 3021 with the blue, gold and red keys, two lives and score 40,220. Choose `iquaxel-from-coldrom` to resume level 5 after the secret mission with score 83,440. [Build 32030 historical kit](../../temp/xl-pumo-phone-32030/README.md)
 
 ### Play the Kartsal ending
 
-Choose `kartsal-final-checkpoint` in the 32030 kit to load the pilot aboard the Black Hole ship with one life and score 48,270. Fly straight ahead through the checkpoint. Advance the score screen to see the authored ending. The ordinary Android build completed this flight from a cold load and showed the MD Vertex9 ending on `demoendb.pcx`. This completes the Kartsal Motivation route from the hub through levels 11, 12 and 13. The separate Mineral Valley route also reached its ending. [Rendered ending receipt](evidence/pumo-kartsal-ending-20261120.json)
+Choose `kartsal-final-checkpoint` in the current kit to load the pilot aboard the Black Hole ship with one life and score 48,270. Fly straight ahead through the checkpoint. Advance the score screen to see the authored ending. The ordinary 32030 Android build completed this flight from a cold load and showed the MD Vertex9 ending on `demoendb.pcx`. This completes the Kartsal Motivation route from the hub through levels 11, 12 and 13. [Rendered ending receipt](evidence/pumo-kartsal-ending-20261120.json)
 
 ### Continue Mineral Valley
 
-For a short ending test, install build 32080 and choose `mineral-ending`. The checkpoint resumes with one life, score 344,540 and the ship already moving through Umbriel's final exit. Advance the **Level 9 Complete** screen, then read through the briefing. On ordinary Android the last page displays “Thanks for playing this first episode, Pumo Mines: Mineral Valley.” The kit contains the engine-written Android-format export that produced this screen. Report if the closing text, page advances or score screen behave differently on your phone. [Build 32080 kit](../../temp/xl-pumo-phone-32080/README.md)
+For a short ending test, choose `mineral-ending` in the current kit. The checkpoint resumes with one life, score 344,540 and the ship already moving through Umbriel's final exit. Advance the **Level 9 Complete** screen, then read through the briefing. On ordinary build 32080 the last page displayed “Thanks for playing this first episode, Pumo Mines: Mineral Valley.” The current kit contains the same engine-written export. Report how the closing text, page advances and score screen behave on your phone. [Build 32080 historical kit](../../temp/xl-pumo-phone-32080/README.md)
 
 For a longer final-level test, choose `umbriel-blue`. Android wrote and cold-loaded this save in room 997 with blue, two lives and score 315,790. Try to find the red-key switch behind the grate, defeat the teleporting boss and reach the escape tunnel. Report the first place where the route or controls stop making sense. [Umbriel checkpoint and ending evidence](evidence/pumo-mineral-valley-ending-20261121.json)
 
-For Mineral Valley, install build 32080, which fixes extra lasers from some robot impacts. Start in the lava shafts with `lava-shafts-arrival` (level 6, two lives, score 100,000) or Mercury Geothermal Lab with `mercury-arrival` (level 7, three lives, score 162,740). Both are device-written saves verified after restarting the ordinary Android game. Record the first room where finding a key, firing through a grate, or controlling the ship becomes difficult. [Build 32080 kit and installation instructions](../../temp/xl-pumo-phone-32080/README.md)
+For Mineral Valley, start in the lava shafts with `lava-shafts-arrival` (level 6, two lives, score 100,000) or Mercury Geothermal Lab with `mercury-arrival` (level 7, three lives, score 162,740). Both are device-written saves verified after restarting the ordinary Android game on build 32080. Record the first room where finding a key, firing through a grate, or controlling the ship becomes difficult. [Build 32080 historical kit](../../temp/xl-pumo-phone-32080/README.md)
 
 Three more 32080 checkpoints are available. Use `mercury-three-keys` for the laboratory puzzles and prototype fight (room 424, three lives), `terradeep-arrival` for a fresh run of level 8 (room 1239, three lives), or `terradeep-blue` for the defended return after collecting blue (room 1049, one life). The moving ship can drift into a neighboring room after load. For the blue-key save, confirm the blue indicator and score 269,300. Android wrote each save and loaded it in a fresh process. [Run and checkpoint identities](evidence/pumo-mercury-phone-20261120.json)
 
