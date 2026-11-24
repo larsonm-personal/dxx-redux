@@ -2,6 +2,7 @@
 #define DXX_XL_LIGHTNING_ADMISSION_H
 #include "lightning_path.h"
 #include "lighting.h"
+#include <algorithm>
 
 namespace xl_compat
 {
@@ -9,6 +10,12 @@ inline bool authored_lightning_shape(const Object &object)
 {
 	return object.type == 20 && object.reader_id == 1 && object.render == 12 && object.reader_render == 12 &&
 	       !object.control && !object.movement && !object.multiplayer;
+}
+
+inline bool classic_lightning_layout(const Inventory &level)
+{
+	return level.level_version == 7 && level.game_version == 31 &&
+	       std::any_of(level.objects.begin(), level.objects.end(), authored_lightning_shape);
 }
 inline bool authored_lightning_emits(const Object &object)
 {
