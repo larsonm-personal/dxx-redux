@@ -1,0 +1,143 @@
+{
+    "schema": 1,
+    "date": "2026-11-24",
+    "episode": "Mineral Valley",
+    "checkpoint": "Crauphel Scilab spawn, room 105, facing both PMC signs",
+    "level_ordinal": 2,
+    "level_member": "mvlev1.rl2",
+    "difficulty": "Rookie",
+    "original_descriptor_sha256": "45b4138e0a0d49ab8ee09334b7cfa97c0ec75ac6c6b6406b21eba28ddaa19cfd",
+    "texture": {
+        "overlay": "misc067#0.tga",
+        "texture_map": 374,
+        "bitmap": 1703,
+        "base": "rock278",
+        "facades": [
+            [111, 4],
+            [112, 4]
+        ],
+        "source_dimensions": [256, 2304]
+    },
+    "reference": {
+        "source": "arbruijn/d2x-xl",
+        "source_head": "2576a98b5de310e3ac7c9777df2677d1627b8bae",
+        "observer_engine_sha256": "2973ffa4faf11bd2da14914fa8af41cce5bd5a82e672e9ff1e6f70a9f5db2936",
+        "capture": "world framebuffer before final UI composition",
+        "window": [640, 480],
+        "desktop_mode_before_and_after": [2880, 1800],
+        "final_position_fixed": [-485850, -5425251, -16540829],
+        "forward_fixed": [0, 0, 65536],
+        "room": 105,
+        "texture_quality": 1,
+        "image_quality": 3,
+        "lighting_method": 0,
+        "lightmaps": false,
+        "phase_order": [3, 4, 5, 6, 7, 8, 0, 1, 2],
+        "median_successive_phase_game_ms": 89.5
+    },
+    "android": {
+        "phone": "Samsung SM-G996U",
+        "android_version": 15,
+        "diagnostic_kit_version": 32334,
+        "apk_sha256": "f4b40392c3337dd0b3d3dc5baf4a2966cdb878ba9b9b6af75a14b86ee28a4f7a",
+        "run_id": "4e111cb3cc7b42f28098ec01cf18c2f1",
+        "steps_passed": 147,
+        "capture": "native framebuffer, fixed heading with pilot wiggle active",
+        "original_archive": "pmines_v11.7z",
+        "original_addons": 8,
+        "framebuffer": [640, 480],
+        "viewport": [0, 160, 640, 320],
+        "room": 105,
+        "position_fixed_xz": [-485850, -16540829],
+        "position_fixed_y_range": [-5406876, -5391637],
+        "forward_fixed": [0, 0, 65536],
+        "texture_filter": "nearest",
+        "phase_changes_logged": 193,
+        "successive_phase_changes_logged": 150,
+        "median_logged_phase_wall_ms": 86.0,
+        "physical_size_before_and_after": [1080, 2400],
+        "physical_density_before_and_after": 450,
+        "stay_awake_restored": true,
+        "profile_hashes_restored": true
+    },
+    "phases": [
+        {
+            "phase": 0,
+            "rgba_256x256_fnv1a32": 2721004471,
+            "rgba_128x128_fnv1a32": 3741052987,
+            "android_rgba_sha256": "4f976d5453aeff2831b200f7f9d48bed05f0743295629ad1aa6c20753cb64094",
+            "reference_world_capture_sha256": "572b8b0abd8babfc90e7c86c3ce3d9e21a01eaf60ba1948ce062f2b820c94a60",
+            "android_observations": 23
+        },
+        {
+            "phase": 1,
+            "rgba_256x256_fnv1a32": 3773115237,
+            "rgba_128x128_fnv1a32": 1639112567,
+            "android_rgba_sha256": "ca58225cca0faed4875658a381af56158581ac547369922c27bddb6e23ba5f2c",
+            "reference_world_capture_sha256": "28ae77643d6a9f050b18aafb6ff47911b048ee224ef64edbebe6b007dcc0f02a",
+            "android_observations": 26
+        },
+        {
+            "phase": 2,
+            "rgba_256x256_fnv1a32": 1841897927,
+            "rgba_128x128_fnv1a32": 574261947,
+            "android_rgba_sha256": "9446c65ccbd687e8cd07bbc02247921cb77e98db4f1c0e398cdc6ffa11c30e21",
+            "reference_world_capture_sha256": "0c4272a7a6f1616c4daea8beb61d4c6472449743dad88f4019d392cae170bd20",
+            "android_observations": 24
+        },
+        {
+            "phase": 3,
+            "rgba_256x256_fnv1a32": 1663466668,
+            "rgba_128x128_fnv1a32": 2762919834,
+            "android_rgba_sha256": "831b857cb23e9b14ad320ac046efbfad3c71a93d394e25c4ef148a3a373d2602",
+            "reference_world_capture_sha256": "647c9f74cac5fd28609a5b4d7e43348463debe8d23d6fa6400743ca6327c5bf3",
+            "android_observations": 17
+        },
+        {
+            "phase": 4,
+            "rgba_256x256_fnv1a32": 3134929221,
+            "rgba_128x128_fnv1a32": 4013560135,
+            "android_rgba_sha256": "de0916a6c7e38d1de8143024c6b517e61afc871165fa8521c3bc52d88df33ceb",
+            "reference_world_capture_sha256": "bb43f4540e8a92a769e85aff6743f5268e129cf3c952e1d4209e7447aeeae1e6",
+            "android_observations": 19
+        },
+        {
+            "phase": 5,
+            "rgba_256x256_fnv1a32": 1200763372,
+            "rgba_128x128_fnv1a32": 4233540446,
+            "android_rgba_sha256": "37b16d976517bc68761d6262de8ae94ed389079536f0b797b53220e40aaea2f7",
+            "reference_world_capture_sha256": "99512e260fb4fdd0956ad8575efd68ac528ae7e93dda9d577a10789a3d224ef5",
+            "android_observations": 25
+        },
+        {
+            "phase": 6,
+            "rgba_256x256_fnv1a32": 2763862413,
+            "rgba_128x128_fnv1a32": 1821091552,
+            "android_rgba_sha256": "dfe4cb58726f3839859e498ba8b3cbdd8e923b1e3f692ce9d57d9d86f298ea2a",
+            "reference_world_capture_sha256": "65033356e67c6eef7ef561217f69ddf4a5be1a2a8e6362532a23930cc435ed7a",
+            "android_observations": 24
+        },
+        {
+            "phase": 7,
+            "rgba_256x256_fnv1a32": 53638466,
+            "rgba_128x128_fnv1a32": 1616897178,
+            "android_rgba_sha256": "f61d6cd265b7101b3d6f89f73eaf4b63c168310c94e415506dd54d728c5246e1",
+            "reference_world_capture_sha256": "191d8429ebed08d4d7ecbf2121cdd26baeee3be6d006c12e4cadbb5a36df7e34",
+            "android_observations": 19
+        },
+        {
+            "phase": 8,
+            "rgba_256x256_fnv1a32": 1510278658,
+            "rgba_128x128_fnv1a32": 2257835731,
+            "android_rgba_sha256": "2a69f5dc1112db972d59f90502c8eae81f43d50ebd4cca1ae7eb7dcc44081545",
+            "reference_world_capture_sha256": "4bb616de45ed04c5f81fc968dcb2212608684839dee75960be319ef2426af8a4",
+            "android_observations": 16
+        }
+    ],
+    "same_rgba_fingerprints": {
+        "reference_upload_vs_redux_decoder": 18,
+        "android_draw_vs_reference_upload": 9
+    },
+    "observation": "All nine source phases show the authored fade. At corresponding phases the Android image has brighter lamps and sharper wall and ceiling details.",
+    "limits": "The camera height, cockpit viewport, texture filtering and capture stage differ. The two phase timers use game time and wall time respectively."
+}
