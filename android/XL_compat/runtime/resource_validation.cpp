@@ -1158,23 +1158,21 @@ struct RestoreSourceCandidate {
 };
 bool restore_resources_active = false;
 std::unique_ptr<RestoreSourceCandidate> restore_source_candidate;
+std::shared_ptr<const xl_compat::ScopedTextureResources> restore_texture_owner;
 } // namespace
-
-void xl_restore_resources_begin()
-{
-	restore_source_candidate.reset();
-	restore_resources_active = true;
-}
 
 void xl_restore_resources_approve(bool sources_match)
 {
-	if (!sources_match) restore_source_candidate.reset();
-	else if (restore_source_candidate) restore_source_candidate->approved = true;
+	if (!sources_match) {
+		restore_source_candidate.reset();
+		restore_texture_owner.reset();
+	} else if (restore_source_candidate) restore_source_candidate->approved = true;
 }
 
 void xl_restore_resources_finished()
 {
 	restore_source_candidate.reset();
+	restore_texture_owner.reset();
 	restore_resources_active = false;
 }
 
@@ -1371,7 +1369,7 @@ struct XlPreparedResources::State {
 	Publication publication;
 	std::vector<unsigned char> level_bytes;
 	std::unique_ptr<xl_compat::Inventory> level_inventory;
-	std::unique_ptr<const xl_compat::ScopedTextureResources> scoped_textures;
+	std::shared_ptr<const xl_compat::ScopedTextureResources> scoped_textures;
 	std::unique_ptr<const xl_compat::ScopedTexturePlayback> texture_playback;
 	std::unique_ptr<const xl_compat::ScopedTexturePlayback> wall_playback;
 	std::shared_ptr<const XlResourceBanks> banks;
@@ -1480,6 +1478,18 @@ struct XlPreparedResources::State {
 		graph.xl_boss_spawning = true;
 	}
 };
+
+#ifdef __ANDROID__
+void xl_restore_resources_begin()
+{
+	restore_source_candidate.reset();
+	// Mission selection can release the installed owner before save preflight
+	restore_texture_owner = prepared_resources && prepared_resources->state->installed
+	                            ? prepared_resources->state->scoped_textures
+	                            : nullptr;
+	restore_resources_active = true;
+}
+#endif
 
 XlPreparedResources::~XlPreparedResources()
 {
@@ -1639,9 +1649,14 @@ void XlPreparedResources::prepare_scoped_textures(const xl_compat::Inventory &le
 	timing = &texture_timing;
 #endif
 	const auto *previous = prepared_resources ? prepared_resources->scoped_textures() : nullptr;
-	auto textures = std::make_unique<const xl_compat::ScopedTextureResources>(
+#ifdef __ANDROID__
+	auto retained = std::move(restore_texture_owner);
+	if (!previous) previous = retained.get();
+#endif
+	auto textures = std::make_shared<const xl_compat::ScopedTextureResources>(
 	    xl_compat::ScopedTextureResources::prepare(target, dependencies, ordinal, state->pog.get(), timing, previous));
 #ifdef __ANDROID__
+	retained.reset();
 	const auto playback_started = android_profile_monotonic_us();
 	debug_log_force(DLOG_PROFILING, "XL scoped image phases: ordinal=%d count=%zu reused=%zu parallel=%zu headers_us=%lld reads_us=%lld decode_us=%lld shrink_us=%lld hash_us=%lld",
 	                ordinal, textures->images.size(), textures->reused_images, texture_timing.parallel_images, texture_timing.headers_us, texture_timing.reads_us, texture_timing.decode_us,
