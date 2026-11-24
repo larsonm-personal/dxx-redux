@@ -56,6 +56,7 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 {
 	std::vector<Issue> result;
 	const bool classic_effect = classic_effect_layout(level);
+	const bool colored_walls = modern_runtime_layout(level) || (level.level_version == 18 && level.game_version == 36);
 	for (const auto &issue : level.unsupported) {
 		if (classic_effect && issue.feature != "effect_lightning" && issue.feature != "effect_particles" &&
 		    issue.feature != "effect_object_types" && issue.feature != "additive_wall_rendering") {
@@ -69,6 +70,8 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 		if (modern_runtime_layout(level) && issue.feature == "segment_damage") continue;
 		// Wide flags stay source-owned; modern doors consume bit 8, higher bits are reserved
 		if (modern_runtime_layout(level) && issue.feature == "wall_flags") continue;
+		if (colored_walls && issue.feature == "wall_type" && issue.record >= 0 &&
+		    std::size_t(issue.record) < level.walls.size() && level.walls[issue.record].type == colored_wall_type) continue;
 		if (issue.feature == "effect_particles") continue;
 		if (issue.feature == "effect_lightning") continue;
 		if (issue.feature == "additive_wall_rendering" && issue.record >= 0 && std::size_t(issue.record) < level.walls.size() &&

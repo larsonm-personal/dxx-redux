@@ -177,7 +177,9 @@ std::array<bool, DXX_XL_MAX_TRIGGERS> activated_triggers{};
 constexpr const char *translated_path = "xl_preview_cache/pilot.rl2";
 // XL palette.h uses 31; stock GR_FADE_LEVELS is 34 and cannot be reused
 constexpr int xl_fade_levels = 31;
+constexpr int colored_wall_default_transparency = (5 * xl_fade_levels + 5) / 10;
 int active_cloak_wall = -1, drawn_cloak_wall = -1, drawn_cloak_value = 0;
+int flat_wall_palette = -1;
 uint64_t cloak_draws = 0;
 float drawn_cloak_alpha = 0;
 bool missile_light(unsigned id)
@@ -957,6 +959,7 @@ extern "C" void xl_preview_clear_mission(void)
 	face_additive = false;
 	face_water_material = false;
 	active_cloak_wall = drawn_cloak_wall = -1;
+	flat_wall_palette = -1;
 	drawn_cloak_value = 0;
 	cloak_draws = 0;
 	drawn_cloak_alpha = 0;
@@ -2028,6 +2031,7 @@ extern "C" void xl_preview_begin_face(int segment_number, int side)
 	face_alpha = -1;
 	face_additive = false;
 	face_water_material = false;
+	flat_wall_palette = -1;
 	if (!source || option("-xl-preview-stock-materials") || segment_number < 0 || segment_number >= Num_segments || side < 0 || side >= 6) return;
 	const int index = Segments[segment_number].sides[side].wall_num;
 	if (source->level_version >= 21 && !xl_fog_active()) {
@@ -2050,8 +2054,8 @@ extern "C" void xl_preview_begin_face(int segment_number, int side)
 	}
 	if (index < 0 || index >= Num_walls) return;
 	const wall &w = Walls[index];
-	// Cloaked flat walls are handled before the textured-face hook
-	if (w.type == WALL_CLOAKED) return;
+	// Flat surfaces have a separate material calculation
+	if (w.type == WALL_CLOAKED || w.type == xl_compat::colored_wall_type) return;
 	face_additive = (w.flags & xl_compat::wall_render_additive) != 0;
 	const int c = w.cloak_value;
 	face_alpha = c > 0 && c < xl_fade_levels ? float(xl_fade_levels - c) / xl_fade_levels : 1.0f;
@@ -2063,6 +2067,7 @@ extern "C" void xl_preview_end_face(void)
 	face_additive = false;
 	face_water_material = false;
 	active_cloak_wall = -1;
+	flat_wall_palette = -1;
 }
 
 extern "C" int xl_preview_water_portal(int segment_number, int side, int32_t points[4][3], float colors[4][4])
@@ -2147,6 +2152,34 @@ extern "C" int xl_preview_begin_cloak_face(int segment_number, int side)
 	face_alpha = cloak >= xl_fade_levels ? 0.0f : 1.0f - float(cloak) / xl_fade_levels;
 	active_cloak_wall = index;
 	return 1;
+}
+
+extern "C" int xl_preview_begin_flat_wall_face(int segment_number, int side, int doorway)
+{
+	flat_wall_palette = -1;
+	if (xl_preview_begin_cloak_face(segment_number, side)) return 1;
+	if (!(doorway & XL_WID_COLORED_FLAG) || option("-xl-preview-stock-materials") ||
+	    !xl_level_extensions_active() || segment_number < 0 || segment_number >= Num_segments || side < 0 || side >= 6 ||
+	    xl_camera_monitor_face(segment_number, side)) return 0;
+	const int index = Segments[segment_number].sides[side].wall_num;
+	if (index < 0 || index >= Num_walls) return 0;
+	const auto &wall = Walls[index];
+	if (wall.type != xl_compat::colored_wall_type) return 0;
+	const float alpha = wall.hps ? std::fabs(1.0f - float(wall.hps) / (100 * F1_0))
+	                             : 1.0f - float(colored_wall_default_transparency) / xl_fade_levels;
+	if (alpha >= 1.0f) return 0;
+	face_alpha = alpha;
+	flat_wall_palette = static_cast<uint8_t>(wall.cloak_value);
+	return 1;
+}
+
+extern "C" void xl_preview_flat_wall_color(float *red, float *green, float *blue)
+{
+	if (flat_wall_palette < 0) return;
+	const auto *color = &gr_palette[flat_wall_palette * 3];
+	*red = color[0] / 64.0f;
+	*green = color[1] / 64.0f;
+	*blue = color[2] / 64.0f;
 }
 
 extern "C" void xl_preview_record_cloak_draw(float alpha)

@@ -1,5 +1,6 @@
 #include "doorway.h"
 #include "preview.h"
+#include "../inventory.h"
 extern "C" {
 #include "inferno.h"
 #include "object.h"
@@ -17,6 +18,8 @@ extern "C" int xl_wall_doorway(int index, int segment, int side)
 	if (wall_index < 0 || wall_index >= Num_walls) return -1;
 	const auto &wall = Walls[wall_index];
 	// CWall::IsPassable owns XL flag ordering; Redux is the caller's alternate
+	if (wall.type == xl_compat::colored_wall_type)
+		return (wall.hps < 0 ? WID_TRANSILLUSORY_WALL : WID_TRANSPARENT_WALL) | XL_WID_COLORED_FLAG;
 	if (wall.type > WALL_CLOAKED) return -1;
 	if (wall.type == WALL_OPEN) return WID_NO_WALL;
 	if (wall.type == WALL_ILLUSION) {

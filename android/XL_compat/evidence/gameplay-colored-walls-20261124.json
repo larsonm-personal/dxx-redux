@@ -1,0 +1,165 @@
+{
+    "schema": 1,
+    "date": "2026-11-24",
+    "reference_project": "arbruijn/d2x-xl",
+    "reference_source_head": "2576a98b5de310e3ac7c9777df2677d1627b8bae",
+    "baseline_full_started": 1567,
+    "full_denominator": 1654,
+    "cluster_started": 2,
+    "cluster_denominator": 3,
+    "source_started": 3,
+    "new_source_observation": "Lunar Outpost completed 120 frames in the local original. Its frozen original simulation result was unverified.",
+    "reference_default_color_walls": true,
+    "reference_default_transparency_levels": 16,
+    "reference_fade_levels": 31,
+    "native_controls_log_sha256": "7d1b941f94163e4a33d8e9e8a32b5b58bac4e1d1674f046acd67a251fc77fa3a",
+    "native_controls": [
+        "negative hit point passage",
+        "solid transparent-wall physical and visibility rays",
+        "unsigned palette index",
+        "zero, half, fully clear and textured opacity",
+        "material retirement and existing door save/load"
+    ],
+    "cases": [
+        {
+            "case": "levels_multiplayer/g-house.7z/missions/diedel/d3/g-house.mn2:1",
+            "ordinal": 1,
+            "advertised_member": "g-house.rl2",
+            "layout": [26, 40],
+            "baseline": "load_failed",
+            "modern_only": "loaded_ticked",
+            "candidate": "loaded_ticked",
+            "candidate_frames": 120,
+            "first_remaining_blocker": null,
+            "candidate_log_sha256": "393cc64e681468fde3e294c570d6f4de9349df3bb9e034932a998d1884ca2753",
+            "reference_frames": 120,
+            "reference_descriptor_sha256": "3e8100b1a1fc8babae88283f5d8e1620eaebc6c9c1f4c82e358b2930576e0f5f",
+            "reference_engine_sha256": "fb6ee0e2c3d9fe6148499def625f85a5419ccd2039bb8530539f6b0fcdfe145d",
+            "reference_trace_sha256": "f9dd672f5c7ac68a8708d476ac30f8c354a043846a67223209f2d8a53974ee04",
+            "reference_materials": [
+                {
+                    "count": 14,
+                    "hitpoints_fixed": 0,
+                    "palette": 0,
+                    "doorway_flags": 38,
+                    "alpha": 0.48387098,
+                    "rgb": [0.0, 0.0, 0.0]
+                },
+                {
+                    "count": 8,
+                    "hitpoints_fixed": 0,
+                    "palette": 65,
+                    "doorway_flags": 38,
+                    "alpha": 0.48387098,
+                    "rgb": [0.09375, 0.375, 0.0625]
+                },
+                {
+                    "count": 24,
+                    "hitpoints_fixed": 0,
+                    "palette": 106,
+                    "doorway_flags": 38,
+                    "alpha": 0.48387098,
+                    "rgb": [0.859375, 0.0, 0.0]
+                },
+                {
+                    "count": 80,
+                    "hitpoints_fixed": 0,
+                    "palette": 117,
+                    "doorway_flags": 38,
+                    "alpha": 0.48387098,
+                    "rgb": [0.984375, 0.984375, 0.0]
+                }
+            ],
+            "target_sha": "04de0c5b9a2c9e05cb8eabd02d79e6f852550049",
+            "engine_sha256": "1ab99fdc35ad1ccb449a5d309f309703e7f88fec155527f8816cb1c2abd63f45"
+        },
+        {
+            "case": "levelpack.7z/missions/diedel/g-house.mn2:1",
+            "ordinal": 1,
+            "advertised_member": "g-house.rl2",
+            "layout": [23, 40],
+            "baseline": "load_failed",
+            "modern_only": "loaded_ticked",
+            "candidate": "loaded_ticked",
+            "candidate_frames": 120,
+            "first_remaining_blocker": null,
+            "candidate_log_sha256": "393cc64e681468fde3e294c570d6f4de9349df3bb9e034932a998d1884ca2753",
+            "reference_frames": 120,
+            "reference_descriptor_sha256": "aa22ec3a6557934b517f8c7fb7626f19ceb5d0d001fae34a6f3f71aec5d24903",
+            "reference_engine_sha256": "fb6ee0e2c3d9fe6148499def625f85a5419ccd2039bb8530539f6b0fcdfe145d",
+            "reference_trace_sha256": "834117c31f1eb6a0f712e6b282fb1ab7f9221a7db0cd4e3072179547efa136f3",
+            "reference_materials": [
+                {
+                    "count": 14,
+                    "hitpoints_fixed": 0,
+                    "palette": 0,
+                    "doorway_flags": 38,
+                    "alpha": 0.48387098,
+                    "rgb": [0.0, 0.0, 0.0]
+                },
+                {
+                    "count": 8,
+                    "hitpoints_fixed": 0,
+                    "palette": 65,
+                    "doorway_flags": 38,
+                    "alpha": 0.48387098,
+                    "rgb": [0.09375, 0.375, 0.0625]
+                },
+                {
+                    "count": 24,
+                    "hitpoints_fixed": 0,
+                    "palette": 106,
+                    "doorway_flags": 38,
+                    "alpha": 0.48387098,
+                    "rgb": [0.859375, 0.0, 0.0]
+                },
+                {
+                    "count": 80,
+                    "hitpoints_fixed": 0,
+                    "palette": 117,
+                    "doorway_flags": 38,
+                    "alpha": 0.48387098,
+                    "rgb": [0.984375, 0.984375, 0.0]
+                }
+            ],
+            "target_sha": "04de0c5b9a2c9e05cb8eabd02d79e6f852550049",
+            "engine_sha256": "1ab99fdc35ad1ccb449a5d309f309703e7f88fec155527f8816cb1c2abd63f45"
+        },
+        {
+            "case": "levelpack.7z/missions/d1fsxl/d1fs-xl.mn2:1",
+            "ordinal": 1,
+            "advertised_member": "d1fs01xl.rl2",
+            "layout": [18, 36],
+            "baseline": "load_failed",
+            "modern_only": "load_failed",
+            "candidate": "load_failed",
+            "candidate_frames": 0,
+            "first_remaining_blocker": "object_trigger_type at record 0: 16",
+            "candidate_log_sha256": "5172641dee19e3ea7918f4b2437ac302380be5b7bf8ca195b0ee31a00c3b3d87",
+            "reference_frames": 120,
+            "reference_descriptor_sha256": "9913f35cc875a39dc3748f20283f14ca2b6e3ebdf29a0d0edc34dc46b371dacf",
+            "reference_engine_sha256": "fb6ee0e2c3d9fe6148499def625f85a5419ccd2039bb8530539f6b0fcdfe145d",
+            "reference_trace_sha256": "1b660ab4e51a1bf64b6c1be7fe1423ccaf12d673fdaaee8587a7b77ebc0d3863",
+            "reference_materials": [
+                {
+                    "count": 2,
+                    "hitpoints_fixed": 5242880,
+                    "palette": 15,
+                    "doorway_flags": 38,
+                    "alpha": 0.19999999,
+                    "rgb": [0.578125, 0.4375, 0.609375]
+                },
+                {
+                    "count": 10,
+                    "hitpoints_fixed": 5242880,
+                    "palette": 16,
+                    "doorway_flags": 38,
+                    "alpha": 0.19999999,
+                    "rgb": [0.53125, 0.53125, 0.703125]
+                }
+            ],
+            "target_sha": "04de0c5b9a2c9e05cb8eabd02d79e6f852550049",
+            "engine_sha256": "1ab99fdc35ad1ccb449a5d309f309703e7f88fec155527f8816cb1c2abd63f45"
+        }
+    ]
+}

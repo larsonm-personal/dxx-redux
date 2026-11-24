@@ -94,6 +94,7 @@ struct ObjectTrigger {
 };
 
 constexpr unsigned wall_render_additive = 4;
+constexpr int colored_wall_type = 8;
 struct Wall {
 	int segment, side, hitpoints, linked_wall;
 	int type, flags, state, trigger, clip, keys, controlling_trigger, cloak;
