@@ -48,6 +48,23 @@ int main(int argc, char **argv)
 		      "OOF decoder lost authored geometry/material data");
 		for (std::size_t size = 0; size < bytes.size(); ++size)
 			check(rejected(Bytes(bytes.begin(), bytes.begin() + size)), "Truncated OOF was accepted");
+		{
+			constexpr unsigned length_offset = 12;
+			const auto texture_bytes = uint32_t(8 + model.textures.at(0).size());
+			const auto header_offset = length_offset + 4 + texture_bytes;
+			auto overstated = bytes;
+			patch32(overstated, length_offset, texture_bytes + 52);
+			const auto decoded = xl_compat::read_oof(overstated);
+			check(decoded.textures == model.textures && decoded.submodels.at(0).vertices == part.vertices,
+			      "OOF texture length moved the decoded model boundary");
+			for (std::size_t size = 0; size < overstated.size(); ++size)
+				check(rejected(Bytes(overstated.begin(), overstated.begin() + size)), "Truncated OOF with overstated texture length was accepted");
+			overstated.at(header_offset) = 'X';
+			check(rejected(overstated), "OOF texture length recovered outside the model header boundary");
+			auto understated = bytes;
+			patch32(understated, length_offset, texture_bytes - 1);
+			check(rejected(understated), "OOF texture read passed the declared length");
+		}
 		check(rejected(fixture(-2)) && rejected(fixture(1)) && rejected(fixture(-1, 3)) && rejected(fixture(-1, 2, 1)), "Invalid OOF references accepted");
 		{
 			// Two distinct submodels pointing at each other remain invalid

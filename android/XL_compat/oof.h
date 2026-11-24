@@ -210,14 +210,25 @@ inline OofModel read_oof(const std::vector<uint8_t> &bytes)
 		if (++chunks > 1024) throw std::runtime_error("Too many OOF chunks");
 		const std::string type(reinterpret_cast<const char *>(file.take(4)), 4);
 		const auto length = std::size_t(file.count(64 * 1024 * 1024));
-		const auto *data = file.take(length);
-		oof_detail::Reader r(data, length);
 		if (type == "TXTR") {
 			if (textures) throw std::runtime_error("Duplicate OOF textures");
+			auto declared = file;
+			oof_detail::Reader r(declared.take(length), length);
 			textures = true;
 			for (int count = r.count(4096); count; --count) model.textures.push_back(r.string());
-			r.end();
-		} else if (type == "OHDR") {
+			file.take(length - r.remaining());
+			// The reference starts its next chunk after the decoded names. Only
+			// accept an overdeclared length at the model header boundary
+			if (r.remaining()) {
+				auto next = file;
+				if (submodels >= 0 || std::memcmp(next.take(4), "OHDR", 4))
+					throw std::runtime_error("Unexpected bytes after OOF textures");
+			}
+			continue;
+		}
+		const auto *data = file.take(length);
+		oof_detail::Reader r(data, length);
+		if (type == "OHDR") {
 			if (submodels >= 0) throw std::runtime_error("Duplicate OOF header");
 			submodels = r.count(64);
 			model.radius = r.real();
