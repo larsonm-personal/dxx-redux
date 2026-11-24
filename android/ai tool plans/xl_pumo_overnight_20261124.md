@@ -66,3 +66,23 @@ The targeted result accounts for four former OOF misses. The full evening
 census remains the observed 1,563/1,654 baseline until the full candidate
 repeat. Ordinary traversal and matched render captures are separate tests.
 [Exact distributions, stepwise blockers and receipts](../XL_compat/evidence/gameplay-anthology-oof-20261124.json).
+
+## Crauphel reference presentation
+
+The original D2X-XL installation and the S21 both render the nine authored
+phases of the two PMC signs at the Crauphel starting room. The Redux decoder
+and original GPU uploads matched all 18 RGBA fingerprints across the full
+and half texture resolutions. The protected S21 diagnostic matched the
+original half-resolution fingerprint in each of its nine live captures.
+The diagnostic completed 147 scripted steps and restored the protected
+profile and device settings.
+
+The first ordinary S21 capture shows the sign legibly. Comparing all nine
+phases shows how the original animation dims it. In the matched-phase
+captures, the phone still shows brighter lamps and sharper wall and ceiling
+details. This first pair used nearest filtering and a 640 × 320 cockpit
+viewport on the phone. The reference used trilinear filtering and a 640 ×
+480 world viewport. The pilot also moved slightly in the phone captures.
+The next controlled pair uses a fixed camera, a full viewport and matching
+texture filtering before attributing any remaining difference to lighting.
+[Crauphel phase receipts](../XL_compat/evidence/pumo-crauphel-reference-presentation-20261124.json).

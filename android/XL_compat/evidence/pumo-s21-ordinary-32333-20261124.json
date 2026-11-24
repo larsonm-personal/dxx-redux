@@ -1,0 +1,75 @@
+{
+    "schema": 1,
+    "date": "2026-11-24",
+    "version": 32333,
+    "package": "com.dxxredux.app",
+    "apk_sha256": "6f8625607a9ba8ccf4157718f9f993eda7a9115830533dd9a8d32ed1468facef",
+    "source_head": "eba42f33e4ef2568b82c73ebd62aa47352f2c912",
+    "phone": "Samsung SM-G996U",
+    "android_version": 15,
+    "difficulty": "Rookie",
+    "input_method": "scripted menu, axis and fire inputs with fixed views at reported shot",
+    "original_archive": {
+        "name": "pmines_v11.7z",
+        "sha256": "82c8cc4cfc740c8169f9d21a961c9ac5d2518342b3e27ac3ac438c91ca8f2ddf",
+        "eight_original_addons": true,
+        "launcher_picker_callbacks": true
+    },
+    "manifest_verified_checkpoints": 11,
+    "closing_pages_observed": 2,
+    "profile_restored": true,
+    "profile_files_verified": 6,
+    "display_and_stay_awake_restored": true,
+    "cases": [
+        {
+            "episode": "Mineral Valley",
+            "checkpoint": "fresh hub and Crauphel room 129",
+            "last_successful_action": "flight after repeated Concussion shot",
+            "steps": 35,
+            "run_id": "82b493225fec44bab3d5f0ec6cd6c00e",
+            "result": "PASS",
+            "reload_observation": "the same fixed-view Concussion shot completed after quickload",
+            "reported_exit_reproduced": false
+        },
+        {
+            "episode": "Mineral Valley",
+            "checkpoint": "Crauphel spawn room 105",
+            "last_successful_action": "native flight framebuffer saved",
+            "steps": 25,
+            "run_id": "bcd10fd5b53b4b53ac989320432870c1",
+            "result": "PASS"
+        },
+        {
+            "episode": "Kartsal",
+            "checkpoint": "level 13 earned checkpoint",
+            "last_successful_action": "MD Vertex9 closing screen",
+            "steps": 14,
+            "run_id": "0d4faa81efe74f098272f8b52894bcf2",
+            "result": "PASS",
+            "closing_page": {
+                "background": "demoendb.pcx",
+                "page_ready": true,
+                "fits_height": true,
+                "overlaps": 0,
+                "expected_words_observed": "MD Vertex9"
+            },
+            "checkpoint_sha256": "0ea266972771d9d2cc99043c6579181ef8e5677ababe6cf759ec740497a15471"
+        },
+        {
+            "episode": "Mineral Valley",
+            "checkpoint": "level 9 exit checkpoint",
+            "last_successful_action": "level 10 closing briefing",
+            "steps": 10,
+            "run_id": "6f94fcf891394eab8e449e515275a1c8",
+            "result": "PASS",
+            "closing_page": {
+                "background": "mv17b.pcx",
+                "page_ready": true,
+                "fits_height": true,
+                "overlaps": 0,
+                "expected_words_observed": "Thanks for playing this first episode"
+            },
+            "checkpoint_sha256": "9cbcf0f9f0f2d8c35b8f67648b0a91f220664f3282318a396e551e7501d999f9"
+        }
+    ]
+}

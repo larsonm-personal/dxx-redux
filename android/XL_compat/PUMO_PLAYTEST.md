@@ -1,12 +1,34 @@
 # Original Pumo gameplay playtest
 
+## November 24 ordinary phone kit
+
+Use [ordinary 32333 and its checked manifest](../../temp/xl-pumo-phone-s21-20261124-32333/README.md)
+for the next manual session. The SHA-256 and all 11 original checkpoint
+digests are in the kit. Keep the kit version with every report.
+
+On the SM-G996U with Android 15, ordinary 32333 imported the original archive
+and eight raw addons. It passed 35/35 scripted Rookie steps, including the
+fixed-view Concussion shot near room 129 and the same shot after quickload.
+`mineral-ending` rendered the level 10 farewell and
+`kartsal-final-checkpoint` rendered the **MD Vertex9** closing screen.
+Both checks started from the earned checkpoint and used scripted inputs.
+[Ordinary S21 receipts](evidence/pumo-s21-ordinary-32333-20261124.json).
+
+The first manual check is the original Rookie touch shot in Crauphel. Save
+the approach in another slot, fire the same missile toward the same landmark
+if known, check steering, then close, load and repeat. Keep the original
+issue save. Record phone, Android version, difficulty, input method, episode,
+checkpoint, last successful action, missile, aim and save/load result.
+Enable **Show progress bars** and **Mission zip** music for the three loading
+intervals below. Include the first words or a screenshot of any low-contrast
+briefing page.
+
 ## November 24 S21 diagnostic
 
 Diagnostic kit **32332** passed 35/35 scripted Rookie steps on the SM-G996U
 with Android 15 after importing the original archive and raw addons. The
 route fired a Concussion missile near Crauphel room 129, quickloaded the
-approach and fired again. Flight continued after both shots. Use the ordinary
-kits below for manual touch reports, including the reporter's exact shot.
+approach and fired again. Flight continued after both shots.
 
 In this comparison with diagnostic 32329, the wait before the Crauphel
 briefing fell from 7.14 to 5.88 seconds. Preparing the level's sounds took
