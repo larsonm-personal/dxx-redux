@@ -283,7 +283,7 @@ static Json snapshot()
 	if (ConsoleObject && Player_ship)
 		for (int gun : { 0, 1, 4, 5, 6 }) {
 			vms_vector point = Player_ship->gun_points[gun];
-			const bool owned = xl_model_gun_point(ConsoleObject->rtype.pobj_info.model_num, gun, &point) != 0;
+			const bool owned = xl_model_gun_point(ConsoleObject, gun, &point) != 0;
 			state["player"]["muzzles"][std::to_string(gun)] = { { "model", int(ConsoleObject->rtype.pobj_info.model_num) }, { "owned", owned }, { "point_fixed", { int(point.x), int(point.y), int(point.z) } }, { "quick_distance", vm_vec_mag_quick(&point) }, { "legacy_limit_exceeded", vm_vec_mag_quick(&point) > 0x50000 } };
 		}
 	if (ConsoleObject) state["position"] = { { "segment", int(ConsoleObject->segnum) }, { "x", double(ConsoleObject->pos.x) / F1_0 }, { "y", double(ConsoleObject->pos.y) / F1_0 }, { "z", double(ConsoleObject->pos.z) / F1_0 }, { "radius_raw", int(ConsoleObject->size) }, { "orient_right_fixed", { int(ConsoleObject->orient.rvec.x), int(ConsoleObject->orient.rvec.y), int(ConsoleObject->orient.rvec.z) } }, { "orient_up_fixed", { int(ConsoleObject->orient.uvec.x), int(ConsoleObject->orient.uvec.y), int(ConsoleObject->orient.uvec.z) } }, { "orient_forward_fixed", { int(ConsoleObject->orient.fvec.x), int(ConsoleObject->orient.fvec.y), int(ConsoleObject->orient.fvec.z) } } };
