@@ -9,11 +9,20 @@ for the next physical-phone session. The ordinary universal APK is
 It keeps the original earned checkpoints with their individual digests. The
 APK and all 11 checkpoint digests match the local manifest. Version 32322
 was installed and hash-verified on SM-G996U (Android 15). The isolated diagnostic
-package passed the original Pumo Rookie hub-to-Crauphel 35-step route,
-including a room 129 missile before and after quickload. The ordinary package
-has no active pilot on that S21, so its checkpoint installer correctly stopped
-at the manual-save prerequisite during a dry run. Those automated inputs do
-not resolve the separate SM-S931U touch report on Play build 31950.
+package passed the original Pumo Rookie hub-to-Crauphel 35-step route.
+After the owner requested it, the ordinary 32322 package also passed 35/35
+steps on that S21: a fixed-view room 129 concussion shot, quickload and the
+same shot again. Its original Pumo HOG was staged as loose mission content;
+the ordinary-package 7z import and mission soundtrack were outside this run.
+The ordinary app's six original files were restored byte for byte afterward.
+[Ordinary-package receipt](evidence/pumo-s21-ordinary-32322-20261123.json).
+While automation still held input, ADB taps did not consume a missile. After
+automation ended, the default look-stick double tap did fire one Concussion
+missile after quickload; the S21 screenshot shows five remaining and active
+flight. This fixed-view touch check does not resolve the separate SM-S931U
+human steering and aim report on Play build 31950. The checkpoint installer
+had stopped at its manual-save prerequisite
+before this protected S21 run and no earned checkpoint was installed.
 
 Keep **Show progress bars** enabled. From a fresh Mineral Valley start, record
 the time and visible label from difficulty selection to the first briefing,
@@ -23,7 +32,9 @@ briefing-to-flight transitions show moving bars on the
 [S21 diagnostic recording](evidence/pumo-s21-loading-tail-32322-20261123.json);
 version 32322 gives the bar a dark backing panel, amber fill and white label.
 On hub entry it changes to **STARTING LEVEL MUSIC** and keeps moving until
-flight. Note whether the ordinary kit shows the same continuous bar.
+flight. A separate filmed run of the ordinary 32322 APK on the S21 also shows
+that bar through music startup before Crauphel flight. Note whether it stays
+visible on your phone and how long each transition takes.
 For the reported exit, save before the Crauphel Scilab level 2 missile shot,
 repeat the same aim and missile after a load, and note whether control
 returns. Include a screenshot or first words of the green-on-green briefing
@@ -32,7 +43,8 @@ begins **“And there it is!”** over the mainframe picture, but please identif
 the page you actually see. The original picture has green monitor text and a
 green foreground character under that page's bright green text request;
 [the artwork inspection](evidence/pumo-briefing-green-candidate-20261123.json)
-is a candidate, not a confirmed match. Record kit **32322**, phone, Android version,
+is a candidate, not a confirmed match; the reporter does not recall the page.
+Record kit **32322**, phone, Android version,
 difficulty, input method, episode, checkpoint, last successful action and
 save/load result with each report. Keep the original issue save intact.
 

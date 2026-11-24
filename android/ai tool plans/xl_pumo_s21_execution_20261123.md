@@ -23,15 +23,18 @@ entry, the bar disappeared during a remaining 2.6-second level-music start
 while **PREPARE FOR DESCENT** still showed. The nested texture-cache progress
 owner ended before the outer level load completed. Version 32322 keeps that
 owner active and changes the label to **STARTING LEVEL MUSIC**. Its S21 video
-shows the amber bar moving through that interval until flight. The ordinary
-package and the unidentified green page still need human play.
+shows the amber bar moving through that interval until flight. A protected
+ordinary-package S21 recording also shows the bar through **STARTING LEVEL
+MUSIC** immediately before Crauphel flight. This staged loose-HOG run leaves
+the reporter's original archive import and unidentified green page for human
+play.
 [Version 32322 recording receipt](../XL_compat/evidence/pumo-s21-loading-tail-32322-20261123.json).
 
 The original Mineral Valley briefing script has a plausible contrast
 candidate: the mainframe page beginning “And there it is!” requests bright
 green foreground (`96 255 96`) over a picture with green displays. The text
-box may overlap that imagery. The reporter has not identified this as the page
-they saw, so the ordinary-kit direction asks for its words or a screenshot.
+box may overlap that imagery. The reporter does not remember the page, so the
+ordinary-kit direction asks for its words or a screenshot only if it reappears.
 An inspection of the original `mv14b.pcx` artwork confirms green text on three
 monitors and a large green foreground character under the script's bright
 green foreground request. Its nearest palette entry to the requested text
@@ -72,11 +75,33 @@ showed poor contrast over score art. Version 32322 keeps the bar visible through
 level music startup. Both diagnostic and ordinary three-ABI APK builds passed.
 The protected S21 version 32322 run imported the original archive, completed
 35/35 gameplay actions including a room 129 concussion shot before and after
-quickload, and restored profile hashes. The ordinary package had no active
-test pilot or manual save, so its checkpoint install dry run stopped at the
-documented prerequisite before writing. The private kits and saves remain in
-ignored `temp/`. The S21's `stay_on_while_plugged_in` setting was restored to
-its original value 0 and read back as 0.
+quickload, and restored profile hashes. The ordinary package initially had no
+active test pilot or manual save, so its checkpoint install dry run stopped at
+the documented prerequisite. At the owner's request, I then staged verified
+retail data and the original Pumo HOG as a loose mission in the ordinary
+32322 package. On the same SM-G996U, Android 15, Rookie and 640 x 480, it
+passed **35/35** scripted steps: a concussion shot toward side 0 from room
+129, quickload, then the same shot. The app stayed in game and ammo fell from
+six to five both times. This covers the ordinary APK and its native S21
+renderer, but uses fixed-view gamepad injection and loose HOG content, not
+the reported human touch aim or the ordinary-package 7z import. ADB taps
+while automation held input did not consume a missile. After a fresh 31/31
+approach and quickload, with automation released, a double tap on the default
+look stick fired one Concussion missile through the ordinary touch overlay.
+At 1.83 seconds, the screenshot showed five missiles, shields 37, two lives
+and active Crauphel flight. The original human steering and impact remain
+unknown. The ordinary package's six original files were restored with a
+byte-identical backup archive. The same ordinary APK then passed a filmed
+35/35 hub-to-Crauphel route. Its 90.011-second private recording (SHA-256
+`dac2c91d5d78e531e644ddcbc8ae3ff8536bec1607f47333af29d3ada64dc94`)
+shows the progress bar at mission verification, both resource checks, level
+loading and **STARTING LEVEL MUSIC** at about 46 seconds, followed by
+Crauphel flight at about 47 seconds. After filming, its six original files
+again matched the before-run backup archive byte for byte.
+[Ordinary-package S21 receipt](../XL_compat/evidence/pumo-s21-ordinary-32322-20261123.json).
+The private kits, source data, saves and captures remain in ignored `temp/`.
+The S21's `stay_on_while_plugged_in` setting was restored to its original
+value 0 and read back as 0.
 
 ## Original XL census and cluster comparison
 
@@ -283,7 +308,8 @@ and registered in [stack 720](https://github.com/larsonm-personal/dxx-redux/stac
 | [#739](https://github.com/larsonm-personal/dxx-redux/pull/739) | `4eeb29e24` | Execution and next tranche    | 37 success, 6 skipped  |
 | [#740](https://github.com/larsonm-personal/dxx-redux/pull/740) | `c0c6100e9` | Robotless Subspace D3 + guard  | 23 success, 15 skipped |
 | [#741](https://github.com/larsonm-personal/dxx-redux/pull/741) | `ffc59e1a0` | S21 execution and next tranche | 34 success, 9 skipped  |
-| [#742](https://github.com/larsonm-personal/dxx-redux/pull/742) | `f050a4ae2` | Loading bar through music      | CI in progress         |
+| [#742](https://github.com/larsonm-personal/dxx-redux/pull/742) | `f050a4ae2` | Loading bar through music      | 35 success, 7 skipped, 1 headed replay running |
+| [#743](https://github.com/larsonm-personal/dxx-redux/pull/743) | `43a4f1c65` | S21 audit and original XL handoff | Private CI passed; public replay jobs running |
 
 Fork workflow admission can skip private XL qualification below the native
 stack tip. The private smoke on #729 actually ran sampled and expanded
@@ -310,8 +336,18 @@ completed the 151/151-step shareware scenario, but the emulator disappeared
 during the final recording listing (`adb: device 'emulator-5554' not found`).
 The retained [attempt 1 artifact](https://github.com/larsonm-personal/dxx-redux/actions/runs/45222810844/attempts/1)
 identifies this as a runner/device loss after gameplay; failed jobs were
-retried as attempt 2 on the same head. The #742 final public checks still
-require an update here.
+retried as attempt 2 on the same head and passed. Its public headed replay
+parity job was still running at this update. The #743 private exact-head
+workflow passed Linux tests, fixed 8/8 and expanded 64/64 original load/tick
+samples on `43a4f1c65`. Its public selected Android and JVM jobs passed: the
+Android game script completed 151/151 actions and JVM reported 1,325 passing
+tests with 12 skipped. The first public #743 Linux-tests attempt failed before
+source tests because Gradle could not resolve the Kotlin 2.4.20 plugin; its
+retained host artifact records setup failure. Failed jobs were retried on the
+identical head in [attempt 2](https://github.com/larsonm-personal/dxx-redux/actions/runs/45229138155/attempts/2),
+which passed. Three separate public native replay/runtime checks remained in
+progress at this update. The documented S21 follow-up will produce a new
+#743 head, whose exact checks must be monitored separately.
 The #734 Windows build was cancelled
 after its test steps passed in [run 45180936407, attempt 1](https://github.com/larsonm-personal/dxx-redux/actions/runs/45180936407/attempts/1);
 the targeted [attempt 2](https://github.com/larsonm-personal/dxx-redux/actions/runs/45180936407/attempts/2)
