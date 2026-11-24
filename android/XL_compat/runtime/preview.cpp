@@ -549,12 +549,13 @@ void collect_dependencies(const xl_compat::Inventory &level, bool multiplayer, b
 	for (std::size_t i = 0; i < level.object_trigger_records.size(); ++i) texture_action(level.object_trigger_records[i].action, int(i), "object texture action");
 }
 
-// A single-level mission cannot consume a custom robot table if it has no
-// robots, contained robots, robotmakers or actions that can create them.
-// The original Subspace D3 release has this shape despite custom_robots=yes.
+// The original Subspace D3 release declares custom robots without an HXM,
+// but its only level has no robot producers and only named-sound actions.
+// Keep companion validation for other single-level packages, including an
+// incomplete Water Arena package whose HXM was removed.
 bool robotless_single_level(const Mission *mission, const xl_compat::Inventory &level)
 {
-	return mission && mission->last_level == 1 && mission->n_secret_levels == 0 && level.matcens.empty() &&
+	return mission && mission->last_level == 1 && mission->n_secret_levels == 0 && !level.triggers.empty() && level.matcens.empty() &&
 	       level.object_trigger_records.empty() &&
 	       std::none_of(level.objects.begin(), level.objects.end(), [](const auto &object) {
 		       return object.type == OBJ_ROBOT || (object.contains_count > 0 && object.contains_type == OBJ_ROBOT);
