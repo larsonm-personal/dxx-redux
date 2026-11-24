@@ -813,6 +813,7 @@ void ogl_cache_level_textures(void)
 	__android_log_print(ANDROID_LOG_INFO, "DXX",
 	    "ogl_cache: starting, %i bitmaps, allow_png=%i",
 	    Num_bitmap_files, ogl_allow_png());
+	const int owns_loading_progress = !android_loading_progress_is_active();
 	android_loading_progress_begin("Prepare for Descent", Num_bitmap_files);
 	{
 		int before_hires = r_hires_loaded;
@@ -857,7 +858,8 @@ void ogl_cache_level_textures(void)
 		    r_hires_loaded - before_hires, n_already, n_bm_upload, n_paged_skip, n_png_fail,
 		    r_etc2_zero_data);
 	}
-	android_loading_progress_end();
+	if (owns_loading_progress)
+		android_loading_progress_end();
 #else
 	for (i = 0; i < Num_bitmap_files; i++) {
 		if (!(GameBitmaps[i].bm_flags & BM_FLAG_PAGED_OUT))
