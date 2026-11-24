@@ -167,6 +167,20 @@ static void classic_audio_controls(const std::filesystem::path &root)
 	        "Classic folder inventory lost a differently cased preferred replacement");
 	std::filesystem::rename(upper_path, temporary);
 	std::filesystem::rename(temporary, preferred);
+	std::ifstream wave_file(preferred, std::ios::binary);
+	const xl_compat::Bytes original_wave{ std::istreambuf_iterator<char>(wave_file), std::istreambuf_iterator<char>() };
+	wave_file.close();
+	require(!original_wave.empty(), "Missing exact replacement bytes for cache control");
+	auto changed_wave = original_wave;
+	changed_wave.back() ^= 1;
+	write_bytes(preferred.string().c_str(), changed_wave);
+	const auto changed_replacement = prepare_classic_audio("scope23.rl2", 2, 44100);
+	require(changed_replacement.identity != partial.identity && changed_replacement.samples.size() == 1 &&
+	            changed_replacement.samples[0].pcm.samples != partial.samples[0].pcm.samples,
+	        "Classic replacement cache ignored a same-size source edit");
+	write_bytes(preferred.string().c_str(), original_wave);
+	require(prepare_classic_audio("scope23.rl2", 2, 44100).identity == partial.identity,
+	        "Classic replacement cache did not recover the original bytes");
 	write_bytes(preferred.string().c_str(), { 'b', 'a', 'd' });
 	require(!xl_level_supported_at("scope23.rl2", 0, 2) && std::strstr(xl_level_rejection(), "Invalid XL classic sound"), "Malformed classic preferred resource fell back");
 	std::filesystem::copy_file(sound_root / "level02" / "scoped.wav", preferred, std::filesystem::copy_options::overwrite_existing);

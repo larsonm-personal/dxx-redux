@@ -33,6 +33,15 @@ SampleSource sample_source(const XlResourceBanks *banks, int id)
 	const auto &native = GameSounds[id];
 	return { native.data, native.length, native.freq, native.bits };
 }
+
+struct DecodedClassicWave {
+	std::string source, hash;
+	xl_compat::WaveChannels pcm;
+	std::size_t storage() const
+	{
+		return source.size() + pcm.samples.size() * sizeof(std::int16_t);
+	}
+};
 } // namespace
 
 namespace xl_compat
@@ -79,19 +88,46 @@ ClassicAudioResources prepare_classic_audio(const char *level, int ordinal, int 
 			throw std::runtime_error("Invalid XL mission sound bank " + resource.path + ": " + error.what());
 		}
 	}
+	// Keep one bounded mission's decoded replacements. Source resolution and
+	// byte comparison still run on every preparation, including save restore.
+	static std::string cached_mission;
+	static std::map<std::string, DecodedClassicWave> wave_cache;
+	static std::size_t cached_storage;
+	constexpr std::size_t cache_limit = 32 * 1024 * 1024;
+	if (cached_mission != scope->mission) {
+		wave_cache.clear();
+		cached_storage = 0;
+		cached_mission = scope->mission;
+	}
 	for (int sample = 0; const char *name = sample_name(banks, sample); ++sample) {
 		if (!*name) throw std::runtime_error("XL sound replacement requires a named native sample registry");
 		const auto resource = load_classic_audio_resource(name, *scope);
 		if (!resource) continue;
 		WaveChannels pcm;
-		try {
-			pcm = decode_wave_channels(reinterpret_cast<const std::uint8_t *>(resource->bytes.data()), resource->bytes.size());
-		} catch (const std::exception &error) {
-			throw std::runtime_error("Invalid XL classic sound " + resource->path + ": " + error.what());
+		std::string hash;
+		const auto cached = wave_cache.find(resource->path);
+		if (cached != wave_cache.end() && cached->second.source == resource->bytes) {
+			pcm = cached->second.pcm;
+			hash = cached->second.hash;
+		} else {
+			try {
+				pcm = decode_wave_channels(reinterpret_cast<const std::uint8_t *>(resource->bytes.data()), resource->bytes.size());
+			} catch (const std::exception &error) {
+				throw std::runtime_error("Invalid XL classic sound " + resource->path + ": " + error.what());
+			}
+			hash = picosha2::hash256_hex_string(resource->bytes);
+			const auto retain_bytes = resource->bytes.size() + pcm.samples.size() * sizeof(std::int16_t);
+			if (cached != wave_cache.end()) {
+				cached_storage -= cached->second.storage();
+				wave_cache.erase(cached);
+			}
+			if (wave_cache.size() < 512 && retain_bytes <= cache_limit - cached_storage) {
+				wave_cache.emplace(resource->path, DecodedClassicWave{ resource->bytes, hash, pcm });
+				cached_storage += retain_bytes;
+			}
 		}
 		storage += pcm.samples.size() * sizeof(std::int16_t);
 		if (storage > 128 * 1024 * 1024) throw std::runtime_error("XL classic replacement bank exceeds 128 MiB of source storage");
-		const auto hash = picosha2::hash256_hex_string(resource->bytes);
 		identity.append(":" + std::to_string(sample) + ":" + name + ":");
 		identity.append_path(resource->path);
 		identity.append(":" + hash);

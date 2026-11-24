@@ -10,7 +10,8 @@
 class XlResourceBanks
 {
   public:
-	XlResourceBanks(std::vector<unsigned char> bitmaps, std::vector<unsigned char> sounds, int sample_rate);
+	XlResourceBanks(std::vector<unsigned char> bitmaps, std::vector<unsigned char> sounds, int sample_rate,
+	                const std::string &expected_bitmap_hash = {}, const std::string &expected_sound_hash = {});
 	~XlResourceBanks();
 	void bitmap(int id) const;
 	void sound(int id) const;
