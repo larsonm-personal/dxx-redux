@@ -22,6 +22,7 @@
 
 #ifdef ANDROID
 #include "pcm_ring.h"
+#include <limits.h>
 #include <android/log.h>
 #include <android/asset_manager.h>
 #include <pthread.h>
@@ -30,6 +31,8 @@
 #include "android_crash_handler.h"
 #include "android_lifecycle_diagnostics.h"
 #include "android_log.h"
+#include "android_mission_assets.h"
+#include "android_ogg_prefetch.h"
 #ifdef INTROSPECT_ON
 #include "android_audio_capture.h"
 #endif
@@ -982,6 +985,80 @@ static unsigned char *music_read_bank(void *context, const char *name, size_t *s
 	return file ? music_read_physfs_bounded(file, limit, size) : NULL;
 }
 
+#ifdef ANDROID
+static struct {
+	SDL_Thread *thread;
+	char filename[PATH_MAX];
+	unsigned generation;
+	unsigned char *encoded;
+	size_t encoded_size;
+	pcm_decode_result_t decoded;
+	Uint32 decode_ms;
+} ogg_prefetch;
+
+static int decode_prefetched_ogg(void *unused)
+{
+	(void) unused;
+	const Uint32 start = SDL_GetTicks();
+	const int status = pcm_decode_memory(ogg_prefetch.encoded, ogg_prefetch.encoded_size, ".ogg", &ogg_prefetch.decoded);
+	free(ogg_prefetch.encoded);
+	ogg_prefetch.encoded = NULL;
+	ogg_prefetch.decode_ms = SDL_GetTicks() - start;
+	return status;
+}
+
+void android_ogg_prefetch_clear(void)
+{
+	if (!ogg_prefetch.thread) return;
+	SDL_WaitThread(ogg_prefetch.thread, NULL);
+	ogg_prefetch.thread = NULL;
+	pcm_decode_free(&ogg_prefetch.decoded);
+}
+
+void android_ogg_prefetch_start(const char *filename)
+{
+	android_ogg_prefetch_clear();
+	const char *extension = strrchr(filename, '.');
+	if (!extension || d_stricmp(extension, ".ogg") || !*android_mission_assets_key() ||
+	    strlen(filename) >= sizeof(ogg_prefetch.filename)) return;
+	PHYSFS_file *file = PHYSFS_openRead(filename);
+	if (!file) return;
+	/* Read from the published mission on the game thread; the worker only decodes bytes */
+	ogg_prefetch.encoded = music_read_physfs_bounded(file, 8u * 1024u * 1024u, &ogg_prefetch.encoded_size);
+	if (!ogg_prefetch.encoded) return;
+	strcpy(ogg_prefetch.filename, filename);
+	ogg_prefetch.generation = android_mission_assets_generation();
+	ogg_prefetch.thread = SDL_CreateThread(decode_prefetched_ogg, NULL);
+	if (!ogg_prefetch.thread) {
+		free(ogg_prefetch.encoded);
+		ogg_prefetch.encoded = NULL;
+	}
+}
+
+static int take_prefetched_ogg(const char *filename, pcm_decode_result_t *pcm)
+{
+	if (!ogg_prefetch.thread) return 0;
+	if (strcmp(ogg_prefetch.filename, filename) || ogg_prefetch.generation != android_mission_assets_generation()) {
+		android_ogg_prefetch_clear();
+		return 0;
+	}
+	const Uint32 start = SDL_GetTicks();
+	int status;
+	SDL_WaitThread(ogg_prefetch.thread, &status);
+	ogg_prefetch.thread = NULL;
+	debug_log_force(DLOG_PROFILING, "Mission Ogg prepared: decode_ms=%u wait_ms=%u status=%d",
+	                ogg_prefetch.decode_ms, SDL_GetTicks() - start, status);
+	if (status != PCM_DECODE_OK) {
+		// Normal playback can retry after releasing the previous track
+		pcm_decode_free(&ogg_prefetch.decoded);
+		return 0;
+	}
+	*pcm = ogg_prefetch.decoded;
+	memset(&ogg_prefetch.decoded, 0, sizeof(ogg_prefetch.decoded));
+	return 1;
+}
+#endif
+
 int mix_play_file(char *filename, int loop, void (*hook_finished_track)())
 {
 	unsigned int bufsize = 0;
@@ -1011,36 +1088,32 @@ int mix_play_file(char *filename, int loop, void (*hook_finished_track)())
 	/* ── PCM path: OGG / MP3 / FLAC ─────────────────────────────────── */
 	if (!d_stricmp(fptr, ".ogg") || !d_stricmp(fptr, ".mp3") ||
 	    !d_stricmp(fptr, ".flac") || !d_stricmp(fptr, ".wav")) {
-		/* Load file into memory.  Try PhysFS first (game archives),
-		 * fall back to fopen for absolute paths (M3U jukebox entries). */
-		unsigned char *fbuf = NULL;
-		size_t fsize = 0;
-		PHYSFS_file *fh = PHYSFS_openRead(filename);
-		if (fh) {
-			fbuf = music_read_physfs_bounded(fh, MUSIC_PCM_ENCODED_MAX_BYTES, &fsize);
-		} else {
-			fbuf = music_read_stdio_bounded(filename, MUSIC_PCM_ENCODED_MAX_BYTES, &fsize);
+		pcm_decode_result_t pcm = { 0 };
+		int decode_status = PCM_DECODE_OK;
+#ifdef ANDROID
+		if (!take_prefetched_ogg(filename, &pcm))
+#endif
+		{
+			size_t fsize = 0;
+			PHYSFS_file *fh = PHYSFS_openRead(filename);
+			/* Absolute paths can come from M3U jukebox entries */
+			unsigned char *fbuf = fh ? music_read_physfs_bounded(fh, MUSIC_PCM_ENCODED_MAX_BYTES, &fsize)
+			                         : music_read_stdio_bounded(filename, MUSIC_PCM_ENCODED_MAX_BYTES, &fsize);
+			if (!fbuf) {
+				con_printf(CON_CRITICAL, "PCM: bounded file read failed for %s\n", filename);
+				return 0;
+			}
+			decode_status = !d_stricmp(fptr, ".wav") ? music_decode_wav(fbuf, fsize, &pcm) : pcm_decode_memory(fbuf, fsize, fptr, &pcm);
+			free(fbuf);
 		}
-		if (!fbuf) {
-			con_printf(CON_CRITICAL, "PCM: bounded file read failed for %s\n", filename);
-			return 0;
-		}
-
-		/* Decode to raw PCM */
-		pcm_decode_result_t pcm;
-		int decode_status = !d_stricmp(fptr, ".wav")
-		                        ? music_decode_wav(fbuf, fsize, &pcm)
-		                        : pcm_decode_memory(fbuf, fsize, fptr, &pcm);
 		if (decode_status != PCM_DECODE_OK) {
 			con_printf(CON_CRITICAL,
 			           decode_status == PCM_DECODE_UNSUPPORTED_CHANNELS
 			               ? "PCM: unsupported channel layout for %s; mono or stereo required\n"
 			               : "PCM: decode failed for %s\n",
 			           filename);
-			free(fbuf);
 			return 0;
 		}
-		free(fbuf);
 		if (pcm_decode_result_status(&pcm) != PCM_DECODE_OK ||
 		    pcm.pcm_samples != pcm.total_samples) {
 			con_printf(CON_CRITICAL, "PCM: incomplete or invalid decoded audio for %s\n",

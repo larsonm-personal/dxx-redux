@@ -1,0 +1,111 @@
+{
+    "schema": 1,
+    "date": "2026-11-23",
+    "scope": "Physical SM-G996U S21, Android 15, protected diagnostic app, 640 x 480 Rookie Mineral Valley fixed-route inputs",
+    "archive_sha256": "82c8cc4cfc740c8169f9d21a961c9ac5d2518342b3e27ac3ac438c91ca8f2ddf",
+    "baseline": {
+        "version": 32323,
+        "apk_sha256": "3ecfb1d4ef691e6ac31b99af16bc84ff4bc1a2fbcf727528a077e504b5f63d76",
+        "run_id": "c30eb30507f24b69807b24f4e138561e",
+        "log_sha256": "839e476a4a4e867ddefd54c2a5d210561eddff790d3de892c760fa66c7d1630a",
+        "steps_passed": 35,
+        "profile_restored": true
+    },
+    "overlap_trial": {
+        "version": 32324,
+        "apk_sha256": "e2c7f72b4e31143f4bb3093235885b366790d6b91b5c8917b882b632dca3e48c",
+        "run_id": "677edaa5ce3b468ca0b268a8d630e0c9",
+        "log_sha256": "b6d3e8cd7b793c11ccd6f1f7e283515de8b2b5d6380f1b2a250b8593f6211bbe",
+        "steps_passed": 35,
+        "profile_restored": true
+    },
+    "phases": [
+        {
+            "phase": "Hub postbriefing native load",
+            "baseline_us": 8309658,
+            "overlap_us": 5450307
+        },
+        {
+            "phase": "Hub level music in the native load",
+            "baseline_us": 2547232,
+            "overlap_us": 22674
+        },
+        {
+            "phase": "Crauphel postbriefing native load",
+            "baseline_us": 5593845,
+            "overlap_us": 4664470
+        },
+        {
+            "phase": "Crauphel level music in the native load",
+            "baseline_us": 1298998,
+            "overlap_us": 21474
+        },
+        {
+            "phase": "Crauphel quickload native load phase",
+            "baseline_us": 5986025,
+            "overlap_us": 4595776
+        },
+        {
+            "phase": "Crauphel quickload level music in the native load",
+            "baseline_us": 1275409,
+            "overlap_us": 15421
+        }
+    ],
+    "overlap_worker_millis": [
+        {
+            "phase": "hub",
+            "decode": 2181,
+            "wait": 0
+        },
+        {
+            "phase": "Crauphel",
+            "decode": 1092,
+            "wait": 0
+        },
+        {
+            "phase": "Crauphel quickload",
+            "decode": 1258,
+            "wait": 0
+        }
+    ],
+    "matching_playback": {
+        "hub_pcm_frames": 15876000,
+        "crauphel_pcm_frames": 7734497,
+        "rate_hz": 44100,
+        "channels": 2,
+        "loop": true
+    },
+    "method": "Both builds imported the same original 7z through the launcher picker and selected the same mission tracks. The fixed route fired a Concussion missile near Crauphel room 129 before and after quickload. Each build has one fresh-route timing and one quickload timing. The earlier phone report still needs its exact aim and save/load result.",
+    "cleanup": "The isolated app profile hashes matched before and after. The S21 stay-awake setting was restored and read back as 0. Phone display size and density matched their pretest values. Raw logs and saves stay local.",
+    "final_diagnostic": {
+        "version": 32326,
+        "apk_sha256": "d0d424d0d738f3b0289b9b2ba52a59b18af4c72fdf79a5ae9162c44626755e90",
+        "run_id": "9eda77fcee0c48c3945d02d9b1cb94e0",
+        "log_sha256": "ce81bc52ca78eb1ffebb240c2d5c6e65e013748b8c791bfac16abee2818b6cdf",
+        "steps_passed": 35,
+        "profile_restored": true,
+        "measurements": [
+            {
+                "phase": "hub",
+                "native_load_us": 5561088,
+                "music_us": 25572,
+                "decode_ms": 2170,
+                "wait_ms": 0
+            },
+            {
+                "phase": "Crauphel",
+                "native_load_us": 4578373,
+                "music_us": 19888,
+                "decode_ms": 1088,
+                "wait_ms": 0
+            },
+            {
+                "phase": "Crauphel quickload",
+                "native_load_us": 4568202,
+                "music_us": 15644,
+                "decode_ms": 1259,
+                "wait_ms": 0
+            }
+        ]
+    }
+}
