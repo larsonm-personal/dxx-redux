@@ -905,8 +905,7 @@ xl_compat::OwnedModelSet prepare_owned_models(int ordinal, mission_preparation *
 			resource->thrusters = std::move(compiled.thrusters);
 		} else {
 			resource->model = xl_compat::read_oof(model_bytes);
-			resource->mesh = xl_compat::compile_oof_mesh(resource->model, mapping.flip_v);
-			resource->gunpoints = xl_compat::compile_oof_gun_points(resource->model);
+			resource->mesh = xl_compat::compile_oof_mesh(resource->model, mapping.flip_v, &resource->gunpoints);
 		}
 		for (auto texture : resource->model.textures) {
 			if (texture.empty() || texture == "." || texture == ".." || texture.find_first_of("/\\:") != std::string::npos)
@@ -1240,11 +1239,12 @@ std::map<std::string, std::string> xl_resource_sources_for_level(int ordinal, st
 	return sources;
 }
 
-extern "C" int xl_model_gun_point(int model, int gun, vms_vector *point)
+extern "C" int xl_model_gun_point(const object *shooter, int gun, vms_vector *point)
 {
-	if (!mission_requires_xl || !point || gun < 0 || gun >= 8) return 0;
-	const auto resource = xl_owned_oof_model(model);
+	if (!mission_requires_xl || !shooter || !point || gun < 0 || gun >= 8) return 0;
+	const auto resource = xl_owned_oof_model(shooter->rtype.pobj_info.model_num);
 	if (!resource || resource->gunpoints.empty()) return 0;
+	if (!resource->ase && shooter->type != OBJ_ROBOT) return 0;
 	// XL selects the model's complete gun array when it has any authored markers
 	*point = {};
 	const auto found = resource->gunpoints.find(gun);
@@ -1273,7 +1273,7 @@ extern "C" int xl_robot_gun_point(const object *robot, int gun, vms_vector *poin
 			parts[i] = { model.submodel_parents[i], vector(model.submodel_offsets[i]), { angle.p, angle.b, angle.h } };
 		}
 		vms_vector local = definition.gun_points[gun];
-		xl_model_gun_point(robot->rtype.pobj_info.model_num, gun, &local);
+		xl_model_gun_point(robot, gun, &local);
 		const xl_compat::GunMatrix orientation{ vector(robot->orient.rvec), vector(robot->orient.uvec), vector(robot->orient.fvec) };
 		const auto result = xl_compat::robot_gun_point(vector(local), definition.gun_submodels[gun], parts, orientation, vector(robot->pos));
 		*point = { result[0], result[1], result[2] };

@@ -30,7 +30,7 @@ int xl_prepared_pog_receipt(int bitmap, unsigned *bytes, unsigned *fnv1a);
 int xl_custom_model_radius(int model, int fallback);
 struct object;
 struct vms_vector;
-int xl_model_gun_point(int model, int gun, struct vms_vector *point);
+int xl_model_gun_point(const struct object *shooter, int gun, struct vms_vector *point);
 int xl_robot_gun_point(const struct object *robot, int gun, struct vms_vector *point);
 void xl_hitbox_begin_frame(void);
 int xl_camera_query(const struct object *camera, const struct object *moving, const struct vms_vector *start, const struct vms_vector *end, int radius, struct vms_vector *hit, struct vms_vector *normal);

@@ -41,13 +41,14 @@ inline void metadata_controls()
 		auto bytes = base;
 		chunk(bytes, "GPNT", points);
 		const auto model = xl_compat::read_oof(bytes);
-		const auto guns = xl_compat::compile_oof_gun_points(model);
+		std::map<int, xl_compat::GunVector> guns;
+		const auto mesh = xl_compat::compile_oof_mesh(model, false, &guns);
 		require(model.gun_points.size() == 9 && model.gun_points[8].parent == -1 &&
 		            model.gun_points[8].direction == xl_compat::OofVector{ 0, 0, -1 } &&
 		            model.additional_chunks[0].bytes == points,
 		        "OOF gun point parsing lost the ninth record or direction");
-		require(guns.size() == 8 && guns.at(0) == xl_compat::GunVector{ 163840, 65536, 327680 } &&
-		            guns.at(7) == xl_compat::GunVector{ 622592, 65536, 327680 } && same_mesh(original, xl_compat::compile_oof_mesh(model, false)),
+		require(guns.size() == 8 && guns.at(0) == xl_compat::GunVector{ 163840, 229376, 262144 } &&
+		            guns.at(7) == guns.at(0) && same_mesh(original, mesh),
 		        "OOF gun point slot limit, parent offset or geometry changed");
 		chunk(bytes, "GPNT", points);
 		rejects(bytes);
@@ -154,7 +155,14 @@ inline void metadata_controls()
 		chunk(b, tag, Bytes{ 0, 0, 0, 0 });
 		rejects(b);
 	}
-	for (const char *property : { "$rotate=1", "$turret=1", "$facing" }) {
+	for (const char *property : { "$rotate=1", "$facing\r\n", "$FOV=0.0,1.0,1.0", "$glow=0.2,0.2,0.2,0.95", "\r\n" }) {
+		auto b = fixture(-1, 2, 0, property, 1, 1);
+		chunk(b, "RANI", rotation_tracks());
+		const auto model = xl_compat::read_oof(b);
+		require(model.submodels.at(0).properties == property && same_mesh(original, xl_compat::compile_oof_mesh(model, false)),
+		        "Static OOF property lost authored data or changed the optimized mesh");
+	}
+	for (const char *property : { "$rotate=21", "$rotate=1 extra", "$turret=1", "$facing=1", "$fov=0,1", "$glow=0.2,0.2,nan,1" }) {
 		auto b = fixture(-1, 2, 0, property, 1, 1);
 		chunk(b, "RANI", rotation_tracks());
 		rejects(b);

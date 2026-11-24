@@ -3,6 +3,8 @@
 #include "oof.h"
 #include "owned_model_bounds.h"
 #include <limits>
+#include <locale>
+#include <sstream>
 
 #ifdef _MSC_VER
 #pragma pack(push, 8)
@@ -29,8 +31,62 @@ struct OofMesh {
 	std::vector<ModelHitboxBounds> hitboxes;
 };
 
+inline bool static_oof_property(const std::string &property)
+{
+	const auto first = property.find_first_not_of(" \t\r\n");
+	if (first == std::string::npos) return true;
+	auto text = property.substr(first, property.find_last_not_of(" \t\r\n") - first + 1);
+	for (auto &c : text)
+		if (c >= 'A' && c <= 'Z') c = char(c + ('a' - 'A'));
+	if (text == "$facing") return true;
+	const auto equals = text.find('=');
+	if (equals == std::string::npos) return false;
+	const auto command = text.substr(0, equals);
+	const auto count = command == "$rotate" ? 1 : command == "$fov" ? 3
+	                                          : command == "$glow"  ? 4
+	                                                                : 0;
+	if (!count) return false;
+	std::istringstream input(text.substr(equals + 1));
+	input.imbue(std::locale::classic());
+	std::array<float, 4> values{};
+	for (int index = 0; index < count; ++index) {
+		char separator;
+		if (index && (!(input >> separator) || separator != ',')) return false;
+		if (!(input >> values[index]) || !std::isfinite(values[index]) || values[index] < 0) return false;
+	}
+	if (!(input >> std::ws).eof()) return false;
+	if (command == "$rotate") return values[0] > 0 && values[0] <= 20;
+	if (command == "$fov") return values[0] <= 360 && values[1] > 0 && values[1] <= 60 && values[2] <= 10;
+	return values[0] <= 1 && values[1] <= 1 && values[2] <= 1 && values[3] > 0;
+}
+
+inline std::map<int, GunVector> compile_oof_robot_gun_points(const OofModel &model, const std::vector<RenderModelPart> &parts)
+{
+	std::map<int, GunVector> result;
+	// SetRobotGunPoints replaces the first eight positions with the face bounds
+	for (int index = 0; index < int(model.gun_points.size()) && index < 8; ++index) {
+		int parent = model.gun_points[index].parent;
+		if (parent < 0 || std::size_t(parent) >= parts.size() || !parts[parent].faces)
+			throw std::runtime_error("OOF robot gun point requires a parent with faces");
+		const auto &body = parts[parent];
+		GunVector point{ gun_fixed(((body.low[0] + body.high[0]) / 2) * 65536.0),
+			             gun_fixed(((body.low[1] + body.high[1]) / 2) * 65536.0),
+			             gun_fixed(body.high[2] * 65536.0) };
+		for (std::size_t depth = 0; parent != -1; ++depth) {
+			if (parent < 0 || std::size_t(parent) >= parts.size() || depth >= parts.size())
+				throw std::runtime_error("Invalid OOF gun point hierarchy");
+			const auto &part = parts[parent];
+			for (unsigned axis = 0; axis < point.size(); ++axis)
+				point[axis] = gun_fixed(double(point[axis]) + part.offset[axis]);
+			parent = part.parent;
+		}
+		result.emplace(index, point);
+	}
+	return result;
+}
+
 // Keep face order and material boundaries; alpha faces must not be regrouped by texture
-inline OofMesh compile_oof_mesh(const OofModel &model, bool flip_v)
+inline OofMesh compile_oof_mesh(const OofModel &model, bool flip_v, std::map<int, GunVector> *robot_gun_points = nullptr)
 {
 	OofMesh mesh;
 	mesh.low.fill((std::numeric_limits<float>::max)());
@@ -56,10 +112,13 @@ inline OofMesh compile_oof_mesh(const OofModel &model, bool flip_v)
 			body.offset[axis] = int32_t(value);
 		}
 		// New metadata admission is limited to the opaque static reference profile
-		if ((model.has_special_points || model.has_rotation_tracks || model.has_position_tracks || model.has_weapon_batteries) &&
+		if ((model.has_special_points || model.has_rotation_tracks || model.has_position_tracks || model.has_weapon_batteries ||
+		     model.has_gun_points || !part.properties.empty()) &&
 		    std::any_of(part.alpha.begin(), part.alpha.end(), [](float value) { return value != 1.0f; }))
 			throw std::runtime_error("OOF metadata profile requires opaque vertex alpha");
-		if (!part.properties.empty() || !part.facing_lists.empty())
+		// Match the optimized reference mesh, which uses authored geometry and
+		// static offsets without rotating, billboarding, or coloring these parts
+		if (!static_oof_property(part.properties) || !part.facing_lists.empty())
 			throw std::runtime_error("OOF runtime requires property/facing-list support for " + part.name);
 		OofVector offset{};
 		int parent = part.index;
@@ -114,29 +173,8 @@ inline OofMesh compile_oof_mesh(const OofModel &model, bool flip_v)
 	}
 	if (!points || mesh.faces.empty()) throw std::runtime_error("OOF mesh has no geometry");
 	mesh.hitboxes = owned_model_hitboxes(bounds);
+	if (robot_gun_points) *robot_gun_points = compile_oof_robot_gun_points(model, bounds);
 	return mesh;
-}
-
-inline std::map<int, GunVector> compile_oof_gun_points(const OofModel &model)
-{
-	std::map<int, GunVector> result;
-	// SetGunPoints applies the eight gameplay slots after reading every point
-	for (int index = 0; index < int(model.gun_points.size()) && index < 8; ++index) {
-		const auto &gun = model.gun_points[index];
-		GunVector point{};
-		for (unsigned axis = 0; axis < point.size(); ++axis) point[axis] = gun_fixed(gun.position[axis] * 65536.0);
-		int parent = gun.parent;
-		for (std::size_t depth = 0; parent != -1; ++depth) {
-			const auto found = model.submodels.find(parent);
-			if (found == model.submodels.end() || depth >= model.submodels.size()) throw std::runtime_error("Invalid OOF gun point hierarchy");
-			const auto &part = found->second;
-			for (unsigned axis = 0; axis < point.size(); ++axis)
-				point[axis] = gun_fixed(double(point[axis]) + gun_fixed(part.offset[axis] * 65536.0));
-			parent = part.parent == parent ? -1 : part.parent;
-		}
-		result.emplace(index, point);
-	}
-	return result;
 }
 } // namespace xl_compat
 #ifdef _MSC_VER
