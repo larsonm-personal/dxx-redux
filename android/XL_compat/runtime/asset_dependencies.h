@@ -5,6 +5,7 @@
 #include <set>
 #include <stdexcept>
 #include <string>
+#include "../inventory.h"
 #include "resource_banks.h"
 #include "preview.h"
 extern "C" {
@@ -149,6 +150,12 @@ struct ObjectDependencies {
 	}
 	void wall(int type, int id)
 	{
+		if (type == xl_compat::colored_wall_type) {
+			// Colored faces retain the clip's metadata for wall queries. They
+			// do not acquire its texture or audio clock as a door would.
+			asset_require(id < wall_clip_count, "colored wall references missing clip metadata");
+			return;
+		}
 		if (id >= 0) (type == WALL_DOOR ? door_clips : type == WALL_BLASTABLE ? blastable_clips
 			                                                                  : other_wall_clips)
 			             .insert(id);

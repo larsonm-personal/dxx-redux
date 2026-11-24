@@ -3,6 +3,11 @@
 #include "inventory.h"
 namespace xl_compat
 {
+inline bool qualified_camera_layout(const Inventory &level)
+{
+	return modern_runtime_layout(level) || (level.level_version == 18 && level.game_version == 36);
+}
+
 inline bool qualified_camera_object(const Object &object)
 {
 	return object.type == 16 && object.control == 1 && object.movement == 0 && object.render == 1 && object.flags == 0 &&
@@ -11,10 +16,10 @@ inline bool qualified_camera_object(const Object &object)
 }
 inline bool qualified_camera_binding(const Inventory &level, const ObjectTrigger &record)
 {
-	return modern_runtime_layout(level) && record.action.type == 16 && record.object >= 0 && std::size_t(record.object) < level.objects.size() &&
-	       (qualified_camera_object(level.objects[record.object]) || level.objects[record.object].type == 2 || level.objects[record.object].type == 20) &&
-	       record.action.flags == 0 && record.action.time == -1 &&
-	       !record.action.targets.empty();
+	if (!qualified_camera_layout(level) || record.action.type != 16 || record.object < 0 || std::size_t(record.object) >= level.objects.size() ||
+	    record.action.flags || record.action.time != -1 || record.action.targets.empty()) return false;
+	const auto &owner = level.objects[record.object];
+	return qualified_camera_object(owner) || (modern_runtime_layout(level) && (owner.type == 2 || owner.type == 20));
 }
 } // namespace xl_compat
 #endif

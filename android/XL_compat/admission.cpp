@@ -66,7 +66,7 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 		}
 		if (issue.feature == "powerup_sentinel_controller" && issue.record >= 0 &&
 		    std::size_t(issue.record) < level.objects.size() && sentinel_fusion_shape(level.objects[issue.record])) continue;
-		if (modern_runtime_layout(level) && issue.feature == "object_type" && issue.record >= 0 && std::size_t(issue.record) < level.objects.size() && qualified_camera_object(level.objects[issue.record])) continue;
+		if (qualified_camera_layout(level) && issue.feature == "object_type" && issue.record >= 0 && std::size_t(issue.record) < level.objects.size() && qualified_camera_object(level.objects[issue.record])) continue;
 		if (issue.feature == "object_trigger_type" && issue.record >= 0 && std::size_t(issue.record) < level.object_trigger_records.size() && qualified_camera_binding(level, level.object_trigger_records[issue.record])) continue;
 		if (modern_runtime_layout(level) && issue.feature == "segment_damage") continue;
 		// Wide flags stay source-owned; modern doors consume bit 8, higher bits are reserved

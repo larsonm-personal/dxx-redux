@@ -161,6 +161,9 @@ static void descriptor_door_view_controls()
 	dormant_graph.door_clips.clear();
 	dormant_graph.blastable_clips.clear();
 	dormant_graph.other_wall_clips.clear();
+	dormant_graph.wall(xl_compat::colored_wall_type, 0);
+	require(dormant_graph.wall_clips.empty() && dormant_graph.other_wall_clips.empty(),
+	        "Colored wall metadata started a wall texture clock");
 	Owner dormant(xl_pog_prepare_rgba({ image }, dormant_graph.resource_banks->bitmap_count()), xl_pog_free);
 	const auto dormant_plan = xl_pog_bind_animation(*dormant, dormant_graph, dormant_graph.resource_banks->bitmap_count());
 	require(dormant_plan.size() == 1 && dormant_plan[0].clip == 0 && xl_pog_count(dormant.get()) == int(aliases.size()) &&
