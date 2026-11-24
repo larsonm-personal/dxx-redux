@@ -29,7 +29,10 @@ repeat the same aim and missile after a load, and note whether control
 returns. Include a screenshot or first words of the green-on-green briefing
 text. One candidate in the original Mineral Valley script is the page that
 begins **“And there it is!”** over the mainframe picture, but please identify
-the page you actually see. Record kit **32322**, phone, Android version,
+the page you actually see. The original picture has green monitor text and a
+green foreground character under that page's bright green text request;
+[the artwork inspection](evidence/pumo-briefing-green-candidate-20261123.json)
+is a candidate, not a confirmed match. Record kit **32322**, phone, Android version,
 difficulty, input method, episode, checkpoint, last successful action and
 save/load result with each report. Keep the original issue save intact.
 

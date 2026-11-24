@@ -32,6 +32,12 @@ candidate: the mainframe page beginning “And there it is!” requests bright
 green foreground (`96 255 96`) over a picture with green displays. The text
 box may overlap that imagery. The reporter has not identified this as the page
 they saw, so the ordinary-kit direction asks for its words or a screenshot.
+An inspection of the original `mv14b.pcx` artwork confirms green text on three
+monitors and a large green foreground character under the script's bright
+green foreground request. Its nearest palette entry to the requested text
+color is also present on 3,932 picture pixels. This strengthens the contrast
+hypothesis but does not establish which page the reporter saw.
+[Original script and artwork hashes](../XL_compat/evidence/pumo-briefing-green-candidate-20261123.json).
 
 ## Loading speed
 
@@ -44,6 +50,17 @@ of 1,643 and 1,771 ms. Crauphel quickload scoped-image preparation fell from
 and the original Pumo texture audit checked hashes and decoded pixels. These
 are native log phase times, not human stopwatch times. See
 [the scoped pipeline report](xl_pumo_s21_scoped_pipeline_20261123.md).
+
+The remaining wait has distinct phases. On the protected build 32322 S21 run,
+Crauphel's prebriefing resource check took **7.50 seconds**. After the last
+briefing page, native level loading took **5.88 seconds**, including **3.23
+seconds** caching textures and **1.33 seconds** starting level music. The hub's
+corresponding load took **8.32 seconds**, with **4.13 seconds** of textures and
+**2.54 seconds** of music. The first archive import also extracts a roughly
+1.56 GiB cache; that is separate from each level transition. The progress bar
+now spans these visible waits. These phase times come from the protected S21
+run, not a human stopwatch or the reporter's SM-S931U.
+[Build 32322 profiling receipt](../XL_compat/evidence/pumo-s21-loading-tail-32322-20261123.json).
 
 The latest ordinary test kit is version **32322**, package `com.dxxredux.app`,
 APK SHA-256 `057e01208c8fd26a87d8fcd835410c4646e5655b95b94d4626406e6e51e3b91c`.
@@ -165,8 +182,14 @@ only binds objects after translated extended-level loads; classic levels pass
 through `prepare_classic_member` and the stock loader. The pinned XL reader
 uses those objects, so clearing the classic admission error alone would lose
 their behavior. The separately passing multiplayer archive is a different
-distribution. The next implementation needs a source-owned classic effect
-load and an original-cluster replay.
+distribution. Inspection of the exact original `standoff.rl2` found both
+objects at indices 51 and 52 with the implemented lightning shape; a direct
+runtime requirement walk then exposed an additional **7/31 serialization
+qualification** blocker. The native stock reader does not consume render-12
+payload bytes, while the existing translated probe rejects version 7. The next
+implementation needs an audited source-owned classic effect load, native
+object identity and save/load checks, and an original-cluster replay. No
+start was credited. [Exact original audit](../XL_compat/evidence/gameplay-levelpack-chaos-classic-effect-audit-20261123.json).
 
 The split-Anthology OOF blocker is also more specific than its first error.
 Six of its seven original model files overstate the TXTR chunk length by
@@ -258,9 +281,9 @@ and registered in [stack 720](https://github.com/larsonm-personal/dxx-redux/stac
 | [#737](https://github.com/larsonm-personal/dxx-redux/pull/737) | `a1209084b` | Bay32 source-identity proof    | 36 success, 7 skipped  |
 | [#738](https://github.com/larsonm-personal/dxx-redux/pull/738) | `0de66ae13` | Loading indicator contrast     | 36 success, 7 skipped  |
 | [#739](https://github.com/larsonm-personal/dxx-redux/pull/739) | `4eeb29e24` | Execution and next tranche    | 37 success, 6 skipped  |
-| [#740](https://github.com/larsonm-personal/dxx-redux/pull/740) | `c0c6100e9` | Robotless Subspace D3 + guard  | CI in progress         |
-| [#741](https://github.com/larsonm-personal/dxx-redux/pull/741) | `ffc59e1a0` | S21 execution and next tranche | CI in progress         |
-| [#742](https://github.com/larsonm-personal/dxx-redux/pull/742) | pending     | Loading bar through music      | CI pending             |
+| [#740](https://github.com/larsonm-personal/dxx-redux/pull/740) | `c0c6100e9` | Robotless Subspace D3 + guard  | 23 success, 15 skipped |
+| [#741](https://github.com/larsonm-personal/dxx-redux/pull/741) | `ffc59e1a0` | S21 execution and next tranche | 34 success, 9 skipped  |
+| [#742](https://github.com/larsonm-personal/dxx-redux/pull/742) | `f050a4ae2` | Loading bar through music      | CI in progress         |
 
 Fork workflow admission can skip private XL qualification below the native
 stack tip. The private smoke on #729 actually ran sampled and expanded
@@ -277,8 +300,18 @@ The first #740 private Linux run and one retry failed `xl_water_arena` at
 After the guard fix, the #740 exact-head private workflow reported success
 with native jobs intentionally skipped because #740 was below the native
 stack tip; its [admission log](https://github.com/larsonm-personal/dxx-redux/actions/runs/45218960729/job/137847672746)
-says so. The #741 private Linux owner is running at the fixed inherited head.
-The #740-#742 final checks still require an update here.
+says so. The #741 exact-head private Linux owner completed with 113 required
+XL tests, including `xl_water_arena`; the fixed sample was 8/8 and the
+expanded set was 64/64 at 120 frames. #741 public checks completed, including
+selected Android and JVM tests. The #742 exact-head private Linux owner also
+passed 113 required XL tests (including `xl_water_arena`), fixed 8/8 and
+expanded 64/64 original load/tick samples. Its first selected Android job
+completed the 151/151-step shareware scenario, but the emulator disappeared
+during the final recording listing (`adb: device 'emulator-5554' not found`).
+The retained [attempt 1 artifact](https://github.com/larsonm-personal/dxx-redux/actions/runs/45222810844/attempts/1)
+identifies this as a runner/device loss after gameplay; failed jobs were
+retried as attempt 2 on the same head. The #742 final public checks still
+require an update here.
 The #734 Windows build was cancelled
 after its test steps passed in [run 45180936407, attempt 1](https://github.com/larsonm-personal/dxx-redux/actions/runs/45180936407/attempts/1);
 the targeted [attempt 2](https://github.com/larsonm-personal/dxx-redux/actions/runs/45180936407/attempts/2)

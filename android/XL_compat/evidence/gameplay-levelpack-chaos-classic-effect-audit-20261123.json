@@ -1,0 +1,29 @@
+{
+  "schema": 1,
+  "date": "2026-11-23",
+  "status": "investigation_only_no_gameplay_gain",
+  "case": "levelpack.7z/missions/darkflamewolf/ctheo-xl.mn2:4",
+  "original_distribution": {
+    "archive_sha256": "b4b519dc5755b795fd49cc3786a0421b96cd099dcc8f002925ddfd7c038b2719",
+    "descriptor_sha256": "1204d3369c2d63a9c3f55cb5b69d3f159ccab7f9dc1e66afe0b5de1aa1666244",
+    "hog_sha256": "a1a2d4cef9c8df1d948d0b46d7d069b91f596cd9440a4efc168f93e5a3b65ee6",
+    "advertised_level_order": ["catalyst.rl2", "initiati.rl2", "unbridle.rl2", "standoff.rl2", "brekthru.rl2", "clminate.rl2"],
+    "selected_level": "standoff.rl2",
+    "selected_level_sha256": "77c4d3929815a98e5534fc0a8c2b70a218730d6656442105b5231b93ffc6d6cb"
+  },
+  "inspection": {
+    "level_version": 7,
+    "game_version": 31,
+    "object_count": 53,
+    "authored_lightning_indices": [51, 52],
+    "authored_lightning_segments": [339, 302],
+    "shape": "Both are stationary, uncontrolled, single-player type-20 ID-1 render-12 objects with 26 decoded payload fields.",
+    "runtime_blocker_after_shape_validation": "serialization: requires an audited XL level/game-data version pair",
+    "current_route_blocker": "effect_object_types: 2 objects of type 20; effect_lightning: 2 decoded payloads"
+  },
+  "implementation_boundary": "Classic 7/31 currently takes prepare_classic_member and the stock reader. The stock read_object render switch does not consume render-12 payload bytes; xl_preserve_effect_position also activates only while a translated load owns object capacity or an XL source is active. The translated extended path can retain source-owned effects and bind native lightning identity, but its probe starts with inspect_level, which rejects classic level version 7, and runtime_blockers does not qualify 7/31 serialization. Admission alone would corrupt object decoding, move an effect or drop authored behavior.",
+  "comparison": "The passing levels_multiplayer/chaos-theory-xl.7z ordinal 4 is a separate distribution and must not be credited for this original levelpack member.",
+  "unchanged_result": "load_failed, 0/120 frames; this case remains one of the 94 blocked exact prior misses",
+  "next_proof": "Audit a classic 7/31 source-owned translation with exact original bytes, native object indices and segments, lightning activation and save/load. Keep other classic levels on the stock path; replay all six ordinals of this original descriptor and capture any newly exposed blocker.",
+  "private_material": "Original level bytes, source archive, temporary inspection executable and route logs are retained only on the build machine."
+}

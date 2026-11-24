@@ -26,6 +26,14 @@ Android version,
 difficulty, input method, episode, checkpoint, last successful action and
 save/load result.
 
+For speed work, keep the two waits separate. The protected build 32322 S21
+log measured Crauphel's prebriefing resource check at 7.50 seconds, split
+roughly between level preparation (3.71 seconds) and scoped images (3.78
+seconds). The postbriefing native load took 5.88 seconds, including 3.23
+seconds of texture caching and 1.33 seconds of synchronous music startup.
+Compare those phases on the ordinary phone report before selecting another
+optimization; retain the asset-generation identity and source-order checks.
+
 ## Independent engineering while waiting
 
 The frozen integrated Windows baseline is 1,534/1,654 starts at 120 frames.
@@ -50,9 +58,14 @@ two type-20 effect objects and two lightning payloads in a classic 7/31
 level. The original multiplayer Chaos Theory archive passing level 4 is a
 separate distribution. The existing lightning runtime binds translated
 extended levels; the classic stock-load path does not bind those objects.
-Prove a source-owned classic effect path, including native object identity and
-save/load, before changing admission. Then replay the exact levelpack cluster
-and record newly exposed blockers. The split-Anthology OOF cluster is a
+An [exact original audit](../XL_compat/evidence/gameplay-levelpack-chaos-classic-effect-audit-20261123.json)
+also exposed an unqualified 7/31 serialization pair. The native stock reader
+does not consume render-12 payloads, and the current translator rejects
+classic level version 7. Prove a source-owned classic effect path and its
+serialization, including native object identity and save/load, before changing
+admission. Then replay all six ordinals of the exact levelpack descriptor and
+record newly exposed blockers. Confirm an ordinary classic mission still uses
+the stock path. The split-Anthology OOF cluster is a
 separate lead: six original TXTR chunks overstate length, but bounded parser
 resynchronization exposed `GPNT`; gun-point and animation behavior remains
 unqualified. The [model audit](../XL_compat/evidence/gameplay-anthology-oof-audit-20261123.json)
@@ -111,7 +124,8 @@ original `stay_on_while_plugged_in` value after phone experiments.
 > separately and identify the green-on-green briefing page. While waiting,
 > investigate a runnable-original XL entry from the measured 94/120 remaining
 > prior misses (94/1,654 if the prior 1,534 passes still hold), beginning with
-> levelpack Chaos Theory level 4 effect objects and lightning. Bay32's source
+> levelpack Chaos Theory level 4's classic 7/31 effect serialization, object
+> identity and lightning. Bay32's source
 > identity is resolved. Preserve
 > exact archive, ordinal and inputs;
 > replay the entire affected cluster and record newly exposed blockers. Use
