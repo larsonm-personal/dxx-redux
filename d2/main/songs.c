@@ -46,6 +46,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "android_log.h"
 #include "songs_android_shared.h"
 #endif
+#if defined(__ANDROID__) && defined(DXX_XL_RUNTIME) && defined(USE_SDLMIXER)
+#include "android_ogg_prefetch.h"
+#endif
 
 int Songs_initialized = 0;
 #if defined(__ANDROID__) || defined(ANDROID)
@@ -478,6 +481,31 @@ void redbook_first_song_func(void)
 	start_time();
 }
 
+static int builtin_level_song_number(int levelnum)
+{
+	if (Num_bim_songs <= SONG_FIRST_LEVEL_SONG) return -1;
+	const int ordinal = levelnum > 0 ? levelnum - 1 : -levelnum;
+	int songnum = SONG_FIRST_LEVEL_SONG + (ordinal % (Num_bim_songs - SONG_FIRST_LEVEL_SONG));
+#ifdef DXX_XL_RUNTIME
+	songnum = xl_secret_music_slot(levelnum, songnum);
+#endif
+	return songnum;
+}
+
+#if defined(__ANDROID__) && defined(DXX_XL_RUNTIME) && defined(USE_SDLMIXER)
+void songs_prepare_level_music(int levelnum)
+{
+	if (GameCfg.MusicType != MUSIC_TYPE_BUILTIN || !android_music_get_prefer_mission_soundtrack()) return;
+	songs_init();
+	if (GameCfg.MusicType != MUSIC_TYPE_BUILTIN) return;
+	const int songnum = Songs_initialized ? builtin_level_song_number(levelnum) : -1;
+	char resource[PATH_MAX];
+	if (songnum >= SONG_FIRST_LEVEL_SONG && songnum < Num_bim_songs &&
+	    xl_mission_music_path(BIMSongs[songnum].filename, resource, sizeof(resource)))
+		android_ogg_prefetch_start(resource);
+}
+#endif
+
 // play track given by levelnum (depending on the music type and it's playing behaviour) or increment/decrement current track number via offset value
 int songs_play_level_song( int levelnum, int offset )
 {
@@ -499,12 +527,9 @@ int songs_play_level_song( int levelnum, int offset )
 				return Song_playing;
 
 			Song_playing = -1;
-			if ((Num_bim_songs - SONG_FIRST_LEVEL_SONG) > 0)
+			songnum = builtin_level_song_number(levelnum);
+			if (songnum >= SONG_FIRST_LEVEL_SONG)
 			{
-				songnum = SONG_FIRST_LEVEL_SONG + (songnum % (Num_bim_songs - SONG_FIRST_LEVEL_SONG));
-#ifdef DXX_XL_RUNTIME
-				songnum = xl_secret_music_slot(levelnum, songnum);
-#endif
 				if (songs_play_file(BIMSongs[songnum].filename, 1, NULL))
 				{
 					Song_playing = songnum;

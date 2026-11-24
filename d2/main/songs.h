@@ -32,6 +32,9 @@ typedef struct bim_song_info {
 int songs_play_file(char *filename, int repeat, void (*hook_finished_track)(void));
 int songs_play_song( int songnum, int repeat );
 int songs_play_level_song( int levelnum, int offset );
+#if defined(__ANDROID__) && defined(DXX_XL_RUNTIME) && defined(USE_SDLMIXER)
+void songs_prepare_level_music(int levelnum);
+#endif
 
 //stop any songs - midi, redbook or jukebox - that are currently playing
 void songs_stop_all(void);

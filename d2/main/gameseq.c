@@ -141,6 +141,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "coop_warp.h"
 #include "android_log.h"
 #include "android_profile.h"
+#if defined(DXX_XL_RUNTIME) && defined(USE_SDLMIXER)
+#include "android_ogg_prefetch.h"
+#endif
 #include "android_mod_assets.h"
 #include "mod_save_compat.h"
 #include "state_android_shared.h"
@@ -1145,6 +1148,9 @@ void LoadLevel(int level_num,int page_in_textures)
 #endif
 
 	if ( page_in_textures && !skip_level_presentation ) {
+#if defined(__ANDROID__) && defined(DXX_XL_RUNTIME) && defined(USE_SDLMIXER)
+		if (!(Game_mode & GM_MULTI) && !d1_assets) songs_prepare_level_music(level_num);
+#endif
 #ifdef __ANDROID__
 		if (owns_loading_progress) android_loading_progress_update("Caching level textures", 0, 0);
 #endif
@@ -1191,6 +1197,9 @@ void LoadLevel(int level_num,int page_in_textures)
 #endif
 
 	songs_play_level_song( Current_level_num, 0 );
+#if defined(__ANDROID__) && defined(DXX_XL_RUNTIME) && defined(USE_SDLMIXER)
+	android_ogg_prefetch_clear();
+#endif
 #ifdef __ANDROID__
 	load_profile.music_us = android_profile_take_elapsed_us(&load_profile_phase_us);
 #endif
