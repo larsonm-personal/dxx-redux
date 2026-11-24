@@ -1,0 +1,34 @@
+{
+  "schema": 1,
+  "date": "2026-11-23",
+  "scope": "S21 SM-G996U, Android 15, protected diagnostic package, Rookie Mineral Valley at 640 x 480, fixed-route inputs",
+  "archive_sha256": "82c8cc4cfc740c8169f9d21a961c9ac5d2518342b3e27ac3ac438c91ca8f2ddf",
+  "baseline": {
+    "version": 32322,
+    "apk_sha256": "23db2e05704bf00df85e1ecd9787406c2b66223c1bf8a243d360084376d89730",
+    "run": "ec956acca5b040faa099b633e566854d",
+    "log_sha256": "b54620582748d279573979c2e12143d0b284700cef66a555c7614892dba7bc5a",
+    "steps_passed": 35,
+    "profile_restored": true
+  },
+  "candidate": {
+    "version": 32323,
+    "apk_sha256": "3ecfb1d4ef691e6ac31b99af16bc84ff4bc1a2fbcf727528a077e504b5f63d76",
+    "run": "9e90a8ee56bf4ef2af83391148d5ed0d",
+    "log_sha256": "10a7c067da8956945c5ef0dc50b5e597fea8a84d1067524015cb1807268aff5e",
+    "steps_passed": 35,
+    "profile_restored": true
+  },
+  "phase_micros": [
+    { "phase": "Hub scoped storage", "baseline": 1254697, "candidate": 865320 },
+    { "phase": "Hub prebriefing resources", "baseline": 7523690, "candidate": 6942900 },
+    { "phase": "Hub postbriefing load", "baseline": 7829279, "candidate": 7798178 },
+    { "phase": "Crauphel scoped storage", "baseline": 599155, "candidate": 378687 },
+    { "phase": "Crauphel prebriefing resources", "baseline": 7773346, "candidate": 7545314 },
+    { "phase": "Crauphel postbriefing load", "baseline": 5836342, "candidate": 5883608 },
+    { "phase": "Crauphel quickload scoped storage", "baseline": 588396, "candidate": 378771 }
+  ],
+  "method": "The launcher imported the original archive and the same raw XL addons for both builds. Both routes entered Crauphel, fired Concussion at room 129, loaded the quicksave and repeated the shot. Resource and native-load phases come from the phone log. Each build has one fresh-route observation and one Crauphel quickload observation.",
+  "windows_controls": "The original Pumo mod-data test passed two stock-to-mission cycles. The original Crauphel texture dependency audit inspected 71 side textures and 745 owned images.",
+  "cleanup": "Both APK hashes were checked on the S21. The runner restored the isolated package profile after each run. The original stay-awake value 0 was read back after the pair. Private logs, saves and game assets remain local."
+}

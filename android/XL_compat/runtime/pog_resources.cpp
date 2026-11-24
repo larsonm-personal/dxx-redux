@@ -86,42 +86,61 @@ extern "C" unsigned char *xl_pog_take_storage(xl_pog_resources *resources, size_
 
 namespace
 {
+void append_packed_image(xl_pog_resources &result, const xl_compat::PogBitmap &image, unsigned index, bool scoped_texture)
+{
+	xl_pog_bitmap entry{};
+	entry.index = index;
+	entry.width = image.width;
+	entry.height = image.height;
+	entry.flags = image.flags & (xl_compat::pog_transparent | xl_compat::pog_super | xl_compat::pog_no_lighting |
+	                             xl_compat::pog_rle | xl_compat::pog_rle_big | xl_compat::pog_see_through);
+	entry.average_index = image.average_index;
+	for (unsigned c = 0; c < 3; ++c) entry.average_rgb[c] = image.average_rgb[c];
+	entry.rgba = image.truecolor;
+	entry.palette_flags = image.palette_flags;
+	entry.offset = unsigned(result.pixels.size());
+	entry.size = unsigned(image.pixels.size());
+	entry.frames = image.frames;
+	entry.frame_height = image.frame_height();
+	entry.rgb_opaque = image.rgb_opaque;
+	entry.physics_height = scoped_texture ? image.height : image.frame_height();
+	entry.scoped_texture = scoped_texture;
+	for (unsigned word = 0; word < 4; ++word) {
+		entry.transparent_frames[word] = image.transparent_frames[word];
+		entry.super_frames[word] = image.super_frames[word];
+	}
+	result.entries.push_back(entry);
+	result.pixels.insert(result.pixels.end(), image.pixels.begin(), image.pixels.end());
+}
+
+size_t add_pixel_size(size_t total, size_t bytes)
+{
+	if (bytes > 2 * xl_compat::pog_file_limit - total)
+		throw std::runtime_error("Decoded bitmap arena exceeds its resource bound");
+	return total + bytes;
+}
+
+void validate_rgba_target(const xl_compat::PogBitmap &image, unsigned index, unsigned max_bitmaps)
+{
+	if (!image.truecolor || !index || index >= max_bitmaps ||
+	    (image.flags & (xl_compat::pog_rle | xl_compat::pog_rle_big)))
+		throw std::runtime_error("Decoded RGBA bitmap has an invalid target or encoding");
+	xl_compat::validate_pog_rgba(image);
+	if (!image.rgb_opaque) return;
+	if (image.flags & (xl_compat::pog_transparent | xl_compat::pog_super | xl_compat::pog_see_through))
+		throw std::runtime_error("Opaque RGB bitmap declares transparency");
+	for (std::size_t pixel = 3; pixel < image.pixels.size(); pixel += 4)
+		if (image.pixels[pixel] != 255) throw std::runtime_error("Opaque RGB bitmap has nonopaque normalized pixels");
+}
+
 xl_pog_resources *pack_images(const std::vector<xl_compat::PogBitmap> &images, bool scoped_texture = false)
 {
 	auto result = std::make_unique<xl_pog_resources>();
 	size_t total = 0;
-	for (const auto &image : images) {
-		if (image.pixels.size() > 2 * xl_compat::pog_file_limit - total)
-			throw std::runtime_error("Decoded bitmap arena exceeds its resource bound");
-		total += image.pixels.size();
-	}
+	for (const auto &image : images) total = add_pixel_size(total, image.pixels.size());
 	result->pixels.reserve(total);
 	result->entries.reserve(images.size());
-	for (const auto &image : images) {
-		xl_pog_bitmap entry{};
-		entry.index = image.index;
-		entry.width = image.width;
-		entry.height = image.height;
-		entry.flags = image.flags & (xl_compat::pog_transparent | xl_compat::pog_super | xl_compat::pog_no_lighting |
-		                             xl_compat::pog_rle | xl_compat::pog_rle_big | xl_compat::pog_see_through);
-		entry.average_index = image.average_index;
-		for (unsigned c = 0; c < 3; ++c) entry.average_rgb[c] = image.average_rgb[c];
-		entry.rgba = image.truecolor;
-		entry.palette_flags = image.palette_flags;
-		entry.offset = unsigned(result->pixels.size());
-		entry.size = unsigned(image.pixels.size());
-		entry.frames = image.frames;
-		entry.frame_height = image.frame_height();
-		entry.rgb_opaque = image.rgb_opaque;
-		entry.physics_height = scoped_texture ? image.height : image.frame_height();
-		entry.scoped_texture = scoped_texture;
-		for (unsigned word = 0; word < 4; ++word) {
-			entry.transparent_frames[word] = image.transparent_frames[word];
-			entry.super_frames[word] = image.super_frames[word];
-		}
-		result->entries.push_back(entry);
-		result->pixels.insert(result->pixels.end(), image.pixels.begin(), image.pixels.end());
-	}
+	for (const auto &image : images) append_packed_image(*result, image, image.index, scoped_texture);
 	return result.release();
 }
 } // namespace
@@ -130,18 +149,7 @@ xl_pog_resources *xl_pog_prepare_rgba(const std::vector<xl_compat::PogBitmap> &i
 {
 	if (max_bitmaps < 2 || images.size() >= max_bitmaps)
 		throw std::runtime_error("Decoded RGBA bitmap count exceeds its target bank");
-	for (const auto &image : images) {
-		if (!image.truecolor || !image.index || image.index >= max_bitmaps ||
-		    (image.flags & (xl_compat::pog_rle | xl_compat::pog_rle_big)))
-			throw std::runtime_error("Decoded RGBA bitmap has an invalid target or encoding");
-		xl_compat::validate_pog_rgba(image);
-		if (image.rgb_opaque) {
-			if (image.flags & (xl_compat::pog_transparent | xl_compat::pog_super | xl_compat::pog_see_through))
-				throw std::runtime_error("Opaque RGB bitmap declares transparency");
-			for (std::size_t pixel = 3; pixel < image.pixels.size(); pixel += 4)
-				if (image.pixels[pixel] != 255) throw std::runtime_error("Opaque RGB bitmap has nonopaque normalized pixels");
-		}
-	}
+	for (const auto &image : images) validate_rgba_target(image, image.index, max_bitmaps);
 	return pack_images(images, scoped_texture);
 }
 
@@ -153,16 +161,26 @@ xl_pog_resources *xl_pog_prepare_scoped(const xl_compat::ScopedTextureResources 
 	if (pog)
 		for (const auto &entry : pog->entries) protected_indices.insert(int(entry.index));
 	if (protected_indices != textures.pog_indices) throw std::runtime_error("Scoped texture plan has stale POG ownership");
-	std::vector<xl_compat::PogBitmap> images;
+	std::vector<const xl_compat::ScopedTextureBinding *> images;
 	std::map<std::size_t, std::size_t> image_rows;
+	const unsigned max_bitmaps = tables.resource_banks->bitmap_count();
+	size_t total = pog ? pog->pixels.size() : 0;
 	for (const auto &binding : playback.bindings) {
 		if (protected_indices.count(binding.bitmap)) throw std::runtime_error("Scoped texture conflicts with POG ownership");
 		if (image_rows.emplace(binding.image, images.size()).second) {
-			images.push_back(textures.images.at(binding.image).bitmap);
-			images.back().index = binding.bitmap;
+			const auto &image = textures.images.at(binding.image).bitmap;
+			validate_rgba_target(image, binding.bitmap, max_bitmaps);
+			total = add_pixel_size(total, image.pixels.size());
+			images.push_back(&binding);
 		}
 	}
-	std::unique_ptr<xl_pog_resources> result(xl_pog_prepare_rgba(images, tables.resource_banks->bitmap_count(), true));
+	if (max_bitmaps < 2 || images.size() >= max_bitmaps)
+		throw std::runtime_error("Decoded RGBA bitmap count exceeds its target bank");
+	auto result = std::make_unique<xl_pog_resources>();
+	result->pixels.reserve(total);
+	result->entries.reserve(playback.bindings.size() + (pog ? pog->entries.size() : 0));
+	for (const auto *binding : images)
+		append_packed_image(*result, textures.images.at(binding->image).bitmap, binding->bitmap, true);
 	// Native aliases have independent display views but share one retained image
 	const auto unique_entries = result->entries;
 	result->entries.clear();
@@ -177,8 +195,6 @@ xl_pog_resources *xl_pog_prepare_scoped(const xl_compat::ScopedTextureResources 
 		result->effects = pog->effects;
 		result->effect_bitmaps = pog->effect_bitmaps;
 		result->doors = pog->doors;
-		if (pog->pixels.size() > 2 * xl_compat::pog_file_limit - result->pixels.size())
-			throw std::runtime_error("Combined scoped texture arena exceeds its resource bound");
 		const auto offset = unsigned(result->pixels.size());
 		for (auto entry : pog->entries) {
 			entry.offset += offset;
