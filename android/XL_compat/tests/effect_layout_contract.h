@@ -56,7 +56,7 @@ void original_fire_translation(const char *path)
 	std::cout << "Original Pumo fire translation: 12 disabled authored fire objects validated, source retained, normal strict-fire admission passed\n";
 }
 
-static void classic_lightning_translation()
+static void classic_effect_translation(bool smoke)
 {
 	auto bytes = fixture(7);
 	rejects([&] { xl_compat::prepare_source_runtime_probe(bytes); });
@@ -65,22 +65,27 @@ static void classic_lightning_translation()
 	patch(bytes, classic.game_offset + 35, static_cast<unsigned>(start));
 	patch(bytes, classic.game_offset + 39, 2);
 	patch(bytes, classic.game_offset + 43, 264);
-	Bytes lightning(79);
-	lightning[0] = 20;
-	lightning[1] = 1;
-	lightning[4] = 12;
-	for (int i = 0; i < 9; ++i) patch(lightning, 20 + i * 4, i % 4 == 0 ? 65536 : 0);
-	for (int value : { 300, 50, 18, 5, 1 }) put(lightning, value, 4);
-	for (int value : { 3, 0, 0, 8, 0, 2 }) put(lightning, value, 2);
-	for (int value : { 0, 0, 0, 0, 1, 0, 1, 0, 0, 52, 149, 128 }) put(lightning, value, 1);
-	bytes.insert(bytes.end(), lightning.begin(), lightning.end());
+	Bytes effect(79);
+	effect[0] = 20;
+	effect[1] = smoke ? 0 : 1;
+	effect[4] = smoke ? 11 : 12;
+	for (int i = 0; i < 9; ++i) patch(effect, 20 + i * 4, i % 4 == 0 ? 65536 : 0);
+	if (smoke) {
+		for (int value : { 3, 4, 5, 6, 7, 8 }) put(effect, value, 4);
+		for (int value : { 11, 22, 33, 44, 0 }) put(effect, value, 1);
+	} else {
+		for (int value : { 300, 50, 18, 5, 1 }) put(effect, value, 4);
+		for (int value : { 3, 0, 0, 8, 0, 2 }) put(effect, value, 2);
+		for (int value : { 0, 0, 0, 0, 1, 0, 1, 0, 0, 52, 149, 128 }) put(effect, value, 1);
+	}
+	bytes.insert(bytes.end(), effect.begin(), effect.end());
 	Bytes player(79);
 	player[0] = 4;
 	bytes.insert(bytes.end(), player.begin(), player.end());
 	const auto probe = xl_compat::prepare_source_runtime_probe(bytes);
 	check(probe.source.level_version == 7 && probe.source.game_version == 31 && probe.source.objects.size() == 2 &&
-	          probe.source.objects[0].render_data.size() == 26 && probe.source.objects[1].type == 4,
-	      "Classic lightning source payload or following object was lost");
+	          probe.source.objects[0].render_data.size() == (smoke ? 13u : 26u) && probe.source.objects[1].type == 4,
+	      "Classic effect source payload or following object was lost");
 	const auto &stock = probe.stock_level;
 	const auto read32 = [&](std::size_t at) {
 		unsigned value = 0;
@@ -90,19 +95,20 @@ static void classic_lightning_translation()
 	const auto game = read32(12);
 	const auto objects = read32(game + 35);
 	check(read32(4) == 8 && read32(8) == static_cast<unsigned>(classic.mine_offset) + 7 && stock.at(game + 2) == 32,
-	      "Classic lightning translation did not align the native header");
-	check(read32(game + 39) == 2 && stock.at(objects) == 20 && stock.at(objects + 1) == 1 && stock.at(objects + 4) == 0 &&
+	      "Classic effect translation did not align the native header");
+	check(read32(game + 39) == 2 && stock.at(objects) == 20 && stock.at(objects + 1) == effect[1] && stock.at(objects + 4) == 0 &&
 	          std::equal(player.begin(), player.end(), stock.begin() + objects + 79),
-	      "Classic lightning translation shifted or rewrote the following native object");
+	      "Classic effect translation shifted or rewrote the following native object");
 	rejects([&] { xl_compat::prepare_gameplay_probe(bytes); });
-	bytes[start + 1] = 2;
+	bytes[start + (smoke ? 3 : 1)] = 2;
 	rejects([&] { xl_compat::prepare_source_runtime_probe(bytes); });
 }
 
 void effect_layout_contract(const char *directory = nullptr)
 {
 	if (directory) std::filesystem::create_directories(directory);
-	classic_lightning_translation();
+	classic_effect_translation(false);
+	classic_effect_translation(true);
 	// Header widths and legacy function semantics are independent in these releases.
 	for (int version : { 18, 19 }) {
 		const auto bytes = fixture(version);

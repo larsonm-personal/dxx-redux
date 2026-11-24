@@ -59,7 +59,6 @@ extern "C" {
 #include "../probe.h"
 #include "../lighting.h"
 #include "../admission.h"
-#include "../lightning_admission.h"
 #include "../texture_change.h"
 #include "texture_brightness.h"
 #include <cstring>
@@ -568,13 +567,13 @@ void validate_requirements(const xl_compat::Inventory &level, bool multiplayer, 
                            mission_preparation *incoming = nullptr, xl_compat::TargetSources *target = nullptr, bool owned_scoped_textures = false, bool mission_robot_replacements = false)
 {
 	const bool classic = level.level_version <= 8;
-	const bool classic_lightning = xl_compat::classic_lightning_layout(level);
+	const bool classic_effect = xl_compat::classic_effect_layout(level);
 	// Selected-mission admission also checks the currently installed native tables
 	const int texture_count = incoming ? graph.texture_count : NumTextures;
 
 	if (classic) {
 		if (!level.unknown.empty()) throw std::runtime_error(xl_compat::blocker_message(level.unknown));
-		if (!classic_lightning && !level.unsupported.empty()) throw std::runtime_error(xl_compat::blocker_message(level.unsupported));
+		if (!classic_effect && !level.unsupported.empty()) throw std::runtime_error(xl_compat::blocker_message(level.unsupported));
 		if (level.objects.size() > DXX_CLASSIC_MAX_OBJECTS || level.walls.size() > DXX_CLASSIC_MAX_WALLS ||
 		    level.triggers.size() > DXX_CLASSIC_MAX_TRIGGERS || level.segments.size() > MAX_SEGMENTS || level.vertices.size() > MAX_VERTICES)
 			throw std::runtime_error("Classic mine exceeds native level capacity");
@@ -582,7 +581,7 @@ void validate_requirements(const xl_compat::Inventory &level, bool multiplayer, 
 			for (const auto &side : segment.sides)
 				if (side.texture >= texture_count) throw std::runtime_error("Classic mine texture is outside the target bank");
 	}
-	if (!classic || classic_lightning) {
+	if (!classic || classic_effect) {
 		auto blockers = xl_compat::runtime_blockers(level, water_pilot);
 		if (!blockers.empty()) throw std::runtime_error(xl_compat::blocker_message(blockers));
 	}
@@ -676,7 +675,7 @@ std::unique_ptr<XlPreparedResources> prepare_classic_member(const char *filename
 	if (bytes.empty()) return {};
 	const auto level = xl_compat::inspect_mission_level(bytes);
 	if (level.level_version > 8) throw std::runtime_error("Selected level and mission archive disagree on level format");
-	if (xl_compat::classic_lightning_layout(level)) {
+	if (xl_compat::classic_effect_layout(level)) {
 		runtime_bytes = std::move(bytes);
 		return {};
 	}
@@ -1433,7 +1432,7 @@ extern "C" int xl_secret_restore_clock(int ordinal, int64_t saved_epoch, int64_t
 			if (open_extended_level(filename)) *clock = saved_epoch;
 			else {
 				const auto bytes = read_classic_member(filename, ordinal);
-				if (!bytes.empty() && xl_compat::classic_lightning_layout(xl_compat::inspect_mission_level(bytes))) *clock = saved_epoch;
+				if (!bytes.empty() && xl_compat::classic_effect_layout(xl_compat::inspect_mission_level(bytes))) *clock = saved_epoch;
 			}
 		}
 		return 1;
