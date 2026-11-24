@@ -12,8 +12,9 @@ float eyeDepth(float depth) {
     return 10000.0 / (5001.0 + (2.0 * depth - 1.0) * -4999.0);
 }
 void main() {
-    float delta = clamp(eyeDepth(gl_FragCoord.z) - eyeDepth(texture2D(depthTex, gl_FragCoord.xy * windowScale).r), 0.0, 5.0);
-    float fade = (5.0 - delta) / 5.0;
+    float depthRange = blendMode == 3 ? 10.0 : 5.0;
+    float delta = clamp(eyeDepth(gl_FragCoord.z) - eyeDepth(texture2D(depthTex, gl_FragCoord.xy * windowScale).r), 0.0, depthRange);
+    float fade = (depthRange - delta) / depthRange;
     vec4 color = texture2D(particleTex, particleUV);
     if (blendMode > 0)
         gl_FragColor = vec4(color.rgb * particleColor.rgb * fade, 1.0);

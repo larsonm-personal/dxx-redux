@@ -2308,6 +2308,7 @@ extern "C" char *game_introspect_get_state(void)
 		{ "completed", xl_preview_pilot_completed() != 0 },
 		{ "shaded_vertices", xl_preview_vertex_calls() },
 		{ "corona_draws", xl_preview_corona_draws() },
+		{ "corona_textured_draws", xl_preview_corona_textured_draws() },
 		{ "cloak_draws", xl_preview_cloak_draws() },
 		{ "cloak_draw_wall", xl_preview_cloak_draw_wall() },
 		{ "cloak_draw_value", xl_preview_cloak_draw_value() },

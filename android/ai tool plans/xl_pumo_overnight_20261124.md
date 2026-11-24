@@ -1,5 +1,8 @@
 # Pumo and D2X-XL overnight validation, November 24
 
+The [dated execution report](xl_pumo_gameplay_execution_20261124.md) tracks
+results that followed this kickoff.
+
 The work window ends at 10 a.m. Pacific. Start from the exact verified
 evening stack tip at `67d743590`. Preserve original assets, profiles, saves,
 screenshots and full logs on the build machine. Record kit versions and keep

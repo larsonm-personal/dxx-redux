@@ -1,0 +1,715 @@
+{
+    "schema": 1,
+    "date": "2026-11-24",
+    "reference_source": "2576a98b5de310e3ac7c9777df2677d1627b8bae",
+    "mission": "Pumo Mines v1.1 Mineral Valley",
+    "ordinal": 2,
+    "member": "mvlev1.rl2",
+    "room": 105,
+    "fixed_position": [
+        -485850,
+        -5439488,
+        -16540829
+    ],
+    "fixed_heading_pitch_bank": [
+        0,
+        0,
+        0
+    ],
+    "world_viewport": [
+        640,
+        480
+    ],
+    "reference_filter": {
+        "min": 9987,
+        "mag": 9729
+    },
+    "android_accepted_filter": "Trilinear",
+    "normalized_gamma": {
+        "reference": 3,
+        "android": 0,
+        "reference_multiplier": 1.0
+    },
+    "reference_modes": {
+        "default": {
+            "coronas_enabled": false,
+            "corona_style": 1,
+            "ambient_color": true,
+            "headlight": false,
+            "brightness_multiplier": 1.0,
+            "sign_faces_with_coronas": [],
+            "trace_sha256": "2314260081e6d66a4de2751936b74418870096473239895a0dee607528fddbac"
+        },
+        "disabled": {
+            "coronas_enabled": false,
+            "corona_style": 1,
+            "ambient_color": true,
+            "headlight": false,
+            "brightness_multiplier": 1.0,
+            "sign_faces_with_coronas": [],
+            "trace_sha256": "3773eca78e26068cecb068e58eb3bc50f4b2e5a8bf028c1254338638178874f3"
+        },
+        "enabled": {
+            "coronas_enabled": true,
+            "corona_style": 1,
+            "ambient_color": true,
+            "headlight": false,
+            "brightness_multiplier": 1.0,
+            "sign_faces_with_coronas": [
+                [
+                    111,
+                    4
+                ],
+                [
+                    112,
+                    4
+                ]
+            ],
+            "trace_sha256": "b2d7008468f1666550197aff8aefc4d94b15644056ec8340c047448560aa2c0f"
+        }
+    },
+    "emulator_profile": "Android 14, isolated read-only emulator, display and stay-awake restored",
+    "baseline_android_vs_default_reference": {
+        "android_version_code": 32334,
+        "apk_sha256": "f4b40392c3337dd0b3d3dc5baf4a2966cdb878ba9b9b6af75a14b86ee28a4f7a",
+        "runtime_run_id": "10b08000e49b45f4b67d0327e59ed27e",
+        "verified_steps": 158,
+        "profile_hashes_restored": true,
+        "reference_trace_sha256": "2314260081e6d66a4de2751936b74418870096473239895a0dee607528fddbac",
+        "android_trace_sha256": "a7786aff168748d4de584b596df68aa11de530f18c6708ded1043963911b2073",
+        "matched_phases": 9,
+        "comparison_crop": [
+            160,
+            166,
+            480,
+            310
+        ],
+        "median_crop_absolute_rgb": [
+            18.546614583333334,
+            16.453428819444444,
+            10.584635416666666
+        ],
+        "regions": {
+            "ceiling": {
+                "box_lt_rb": [
+                    235,
+                    95,
+                    405,
+                    151
+                ],
+                "median_phase_mean_absolute_rgb": [
+                    0.391,
+                    0.389,
+                    0.336
+                ],
+                "median_phase_android_minus_reference_rgb": [
+                    -0.01,
+                    -0.001,
+                    -0.019
+                ]
+            },
+            "left_side_wall": {
+                "box_lt_rb": [
+                    24,
+                    183,
+                    110,
+                    280
+                ],
+                "median_phase_mean_absolute_rgb": [
+                    0.504,
+                    0.451,
+                    0.37
+                ],
+                "median_phase_android_minus_reference_rgb": [
+                    -0.037,
+                    -0.024,
+                    -0.03
+                ]
+            },
+            "right_side_wall": {
+                "box_lt_rb": [
+                    530,
+                    183,
+                    615,
+                    280
+                ],
+                "median_phase_mean_absolute_rgb": [
+                    0.602,
+                    0.561,
+                    0.472
+                ],
+                "median_phase_android_minus_reference_rgb": [
+                    -0.026,
+                    -0.023,
+                    -0.03
+                ]
+            },
+            "center_above_reticle": {
+                "box_lt_rb": [
+                    275,
+                    193,
+                    365,
+                    218
+                ],
+                "median_phase_mean_absolute_rgb": [
+                    0.276,
+                    0.188,
+                    0.188
+                ],
+                "median_phase_android_minus_reference_rgb": [
+                    -0.01,
+                    -0.048,
+                    -0.04
+                ]
+            },
+            "left_sign": {
+                "box_lt_rb": [
+                    152,
+                    207,
+                    229,
+                    286
+                ],
+                "median_phase_mean_absolute_rgb": [
+                    57.478,
+                    49.677,
+                    32.529
+                ],
+                "median_phase_android_minus_reference_rgb": [
+                    57.478,
+                    49.677,
+                    32.529
+                ]
+            },
+            "right_sign": {
+                "box_lt_rb": [
+                    410,
+                    207,
+                    487,
+                    286
+                ],
+                "median_phase_mean_absolute_rgb": [
+                    57.381,
+                    49.67,
+                    32.541
+                ],
+                "median_phase_android_minus_reference_rgb": [
+                    57.381,
+                    49.67,
+                    32.541
+                ]
+            },
+            "left_sign_surround": {
+                "box_lt_rb": [
+                    131,
+                    234,
+                    148,
+                    286
+                ],
+                "median_phase_mean_absolute_rgb": [
+                    12.593,
+                    10.577,
+                    6.898
+                ],
+                "median_phase_android_minus_reference_rgb": [
+                    12.57,
+                    10.545,
+                    6.871
+                ]
+            },
+            "right_sign_surround": {
+                "box_lt_rb": [
+                    492,
+                    234,
+                    510,
+                    286
+                ],
+                "median_phase_mean_absolute_rgb": [
+                    11.986,
+                    10.068,
+                    6.569
+                ],
+                "median_phase_android_minus_reference_rgb": [
+                    11.969,
+                    10.047,
+                    6.548
+                ]
+            }
+        },
+        "phase_hashes": [
+            {
+                "phase": 0,
+                "reference_world_sha256": "1592376cc974416aedba99ab6419621a787061be10a4ccc13b589c58b115e864",
+                "android_pixels_sha256": "463a05e3d8d8f668b89cade48920a674967d5a1464fe82e3b0977fe69cc115f3"
+            },
+            {
+                "phase": 1,
+                "reference_world_sha256": "d23d2b7fea246bdc90a88e3d864d226feabf9e92d8b5efb7ceafc4a37fc1a669",
+                "android_pixels_sha256": "5af46fdc36f2b8f9b7feb9930f983383eb40b14ea797091218ab6bb0f804e0f1"
+            },
+            {
+                "phase": 2,
+                "reference_world_sha256": "c30ae46605c250c26c00fb5df159b0b27771315a7de584dacfe0b966a0b21f75",
+                "android_pixels_sha256": "e4b47a8a7f85a519b86ff70fc83aa7095ae3b951cd516601ccb1ea70cff33a2c"
+            },
+            {
+                "phase": 3,
+                "reference_world_sha256": "fb5f7b36f67739ea64ffe2dbb2e89b04eabf2761090ee419e6dd44323b0fe65f",
+                "android_pixels_sha256": "212aa24161f11d93f30ad57ec491ad6159965cfb3ebf73a9197ba6335348eec8"
+            },
+            {
+                "phase": 4,
+                "reference_world_sha256": "71923a42af3fd3d5552f1fb456cbea5bfb8fd991721899fbec350cd005cf9e61",
+                "android_pixels_sha256": "1cd6607929251a980f6240fd83c213f7909792372e88c30326b15705eb9cfbfe"
+            },
+            {
+                "phase": 5,
+                "reference_world_sha256": "6741e8959138e33c71aa4719ba9101ad4f8a1149815a22e0eebff8e36d88d739",
+                "android_pixels_sha256": "17b58a5051cb8204e21e6aa80d90df610f0199b3f315795b44503ef1dcbdc021"
+            },
+            {
+                "phase": 6,
+                "reference_world_sha256": "1696b8761fe415765c93974019e43573b43659c319d8b9919db88a2a555d099f",
+                "android_pixels_sha256": "e6f95981e570ca53e1ed96a12088025034085136e5b2ae700bc210d5301bb18e"
+            },
+            {
+                "phase": 7,
+                "reference_world_sha256": "3d84b967a113e6d97a5e4bcf62283b6337fc0fed1d41e4ddf44a1bc15531e481",
+                "android_pixels_sha256": "f1ac766f1a1ef6cec0d79dff79850798e67da9b97fb300a2bd317d6cfe2d0090"
+            },
+            {
+                "phase": 8,
+                "reference_world_sha256": "23868c73cc4028593769bd0d140abaa00610407eba22f2bd4b8eb5ef3924e05d",
+                "android_pixels_sha256": "ce99cbd7f23a953332c65c698bf5750d52e73d4e047607141bc02ccd1550ae50"
+            }
+        ]
+    },
+    "baseline_android_vs_enabled_reference": {
+        "android_version_code": 32334,
+        "apk_sha256": "f4b40392c3337dd0b3d3dc5baf4a2966cdb878ba9b9b6af75a14b86ee28a4f7a",
+        "runtime_run_id": "10b08000e49b45f4b67d0327e59ed27e",
+        "verified_steps": 158,
+        "profile_hashes_restored": true,
+        "reference_trace_sha256": "b2d7008468f1666550197aff8aefc4d94b15644056ec8340c047448560aa2c0f",
+        "android_trace_sha256": "a7786aff168748d4de584b596df68aa11de530f18c6708ded1043963911b2073",
+        "matched_phases": 9,
+        "comparison_crop": [
+            160,
+            166,
+            480,
+            310
+        ],
+        "median_crop_absolute_rgb": [
+            9.873090277777777,
+            9.232118055555556,
+            6.065299479166667
+        ],
+        "regions": {
+            "ceiling": {
+                "box_lt_rb": [
+                    235,
+                    95,
+                    405,
+                    151
+                ],
+                "median_phase_mean_absolute_rgb": [
+                    0.391,
+                    0.389,
+                    0.336
+                ],
+                "median_phase_android_minus_reference_rgb": [
+                    -0.01,
+                    -0.001,
+                    -0.019
+                ]
+            },
+            "left_side_wall": {
+                "box_lt_rb": [
+                    24,
+                    183,
+                    110,
+                    280
+                ],
+                "median_phase_mean_absolute_rgb": [
+                    0.58,
+                    0.513,
+                    0.409
+                ],
+                "median_phase_android_minus_reference_rgb": [
+                    -0.142,
+                    -0.11,
+                    -0.082
+                ]
+            },
+            "right_side_wall": {
+                "box_lt_rb": [
+                    530,
+                    183,
+                    615,
+                    280
+                ],
+                "median_phase_mean_absolute_rgb": [
+                    0.664,
+                    0.613,
+                    0.504
+                ],
+                "median_phase_android_minus_reference_rgb": [
+                    -0.121,
+                    -0.101,
+                    -0.078
+                ]
+            },
+            "center_above_reticle": {
+                "box_lt_rb": [
+                    275,
+                    193,
+                    365,
+                    218
+                ],
+                "median_phase_mean_absolute_rgb": [
+                    0.276,
+                    0.188,
+                    0.188
+                ],
+                "median_phase_android_minus_reference_rgb": [
+                    -0.01,
+                    -0.048,
+                    -0.04
+                ]
+            },
+            "left_sign": {
+                "box_lt_rb": [
+                    152,
+                    207,
+                    229,
+                    286
+                ],
+                "median_phase_mean_absolute_rgb": [
+                    26.146,
+                    23.571,
+                    15.684
+                ],
+                "median_phase_android_minus_reference_rgb": [
+                    -26.146,
+                    -23.571,
+                    -15.684
+                ]
+            },
+            "right_sign": {
+                "box_lt_rb": [
+                    410,
+                    207,
+                    487,
+                    286
+                ],
+                "median_phase_mean_absolute_rgb": [
+                    25.969,
+                    23.395,
+                    15.584
+                ],
+                "median_phase_android_minus_reference_rgb": [
+                    -25.969,
+                    -23.395,
+                    -15.584
+                ]
+            },
+            "left_sign_surround": {
+                "box_lt_rb": [
+                    131,
+                    234,
+                    148,
+                    286
+                ],
+                "median_phase_mean_absolute_rgb": [
+                    25.286,
+                    23.891,
+                    17.241
+                ],
+                "median_phase_android_minus_reference_rgb": [
+                    -25.286,
+                    -23.891,
+                    -17.241
+                ]
+            },
+            "right_sign_surround": {
+                "box_lt_rb": [
+                    492,
+                    234,
+                    510,
+                    286
+                ],
+                "median_phase_mean_absolute_rgb": [
+                    22.641,
+                    21.887,
+                    15.949
+                ],
+                "median_phase_android_minus_reference_rgb": [
+                    -22.641,
+                    -21.887,
+                    -15.949
+                ]
+            }
+        },
+        "phase_hashes": [
+            {
+                "phase": 0,
+                "reference_world_sha256": "9e2c38f4ad9cc8dad1655d19c4da3910ab66139d35663877d6326e6aae95b0c4",
+                "android_pixels_sha256": "463a05e3d8d8f668b89cade48920a674967d5a1464fe82e3b0977fe69cc115f3"
+            },
+            {
+                "phase": 1,
+                "reference_world_sha256": "1a8dfe73dae92e4bc83bd6579920313f4568fb9b0d219bdd7780b51538d6d11c",
+                "android_pixels_sha256": "5af46fdc36f2b8f9b7feb9930f983383eb40b14ea797091218ab6bb0f804e0f1"
+            },
+            {
+                "phase": 2,
+                "reference_world_sha256": "249f7ddac730a07ad001fd7f08227a6fa6cbc8919a46c4183a31ef4a2cb1894b",
+                "android_pixels_sha256": "e4b47a8a7f85a519b86ff70fc83aa7095ae3b951cd516601ccb1ea70cff33a2c"
+            },
+            {
+                "phase": 3,
+                "reference_world_sha256": "b74f01d36bd9e122d1836469d4f8f2715495070e6c08067a8192c6ed7c7784e0",
+                "android_pixels_sha256": "212aa24161f11d93f30ad57ec491ad6159965cfb3ebf73a9197ba6335348eec8"
+            },
+            {
+                "phase": 4,
+                "reference_world_sha256": "97e24d72cb9d86ecc036f52672b00b5bacec97911e69b791316e757ab6f40c25",
+                "android_pixels_sha256": "1cd6607929251a980f6240fd83c213f7909792372e88c30326b15705eb9cfbfe"
+            },
+            {
+                "phase": 5,
+                "reference_world_sha256": "539321bafe8bb9c521ab118a359fbf5737107a42f1bf567a964124a872869d5d",
+                "android_pixels_sha256": "17b58a5051cb8204e21e6aa80d90df610f0199b3f315795b44503ef1dcbdc021"
+            },
+            {
+                "phase": 6,
+                "reference_world_sha256": "6a6fed59454ec908757be3d2044b5d5b4b9f5b74216d9d57bc9314a2d5f8d791",
+                "android_pixels_sha256": "e6f95981e570ca53e1ed96a12088025034085136e5b2ae700bc210d5301bb18e"
+            },
+            {
+                "phase": 7,
+                "reference_world_sha256": "1a870aa269b87eaf55e8fd9c331becd2d9607e5f1d15b7d9397fbd5008e129dc",
+                "android_pixels_sha256": "f1ac766f1a1ef6cec0d79dff79850798e67da9b97fb300a2bd317d6cfe2d0090"
+            },
+            {
+                "phase": 8,
+                "reference_world_sha256": "22bde5967cdece00e02a3d2a44ac57e3b3d57a17b64eeb07665de24dd448ec9d",
+                "android_pixels_sha256": "ce99cbd7f23a953332c65c698bf5750d52e73d4e047607141bc02ccd1550ae50"
+            }
+        ]
+    },
+    "corona_suppressed_android_vs_default_reference": {
+        "android_version_code": 32336,
+        "apk_sha256": "77472c37cb17aee558ce5f2e24b25df25b9ab1b7f6966edcc75071df969e3c76",
+        "runtime_run_id": "2a92f877963a46ebb3634696fb2b440e",
+        "verified_steps": 158,
+        "profile_hashes_restored": true,
+        "reference_trace_sha256": "2314260081e6d66a4de2751936b74418870096473239895a0dee607528fddbac",
+        "android_trace_sha256": "5a1ebd9108fe7bc9635c8f5c40547d5ab1ae52c570d644ba51ef624c97dc0880",
+        "matched_phases": 9,
+        "comparison_crop": [
+            160,
+            166,
+            480,
+            310
+        ],
+        "median_crop_absolute_rgb": [
+            0.5214409722222222,
+            0.9378472222222223,
+            0.43721788194444444
+        ],
+        "regions": {
+            "ceiling": {
+                "box_lt_rb": [
+                    235,
+                    95,
+                    405,
+                    151
+                ],
+                "median_phase_mean_absolute_rgb": [
+                    0.391,
+                    0.389,
+                    0.336
+                ],
+                "median_phase_android_minus_reference_rgb": [
+                    -0.01,
+                    -0.001,
+                    -0.019
+                ]
+            },
+            "left_side_wall": {
+                "box_lt_rb": [
+                    24,
+                    183,
+                    110,
+                    280
+                ],
+                "median_phase_mean_absolute_rgb": [
+                    0.504,
+                    0.451,
+                    0.37
+                ],
+                "median_phase_android_minus_reference_rgb": [
+                    -0.037,
+                    -0.024,
+                    -0.03
+                ]
+            },
+            "right_side_wall": {
+                "box_lt_rb": [
+                    530,
+                    183,
+                    615,
+                    280
+                ],
+                "median_phase_mean_absolute_rgb": [
+                    0.602,
+                    0.561,
+                    0.472
+                ],
+                "median_phase_android_minus_reference_rgb": [
+                    -0.026,
+                    -0.023,
+                    -0.03
+                ]
+            },
+            "center_above_reticle": {
+                "box_lt_rb": [
+                    275,
+                    193,
+                    365,
+                    218
+                ],
+                "median_phase_mean_absolute_rgb": [
+                    0.276,
+                    0.188,
+                    0.188
+                ],
+                "median_phase_android_minus_reference_rgb": [
+                    -0.01,
+                    -0.048,
+                    -0.04
+                ]
+            },
+            "left_sign": {
+                "box_lt_rb": [
+                    152,
+                    207,
+                    229,
+                    286
+                ],
+                "median_phase_mean_absolute_rgb": [
+                    0.046,
+                    0.04,
+                    0.039
+                ],
+                "median_phase_android_minus_reference_rgb": [
+                    -0.031,
+                    -0.029,
+                    -0.032
+                ]
+            },
+            "right_sign": {
+                "box_lt_rb": [
+                    410,
+                    207,
+                    487,
+                    286
+                ],
+                "median_phase_mean_absolute_rgb": [
+                    0.044,
+                    0.045,
+                    0.039
+                ],
+                "median_phase_android_minus_reference_rgb": [
+                    -0.028,
+                    -0.031,
+                    -0.031
+                ]
+            },
+            "left_sign_surround": {
+                "box_lt_rb": [
+                    131,
+                    234,
+                    148,
+                    286
+                ],
+                "median_phase_mean_absolute_rgb": [
+                    0.048,
+                    0.051,
+                    0.046
+                ],
+                "median_phase_android_minus_reference_rgb": [
+                    -0.032,
+                    -0.044,
+                    -0.035
+                ]
+            },
+            "right_sign_surround": {
+                "box_lt_rb": [
+                    492,
+                    234,
+                    510,
+                    286
+                ],
+                "median_phase_mean_absolute_rgb": [
+                    0.035,
+                    0.041,
+                    0.035
+                ],
+                "median_phase_android_minus_reference_rgb": [
+                    -0.029,
+                    -0.034,
+                    -0.027
+                ]
+            }
+        },
+        "phase_hashes": [
+            {
+                "phase": 0,
+                "reference_world_sha256": "1592376cc974416aedba99ab6419621a787061be10a4ccc13b589c58b115e864",
+                "android_pixels_sha256": "aa7cd9409d81a3d676b84ec67cb01439beadd00ea6b0fee9ca981433133371f9"
+            },
+            {
+                "phase": 1,
+                "reference_world_sha256": "d23d2b7fea246bdc90a88e3d864d226feabf9e92d8b5efb7ceafc4a37fc1a669",
+                "android_pixels_sha256": "5da831874550c20343d63f468b7a5f2eec6fbbfe780886c8e8f934778edf66b6"
+            },
+            {
+                "phase": 2,
+                "reference_world_sha256": "c30ae46605c250c26c00fb5df159b0b27771315a7de584dacfe0b966a0b21f75",
+                "android_pixels_sha256": "f55cb9a0f014a2c8be1149ff3972ee175e39e87377bb26b7b69c4eed31597821"
+            },
+            {
+                "phase": 3,
+                "reference_world_sha256": "fb5f7b36f67739ea64ffe2dbb2e89b04eabf2761090ee419e6dd44323b0fe65f",
+                "android_pixels_sha256": "56f1296ef0ba2312b7c52bbce17b0818cd583c7307b2895837db9c7837f86f74"
+            },
+            {
+                "phase": 4,
+                "reference_world_sha256": "71923a42af3fd3d5552f1fb456cbea5bfb8fd991721899fbec350cd005cf9e61",
+                "android_pixels_sha256": "2ed81a27f2e410269c6e9c2790311b8053d15777d5114ede68517f5cbe1fe080"
+            },
+            {
+                "phase": 5,
+                "reference_world_sha256": "6741e8959138e33c71aa4719ba9101ad4f8a1149815a22e0eebff8e36d88d739",
+                "android_pixels_sha256": "ee9e0908fab8aa5c6262701060fad715e245a0a483123fb0d4486b16f80c09af"
+            },
+            {
+                "phase": 6,
+                "reference_world_sha256": "1696b8761fe415765c93974019e43573b43659c319d8b9919db88a2a555d099f",
+                "android_pixels_sha256": "4b897d5593d815e6cca654b2874e689c5e9ffc900a82536819edae9a78ad440c"
+            },
+            {
+                "phase": 7,
+                "reference_world_sha256": "3d84b967a113e6d97a5e4bcf62283b6337fc0fed1d41e4ddf44a1bc15531e481",
+                "android_pixels_sha256": "01c6958fc3daf2af69c3711febdfd099312e8aae88d777c16eee1d046c4b89ee"
+            },
+            {
+                "phase": 8,
+                "reference_world_sha256": "23868c73cc4028593769bd0d140abaa00610407eba22f2bd4b8eb5ef3924e05d",
+                "android_pixels_sha256": "819acc15154f3e9590888071a61ae2297868a2350e491a1016b08a638ffb19dc"
+            }
+        ]
+    },
+    "limitation": "Fixed diagnostics from one rendered viewpoint. Android HUD was excluded from individual measurements."
+}

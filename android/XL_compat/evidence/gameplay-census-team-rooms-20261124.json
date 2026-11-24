@@ -1,0 +1,576 @@
+{
+    "schema": 1,
+    "date": "2026-11-24",
+    "source_head": "4d3ec26f349cdbf7322ea6e1159cf1fa35c4ceda",
+    "engine_sha256": "fb381f153189d3e9e55a090ddb210a2329d263a85f88ed17e2a452ae4358652e",
+    "criterion": "120 unassisted frames at 60 Hz and seed 1 on the requested distribution and ordinal, without death or transition",
+    "original_integrated_passed": 1534,
+    "anthology_full_passed": 1567,
+    "current_full_passed": 1576,
+    "elapsed_seconds": 4093,
+    "full_denominator": 1654,
+    "frozen_case_register_sha256": "be85403713651a8f25274c762f9b1f320cad68666f1aee7389f5573720f3d9f1",
+    "raw_aggregate_receipt_sha256": "04657d0e1a77fa16287388f2332e74386559121520639b3d1e59541cb55ec9bd",
+    "catalogs": [
+        {
+            "catalog": "local",
+            "cases": 543,
+            "earlier_passed": 518,
+            "outcomes": {
+                "loaded_ticked": 522,
+                "load_failed": 17,
+                "unsupported_format": 1,
+                "simulation_failed": 2,
+                "timeout": 1
+            },
+            "receipt_sha256": "a2553fa69dca6acd8485c7a513f459caf01d40f78e3eb9d35586390f710e6c5e"
+        },
+        {
+            "catalog": "pinned",
+            "cases": 1111,
+            "earlier_passed": 1049,
+            "outcomes": {
+                "loaded_ticked": 1054,
+                "load_failed": 53,
+                "simulation_failed": 2,
+                "unsupported_format": 2
+            },
+            "receipt_sha256": "602b0b5d7aa09e3da0dc332c3f9e13d2cc9196d56172079eb87bacbbb2798de9"
+        }
+    ],
+    "changes_from_anthology_full_run": [
+        {
+            "case": "levels_multiplayer/biohzrd.zip/biohzrd.mn2:1",
+            "from": "load_failed",
+            "to": "loaded_ticked"
+        },
+        {
+            "case": "levels_multiplayer/emtombz.zip/emtombz.mn2:1",
+            "from": "load_failed",
+            "to": "loaded_ticked"
+        },
+        {
+            "case": "levels_multiplayer/etombz.zip/etombz.mn2:1",
+            "from": "load_failed",
+            "to": "loaded_ticked"
+        },
+        {
+            "case": "levels_multiplayer/g-house.7z/missions/diedel/d3/g-house.mn2:1",
+            "from": "load_failed",
+            "to": "loaded_ticked"
+        },
+        {
+            "case": "levelpack.7z/missions/diedel/biohzrd.mn2:1",
+            "from": "load_failed",
+            "to": "loaded_ticked"
+        },
+        {
+            "case": "levelpack.7z/missions/diedel/emtombz.mn2:1",
+            "from": "load_failed",
+            "to": "loaded_ticked"
+        },
+        {
+            "case": "levelpack.7z/missions/diedel/etombz.mn2:1",
+            "from": "load_failed",
+            "to": "loaded_ticked"
+        },
+        {
+            "case": "levelpack.7z/missions/diedel/g-house.mn2:1",
+            "from": "load_failed",
+            "to": "loaded_ticked"
+        },
+        {
+            "case": "levelpack.7z/missions/sirius/fv24b.mn2:1",
+            "from": "load_failed",
+            "to": "loaded_ticked"
+        }
+    ],
+    "frozen_previous_misses": 120,
+    "current_misses": 78,
+    "original_observations": {
+        "started_and_ran": 42,
+        "mission_rejected": 31,
+        "advertised_member_lookup_empty": 3,
+        "simulation_unverified": 2
+    },
+    "remaining_first_blockers": [
+        {
+            "blocker": "Advertised level file missing",
+            "cases": 34,
+            "pinned_original": {
+                "mission_rejected": 31,
+                "advertised_member_lookup_empty": 3
+            }
+        },
+        {
+            "blocker": "Custom base definitions",
+            "cases": 2,
+            "pinned_original": {
+                "started_and_ran": 2
+            }
+        },
+        {
+            "blocker": "Fluid behavior",
+            "cases": 4,
+            "pinned_original": {
+                "started_and_ran": 4
+            }
+        },
+        {
+            "blocker": "Light index bounds",
+            "cases": 16,
+            "pinned_original": {
+                "started_and_ran": 16
+            }
+        },
+        {
+            "blocker": "Lightning effects",
+            "cases": 6,
+            "pinned_original": {
+                "started_and_ran": 6
+            }
+        },
+        {
+            "blocker": "Non-hexahedral geometry",
+            "cases": 4,
+            "pinned_original": {
+                "started_and_ran": 4
+            }
+        },
+        {
+            "blocker": "Object camera trigger",
+            "cases": 1,
+            "pinned_original": {
+                "started_and_ran": 1
+            }
+        },
+        {
+            "blocker": "Robot definitions",
+            "cases": 2,
+            "pinned_original": {
+                "started_and_ran": 2
+            }
+        },
+        {
+            "blocker": "Robot fire killed the idle pilot",
+            "cases": 4,
+            "pinned_original": {
+                "started_and_ran": 4
+            }
+        },
+        {
+            "blocker": "Segment flags",
+            "cases": 1,
+            "pinned_original": {
+                "started_and_ran": 1
+            }
+        },
+        {
+            "blocker": "Unsupported level format",
+            "cases": 3,
+            "pinned_original": {
+                "started_and_ran": 2,
+                "simulation_unverified": 1
+            }
+        },
+        {
+            "blocker": "timeout",
+            "cases": 1,
+            "pinned_original": {
+                "simulation_unverified": 1
+            }
+        }
+    ],
+    "remaining_cases": [
+        {
+            "case": "boilpnt.7z/missions/single/boilpnt.mn2:2",
+            "first_blocker": "Light index bounds",
+            "pinned_original": "started_and_ran"
+        },
+        {
+            "case": "levelpack.7z/missions/d1fsxl/d1fs-xl.mn2:1",
+            "first_blocker": "Object camera trigger",
+            "pinned_original": "started_and_ran"
+        },
+        {
+            "case": "levelpack.7z/missions/danwentz/dffusion.mn2:1",
+            "first_blocker": "Advertised level file missing",
+            "pinned_original": "mission_rejected"
+        },
+        {
+            "case": "levelpack.7z/missions/darkflamewolf/acat-xl.mn2:1",
+            "first_blocker": "Custom base definitions",
+            "pinned_original": "started_and_ran"
+        },
+        {
+            "case": "levelpack.7z/missions/darkflamewolf/wolfpak3.mn2:6",
+            "first_blocker": "Robot fire killed the idle pilot",
+            "pinned_original": "started_and_ran"
+        },
+        {
+            "case": "levelpack.7z/missions/diedel/forest.mn2:1",
+            "first_blocker": "Robot definitions",
+            "pinned_original": "started_and_ran"
+        },
+        {
+            "case": "levelpack.7z/missions/diedel/pyrotech.mn2:1",
+            "first_blocker": "Robot fire killed the idle pilot",
+            "pinned_original": "started_and_ran"
+        },
+        {
+            "case": "levelpack.7z/missions/diedel/speed.mn2:1",
+            "first_blocker": "Lightning effects",
+            "pinned_original": "started_and_ran"
+        },
+        {
+            "case": "levelpack.7z/missions/diedel/steel-xl.mn2:1",
+            "first_blocker": "Lightning effects",
+            "pinned_original": "started_and_ran"
+        },
+        {
+            "case": "levelpack.7z/missions/diedel/wfc.mn2:1",
+            "first_blocker": "Advertised level file missing",
+            "pinned_original": "mission_rejected"
+        },
+        {
+            "case": "levelpack.7z/missions/sidewinder/picasso.mn2:1",
+            "first_blocker": "Advertised level file missing",
+            "pinned_original": "advertised_member_lookup_empty"
+        },
+        {
+            "case": "levelpack.7z/missions/single/af-xl.mn2:1",
+            "first_blocker": "Light index bounds",
+            "pinned_original": "started_and_ran"
+        },
+        {
+            "case": "levelpack.7z/missions/single/af-xl.mn2:10",
+            "first_blocker": "Light index bounds",
+            "pinned_original": "started_and_ran"
+        },
+        {
+            "case": "levelpack.7z/missions/single/af-xl.mn2:11",
+            "first_blocker": "Light index bounds",
+            "pinned_original": "started_and_ran"
+        },
+        {
+            "case": "levelpack.7z/missions/single/af-xl.mn2:12",
+            "first_blocker": "Light index bounds",
+            "pinned_original": "started_and_ran"
+        },
+        {
+            "case": "levelpack.7z/missions/single/af-xl.mn2:13",
+            "first_blocker": "Light index bounds",
+            "pinned_original": "started_and_ran"
+        },
+        {
+            "case": "levelpack.7z/missions/single/af-xl.mn2:14",
+            "first_blocker": "Light index bounds",
+            "pinned_original": "started_and_ran"
+        },
+        {
+            "case": "levelpack.7z/missions/single/af-xl.mn2:15",
+            "first_blocker": "Light index bounds",
+            "pinned_original": "started_and_ran"
+        },
+        {
+            "case": "levelpack.7z/missions/single/af-xl.mn2:2",
+            "first_blocker": "Light index bounds",
+            "pinned_original": "started_and_ran"
+        },
+        {
+            "case": "levelpack.7z/missions/single/af-xl.mn2:3",
+            "first_blocker": "Light index bounds",
+            "pinned_original": "started_and_ran"
+        },
+        {
+            "case": "levelpack.7z/missions/single/af-xl.mn2:4",
+            "first_blocker": "Light index bounds",
+            "pinned_original": "started_and_ran"
+        },
+        {
+            "case": "levelpack.7z/missions/single/af-xl.mn2:5",
+            "first_blocker": "Light index bounds",
+            "pinned_original": "started_and_ran"
+        },
+        {
+            "case": "levelpack.7z/missions/single/af-xl.mn2:7",
+            "first_blocker": "Light index bounds",
+            "pinned_original": "started_and_ran"
+        },
+        {
+            "case": "levelpack.7z/missions/single/af-xl.mn2:8",
+            "first_blocker": "Light index bounds",
+            "pinned_original": "started_and_ran"
+        },
+        {
+            "case": "levelpack.7z/missions/single/af-xl.mn2:9",
+            "first_blocker": "Light index bounds",
+            "pinned_original": "started_and_ran"
+        },
+        {
+            "case": "levelpack.7z/missions/single/boilpnt.mn2:2",
+            "first_blocker": "Light index bounds",
+            "pinned_original": "started_and_ran"
+        },
+        {
+            "case": "levelpack.7z/missions/single/ffyl.mn2:1",
+            "first_blocker": "Advertised level file missing",
+            "pinned_original": "mission_rejected"
+        },
+        {
+            "case": "levelpack.7z/missions/single/ffyl.mn2:10",
+            "first_blocker": "Advertised level file missing",
+            "pinned_original": "mission_rejected"
+        },
+        {
+            "case": "levelpack.7z/missions/single/ffyl.mn2:11",
+            "first_blocker": "Advertised level file missing",
+            "pinned_original": "mission_rejected"
+        },
+        {
+            "case": "levelpack.7z/missions/single/ffyl.mn2:12",
+            "first_blocker": "Advertised level file missing",
+            "pinned_original": "mission_rejected"
+        },
+        {
+            "case": "levelpack.7z/missions/single/ffyl.mn2:13",
+            "first_blocker": "Advertised level file missing",
+            "pinned_original": "mission_rejected"
+        },
+        {
+            "case": "levelpack.7z/missions/single/ffyl.mn2:14",
+            "first_blocker": "Advertised level file missing",
+            "pinned_original": "mission_rejected"
+        },
+        {
+            "case": "levelpack.7z/missions/single/ffyl.mn2:15",
+            "first_blocker": "Advertised level file missing",
+            "pinned_original": "mission_rejected"
+        },
+        {
+            "case": "levelpack.7z/missions/single/ffyl.mn2:16",
+            "first_blocker": "Advertised level file missing",
+            "pinned_original": "mission_rejected"
+        },
+        {
+            "case": "levelpack.7z/missions/single/ffyl.mn2:17",
+            "first_blocker": "Advertised level file missing",
+            "pinned_original": "mission_rejected"
+        },
+        {
+            "case": "levelpack.7z/missions/single/ffyl.mn2:18",
+            "first_blocker": "Advertised level file missing",
+            "pinned_original": "mission_rejected"
+        },
+        {
+            "case": "levelpack.7z/missions/single/ffyl.mn2:19",
+            "first_blocker": "Advertised level file missing",
+            "pinned_original": "mission_rejected"
+        },
+        {
+            "case": "levelpack.7z/missions/single/ffyl.mn2:2",
+            "first_blocker": "Advertised level file missing",
+            "pinned_original": "mission_rejected"
+        },
+        {
+            "case": "levelpack.7z/missions/single/ffyl.mn2:20",
+            "first_blocker": "Advertised level file missing",
+            "pinned_original": "mission_rejected"
+        },
+        {
+            "case": "levelpack.7z/missions/single/ffyl.mn2:21",
+            "first_blocker": "Advertised level file missing",
+            "pinned_original": "mission_rejected"
+        },
+        {
+            "case": "levelpack.7z/missions/single/ffyl.mn2:22",
+            "first_blocker": "Advertised level file missing",
+            "pinned_original": "mission_rejected"
+        },
+        {
+            "case": "levelpack.7z/missions/single/ffyl.mn2:23",
+            "first_blocker": "Advertised level file missing",
+            "pinned_original": "mission_rejected"
+        },
+        {
+            "case": "levelpack.7z/missions/single/ffyl.mn2:24",
+            "first_blocker": "Advertised level file missing",
+            "pinned_original": "mission_rejected"
+        },
+        {
+            "case": "levelpack.7z/missions/single/ffyl.mn2:25",
+            "first_blocker": "Advertised level file missing",
+            "pinned_original": "mission_rejected"
+        },
+        {
+            "case": "levelpack.7z/missions/single/ffyl.mn2:26",
+            "first_blocker": "Advertised level file missing",
+            "pinned_original": "mission_rejected"
+        },
+        {
+            "case": "levelpack.7z/missions/single/ffyl.mn2:27",
+            "first_blocker": "Advertised level file missing",
+            "pinned_original": "mission_rejected"
+        },
+        {
+            "case": "levelpack.7z/missions/single/ffyl.mn2:3",
+            "first_blocker": "Advertised level file missing",
+            "pinned_original": "mission_rejected"
+        },
+        {
+            "case": "levelpack.7z/missions/single/ffyl.mn2:4",
+            "first_blocker": "Advertised level file missing",
+            "pinned_original": "mission_rejected"
+        },
+        {
+            "case": "levelpack.7z/missions/single/ffyl.mn2:5",
+            "first_blocker": "Advertised level file missing",
+            "pinned_original": "mission_rejected"
+        },
+        {
+            "case": "levelpack.7z/missions/single/ffyl.mn2:6",
+            "first_blocker": "Advertised level file missing",
+            "pinned_original": "mission_rejected"
+        },
+        {
+            "case": "levelpack.7z/missions/single/ffyl.mn2:7",
+            "first_blocker": "Advertised level file missing",
+            "pinned_original": "mission_rejected"
+        },
+        {
+            "case": "levelpack.7z/missions/single/ffyl.mn2:8",
+            "first_blocker": "Advertised level file missing",
+            "pinned_original": "mission_rejected"
+        },
+        {
+            "case": "levelpack.7z/missions/single/ffyl.mn2:9",
+            "first_blocker": "Advertised level file missing",
+            "pinned_original": "mission_rejected"
+        },
+        {
+            "case": "levelpack.7z/missions/single/pmlev1.mn2:1",
+            "first_blocker": "Unsupported level format",
+            "pinned_original": "started_and_ran"
+        },
+        {
+            "case": "levelpack.7z/missions/single/reflux.mn2:1",
+            "first_blocker": "Advertised level file missing",
+            "pinned_original": "mission_rejected"
+        },
+        {
+            "case": "levelpack.7z/missions/single/sphere.mn2:1",
+            "first_blocker": "Robot definitions",
+            "pinned_original": "started_and_ran"
+        },
+        {
+            "case": "levelpack.7z/missions/spotlight/crownx.mn2:1",
+            "first_blocker": "Unsupported level format",
+            "pinned_original": "started_and_ran"
+        },
+        {
+            "case": "levelpack.7z/missions/spotlight/rtarena.mn2:1",
+            "first_blocker": "Fluid behavior",
+            "pinned_original": "started_and_ran"
+        },
+        {
+            "case": "levels/amalthea.zip/amalthea/Amalthea.mn2:1",
+            "first_blocker": "Lightning effects",
+            "pinned_original": "started_and_ran"
+        },
+        {
+            "case": "levels/elitehunt.zip/elitehnt.mn2:1",
+            "first_blocker": "Fluid behavior",
+            "pinned_original": "started_and_ran"
+        },
+        {
+            "case": "levels/kalisto.zip/kalisto/kalisto.mn2:1",
+            "first_blocker": "Non-hexahedral geometry",
+            "pinned_original": "started_and_ran"
+        },
+        {
+            "case": "levels_multiplayer/Temple Of Helix.zip/missions/tohelix.mn2:1",
+            "first_blocker": "Non-hexahedral geometry",
+            "pinned_original": "started_and_ran"
+        },
+        {
+            "case": "levels_multiplayer/acat-xl.7z/missions/acat-xl.mn2:1",
+            "first_blocker": "Custom base definitions",
+            "pinned_original": "started_and_ran"
+        },
+        {
+            "case": "levels_multiplayer/code-yena-xl.7z/cdeyena2.mn2:1",
+            "first_blocker": "Non-hexahedral geometry",
+            "pinned_original": "started_and_ran"
+        },
+        {
+            "case": "levels_multiplayer/coordination-xl.7z/crdntion.mn2:1",
+            "first_blocker": "Non-hexahedral geometry",
+            "pinned_original": "started_and_ran"
+        },
+        {
+            "case": "levels_multiplayer/dmentia2.zip/DMENTIA2.MN2:2",
+            "first_blocker": "Advertised level file missing",
+            "pinned_original": "advertised_member_lookup_empty"
+        },
+        {
+            "case": "levels_multiplayer/firsteel.7z/steel-xl.mn2:1",
+            "first_blocker": "Lightning effects",
+            "pinned_original": "started_and_ran"
+        },
+        {
+            "case": "levels_multiplayer/fv24b.zip/fv24b.mn2:1",
+            "first_blocker": "Unsupported level format",
+            "pinned_original": "simulation_unverified"
+        },
+        {
+            "case": "levels_multiplayer/nocturnl.zip/d1nctrlnl.msn:1",
+            "first_blocker": "Advertised level file missing",
+            "pinned_original": "mission_rejected"
+        },
+        {
+            "case": "levels_multiplayer/picasso.zip/Picasso.mn2:1",
+            "first_blocker": "Advertised level file missing",
+            "pinned_original": "advertised_member_lookup_empty"
+        },
+        {
+            "case": "levels_multiplayer/pmanicd2.zip/pmanicd2.mn2:1",
+            "first_blocker": "Segment flags",
+            "pinned_original": "started_and_ran"
+        },
+        {
+            "case": "levels_multiplayer/pyrotech.7z/missions/diedel/pyrotech.mn2:1",
+            "first_blocker": "Robot fire killed the idle pilot",
+            "pinned_original": "started_and_ran"
+        },
+        {
+            "case": "levels_multiplayer/pyrotech.7z/pyrotech.mn2:1",
+            "first_blocker": "Robot fire killed the idle pilot",
+            "pinned_original": "started_and_ran"
+        },
+        {
+            "case": "levels_multiplayer/rtarena.zip/RTARENA.MN2:1",
+            "first_blocker": "Fluid behavior",
+            "pinned_original": "started_and_ran"
+        },
+        {
+            "case": "levels_multiplayer/speed.7z/missions/diedel/d3/speed.mn2:1",
+            "first_blocker": "Lightning effects",
+            "pinned_original": "started_and_ran"
+        },
+        {
+            "case": "levels_multiplayer/zugzwang.7z/zugzwang.mn2:1",
+            "first_blocker": "timeout",
+            "pinned_original": "simulation_unverified"
+        },
+        {
+            "case": "prophxl131beta.zip/missions/sapphire wolf sp/PROPHXL.MN2:1",
+            "first_blocker": "Fluid behavior",
+            "pinned_original": "started_and_ran"
+        },
+        {
+            "case": "prophxl131beta.zip/missions/sapphire wolf sp/PROPHXL.MN2:3",
+            "first_blocker": "Lightning effects",
+            "pinned_original": "started_and_ran"
+        }
+    ]
+}

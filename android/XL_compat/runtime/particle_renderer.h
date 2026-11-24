@@ -31,12 +31,15 @@ class ParticleTexture
 	void draw_sprite(const ParticleQuad &quad);
 	// Source powerup corona: additive sprite, radius-5 soft depth, transparent border
 	void draw_soft_sprite(const ParticleQuad &quad, bool soft = true);
+	// Maps the submitted wall quads onto the texture's transparent border
+	void draw_wall_glare(ParticleQuad *quads, std::size_t count);
 	unsigned handle();
 	// Transparent border at every mip; sample original UVs with uv/4+1/4
 	unsigned border_handle();
 	static void discard_context(bool abandoned);
 
   private:
+	void draw_additive_sprites(ParticleQuad *quads, std::size_t count, bool soft, bool wall_glare);
 	struct State;
 	std::unique_ptr<State> state;
 };

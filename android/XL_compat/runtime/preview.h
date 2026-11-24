@@ -148,6 +148,7 @@ int xl_preview_corona_geometry(int segment, int side, const int32_t eye[3], int 
                                int32_t center[3], int32_t *radius, float *facing);
 void xl_preview_render_emitters(const short *segments, int count, const int32_t eye[3], int eye_segment);
 uint64_t xl_preview_corona_draws(void);
+uint64_t xl_preview_corona_textured_draws(void);
 void xl_preview_record_corona_depth(int enabled, int classic_requested);
 uint64_t xl_preview_corona_depth_failures(void);
 uint64_t xl_preview_corona_classic_requested_draws(void);
