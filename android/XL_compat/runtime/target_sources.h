@@ -17,6 +17,7 @@ class TargetSources
 	explicit TargetSources(std::string installation);
 	~TargetSources();
 	const std::string &archive() const;
+	const std::string &directory() const;
 	int ordinal(const char *level, int requested) const;
 	bool archive_contains(const std::string &name);
 	std::optional<std::vector<unsigned char>> archive_bytes(const std::string &name, std::size_t limit);

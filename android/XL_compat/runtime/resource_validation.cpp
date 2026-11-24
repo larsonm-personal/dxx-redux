@@ -1638,12 +1638,13 @@ void XlPreparedResources::prepare_scoped_textures(const xl_compat::Inventory &le
 	texture_timing.now = android_profile_monotonic_us;
 	timing = &texture_timing;
 #endif
+	const auto *previous = prepared_resources ? prepared_resources->scoped_textures() : nullptr;
 	auto textures = std::make_unique<const xl_compat::ScopedTextureResources>(
-	    xl_compat::ScopedTextureResources::prepare(target, dependencies, ordinal, state->pog.get(), timing));
+	    xl_compat::ScopedTextureResources::prepare(target, dependencies, ordinal, state->pog.get(), timing, previous));
 #ifdef __ANDROID__
 	const auto playback_started = android_profile_monotonic_us();
-	debug_log_force(DLOG_PROFILING, "XL scoped image phases: ordinal=%d count=%zu parallel=%zu headers_us=%lld reads_us=%lld decode_us=%lld shrink_us=%lld hash_us=%lld",
-	                ordinal, textures->images.size(), texture_timing.parallel_images, texture_timing.headers_us, texture_timing.reads_us, texture_timing.decode_us,
+	debug_log_force(DLOG_PROFILING, "XL scoped image phases: ordinal=%d count=%zu reused=%zu parallel=%zu headers_us=%lld reads_us=%lld decode_us=%lld shrink_us=%lld hash_us=%lld",
+	                ordinal, textures->images.size(), textures->reused_images, texture_timing.parallel_images, texture_timing.headers_us, texture_timing.reads_us, texture_timing.decode_us,
 	                texture_timing.shrink_us, texture_timing.hash_us);
 #endif
 	if (textures->texture_target)
