@@ -145,7 +145,7 @@ static GameplayProbe prepare_probe(const Bytes &original, bool water_segments, i
 	for (const auto &vertex : v.vertices)
 		for (const auto component : vertex) put(out, component, 4);
 	for (const auto &seg : v.segments) {
-		require(seg.owner == -1 || seg.owner == 0, "nonneutral segment owner");
+		require(seg.owner == -1 || seg.owner == 0 || (source_runtime && legacy_team_ownership(v, seg)), "nonneutral segment owner");
 		int children = 0, walls = 0;
 		for (int i = 0; i < 6; ++i) {
 			if (seg.children[i] != -1) children |= 1 << i;
@@ -178,7 +178,8 @@ static GameplayProbe prepare_probe(const Bytes &original, bool water_segments, i
 		// functions in the XL inventory. None creates a classic fuel center
 		const bool modern_xl_function = modern_layout && function >= 7 && function <= 11;
 		const bool legacy_xl_function = v.level_version < 21 && ((water_segments && function == 7) || (function >= 11 && function <= 13));
-		put(out, modern_xl_function || legacy_xl_function ? 0 : function, 1);
+		const bool legacy_team_room = legacy_team_room_layout(v) && (function == 9 || function == 10);
+		put(out, modern_xl_function || legacy_xl_function || legacy_team_room ? 0 : function, 1);
 		// Wide authored fields stay in the owned source. Only robot assignment enters
 		// the native shadow, after geometry-order initialization and capacity checks
 		// Both loaders rebuild station values; other functions never consume them

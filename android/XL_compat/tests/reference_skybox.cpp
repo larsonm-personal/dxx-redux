@@ -82,6 +82,7 @@ void skybox_collision_source_controls()
 							for (bool transparent : { false, true })
 								for (int found : { -1, 0, 1, 2 }) {
 									xl_compat::Inventory inventory;
+									inventory.level_version = 23;
 									inventory.segments.resize(3);
 									segments.clear();
 									gameData.segData.skybox.clear();

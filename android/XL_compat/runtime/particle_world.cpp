@@ -43,7 +43,7 @@ ParticleWorld compile_particle_world(const Inventory &source)
 				throw std::runtime_error("XL particle world connectivity does not match the loaded mine");
 		auto &segment = result.segments[index];
 		segment.bounds = { ParticlePoint{ INT32_MAX, INT32_MAX, INT32_MAX }, ParticlePoint{ INT32_MIN, INT32_MIN, INT32_MIN } };
-		segment.skybox = source.segments[index].function == 10;
+		segment.skybox = segment_is_skybox(source, source.segments[index]);
 		segment.water = (source.segments[index].properties & segment_water) != 0;
 		segment.lava = (source.segments[index].properties & segment_lava) != 0;
 		segment.inner_radius = INT32_MAX;

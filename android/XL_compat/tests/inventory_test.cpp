@@ -1906,6 +1906,20 @@ int main(int argc, char **argv)
 			check(!xl_compat::runtime_blockers(lightning).empty(), "Lightning admission erased an independent blocker");
 		}
 		{
+			const auto translated_team = xl_compat::prepare_source_runtime_probe(fixture(17, 0, 1, 10), false, true);
+			auto team_rooms = translated_team.source;
+			check(team_rooms.segments[0].function == 10 && !xl_compat::segment_is_skybox(team_rooms, team_rooms.segments[0]), "Legacy red room was mistaken for a skybox");
+			std::uint32_t shadow_team_game = 0;
+			for (unsigned byte = 0; byte < 4; ++byte) shadow_team_game |= std::uint32_t(translated_team.stock_level.at(12 + byte)) << (byte * 8);
+			check(translated_team.stock_level.at(shadow_team_game - 8) == 0, "Legacy team room created a native station");
+			team_rooms.segments[0].owner = 1;
+			team_rooms.segments[0].group = 54;
+			team_rooms.unknown.push_back({ "segment_owner_group", 0, "1/54" });
+			check(xl_compat::runtime_blockers(team_rooms).empty(), "Valid legacy team owner and group were rejected");
+			team_rooms.segments[0].owner = 3;
+			check(!xl_compat::runtime_blockers(team_rooms).empty(), "Undefined legacy team owner was admitted");
+		}
+		{
 			const auto translated_skybox = xl_compat::prepare_gameplay_probe(fixture(23, 0, 1, 10));
 			auto skybox = translated_skybox.source;
 			check(skybox.segments[0].function == 10 && xl_compat::runtime_blockers(skybox).empty(), "Textured skybox metadata lost during normal translation");
