@@ -1356,9 +1356,10 @@ class XlPrivateTests(unittest.TestCase):
                         with self.assertRaises(ValueError):
                             runner.format_results(Path("inspect"), work, work, {"format_witnesses": [witness]})
 
-    def test_modern_original_outcomes_cannot_drop_rejections_or_source_comparisons(self):
+    def test_modern_original_outcomes_require_dormant_indices_and_source_comparisons(self):
         decoded = {
             "boilpnt.rl2": (23, 1241),
+            "control.rl2": (27, 3316),
             "control2.rl2": (27, 3389),
             "canyon.rl2": (27, 2139),
             "canyon2.rl2": (27, 2125),
@@ -1377,6 +1378,14 @@ class XlPrivateTests(unittest.TestCase):
             }
             for name, (version, segments) in decoded.items()
         ]
+        control = next(row["inventory"] for row in rows if row["name"] == "control.rl2")
+        control.update(
+            observations=[
+                {"feature": "inert_light_index", "record": index} for index in (0, 1, 130, 131, 132, 133, 134)
+            ],
+            light_indices=[None] * 128,
+            delta_lights=[None] * 32769,
+        )
         reactor = next(row["inventory"] for row in rows if row["name"] == "control2.rl2")
         reactor.update(playable=False, reactor_authored_count=26, reactor_targets=[[0, 0] for _ in range(10)])
         sentinel = next(row["inventory"] for row in rows if row["name"] == "subzero.rl2")
@@ -1397,19 +1406,17 @@ class XlPrivateTests(unittest.TestCase):
                 "movement_data": [],
                 "render_data": [40, 0, 0],
             }
-        rows += [
-            {"name": name, "inventory": {"status": "rejected", "reason": reason}}
-            for name, reason in {
-                "control.rl2": "invalid packed light index 0",
-            }.items()
-        ]
         for mode in (
             "valid",
-            "missing-rejection",
+            "missing-level",
             "duplicate",
             "changed-version",
-            "wrong-rejection",
             "empty-source",
+            "control-old-rejection",
+            "control-discarded",
+            "control-indices",
+            "control-deltas",
+            "control-empty-source",
             "reactor-old-rejection",
             "reactor-raw",
             "reactor-short",
@@ -1429,14 +1436,21 @@ class XlPrivateTests(unittest.TestCase):
             with self.subTest(mode=mode), tempfile.TemporaryDirectory() as temporary:
                 work = Path(temporary)
                 current = copy.deepcopy(rows)
-                if mode == "missing-rejection":
-                    current.pop()
+                if mode == "missing-level":
+                    current.pop(0)
                 elif mode == "duplicate":
-                    current[-1] = current[-2]
+                    current[0] = current[1]
                 elif mode == "changed-version":
-                    current[1]["inventory"]["level_version"] = 25
-                elif mode == "wrong-rejection":
-                    current[-1]["inventory"]["reason"] = "unsupported level version 27"
+                    current[0]["inventory"]["level_version"] = 25
+                control = next(row["inventory"] for row in current if row["name"] == "control.rl2")
+                if mode == "control-old-rejection":
+                    control.update(status="rejected", reason="invalid packed light index 0")
+                elif mode == "control-discarded":
+                    control["observations"].pop()
+                elif mode == "control-indices":
+                    control["light_indices"].pop()
+                elif mode == "control-deltas":
+                    control["delta_lights"].pop()
                 reactor = next(row["inventory"] for row in current if row["name"] == "control2.rl2")
                 sentinel = next(row["inventory"] for row in current if row["name"] == "subzero.rl2")
                 if mode == "sentinel-playable":
@@ -1469,13 +1483,14 @@ class XlPrivateTests(unittest.TestCase):
                     calls.append(command)
                     if len(command) == 3:
                         Path(command[2]).write_text(json.dumps({"playable": False, "levels": current}))
-                        return subprocess.CompletedProcess(command, 1)
+                        return subprocess.CompletedProcess(command, 0)
                     if mode == "reactor-source-failure" and command[3] == "control2.rl2":
                         raise subprocess.CalledProcessError(1, command)
                     segments = decoded[command[3]][1]
                     output = (
                         ""
                         if mode == "empty-source"
+                        or (mode == "control-empty-source" and command[3] == "control.rl2")
                         or (mode == "reactor-empty-source" and command[3] == "control2.rl2")
                         or (mode == "sentinel-empty-source" and command[3] == "subzero.rl2")
                         else f"1 levels, {segments} segments, {segments * 6} sides, 10000 comparisons; 5000 vertex brightness maxima"
@@ -1485,10 +1500,10 @@ class XlPrivateTests(unittest.TestCase):
                 with patch.object(runner.subprocess, "run", side_effect=execute):
                     if mode == "valid":
                         self.assertEqual(runner.modern_results(Path("inspect"), Path("reference"), work, work), (7, 3))
-                        self.assertEqual(len(calls), 6)
+                        self.assertEqual(len(calls), 7)
                         self.assertEqual(
                             {command[3] for command in calls[1:]},
-                            {"canyon.rl2", "canyon2.rl2", "watrwrks.rl2", "control2.rl2", "subzero.rl2"},
+                            {"canyon.rl2", "canyon2.rl2", "watrwrks.rl2", "control.rl2", "control2.rl2", "subzero.rl2"},
                         )
                     else:
                         with self.assertRaises((ValueError, subprocess.CalledProcessError)):

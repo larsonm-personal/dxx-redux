@@ -405,7 +405,7 @@ def format_results(inspect, stage, work, data):
 
 
 def modern_results(inspect, reference, stage, work):
-    """Preserve the historical v27 cohort and supplement it with reactor assertions."""
+    """Verify all original Boiling Point members and preserve the historical source count."""
     original = stage / "modern/boilpnt.hog"
     report = work / "modern-inventory.json"
     report.unlink(missing_ok=True)
@@ -413,30 +413,24 @@ def modern_results(inspect, reference, stage, work):
     result = json.loads(report.read_text())
     decoded = {
         "boilpnt.rl2": (23, 1241),
+        "control.rl2": (27, 3316),
         "control2.rl2": (27, 3389),
         "canyon.rl2": (27, 2139),
         "canyon2.rl2": (27, 2125),
         "watrwrks.rl2": (27, 3188),
         "subzero.rl2": (27, 3566),
     }
-    rejected = {
-        "control.rl2": "invalid packed light index ",
-    }
     rows = result["levels"]
     if (
-        run.returncode != 1
+        run.returncode
         or result["playable"] is not False
-        or len(rows) != 7
-        or {row["name"] for row in rows} != decoded.keys() | rejected.keys()
+        or len(rows) != len(decoded)
+        or {row["name"] for row in rows} != decoded.keys()
     ):
         raise ValueError("Modern original outcome membership differs")
     compared = 0
     for row in rows:
         name, inventory = row["name"], row["inventory"]
-        if name in rejected:
-            if inventory["status"] != "rejected" or not inventory["reason"].startswith(rejected[name]):
-                raise ValueError("Modern original expected rejection changed")
-            continue
         version, segments = decoded[name]
         if (
             inventory["status"] != "inspection_only"
@@ -444,6 +438,21 @@ def modern_results(inspect, reference, stage, work):
             or len(inventory["segments"]) != segments
         ):
             raise ValueError("Modern original format or geometry differs")
+        if name == "control.rl2":
+            discarded = [
+                item.get("record")
+                for item in inventory.get("observations", [])
+                if item.get("feature") == "inert_light_index"
+            ]
+            indices, deltas = inventory.get("light_indices"), inventory.get("delta_lights")
+            if (
+                discarded != [0, 1, 130, 131, 132, 133, 134]
+                or type(indices) is not list
+                or len(indices) != 128
+                or type(deltas) is not list
+                or len(deltas) != 32769
+            ):
+                raise ValueError("Original Control dormant indices or retained delta table differ")
         if name == "control2.rl2":
             targets = inventory.get("reactor_targets")
             if (
@@ -505,8 +514,7 @@ def modern_results(inspect, reference, stage, work):
                 check.stdout,
             ):
                 raise ValueError("Modern original source comparison did not execute completely")
-            # Receipt count remains the exact three historical v27 witnesses.
-            # control2 is a mandatory supplemental assertion, not a new cohort member.
+            # The receipt counts the same three historical v27 witnesses.
             if name in {"canyon.rl2", "canyon2.rl2", "watrwrks.rl2"}:
                 compared += 1
     if compared != 3:

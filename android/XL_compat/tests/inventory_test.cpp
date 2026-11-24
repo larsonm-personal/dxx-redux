@@ -1294,20 +1294,22 @@ void version_23_contract()
 
 void invalid_light_row_contract()
 {
-	const auto rooms = fixture(22, 0, 2, 0, true);
 	const std::vector<std::array<int, 7>> delta{ { 1, 2, 0, 1, 2, 3, 4 } };
 	const auto tables = [&](const Bytes &base) {
 		return xl_test::changing_light_tables(base, { { -32768, 0, 0, 35 }, { 0, 0, 4, 0 }, { 0, 2, 1, 0 } }, delta);
 	};
-	const auto filtered = xl_compat::prepare_source_runtime_probe(tables(rooms)).source;
-	check(filtered.light_indices == std::vector<std::array<int, 4>>{ { 0, 2, 1, 0 } } && filtered.delta_lights == delta,
-	      "Inert portal sources reached playback or changed the valid source");
-	check(std::count_if(filtered.observations.begin(), filtered.observations.end(), [](const auto &row) { return row.feature == "inert_light_index"; }) == 2,
-	      "Missing inert light source diagnostics");
-	rejects([&] { xl_compat::prepare_gameplay_probe(tables(rooms)); });
-	rejects([&] { xl_compat::inspect_level(tables(fixture(22))); });
-	for (const auto &target : { std::array<int, 5>{ 0, 0, 1, 0, 32 }, { 1, 1, 1, 0, 32 } })
-		rejects([&] { xl_compat::inspect_level(tables(xl_test::flicker_table(rooms, { target }))); });
+	for (const int version : { 22, 23, 27 }) {
+		const auto rooms = fixture(version, 0, 2, 0, true);
+		const auto filtered = xl_compat::prepare_source_runtime_probe(tables(rooms)).source;
+		check(filtered.light_indices == std::vector<std::array<int, 4>>{ { 0, 2, 1, 0 } } && filtered.delta_lights == delta,
+		      "Inert portal sources reached playback or changed the valid source");
+		check(std::count_if(filtered.observations.begin(), filtered.observations.end(), [](const auto &row) { return row.feature == "inert_light_index"; }) == 2,
+		      "Missing inert light source diagnostics");
+		rejects([&] { xl_compat::prepare_gameplay_probe(tables(rooms)); });
+		rejects([&] { xl_compat::inspect_level(tables(fixture(version))); });
+		for (const auto &target : { std::array<int, 5>{ 0, 0, 1, 0, 32 }, { 1, 1, 1, 0, 32 } })
+			rejects([&] { xl_compat::inspect_level(tables(xl_test::flicker_table(rooms, { target }))); });
+	}
 	const std::vector<std::array<int, 4>> indices{ { 0, 0, 4, 0 }, { 0, 0, 4, 1 } };
 	const std::vector<std::array<int, 7>> deltas{ { -1, 0, 219, 1, 2, 3, 4 }, { 0, 0, 9, 0, 127, 128, 255 }, { 0, 6, 0, 5, 6, 7, 8 }, { 0, 5, 128, 10, 20, 30, 40 }, { 1, 255, 255, 11, 12, 13, 14 } };
 	for (int version : { 15, 17, 21, 23, 25, 27 }) {
@@ -1324,7 +1326,12 @@ void invalid_light_row_contract()
 		}
 		for (const auto range : { std::array<int, 4>{ -1, 0, 1, 0 }, { 0, 0, 6, 0 }, { 0, 0, 1, 5 } }) {
 			const auto invalid = xl_test::changing_light_tables(fixture(version), { range }, deltas);
-			rejects([&] { xl_compat::inspect_level(invalid); });
+			if (range[0] == -1 && (version == 23 || version == 27)) {
+				const auto source = xl_compat::prepare_source_runtime_probe(invalid).source;
+				check(source.light_indices.empty() && source.delta_lights == deltas, "Impossible source entered the runtime light index");
+			} else {
+				rejects([&] { xl_compat::inspect_level(invalid); });
+			}
 		}
 	}
 	std::cout << "Six-layout invalid delta validity, exact raw-row retention and structural bounds passed\n";
