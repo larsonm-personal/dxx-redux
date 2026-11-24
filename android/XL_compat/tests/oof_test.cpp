@@ -135,7 +135,7 @@ int main(int argc, char **argv)
 			check(xl_compat::ModelGeometry(payload.data(), payload.size(), 1).custom_radius() > 0, "Batched geometry has no native radius");
 		}
 		auto extended = bytes;
-		chunk(extended, "PANI", Bytes{ 1, 2, 3 });
+		chunk(extended, "ATCH", Bytes{ 1, 2, 3 });
 		check(xl_compat::read_oof(extended).additional_chunks.at(0).bytes == Bytes({ 1, 2, 3 }), "OOF extension silently discarded");
 		for (int i = 1; i < argc; ++i) {
 			std::ifstream file(argv[i], std::ios::binary);

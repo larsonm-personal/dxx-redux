@@ -36,9 +36,12 @@ inline OofMesh compile_oof_mesh(const OofModel &model, bool flip_v)
 	mesh.low.fill((std::numeric_limits<float>::max)());
 	mesh.high.fill(-(std::numeric_limits<float>::max)());
 	std::size_t vertex_budget = 1024 * 1024;
+	// The reference discards the ground and information records by length
 	for (const auto &chunk : model.additional_chunks)
-		if (chunk.type != "PINF" && !(chunk.type == "SPCL" && model.has_special_points) &&
+		if (chunk.type != "PINF" && chunk.type != "GRND" && !(chunk.type == "SPCL" && model.has_special_points) &&
 		    !(chunk.type == "GPNT" && model.has_gun_points) &&
+		    !(chunk.type == "WBAT" && model.has_weapon_batteries) &&
+		    !(chunk.type == "PANI" && model.has_position_tracks && model.position_tracks.size() == model.submodels.size()) &&
 		    !(chunk.type == "RANI" && model.has_rotation_tracks && model.rotation_tracks.size() == model.submodels.size()))
 			throw std::runtime_error("OOF runtime does not support chunk " + chunk.type);
 	bool points = false;
@@ -53,7 +56,7 @@ inline OofMesh compile_oof_mesh(const OofModel &model, bool flip_v)
 			body.offset[axis] = int32_t(value);
 		}
 		// New metadata admission is limited to the opaque static reference profile
-		if ((model.has_special_points || model.has_rotation_tracks) &&
+		if ((model.has_special_points || model.has_rotation_tracks || model.has_position_tracks || model.has_weapon_batteries) &&
 		    std::any_of(part.alpha.begin(), part.alpha.end(), [](float value) { return value != 1.0f; }))
 			throw std::runtime_error("OOF metadata profile requires opaque vertex alpha");
 		if (!part.properties.empty() || !part.facing_lists.empty())

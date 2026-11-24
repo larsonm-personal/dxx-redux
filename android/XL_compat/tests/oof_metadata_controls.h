@@ -117,7 +117,39 @@ inline void metadata_controls()
 		chunk(b, "RANI", p);
 		require(xl_compat::read_oof(b).rotation_tracks[0].frames[0].normalized_axis == xl_compat::OofVector{}, "Zero axis was invented");
 	}
-	for (const char *tag : { "PANI", "ANIM", "ATCH", "WBAT", "NATH" }) {
+	{
+		Bytes position;
+		for (int header : { 2, 0, 9, 0 }) integer(position, header);
+		vector(position, 1, 2, 3);
+		integer(position, 9);
+		vector(position, 3, 2, 1);
+		Bytes batteries;
+		for (int row : { 1, 2, 1, 2, 1, 0 }) integer(batteries, row);
+		const Bytes ground{ 0, 0, 0, 0 };
+		auto b = base;
+		chunk(b, "PANI", position);
+		chunk(b, "WBAT", batteries);
+		chunk(b, "GRND", ground);
+		const auto model = xl_compat::read_oof(b);
+		require(model.position_tracks.size() == 1 && model.position_tracks[0].frames.size() == 2 &&
+		            model.position_tracks[0].frames[1].start == 9 && model.position_tracks[0].frames[1].position == xl_compat::OofVector{ 3, 2, 1 },
+		        "OOF position animation lost its authored frames");
+		require(model.weapon_batteries.size() == 1 && model.weapon_batteries[0].vertices == std::vector<int>{ 1, 2 } &&
+		            model.weapon_batteries[0].turrets == std::vector<int>{ 0 } && model.additional_chunks[2].bytes == ground,
+		        "OOF weapon battery or opaque ground record changed");
+		require(same_mesh(original, xl_compat::compile_oof_mesh(model, false)), "Unused OOF metadata changed the static reference mesh");
+		chunk(b, "WBAT", batteries);
+		rejects(b);
+		b = base;
+		patch32(batteries, batteries.size() - 4, 1);
+		chunk(b, "WBAT", batteries);
+		rejects(b);
+		b = base;
+		patch32(position, 12, 10);
+		chunk(b, "PANI", position);
+		rejects(b);
+	}
+	for (const char *tag : { "PANI", "ANIM", "ATCH", "NATH" }) {
 		auto b = base;
 		chunk(b, tag, Bytes{ 0, 0, 0, 0 });
 		rejects(b);
