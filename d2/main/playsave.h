@@ -98,6 +98,9 @@ typedef struct player_config
 	ubyte QuietPlasma;
 	int AlphaEffects;
 	int DynLightColor;
+#ifdef DXX_XL_RUNTIME
+	int XlWallLightGlow;
+#endif
 	ubyte DisableCockpit;  /* DisableCockpit */
 	ubyte StickyRearview; /* StickyRearview */
 	ubyte SelectAfterFire; /* SelectAfterFire */

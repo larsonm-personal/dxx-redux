@@ -225,6 +225,7 @@
     },
     // Native original-file check identifies this face's authored texture-295 emitter
     // Controlled placement is a rendering witness, not route traversal
+    { "action": "set_debug", "field": "xl_wall_light_glow", "value": "1" },
     { "action": "face_view", "segment": 9, "side": 2, "distance": 12, "post_delay_ms": 300 },
     {
         "action": "wait_for",
@@ -236,4 +237,5 @@
         },
     },
     { "action": "introspect" },
+    { "action": "set_debug", "field": "xl_wall_light_glow", "value": "0" },
 ]

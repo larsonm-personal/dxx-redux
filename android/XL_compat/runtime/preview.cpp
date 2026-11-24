@@ -89,6 +89,7 @@ extern "C" {
 #include "render.h"
 #include "lighting.h"
 #include "player.h"
+#include "playsave.h"
 #include "weapon.h"
 #include "laser.h"
 #include "vclip.h"
@@ -1945,7 +1946,7 @@ extern "C" int xl_preview_corona_geometry(int segment_number, int side_number, c
 
 extern "C" void xl_preview_render_emitters(const short *segments, int count, const int32_t eye[3], int eye_segment)
 {
-	if ((!source && !xl_prepared_classic_lighting()) || Game_mode & GM_MULTI) return;
+	if (!PlayerCfg.XlWallLightGlow || (!source && !xl_prepared_classic_lighting()) || Game_mode & GM_MULTI) return;
 	for (int i = 0; i < count; ++i) {
 		for (int side = 0; side < 6; ++side) {
 			xl_texture_emitter emitter{};
