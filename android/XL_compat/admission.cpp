@@ -19,6 +19,17 @@
 
 namespace xl_compat
 {
+static bool classic_effect_shape(const Object &object)
+{
+	return authored_lightning_shape(object) || (authored_particle_shape(object) && object.render_data[11] == 0);
+}
+
+bool classic_effect_layout(const Inventory &level)
+{
+	return level.level_version == 7 && level.game_version == 31 &&
+	       std::any_of(level.objects.begin(), level.objects.end(), classic_effect_shape);
+}
+
 std::vector<int> object_chain_targets(const Inventory &level, const Trigger &master)
 {
 	std::vector<int> result;
@@ -44,9 +55,10 @@ std::vector<int> object_chain_targets(const Inventory &level, const Trigger &mas
 std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_water)
 {
 	std::vector<Issue> result;
-	const bool classic_lightning = classic_lightning_layout(level);
+	const bool classic_effect = classic_effect_layout(level);
 	for (const auto &issue : level.unsupported) {
-		if (classic_lightning && issue.feature != "effect_lightning" && issue.feature != "effect_object_types") {
+		if (classic_effect && issue.feature != "effect_lightning" && issue.feature != "effect_particles" &&
+		    issue.feature != "effect_object_types" && issue.feature != "additive_wall_rendering") {
 			result.push_back(issue);
 			continue;
 		}
@@ -102,8 +114,8 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 					result.push_back({ "skybox colored boundary", int(segment), "untextured fog boundary on side " + std::to_string(side) + " requires source draw-state qualification" });
 	for (unsigned index = 0; index < level.objects.size(); ++index) {
 		const auto &object = level.objects[index];
-		if (classic_lightning && (object.type == 18 || object.type == 19 || object.type == 20) && !authored_lightning_shape(object)) {
-			result.push_back({ "effect_object_types", int(index), "classic 7/31 only supports source-owned lightning effects" });
+		if (classic_effect && (object.type == 18 || object.type == 19 || object.type == 20) && !classic_effect_shape(object)) {
+			result.push_back({ "effect_object_types", int(index), "classic 7/31 requires source-owned lightning or smoke" });
 			continue;
 		}
 		if (object.render == 11) {
@@ -146,7 +158,7 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 	auto limit = [&](bool exceeded, const char *feature, const char *detail) {
 		if (exceeded) result.push_back({ feature, -1, detail });
 	};
-	limit(!supported_xl_layout(level) && !classic_lightning, "serialization", "requires an audited XL level/game-data version pair");
+	limit(!supported_xl_layout(level) && !classic_effect, "serialization", "requires an audited XL level/game-data version pair");
 	limit(level.level_version >= 27 && volumetric_fog_required(level) && level.fog_settings.size() != 4, "authored fog", "requires four complete authored color/distance records and a capable OpenGL renderer");
 	limit(level.walls.size() > DXX_XL_MAX_WALLS, "wall capacity", "more than 2047 walls");
 	for (std::size_t i = 0; i < level.walls.size(); ++i) {

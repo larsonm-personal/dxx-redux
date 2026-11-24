@@ -3,6 +3,7 @@
 #include "inventory.h"
 namespace xl_compat
 {
+bool classic_effect_layout(const Inventory &level);
 // Format/feature eligibility only; the engine must also validate mounted assets
 std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_water = false);
 std::string blocker_message(const std::vector<Issue> &blockers);

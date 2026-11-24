@@ -2,7 +2,6 @@
 #define DXX_XL_LIGHTNING_ADMISSION_H
 #include "lightning_path.h"
 #include "lighting.h"
-#include <algorithm>
 
 namespace xl_compat
 {
@@ -12,11 +11,6 @@ inline bool authored_lightning_shape(const Object &object)
 	       !object.control && !object.movement && !object.multiplayer;
 }
 
-inline bool classic_lightning_layout(const Inventory &level)
-{
-	return level.level_version == 7 && level.game_version == 31 &&
-	       std::any_of(level.objects.begin(), level.objects.end(), authored_lightning_shape);
-}
 inline bool authored_lightning_emits(const Object &object)
 {
 	if (object.render_data.size() != 26 || object.render_data[6] < -32768 || object.render_data[6] > 32767)

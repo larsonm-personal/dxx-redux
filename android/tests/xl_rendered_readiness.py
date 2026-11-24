@@ -48,6 +48,7 @@ def main():
     engine = args.engine.resolve()
     command = [
         str(engine),
+        "-window",
         "-mission",
         args.mission,
         "-level",

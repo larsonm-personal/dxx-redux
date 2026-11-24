@@ -1,0 +1,54 @@
+{
+  "schema": 1,
+  "date": "2026-11-23",
+  "distribution": "levelpack.7z",
+  "distribution_sha256": "b4b519dc5755b795fd49cc3786a0421b96cd099dcc8f002925ddfd7c038b2719",
+  "mission": "missions/darkflamewolf/ctheo-xl.mn2",
+  "ordinal": 6,
+  "member": "clminate.rl2",
+  "member_sha256": "e7ade6c4fb0803c46573ee5265f815e8d3488951e8274729291812675522bf8e",
+  "level_version": 7,
+  "game_version": 31,
+  "original_effects": {
+    "smoke_indices": [56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66],
+    "smoke_segments": [263, 262, 197, 265, 338, 196, 266, 264, 194, 195, 198],
+    "additive_closed_wall_indices": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]
+  },
+  "unassisted_cluster": {
+    "denominator": 6,
+    "baseline_passed": 5,
+    "candidate_passed": 6,
+    "baseline_engine_sha256": "2dccc5fec3bf9ffac69c130f2602433ba4d10de7f17d8c56339aa88a409e42b6",
+    "candidate_engine_sha256": "f72723f26375e8abab53a1e4df0197a8d8a8ee862b7f3e2fe377bd641df2c89b",
+    "candidate_receipt_sha256": "6c9df70b627b8bca2a07c744dae5a76ae64c25ea3f03f1461e7af978c8fecc12",
+    "frames_per_start": 120,
+    "fixed_hz": 60,
+    "seed": 1
+  },
+  "rendered_start": {
+    "frames": 120,
+    "receipt_sha256": "07d15014865517f62744d4aedf57395b11f28511537218fec881c9b28274e4b6",
+    "observation": "The spawn view completed 120 OpenGL frames. The original archive alone yielded no live particle systems in this run."
+  },
+  "assisted_smoke_scene": {
+    "addon_sha256": "6fe8b321ff2cf6e3bc6edd1c1cf8d692b2ba7796325bdb64254a2556e4d1e6ac",
+    "engine_sha256": "0427e945a16defe7505c609de705c68db8132454a2ef568e7fcedcbe65a9ed1d",
+    "receipt_sha256": "c712d929d352fb355a0b0408b80e710fcb8b9fa59e662c1ebf4072299b24c575",
+    "windowed_display_modes_preserved": true,
+    "object": 56,
+    "segment": 263,
+    "live_smoke_owners": 11,
+    "object_particles": 3,
+    "effect_vs_empty_control_changed_pixels": 156752,
+    "empty_vs_repeat_control_changed_pixels": 0,
+    "observation": "The original level used a pinned smoke add-on image. The developer camera viewed the authored face after 120 unassisted frames. The effect and both cleared-particle controls rendered without GL errors."
+  },
+  "cold_save_restore": {
+    "save_receipt_sha256": "3be29b603f1a499c327584805f74077eac93a6e3ab618bdb7eb026b38ad5e4ee",
+    "restore_receipt_sha256": "f893481f67128c4bf8101a8f40679a06912f08f75d89dc5fab2af0432b9df811",
+    "first_segment": 20,
+    "continued_segment": 21,
+    "retained_enabled_smoke_owners": 11
+  },
+  "coverage": "Startup and simulation use exact original mission members. Cold save/load uses automated steering. The assisted renderer check witnesses smoke only. The additive walls did not receive a dedicated visual test. Ordinary completion and phone play remain unmeasured."
+}
