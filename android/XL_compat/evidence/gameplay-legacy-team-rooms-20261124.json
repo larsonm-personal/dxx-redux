@@ -14,7 +14,10 @@
             "case": "levelpack.7z/missions/sirius/fv24b.mn2:1",
             "ordinal": 1,
             "level_sha256": "0616b9500650f91d78f13f00a05208b134097a9ebf4369864977bf54551dea09",
-            "layout": [17, 36],
+            "layout": [
+                17,
+                36
+            ],
             "source_descriptor_sha256": "99cdc7e5f4baeae3d715d69bf8fe48c66672d4d8aa03898aa5131fbb4fdafbc1",
             "original_trace_sha256": "dbd03b0b2caf25600215ceea19736cd63b04b2f60620685b327965889b84db72",
             "original_observer_sha256": "eabab1bc9e8d6bb14a8e1ffce5d8720e2ec51aeec54723bb1bbd7bdb1c09d9c3",
@@ -32,13 +35,17 @@
             "first_remaining_blocker": null,
             "windows_log_sha256": "7fcba1b55c31052f8ccf0ea08e02adebedfae6941a1b5946f7a8c9f2305a1557",
             "windows_source_head": "a8c3f733207a76613a64d46adc2f4834f48fc84c",
-            "windows_executable_sha256": "8c6e8e78da3f6646251cf733bddfbaf9595baa4efb02b2b31c62963701ac6846"
+            "windows_executable_sha256": "8c6e8e78da3f6646251cf733bddfbaf9595baa4efb02b2b31c62963701ac6846",
+            "integrated_windows_log_sha256": "7fcba1b55c31052f8ccf0ea08e02adebedfae6941a1b5946f7a8c9f2305a1557"
         },
         {
             "case": "levels_multiplayer/biohzrd.zip/biohzrd.mn2:1",
             "ordinal": 1,
             "level_sha256": "8dbcb12fbdae03fe7ece97d9b64cb72b35f3fcaffa1da2b26f04c383e4794c81",
-            "layout": [17, 36],
+            "layout": [
+                17,
+                36
+            ],
             "source_descriptor_sha256": "f022ef06ad0a6de29f127705af4d7ed56890d4ed5393f0d2c53ab5f413bff29f",
             "original_trace_sha256": "be76d9fbcea85551764872e4433a0058e17dac733666acb8dac6090c5f67f2b5",
             "original_observer_sha256": "eabab1bc9e8d6bb14a8e1ffce5d8720e2ec51aeec54723bb1bbd7bdb1c09d9c3",
@@ -48,7 +55,12 @@
             },
             "original_team_owners": 18,
             "original_named_groups": 18,
-            "original_repair_centers": [887, 888, 896, 897],
+            "original_repair_centers": [
+                887,
+                888,
+                896,
+                897
+            ],
             "original_frames": 120,
             "windows_candidate": "loaded_ticked",
             "windows_candidate_frames": 120,
@@ -56,13 +68,17 @@
             "first_remaining_blocker": null,
             "windows_log_sha256": "393cc64e681468fde3e294c570d6f4de9349df3bb9e034932a998d1884ca2753",
             "windows_source_head": "a8c3f733207a76613a64d46adc2f4834f48fc84c",
-            "windows_executable_sha256": "8c6e8e78da3f6646251cf733bddfbaf9595baa4efb02b2b31c62963701ac6846"
+            "windows_executable_sha256": "8c6e8e78da3f6646251cf733bddfbaf9595baa4efb02b2b31c62963701ac6846",
+            "integrated_windows_log_sha256": "393cc64e681468fde3e294c570d6f4de9349df3bb9e034932a998d1884ca2753"
         },
         {
             "case": "levels_multiplayer/emtombz.zip/emtombz.mn2:1",
             "ordinal": 1,
             "level_sha256": "84caa422c938dc02df17e72910e1c9f59d0358ac5f8d4c77050d856c185874c7",
-            "layout": [17, 36],
+            "layout": [
+                17,
+                36
+            ],
             "source_descriptor_sha256": "bb78417651897eac180c34558737e4f6a48ccceba29f11d14482952295e2fa96",
             "original_trace_sha256": "30a0491fd5a5ec946d4c0d3adc51c7abed19b89af10d30869ec4c25fbbf37d42",
             "original_observer_sha256": "eabab1bc9e8d6bb14a8e1ffce5d8720e2ec51aeec54723bb1bbd7bdb1c09d9c3",
@@ -72,7 +88,14 @@
             },
             "original_team_owners": 72,
             "original_named_groups": 72,
-            "original_repair_centers": [181, 182, 183, 193, 194, 195],
+            "original_repair_centers": [
+                181,
+                182,
+                183,
+                193,
+                194,
+                195
+            ],
             "original_frames": 120,
             "windows_candidate": "loaded_ticked",
             "windows_candidate_frames": 120,
@@ -80,13 +103,17 @@
             "first_remaining_blocker": null,
             "windows_log_sha256": "393cc64e681468fde3e294c570d6f4de9349df3bb9e034932a998d1884ca2753",
             "windows_source_head": "a8c3f733207a76613a64d46adc2f4834f48fc84c",
-            "windows_executable_sha256": "8c6e8e78da3f6646251cf733bddfbaf9595baa4efb02b2b31c62963701ac6846"
+            "windows_executable_sha256": "8c6e8e78da3f6646251cf733bddfbaf9595baa4efb02b2b31c62963701ac6846",
+            "integrated_windows_log_sha256": "393cc64e681468fde3e294c570d6f4de9349df3bb9e034932a998d1884ca2753"
         },
         {
             "case": "levels_multiplayer/etombz.zip/etombz.mn2:1",
             "ordinal": 1,
             "level_sha256": "f4e89350a34c38ce1cad9bc9767cd3fa8d6c8b4ae1985c50177c2da095a4622e",
-            "layout": [17, 36],
+            "layout": [
+                17,
+                36
+            ],
             "source_descriptor_sha256": "d2be0abfcb3d834afb159292afc1d256470809900bc701e7bba104aad873afaf",
             "original_trace_sha256": "9f5d3055a3acd8dffb6b50622f05e58a2b302ee8471a5440f0205fd1a240d541",
             "original_observer_sha256": "eabab1bc9e8d6bb14a8e1ffce5d8720e2ec51aeec54723bb1bbd7bdb1c09d9c3",
@@ -96,7 +123,14 @@
             },
             "original_team_owners": 72,
             "original_named_groups": 110,
-            "original_repair_centers": [495, 496, 497, 507, 508, 509],
+            "original_repair_centers": [
+                495,
+                496,
+                497,
+                507,
+                508,
+                509
+            ],
             "original_frames": 120,
             "windows_candidate": "loaded_ticked",
             "windows_candidate_frames": 120,
@@ -104,20 +138,28 @@
             "first_remaining_blocker": null,
             "windows_log_sha256": "393cc64e681468fde3e294c570d6f4de9349df3bb9e034932a998d1884ca2753",
             "windows_source_head": "a8c3f733207a76613a64d46adc2f4834f48fc84c",
-            "windows_executable_sha256": "8c6e8e78da3f6646251cf733bddfbaf9595baa4efb02b2b31c62963701ac6846"
+            "windows_executable_sha256": "8c6e8e78da3f6646251cf733bddfbaf9595baa4efb02b2b31c62963701ac6846",
+            "integrated_windows_log_sha256": "393cc64e681468fde3e294c570d6f4de9349df3bb9e034932a998d1884ca2753"
         },
         {
             "case": "prophxl131beta.zip/missions/sapphire wolf sp/PROPHXL.MN2:3",
             "ordinal": 3,
             "level_sha256": "f1b67a7d715fcf9eae077b3899972e52b2b97dbf42c4fe9bec6c8e4b92eaa1cc",
-            "layout": [19, 40],
+            "layout": [
+                19,
+                40
+            ],
             "source_descriptor_sha256": "8a47df99aaa72d34366d8ae357f1303e2c82c631163b062636b19d20c878b62b",
             "original_trace_sha256": "7c1f801a7671fcf8b0781db19f469741f46028c47ffb025ad68b72e24ab4cef1",
             "original_observer_sha256": "eabab1bc9e8d6bb14a8e1ffce5d8720e2ec51aeec54723bb1bbd7bdb1c09d9c3",
             "original_team_function_mappings": {},
             "original_team_owners": 0,
             "original_named_groups": 0,
-            "original_repair_centers": [691, 692, 693],
+            "original_repair_centers": [
+                691,
+                692,
+                693
+            ],
             "original_frames": 120,
             "windows_candidate": "load_failed",
             "windows_candidate_frames": 0,
@@ -125,7 +167,66 @@
             "first_remaining_blocker": "Lightning endpoint profile at object 186",
             "windows_log_sha256": "6e8c079894d54765da90369edba9139e563643e47a8a0f321e0919046abde8b2",
             "windows_source_head": "a8c3f733207a76613a64d46adc2f4834f48fc84c",
-            "windows_executable_sha256": "8c6e8e78da3f6646251cf733bddfbaf9595baa4efb02b2b31c62963701ac6846"
+            "windows_executable_sha256": "8c6e8e78da3f6646251cf733bddfbaf9595baa4efb02b2b31c62963701ac6846",
+            "integrated_windows_log_sha256": "6e8c079894d54765da90369edba9139e563643e47a8a0f321e0919046abde8b2"
         }
-    ]
+    ],
+    "combined_cluster": {
+        "original_started": 8,
+        "windows_started": 7,
+        "denominator": 8,
+        "windows_source_head": "4d3ec26f349cdbf7322ea6e1159cf1fa35c4ceda",
+        "windows_executable_sha256": "fb381f153189d3e9e55a090ddb210a2329d263a85f88ed17e2a452ae4358652e",
+        "native_inventory_contract_log_sha256": "70b909e9364cae1591fdf05f8fa9e7ed8dcd7d07de5bc5994a4b348abd8f0336",
+        "additional_pinned_23_40_cases": [
+            {
+                "case": "levelpack.7z/missions/diedel/biohzrd.mn2:1",
+                "ordinal": 1,
+                "layout": [
+                    23,
+                    40
+                ],
+                "source_descriptor_sha256": "be2a1daf62c8fcb5128e6316506a449676c5f6a11b0fad0e320d73df50906b51",
+                "original_observer_sha256": "eabab1bc9e8d6bb14a8e1ffce5d8720e2ec51aeec54723bb1bbd7bdb1c09d9c3",
+                "original_trace_sha256": "f994999b9593b98854abee74088a5d4c75e9e880a13450503c02c4f502cb5185",
+                "original_team_owners": 18,
+                "original_frames": 120,
+                "windows_candidate": "loaded_ticked",
+                "windows_candidate_frames": 120,
+                "windows_log_sha256": "393cc64e681468fde3e294c570d6f4de9349df3bb9e034932a998d1884ca2753"
+            },
+            {
+                "case": "levelpack.7z/missions/diedel/emtombz.mn2:1",
+                "ordinal": 1,
+                "layout": [
+                    23,
+                    40
+                ],
+                "source_descriptor_sha256": "0195529894e4a40b7158ee6f3f9020dba05312200975f52cba6fb149a2b2024a",
+                "original_observer_sha256": "eabab1bc9e8d6bb14a8e1ffce5d8720e2ec51aeec54723bb1bbd7bdb1c09d9c3",
+                "original_trace_sha256": "5e74cb6ba4a0d670999592e98d1cbd458c92f120451779ce0ec033b972635996",
+                "original_team_owners": 72,
+                "original_frames": 120,
+                "windows_candidate": "loaded_ticked",
+                "windows_candidate_frames": 120,
+                "windows_log_sha256": "393cc64e681468fde3e294c570d6f4de9349df3bb9e034932a998d1884ca2753"
+            },
+            {
+                "case": "levelpack.7z/missions/diedel/etombz.mn2:1",
+                "ordinal": 1,
+                "layout": [
+                    23,
+                    40
+                ],
+                "source_descriptor_sha256": "eb65bcd6ed15a25581434f4fc593b24604b7f7451b6b8d2945d8e56984b91e97",
+                "original_observer_sha256": "eabab1bc9e8d6bb14a8e1ffce5d8720e2ec51aeec54723bb1bbd7bdb1c09d9c3",
+                "original_trace_sha256": "3af9a59d6baa79a69ce390b32a4ac557ee4694a2515f5e1de97bfd9ffca522a6",
+                "original_team_owners": 72,
+                "original_frames": 120,
+                "windows_candidate": "loaded_ticked",
+                "windows_candidate_frames": 120,
+                "windows_log_sha256": "393cc64e681468fde3e294c570d6f4de9349df3bb9e034932a998d1884ca2753"
+            }
+        ]
+    }
 }
