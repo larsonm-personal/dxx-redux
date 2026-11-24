@@ -658,7 +658,8 @@ static Inventory read_level_inventory(const Bytes &bytes, bool allow_classic)
 	}
 	if (indices.count) {
 		auto r = section_reader(bytes, out, indices, 6);
-		const bool allows_inert_light_indices = out.level_version == 22 && out.game_version == 40;
+		const bool allows_inert_light_indices = out.game_version == 40 &&
+		                                        (out.level_version == 22 || out.level_version == 23 || out.level_version == 27);
 		const auto targets = allows_inert_light_indices ? authored_light_targets(out) : LightFaces{};
 		for (int i = 0; i < indices.count; ++i) {
 			std::array<int, 4> values{ r.s16(), r.u8(), r.u8(), r.u16() };
