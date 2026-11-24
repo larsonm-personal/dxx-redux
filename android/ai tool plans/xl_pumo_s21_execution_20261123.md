@@ -308,8 +308,8 @@ and registered in [stack 720](https://github.com/larsonm-personal/dxx-redux/stac
 | [#739](https://github.com/larsonm-personal/dxx-redux/pull/739) | `4eeb29e24` | Execution and next tranche    | 37 success, 6 skipped  |
 | [#740](https://github.com/larsonm-personal/dxx-redux/pull/740) | `c0c6100e9` | Robotless Subspace D3 + guard  | 23 success, 15 skipped |
 | [#741](https://github.com/larsonm-personal/dxx-redux/pull/741) | `ffc59e1a0` | S21 execution and next tranche | 34 success, 9 skipped  |
-| [#742](https://github.com/larsonm-personal/dxx-redux/pull/742) | `f050a4ae2` | Loading bar through music      | 35 success, 7 skipped, 1 headed replay running |
-| [#743](https://github.com/larsonm-personal/dxx-redux/pull/743) | `43a4f1c65` | S21 audit and original XL handoff | Private CI passed; public replay jobs running |
+| [#742](https://github.com/larsonm-personal/dxx-redux/pull/742) | `f050a4ae2` | Loading bar through music      | 36 success, 7 skipped |
+| [#743](https://github.com/larsonm-personal/dxx-redux/pull/743) | `f68bfe4db` | S21 audit, ordinary touch and filmed loading | 36 success, 7 skipped before this report-only update |
 
 Fork workflow admission can skip private XL qualification below the native
 stack tip. The private smoke on #729 actually ran sampled and expanded
@@ -337,22 +337,35 @@ during the final recording listing (`adb: device 'emulator-5554' not found`).
 The retained [attempt 1 artifact](https://github.com/larsonm-personal/dxx-redux/actions/runs/45222810844/attempts/1)
 identifies this as a runner/device loss after gameplay; failed jobs were
 retried as attempt 2 on the same head and passed. Its public headed replay
-parity job was still running at this update. The #743 private exact-head
-workflow passed Linux tests, fixed 8/8 and expanded 64/64 original load/tick
-samples on `43a4f1c65`. Its public selected Android and JVM jobs passed: the
-Android game script completed 151/151 actions and JVM reported 1,325 passing
-tests with 12 skipped. The first public #743 Linux-tests attempt failed before
-source tests because Gradle could not resolve the Kotlin 2.4.20 plugin; its
-retained host artifact records setup failure. Failed jobs were retried on the
-identical head in [attempt 2](https://github.com/larsonm-personal/dxx-redux/actions/runs/45229138155/attempts/2),
-which passed. Three separate public native replay/runtime checks remained in
-progress at this update. The documented S21 follow-up will produce a new
-#743 head, whose exact checks must be monitored separately.
+parity job also passed. The first #743 private exact-head workflow passed Linux
+tests, fixed 8/8 and expanded 64/64 original load/tick samples on
+`43a4f1c65`. Its public selected Android and JVM jobs passed: the Android game
+script completed 151/151 actions and JVM reported 1,325 passing tests with 12
+skipped. The first public #743 Linux-tests attempt failed before source tests
+because Gradle could not resolve the Kotlin 2.4.20 plugin; its retained host
+artifact records setup failure. Failed jobs were retried on the identical
+head in [attempt 2](https://github.com/larsonm-personal/dxx-redux/actions/runs/45229138155/attempts/2),
+which passed.
+
+The subsequent `f68bfe4db` #743 head documented the ordinary S21 touch and
+filmed loading checks. Its [private XL workflow](https://github.com/larsonm-personal/dxx-redux/actions/runs/45235143202)
+passed host tests with `attempted_tests: true`, fixed **8/8** and expanded
+**64/64** original load/tick cases at 120 frames. Its [public selected tests](https://github.com/larsonm-personal/dxx-redux/actions/runs/45235110960)
+passed five attempted Android tests, including **151/151** Descent 2 game
+actions; JVM ran **1,325 passing** tests with 12 declared fixture skips.
+The [ASan workload](https://github.com/larsonm-personal/dxx-redux/actions/runs/45235110704)
+ran D1 and D2 instrumented public cases and passed. The [public replay run](https://github.com/larsonm-personal/dxx-redux/actions/runs/45235110699)
+passed both headless and headed jobs: each ran 17 public scenes twice,
+**34/34** native runs per backend, and headed negative controls passed. The
+replay reports limit broader imported/paired simulation qualification; the
+passing checks do not claim full gameplay parity. All current #726-#743
+check lists were rechecked before this report-only update and contained only
+successes and intentional skips. This update creates a newer #743 commit;
+qualify that exact head separately before handoff.
 The #734 Windows build was cancelled
 after its test steps passed in [run 45180936407, attempt 1](https://github.com/larsonm-personal/dxx-redux/actions/runs/45180936407/attempts/1);
 the targeted [attempt 2](https://github.com/larsonm-personal/dxx-redux/actions/runs/45180936407/attempts/2)
-succeeded. Final head checks and admission evidence must be updated here
-after active runs complete. Leave all PRs open for review.
+succeeded. Leave all PRs open for review.
 
 ## Handoff
 
