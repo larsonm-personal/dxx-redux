@@ -46,12 +46,13 @@ void rejects(const std::function<void()> &action)
 }
 Bytes fixture(int version = 15, int segment_flags = 0, int segment_count = 1, int segment_function = 0, bool connect_pair = false)
 {
+	const bool classic = version == 7;
 	Bytes b;
 	put(b, 0x504c564c, 4);
 	put(b, version, 4);
 	put(b, 16, 4);
 	put(b, 0, 4);
-	b.resize(23);
+	if (!classic) b.resize(23);
 	put(b, 0, 1);
 	put(b, 30, 4);
 	put(b, 0xffffffff, 4);
@@ -63,8 +64,10 @@ Bytes fixture(int version = 15, int segment_flags = 0, int segment_count = 1, in
 	put(b, segment_count, 2);
 	for (int i = 0; i < 24; ++i) put(b, i * 65536, 4);
 	for (int segment = 0; segment < segment_count; ++segment) {
-		put(b, 255, 1);
-		put(b, 255, 1);
+		if (!classic) {
+			put(b, 255, 1);
+			put(b, 255, 1);
+		}
 		const int portal = connect_pair ? segment : -1;
 		put(b, connect_pair ? 1 << portal : 0, 1);
 		if (connect_pair) put(b, 1 - segment, 2);
@@ -86,14 +89,14 @@ Bytes fixture(int version = 15, int segment_flags = 0, int segment_count = 1, in
 		if (version >= 21) b.resize(b.size() + 5);
 		put(b, 65536, 4);
 	}
-	for (int i = 0; i < 8 + segment_count * 6; ++i) {
+	for (int i = 0; !classic && i < 8 + segment_count * 6; ++i) {
 		put(b, 1, 1);
 		put(b, 2147483647, 4);
 		put(b, 1073741824, 4);
 		put(b, 0, 4);
 	}
 	// Texture colors switch from double to integer components after level 15
-	for (int i = 0; i < 910; ++i) {
+	for (int i = 0; !classic && i < 910; ++i) {
 		put(b, 1, 1);
 		if (version == 15) {
 			put(b, 0, 4);
@@ -108,11 +111,12 @@ Bytes fixture(int version = 15, int segment_flags = 0, int segment_count = 1, in
 	const auto game = b.size();
 	patch(b, 12, static_cast<std::uint32_t>(game));
 	put(b, 0x6705, 2);
-	put(b, version == 15 ? 33 : version >= 19 ? 40
-	                                          : 36,
+	put(b, classic ? 31 : version == 15 ? 33
+	                  : version >= 19   ? 40
+	                                    : 36,
 	    2);
 	b.resize(b.size() + 31);
-	for (int i = 0; i < (version == 15 ? 9 : 10); ++i) {
+	for (int i = 0; i < (version <= 15 ? 9 : 10); ++i) {
 		put(b, 0xffffffff, 4);
 		put(b, 0, 4);
 		put(b, 0, 4);
@@ -120,8 +124,10 @@ Bytes fixture(int version = 15, int segment_flags = 0, int segment_count = 1, in
 	if (version >= 27) b.resize(b.size() + 16);
 	put(b, 0, 1);
 	put(b, 0, 2);
-	patch(b, game + 71, static_cast<std::uint32_t>(b.size()));
-	put(b, 0, 4);
+	if (!classic) {
+		patch(b, game + 71, static_cast<std::uint32_t>(b.size()));
+		put(b, 0, 4);
+	}
 	if (version == 17 || version == 18) put(b, 0, 2);
 	return b;
 }

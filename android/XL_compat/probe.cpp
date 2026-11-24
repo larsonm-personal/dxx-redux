@@ -81,7 +81,7 @@ static Bytes level_without_multiplayer_objects(const Bytes &source, const Invent
 static GameplayProbe prepare_probe(const Bytes &original, bool water_segments, int qualification_version, bool source_runtime = false, bool singleplayer = false)
 {
 	GameplayProbe result;
-	result.source = inspect_level(original);
+	result.source = source_runtime ? inspect_mission_level(original) : inspect_level(original);
 	Bytes compact;
 	if (singleplayer && std::any_of(result.source.objects.begin(), result.source.objects.end(), [](const Object &object) { return object.multiplayer != 0; })) {
 		compact = level_without_multiplayer_objects(original, result.source);
@@ -131,6 +131,11 @@ static GameplayProbe prepare_probe(const Bytes &original, bool water_segments, i
 		require(begin <= end && end <= out.size(), "invalid owned flicker header span");
 		out.erase(out.begin() + begin, out.begin() + end);
 		patch(out, v.flicker_offset, 0);
+		patch(out, 8, static_cast<int>(out.size()));
+	}
+	if (v.level_version == 7) {
+		// Version 8's native header expects an unused seven-byte field before the palette
+		out.insert(out.begin() + 16, 7, 0);
 		patch(out, 8, static_cast<int>(out.size()));
 	}
 	patch(out, 4, 8);

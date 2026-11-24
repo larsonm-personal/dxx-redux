@@ -1,0 +1,39 @@
+{
+  "schema": 1,
+  "date": "2026-11-23",
+  "baseline_commit": "b579df413d76e57fcb188df3f4a0276b6720a23d",
+  "archive": "levelpack.7z",
+  "archive_sha256": "b4b519dc5755b795fd49cc3786a0421b96cd099dcc8f002925ddfd7c038b2719",
+  "descriptor": "missions/darkflamewolf/ctheo-xl.mn2",
+  "descriptor_sha256": "1204d3369c2d63a9c3f55cb5b69d3f159ccab7f9dc1e66afe0b5de1aa1666244",
+  "hog_sha256": "a1a2d4cef9c8df1d948d0b46d7d069b91f596cd9440a4efc168f93e5a3b65ee6",
+  "catalog_sha256": "bf4356a7a5fbe64832a40d7065ea02d8b81276ebd8bbba6874012f7851fa0cf8",
+  "baseline_engine_sha256": "84279290127b784ca3b12cf9579195bb56273ebae5fc131d73bb8a8bb0baaa40",
+  "candidate_engine_sha256": "2dccc5fec3bf9ffac69c130f2602433ba4d10de7f17d8c56339aa88a409e42b6",
+  "inputs": "One Windows worker, fixed 60 Hz, seed 1, 120 unassisted frames per advertised ordinal",
+  "before_passed": 4,
+  "after_passed": 5,
+  "denominator": 6,
+  "ordinals": [
+    { "ordinal": 1, "member": "catalyst.rl2", "before_frames": 120, "after_frames": 120 },
+    { "ordinal": 2, "member": "initiati.rl2", "before_frames": 120, "after_frames": 120 },
+    { "ordinal": 3, "member": "unbridle.rl2", "before_frames": 120, "after_frames": 120 },
+    { "ordinal": 4, "member": "standoff.rl2", "before_frames": 0, "after_frames": 120 },
+    { "ordinal": 5, "member": "brekthru.rl2", "before_frames": 120, "after_frames": 120 },
+    { "ordinal": 6, "member": "clminate.rl2", "before_frames": 0, "after_frames": 0 }
+  ],
+  "standoff": {
+    "resolved_level_sha256": "77c4d3929815a98e5534fc0a8c2b70a218730d6656442105b5231b93ffc6d6cb",
+    "source_layout": [7, 31],
+    "native_game_slots": [51, 52],
+    "source_segments": [339, 302],
+    "before_blocker": "Two type-20 effect objects and two decoded lightning payloads",
+    "intermediate_blocker": "Expanded ambient reconstruction expected embedded color tables. Classic levels use retained lighting companions.",
+    "cold_restore": "A separate process loaded the original mission save made after a 332-frame assisted route to room 20, then reached room 21 in 22 frames. The production save trailer recorded both lightning objects enabled and bound before and after cold restore.",
+    "save_lightning_rows": [[51, 52, true, true], [52, 53, true, true]],
+    "rendered_control": "120/120 Windows OpenGL frames from the original spawn on the first passing candidate. The camera remained at the spawn approach.",
+    "stock_control": "Retail D2 level 1 retained the stock path and passed 120/120 unassisted Windows frames with XL inactive."
+  },
+  "level_6_blocker": "Additive wall rendering plus 14 other requirements, unchanged at the first failure",
+  "scope": "This qualification applies to the original levelpack distribution and singleplayer startup. The multiplayer Chaos Theory download is a separate distribution. Raw saves and game assets stay on the build machine."
+}

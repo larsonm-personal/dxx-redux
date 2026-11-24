@@ -59,6 +59,7 @@ extern "C" {
 #include "../probe.h"
 #include "../lighting.h"
 #include "../admission.h"
+#include "../lightning_admission.h"
 #include "../texture_change.h"
 #include "texture_brightness.h"
 #include <cstring>
@@ -276,7 +277,7 @@ xl_compat::Bytes read_extended_level(const char *filename)
 // Experimental fluid profile selected by detected requirements, never mission identity
 bool water_profile(const xl_compat::Bytes &bytes, bool multiplayer, bool water_enabled)
 {
-	const auto level = xl_compat::inspect_level(bytes);
+	const auto level = xl_compat::inspect_mission_level(bytes);
 	const bool water = std::any_of(level.segments.begin(), level.segments.end(), [&](const xl_compat::Segment &segment) {
 		return (xl_compat::segment_property_bits(level.level_version, segment) & xl_compat::segment_water) != 0;
 	});
@@ -567,19 +568,21 @@ void validate_requirements(const xl_compat::Inventory &level, bool multiplayer, 
                            mission_preparation *incoming = nullptr, xl_compat::TargetSources *target = nullptr, bool owned_scoped_textures = false, bool mission_robot_replacements = false)
 {
 	const bool classic = level.level_version <= 8;
+	const bool classic_lightning = xl_compat::classic_lightning_layout(level);
 	// Selected-mission admission also checks the currently installed native tables
 	const int texture_count = incoming ? graph.texture_count : NumTextures;
 
 	if (classic) {
 		if (!level.unknown.empty()) throw std::runtime_error(xl_compat::blocker_message(level.unknown));
-		if (!level.unsupported.empty()) throw std::runtime_error(xl_compat::blocker_message(level.unsupported));
+		if (!classic_lightning && !level.unsupported.empty()) throw std::runtime_error(xl_compat::blocker_message(level.unsupported));
 		if (level.objects.size() > DXX_CLASSIC_MAX_OBJECTS || level.walls.size() > DXX_CLASSIC_MAX_WALLS ||
 		    level.triggers.size() > DXX_CLASSIC_MAX_TRIGGERS || level.segments.size() > MAX_SEGMENTS || level.vertices.size() > MAX_VERTICES)
 			throw std::runtime_error("Classic mine exceeds native level capacity");
 		for (const auto &segment : level.segments)
 			for (const auto &side : segment.sides)
 				if (side.texture >= texture_count) throw std::runtime_error("Classic mine texture is outside the target bank");
-	} else {
+	}
+	if (!classic || classic_lightning) {
 		auto blockers = xl_compat::runtime_blockers(level, water_pilot);
 		if (!blockers.empty()) throw std::runtime_error(xl_compat::blocker_message(blockers));
 	}
@@ -655,17 +658,28 @@ void validate_requirements(const xl_compat::Inventory &level, bool multiplayer, 
 	collect_dependencies(level, multiplayer, water_pilot, graph, incoming != nullptr);
 }
 
-std::unique_ptr<XlPreparedResources> prepare_classic_member(const char *filename, int ordinal, bool multiplayer)
+xl_compat::Bytes read_classic_member(const char *filename, int &ordinal)
 {
 	if (!Current_mission || Current_mission->enhanced != MISSION_ENHANCED_XL) return {};
 	xl_compat::TargetSources target("");
 	if (!mission_owns_resource_archive(PHYSFS_getRealDir(filename)))
 		throw std::runtime_error("d2x-name mission resources: classic level must come from its selected mission archive");
 	ordinal = target.ordinal(filename, ordinal);
-	const auto bytes = target.archive_bytes(filename, 64 * 1024 * 1024);
+	auto bytes = target.archive_bytes(filename, 64 * 1024 * 1024);
 	if (!bytes) throw std::runtime_error("Classic level is absent from its mission archive");
-	const auto level = xl_compat::inspect_mission_level(*bytes);
+	return std::move(*bytes);
+}
+
+std::unique_ptr<XlPreparedResources> prepare_classic_member(const char *filename, int &ordinal, bool multiplayer, xl_compat::Bytes &runtime_bytes)
+{
+	auto bytes = read_classic_member(filename, ordinal);
+	if (bytes.empty()) return {};
+	const auto level = xl_compat::inspect_mission_level(bytes);
 	if (level.level_version > 8) throw std::runtime_error("Selected level and mission archive disagree on level format");
+	if (xl_compat::classic_lightning_layout(level)) {
+		runtime_bytes = std::move(bytes);
+		return {};
+	}
 	auto resources = std::make_unique<XlPreparedResources>(filename, &level, ordinal);
 	validate_requirements(level, multiplayer, false, resources->dependencies(), nullptr, nullptr, resources->has_scoped_textures(), resources->mission_replaces_robots());
 	return resources;
@@ -725,8 +739,10 @@ static int level_supported(const char *filename, int multiplayer, int ordinal, b
 		validate_mission_context();
 		auto bytes = read_extended_level(filename);
 		if (bytes.empty()) {
+			prepare_classic_member(filename, ordinal, multiplayer != 0, bytes);
+		}
+		if (bytes.empty()) {
 			preflight_translation.reset();
-			prepare_classic_member(filename, ordinal, multiplayer != 0);
 			return 1;
 		}
 #ifdef __ANDROID__
@@ -959,7 +975,8 @@ extern "C" void xl_preview_clear_mission(void)
 // Method-0 GatherStaticLights when ReadColor did not register baked colors
 static void rebuild_xl_ambient()
 {
-	if (!source || admitted_water_arena || xl_compat::has_registered_colors(*source)) return;
+	// Classic members get their colors from the prepared lighting companions
+	if (!source || source->level_version == 7 || admitted_water_arena || xl_compat::has_registered_colors(*source)) return;
 	xl_compat::TextureBrightnessTable table{};
 	for (const auto &entry : xl_compat::texture_brightness) table.at(entry.texture) = entry.brightness;
 	for (unsigned i = 0; i < table.size(); ++i) {
@@ -1030,14 +1047,15 @@ extern "C" int xl_preview_load_level_at(const char *filename, int ordinal)
 	try {
 		validate_mission_context();
 		auto bytes = read_extended_level(filename);
+		std::unique_ptr<XlPreparedResources> classic_resources;
+		if (bytes.empty()) classic_resources = prepare_classic_member(filename, ordinal, (Game_mode & GM_MULTI) != 0, bytes);
 		const bool original = !bytes.empty();
 		if (!original) {
-			auto resources = prepare_classic_member(filename, ordinal, (Game_mode & GM_MULTI) != 0);
 			if (!translated_preview) {
 				committed = true;
 				xl_preview_clear_mission();
 				const int loaded = xl_stock_load_level(filename);
-				if (!loaded && resources) xl_set_prepared_resources(filename, std::move(resources));
+				if (!loaded && classic_resources) xl_set_prepared_resources(filename, std::move(classic_resources));
 				return loaded;
 			}
 #ifdef DXX_XL_DEVELOPER_PROBE
@@ -1411,7 +1429,13 @@ extern "C" int xl_secret_restore_clock(int ordinal, int64_t saved_epoch, int64_t
 	try {
 		const char *filename = ordinal > 0 ? Level_names[ordinal - 1] : Secret_level_names[-ordinal - 1];
 		// The incoming member owns the clock, including in mixed classic/XL campaigns
-		if (!(Game_mode & GM_MULTI) && open_extended_level(filename)) *clock = saved_epoch;
+		if (!(Game_mode & GM_MULTI)) {
+			if (open_extended_level(filename)) *clock = saved_epoch;
+			else {
+				const auto bytes = read_classic_member(filename, ordinal);
+				if (!bytes.empty() && xl_compat::classic_lightning_layout(xl_compat::inspect_mission_level(bytes))) *clock = saved_epoch;
+			}
+		}
 		return 1;
 	} catch (const std::exception &error) {
 		con_printf(CON_URGENT, "XL secret restore: %s\n", error.what());

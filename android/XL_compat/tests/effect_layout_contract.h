@@ -56,9 +56,53 @@ void original_fire_translation(const char *path)
 	std::cout << "Original Pumo fire translation: 12 disabled authored fire objects validated, source retained, normal strict-fire admission passed\n";
 }
 
+static void classic_lightning_translation()
+{
+	auto bytes = fixture(7);
+	rejects([&] { xl_compat::prepare_source_runtime_probe(bytes); });
+	const auto classic = xl_compat::inspect_mission_level(bytes);
+	const auto start = bytes.size();
+	patch(bytes, classic.game_offset + 35, static_cast<unsigned>(start));
+	patch(bytes, classic.game_offset + 39, 2);
+	patch(bytes, classic.game_offset + 43, 264);
+	Bytes lightning(79);
+	lightning[0] = 20;
+	lightning[1] = 1;
+	lightning[4] = 12;
+	for (int i = 0; i < 9; ++i) patch(lightning, 20 + i * 4, i % 4 == 0 ? 65536 : 0);
+	for (int value : { 300, 50, 18, 5, 1 }) put(lightning, value, 4);
+	for (int value : { 3, 0, 0, 8, 0, 2 }) put(lightning, value, 2);
+	for (int value : { 0, 0, 0, 0, 1, 0, 1, 0, 0, 52, 149, 128 }) put(lightning, value, 1);
+	bytes.insert(bytes.end(), lightning.begin(), lightning.end());
+	Bytes player(79);
+	player[0] = 4;
+	bytes.insert(bytes.end(), player.begin(), player.end());
+	const auto probe = xl_compat::prepare_source_runtime_probe(bytes);
+	check(probe.source.level_version == 7 && probe.source.game_version == 31 && probe.source.objects.size() == 2 &&
+	          probe.source.objects[0].render_data.size() == 26 && probe.source.objects[1].type == 4,
+	      "Classic lightning source payload or following object was lost");
+	const auto &stock = probe.stock_level;
+	const auto read32 = [&](std::size_t at) {
+		unsigned value = 0;
+		for (unsigned i = 0; i < 4; ++i) value |= unsigned(stock.at(at + i)) << (8 * i);
+		return value;
+	};
+	const auto game = read32(12);
+	const auto objects = read32(game + 35);
+	check(read32(4) == 8 && read32(8) == static_cast<unsigned>(classic.mine_offset) + 7 && stock.at(game + 2) == 32,
+	      "Classic lightning translation did not align the native header");
+	check(read32(game + 39) == 2 && stock.at(objects) == 20 && stock.at(objects + 1) == 1 && stock.at(objects + 4) == 0 &&
+	          std::equal(player.begin(), player.end(), stock.begin() + objects + 79),
+	      "Classic lightning translation shifted or rewrote the following native object");
+	rejects([&] { xl_compat::prepare_gameplay_probe(bytes); });
+	bytes[start + 1] = 2;
+	rejects([&] { xl_compat::prepare_source_runtime_probe(bytes); });
+}
+
 void effect_layout_contract(const char *directory = nullptr)
 {
 	if (directory) std::filesystem::create_directories(directory);
+	classic_lightning_translation();
 	// Header widths and legacy function semantics are independent in these releases.
 	for (int version : { 18, 19 }) {
 		const auto bytes = fixture(version);
