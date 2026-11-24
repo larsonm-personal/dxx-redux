@@ -323,6 +323,13 @@ static void descriptor_prepared_ham_controls(const std::filesystem::path &root)
 			        "Verified bank hash ignored a same-size source byte change");
 			require(!graph.resource_banks->matches(bitmap_copy, sound_copy, graph.resource_banks->sample_rate()),
 			        "Bank reuse ignored a same-size source byte change");
+			bool changed_source_rejected = false;
+			try {
+				XlResourceBanks invalid(bitmap_copy, sound_copy, graph.resource_banks->sample_rate(), bitmap_hash, sound_hash);
+			} catch (const std::runtime_error &) {
+				changed_source_rejected = true;
+			}
+			require(changed_source_rejected, "Bank construction ignored a same-size source byte change");
 			(bad_bitmap ? bitmap_copy : sound_copy).resize(11);
 			bool rejected = false;
 			try {

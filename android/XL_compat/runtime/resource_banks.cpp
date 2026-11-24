@@ -19,10 +19,16 @@ struct XlResourceBanks::State {
 	int rate;
 };
 
-XlResourceBanks::XlResourceBanks(std::vector<unsigned char> bitmaps, std::vector<unsigned char> sounds, int sample_rate)
+XlResourceBanks::XlResourceBanks(std::vector<unsigned char> bitmaps, std::vector<unsigned char> sounds, int sample_rate,
+                                 const std::string &expected_bitmap_hash, const std::string &expected_sound_hash)
     : state(std::make_unique<State>())
 {
 	if (sample_rate != 11025 && sample_rate != 22050) throw std::runtime_error("Unsupported native source bank rate");
+	state->bitmap_hash = picosha2::hash256_hex_string(bitmaps);
+	state->sound_hash = picosha2::hash256_hex_string(sounds);
+	if ((!expected_bitmap_hash.empty() && state->bitmap_hash != expected_bitmap_hash) ||
+	    (!expected_sound_hash.empty() && state->sound_hash != expected_sound_hash))
+		throw std::runtime_error("Qualified startup bitmap or sound bank changed");
 	state->rate = sample_rate;
 	state->bitmap_bytes = std::move(bitmaps);
 	state->sound_bytes = std::move(sounds);
@@ -51,8 +57,6 @@ XlResourceBanks::XlResourceBanks(std::vector<unsigned char> bitmaps, std::vector
 		});
 		if (count < 0 || count != int(state->sounds.size())) throw std::runtime_error("Invalid retained native sound bank");
 	});
-	state->bitmap_hash = picosha2::hash256_hex_string(state->bitmap_bytes);
-	state->sound_hash = picosha2::hash256_hex_string(state->sound_bytes);
 }
 
 XlResourceBanks::~XlResourceBanks() = default;

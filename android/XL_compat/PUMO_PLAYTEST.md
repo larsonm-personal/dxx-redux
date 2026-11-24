@@ -1,5 +1,20 @@
 # Original Pumo gameplay playtest
 
+## November 24 S21 diagnostic
+
+Diagnostic kit **32332** passed 35/35 scripted Rookie steps on the SM-G996U
+with Android 15 after importing the original archive and raw addons. The
+route fired a Concussion missile near Crauphel room 129, quickloaded the
+approach and fired again. Flight continued after both shots. Use the ordinary
+kits below for manual touch reports, including the reporter's exact shot.
+
+In this comparison with diagnostic 32329, the wait before the Crauphel
+briefing fell from 7.14 to 5.88 seconds. Preparing the level's sounds took
+1.00 seconds of that wait. The cold hub still took 6.91 seconds before its
+briefing. Keep **Show progress bars** enabled and record the full interval
+and visible label when testing by hand.
+[S21 profile and native audio receipts](evidence/pumo-s21-audio-preparation-20261124.json).
+
 ## November 23 evening ordinary phone kit
 
 Use [version 32325 and its checked manifest](../../temp/xl-pumo-phone-s21-20261123-32325/README.md)

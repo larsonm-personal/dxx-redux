@@ -26,6 +26,12 @@
 #include "../capacity.h"
 #include "../time_equipment.h"
 #include "picosha2.h"
+#ifdef __ANDROID__
+extern "C" {
+#include "android_log.h"
+#include "android_profile.h"
+}
+#endif
 #include "save_epoch_format.h"
 #include <SDL.h>
 #ifdef USE_SDLMIXER
@@ -148,14 +154,32 @@ std::int64_t duration(const AudioSample &sample)
 	return std::int32_t(seconds * 65536.0f);
 }
 
-std::vector<AudioSample> convert_bank(const AudioResources &resources, unsigned rate)
+std::vector<AudioSample> convert_bank(const AudioResources &resources, unsigned rate, const AudioResources *previous = nullptr,
+                                      unsigned *reused_classic = nullptr)
 {
 	std::vector<AudioSample> result;
 	std::size_t bytes = 0;
+	const bool reuse_classic = previous && previous->prepared_samples && previous->prepared_rate == rate &&
+	                           previous->classic.size() == resources.classic.size();
+	const auto first_classic = resources.sources.size() - resources.classic.size();
 	for (unsigned index = 0; index < resources.sources.size(); ++index) {
 		// An absent output resource owns an index for persistent linked state,
 		// but has no decoded or converted PCM and cannot acquire a mixer channel
-		auto sample = resources.unavailable.count(index) ? AudioSample{} : prepare_audio_sample(resources.sources[index], rate);
+		const auto &source = resources.sources[index];
+		const AudioSample *cached = nullptr;
+		if (reuse_classic && index >= first_classic) {
+			const auto prior_index = previous->classic[index - first_classic];
+			const auto &prior = previous->sources.at(prior_index);
+			if (source.rate == prior.rate && source.source_channels == prior.source_channels &&
+			    source.source_bits == prior.source_bits && source.samples == prior.samples)
+				cached = &previous->prepared_samples->at(prior_index);
+		}
+		AudioSample sample;
+		if (cached) {
+			sample = *cached;
+			if (reused_classic) ++*reused_classic;
+		} else if (!resources.unavailable.count(index))
+			sample = prepare_audio_sample(source, rate);
 		bytes += sample.stereo.size() * sizeof(std::int16_t);
 		if (bytes > 128 * 1024 * 1024) throw std::runtime_error("Named-audio bank exceeds 128 MiB of mixer storage");
 		result.push_back(std::move(sample));
@@ -276,6 +300,9 @@ static std::shared_ptr<AudioResources> prepare_named_only(const char *level, con
 
 std::shared_ptr<const AudioResources> prepare_named_audio(const char *level, const Inventory &inventory, int ordinal, const XlResourceBanks *banks, TargetSources *target)
 {
+#ifdef __ANDROID__
+	auto phase_started = android_profile_monotonic_us();
+#endif
 	auto resources = prepare_named_only(level, inventory, ordinal, target);
 	if (!resources) resources = std::make_shared<AudioResources>();
 	std::size_t bytes = 0;
@@ -348,6 +375,9 @@ std::shared_ptr<const AudioResources> prepare_named_audio(const char *level, con
 		external_identity.append_path(resource->path);
 		external_identity.append(":" + picosha2::hash256_hex_string(resource->bytes));
 	}
+#ifdef __ANDROID__
+	const auto named_us = android_profile_take_elapsed_us(&phase_started);
+#endif
 	const auto replacements = prepare_classic_audio(level, ordinal, classic_audio_output_rate(), banks, target);
 	for (const auto &sample : replacements.samples) resources->classic_replacements.emplace(sample.name, sample.path);
 	if (!replacements.samples.empty()) {
@@ -356,6 +386,9 @@ std::shared_ptr<const AudioResources> prepare_named_audio(const char *level, con
 #endif
 		if (!GameArg.SndNoSound && !backend_ready) throw std::runtime_error("XL classic replacements require an initialized stereo 16-bit SDL_mixer output");
 	}
+#ifdef __ANDROID__
+	const auto replacements_us = android_profile_take_elapsed_us(&phase_started);
+#endif
 	auto classic = prepare_classic_playback(replacements, banks);
 	for (auto &sample : classic.samples) {
 		if (sample.sample != int(resources->classic.size())) throw std::runtime_error("XL shared bank has an incomplete classic registry");
@@ -371,9 +404,19 @@ std::shared_ptr<const AudioResources> prepare_named_audio(const char *level, con
 	resources->prepared_rate = output_rate;
 	// Reuse only immutable PCM. Authored actions and resource validation above
 	// remain fresh even when a different level selects the same sound content
-	resources->prepared_samples = bank && bank->identity == resources->identity && bank->prepared_rate == output_rate
+	const bool reused_pcm = bank && bank->identity == resources->identity && bank->prepared_rate == output_rate;
+	unsigned reused_classic = 0;
+#ifdef __ANDROID__
+	const auto classic_us = android_profile_take_elapsed_us(&phase_started);
+#endif
+	resources->prepared_samples = reused_pcm
 	                                  ? bank->prepared_samples
-	                                  : std::make_shared<const std::vector<AudioSample>>(convert_bank(*resources, output_rate));
+	                                  : std::make_shared<const std::vector<AudioSample>>(convert_bank(*resources, output_rate, bank.get(), &reused_classic));
+#ifdef __ANDROID__
+	debug_log_force(DLOG_PROFILING, "XL audio resource detail: ordinal=%d replacements=%zu named_us=%lld replacements_us=%lld classic_us=%lld mixer_us=%lld reused_pcm=%d reused_classic=%u",
+	                ordinal, replacements.samples.size(), named_us, replacements_us, classic_us,
+	                android_profile_take_elapsed_us(&phase_started), int(reused_pcm), reused_classic);
+#endif
 	return resources;
 }
 

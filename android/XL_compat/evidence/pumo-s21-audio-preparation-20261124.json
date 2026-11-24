@@ -1,0 +1,401 @@
+{
+    "schema": 1,
+    "date": "2026-11-24",
+    "phone": "Samsung Galaxy S21+ SM-G996U",
+    "android_version": 15,
+    "physical_size": "1080x2400",
+    "physical_density": 450,
+    "physical_state_restored": true,
+    "package": "com.dxxredux.app.nsdtest",
+    "episode": "Mineral Valley",
+    "difficulty": "Rookie",
+    "input": "scripted hub entry and fixed-view room 129 Concussion shot, quickload, repeated shot",
+    "last_successful_action": "flight alive after the second Concussion shot",
+    "exit_reproduced": false,
+    "source": {
+        "archive": "pmines_v11.7z",
+        "sha256": "82c8cc4cfc740c8169f9d21a961c9ac5d2518342b3e27ac3ac438c91ca8f2ddf",
+        "method": "original launcher picker archive plus eight original raw addons"
+    },
+    "timing_unit": "microseconds",
+    "runs": [
+        {
+            "version": 32329,
+            "apk_sha256": "131f7e815034f509fb7e7fd740971d6925a5cca073ac48b453ca06504c480746",
+            "run_id": "8641b9bf25314603b655ad7fe4a23daf",
+            "steps": 35,
+            "profile_restored": true,
+            "log_sha256": "974901b90343394170df46bbd4cf2ca8cbae262d814f14d34fee7e639286f689",
+            "phases": [
+                {
+                    "level": {
+                        "ordinal": 1,
+                        "banks_us": 639625,
+                        "audio_us": 2787932,
+                        "effects_us": 82381,
+                        "definitions_us": 2567,
+                        "models_us": 421982,
+                        "finish_us": 947016
+                    },
+                    "audio": null,
+                    "scoped": {
+                        "ordinal": 1,
+                        "images_us": 1368917,
+                        "playback_us": 1095,
+                        "storage_us": 871298
+                    },
+                    "prebriefing_us": 7163868,
+                    "entry": "mineral_valley_hub"
+                },
+                {
+                    "level": {
+                        "ordinal": 2,
+                        "banks_us": 646607,
+                        "audio_us": 2240269,
+                        "effects_us": 27906,
+                        "definitions_us": 923,
+                        "models_us": 656665,
+                        "finish_us": 3153
+                    },
+                    "audio": null,
+                    "scoped": {
+                        "ordinal": 2,
+                        "images_us": 3164742,
+                        "playback_us": 1372,
+                        "storage_us": 356757
+                    },
+                    "prebriefing_us": 7135459,
+                    "entry": "crauphel_scilab"
+                },
+                {
+                    "level": {
+                        "ordinal": 2,
+                        "banks_us": 161632,
+                        "audio_us": 2214564,
+                        "effects_us": 31944,
+                        "definitions_us": 989,
+                        "models_us": 618976,
+                        "finish_us": 1424
+                    },
+                    "audio": null,
+                    "scoped": {
+                        "ordinal": 2,
+                        "images_us": 2973777,
+                        "playback_us": 1699,
+                        "storage_us": 379099
+                    },
+                    "entry": "crauphel_scilab_quickload"
+                }
+            ],
+            "variant": "phased baseline"
+        },
+        {
+            "version": 32330,
+            "apk_sha256": "f7d556b773248929ae02acf7e23b717e21641fbd55c7d5f32357ea1a76a82f3c",
+            "run_id": "001458ea6cfc4e6d9b0bcae1f05cbffd",
+            "steps": 35,
+            "profile_restored": true,
+            "log_sha256": "7bd56ccd1e59cb1fa5108cd1485af481357bfb8d1fd9239c08e3b4983516ac36",
+            "phases": [
+                {
+                    "level": {
+                        "ordinal": 1,
+                        "banks_us": 409418,
+                        "audio_us": 2775965,
+                        "effects_us": 65763,
+                        "definitions_us": 2280,
+                        "models_us": 401958,
+                        "finish_us": 948199
+                    },
+                    "audio": {
+                        "ordinal": 1,
+                        "replacements": 142,
+                        "named_us": 254765,
+                        "replacements_us": 1194291,
+                        "classic_us": 118831,
+                        "mixer_us": 1204312,
+                        "reused_pcm": 0
+                    },
+                    "scoped": {
+                        "ordinal": 1,
+                        "images_us": 1294856,
+                        "playback_us": 1714,
+                        "storage_us": 880774
+                    },
+                    "prebriefing_us": 6823321,
+                    "entry": "mineral_valley_hub"
+                },
+                {
+                    "level": {
+                        "ordinal": 2,
+                        "banks_us": 414121,
+                        "audio_us": 2278545,
+                        "effects_us": 26951,
+                        "definitions_us": 932,
+                        "models_us": 664857,
+                        "finish_us": 1611
+                    },
+                    "audio": {
+                        "ordinal": 2,
+                        "replacements": 142,
+                        "named_us": 78846,
+                        "replacements_us": 998920,
+                        "classic_us": 120279,
+                        "mixer_us": 1077023,
+                        "reused_pcm": 0
+                    },
+                    "scoped": {
+                        "ordinal": 2,
+                        "images_us": 3409856,
+                        "playback_us": 2956,
+                        "storage_us": 393606
+                    },
+                    "prebriefing_us": 7231113,
+                    "entry": "crauphel_scilab"
+                },
+                {
+                    "level": {
+                        "ordinal": 2,
+                        "banks_us": 159718,
+                        "audio_us": 2239452,
+                        "effects_us": 31893,
+                        "definitions_us": 933,
+                        "models_us": 613704,
+                        "finish_us": 1444
+                    },
+                    "audio": {
+                        "ordinal": 2,
+                        "replacements": 142,
+                        "named_us": 72431,
+                        "replacements_us": 965325,
+                        "classic_us": 118138,
+                        "mixer_us": 1079521,
+                        "reused_pcm": 0
+                    },
+                    "scoped": {
+                        "ordinal": 2,
+                        "images_us": 2995339,
+                        "playback_us": 1820,
+                        "storage_us": 387254
+                    },
+                    "entry": "crauphel_scilab_quickload"
+                }
+            ],
+            "variant": "single bank digest and detailed audio timings"
+        },
+        {
+            "version": 32331,
+            "apk_sha256": "b441386cf1a853398b1384075f6597775a4f6a959cd49719bf2da1f0ec0c418a",
+            "run_id": "c907ed96fab2467e94928ece62c6dc9a",
+            "steps": 35,
+            "profile_restored": true,
+            "log_sha256": "465bb68d91ee047edebfa829e28f242245043e16987f3de6a5b46b2c695b62ac",
+            "phases": [
+                {
+                    "level": {
+                        "ordinal": 1,
+                        "banks_us": 415143,
+                        "audio_us": 2784983,
+                        "effects_us": 65476,
+                        "definitions_us": 3233,
+                        "models_us": 414193,
+                        "finish_us": 966473
+                    },
+                    "audio": {
+                        "ordinal": 1,
+                        "replacements": 142,
+                        "named_us": 255222,
+                        "replacements_us": 1202839,
+                        "classic_us": 119361,
+                        "mixer_us": 1203088,
+                        "reused_pcm": 0,
+                        "classic_match": 0
+                    },
+                    "scoped": {
+                        "ordinal": 1,
+                        "images_us": 1316778,
+                        "playback_us": 1756,
+                        "storage_us": 885630
+                    },
+                    "prebriefing_us": 6899343,
+                    "entry": "mineral_valley_hub"
+                },
+                {
+                    "level": {
+                        "ordinal": 2,
+                        "banks_us": 415758,
+                        "audio_us": 1937451,
+                        "effects_us": 25276,
+                        "definitions_us": 851,
+                        "models_us": 657993,
+                        "finish_us": 1611
+                    },
+                    "audio": {
+                        "ordinal": 2,
+                        "replacements": 142,
+                        "named_us": 84290,
+                        "replacements_us": 662833,
+                        "classic_us": 119335,
+                        "mixer_us": 1065829,
+                        "reused_pcm": 0,
+                        "classic_match": 0
+                    },
+                    "scoped": {
+                        "ordinal": 2,
+                        "images_us": 3221669,
+                        "playback_us": 2919,
+                        "storage_us": 394837
+                    },
+                    "prebriefing_us": 6695197,
+                    "entry": "crauphel_scilab"
+                },
+                {
+                    "level": {
+                        "ordinal": 2,
+                        "banks_us": 160086,
+                        "audio_us": 1900711,
+                        "effects_us": 32048,
+                        "definitions_us": 922,
+                        "models_us": 622501,
+                        "finish_us": 1474
+                    },
+                    "audio": {
+                        "ordinal": 2,
+                        "replacements": 142,
+                        "named_us": 72722,
+                        "replacements_us": 647615,
+                        "classic_us": 119507,
+                        "mixer_us": 1055172,
+                        "reused_pcm": 0,
+                        "classic_match": 0
+                    },
+                    "scoped": {
+                        "ordinal": 2,
+                        "images_us": 3073593,
+                        "playback_us": 2577,
+                        "storage_us": 389111
+                    },
+                    "entry": "crauphel_scilab_quickload"
+                }
+            ],
+            "variant": "decoded WAV cache and whole-bank comparison"
+        },
+        {
+            "version": 32332,
+            "apk_sha256": "7b3a8d17e8e2bda53069e5796fb597fbbcb5bc0f5e1346c4d80e580796195b7e",
+            "run_id": "3573c30957ae4d6bb4432c5d8265d07b",
+            "steps": 35,
+            "profile_restored": true,
+            "log_sha256": "0b516b976f5552cc1aa3b88e9bdd735f7a26877d02767b595925fedebaa7f307",
+            "phases": [
+                {
+                    "level": {
+                        "ordinal": 1,
+                        "banks_us": 405864,
+                        "audio_us": 2773904,
+                        "effects_us": 64804,
+                        "definitions_us": 3493,
+                        "models_us": 410000,
+                        "finish_us": 955105
+                    },
+                    "audio": {
+                        "ordinal": 1,
+                        "replacements": 142,
+                        "named_us": 253853,
+                        "replacements_us": 1202746,
+                        "classic_us": 115565,
+                        "mixer_us": 1198889,
+                        "reused_pcm": 0,
+                        "reused_classic": 0
+                    },
+                    "scoped": {
+                        "ordinal": 1,
+                        "images_us": 1353827,
+                        "playback_us": 1045,
+                        "storage_us": 895056
+                    },
+                    "prebriefing_us": 6908484,
+                    "entry": "mineral_valley_hub"
+                },
+                {
+                    "level": {
+                        "ordinal": 2,
+                        "banks_us": 415896,
+                        "audio_us": 1004076,
+                        "effects_us": 26856,
+                        "definitions_us": 942,
+                        "models_us": 668210,
+                        "finish_us": 1509
+                    },
+                    "audio": {
+                        "ordinal": 2,
+                        "replacements": 142,
+                        "named_us": 84836,
+                        "replacements_us": 660240,
+                        "classic_us": 118849,
+                        "mixer_us": 136955,
+                        "reused_pcm": 0,
+                        "reused_classic": 175
+                    },
+                    "scoped": {
+                        "ordinal": 2,
+                        "images_us": 3341431,
+                        "playback_us": 1608,
+                        "storage_us": 386856
+                    },
+                    "prebriefing_us": 5884979,
+                    "entry": "crauphel_scilab"
+                },
+                {
+                    "level": {
+                        "ordinal": 2,
+                        "banks_us": 159468,
+                        "audio_us": 1909941,
+                        "effects_us": 31140,
+                        "definitions_us": 936,
+                        "models_us": 621092,
+                        "finish_us": 1435
+                    },
+                    "audio": {
+                        "ordinal": 2,
+                        "replacements": 142,
+                        "named_us": 71731,
+                        "replacements_us": 643515,
+                        "classic_us": 118989,
+                        "mixer_us": 1070228,
+                        "reused_pcm": 0,
+                        "reused_classic": 0
+                    },
+                    "scoped": {
+                        "ordinal": 2,
+                        "images_us": 3003221,
+                        "playback_us": 2238,
+                        "storage_us": 389535
+                    },
+                    "entry": "crauphel_scilab_quickload"
+                }
+            ],
+            "variant": "decoded WAV cache and exact classic mixer sample reuse"
+        }
+    ],
+    "interrupted_attempt": {
+        "version": 32332,
+        "phase": "profile protection before import",
+        "cause": "local ADB daemon stopped responding",
+        "profile_files_verified_after_recovery": 79,
+        "same_apk_retried": true
+    },
+    "windows_classic_audio": {
+        "levels": 14,
+        "individual_wav_selections": 1988,
+        "distinct_wavs": 196,
+        "byte_identical_receipts": {
+            "classic-resources-44100.json": "697f5b31a5eacae05463116bd17822b7e1d7249c96997bdf71210579d300c076",
+            "classic-resources-48000.json": "697f5b31a5eacae05463116bd17822b7e1d7249c96997bdf71210579d300c076",
+            "classic-playback-44100.json": "c8a9af7b77b20e5c77e492d15235345870191b60574af83dfd5e010970d748d7",
+            "classic-playback-48000.json": "cf78f6084517cc724d9ccbf56e5230833d278fe74df6e69926c2601ea4ec3227"
+        },
+        "changed_same_size_wav": "fresh identity and PCM, then original restored",
+        "changed_same_size_bank": "source digest mismatch rejected before parse"
+    }
+}

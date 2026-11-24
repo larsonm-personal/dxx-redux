@@ -1745,10 +1745,8 @@ void XlPreparedResources::prepare_banks(const std::string &palette)
 	// Compare every reread byte against the previously hash-verified immutable owner
 	if (!prepared || prepared->bitmap_hash() != bitmap_source->second.hash ||
 	    prepared->sound_hash() != sound_source->second.hash || !prepared->matches(bitmap_bytes, sound_bytes, rate)) {
-		if (picosha2::hash256_hex_string(bitmap_bytes) != bitmap_source->second.hash ||
-		    picosha2::hash256_hex_string(sound_bytes) != sound_source->second.hash)
-			throw std::runtime_error("Qualified startup bitmap or sound bank changed");
-		prepared = std::make_shared<XlResourceBanks>(std::move(bitmap_bytes), std::move(sound_bytes), rate);
+		prepared = std::make_shared<XlResourceBanks>(std::move(bitmap_bytes), std::move(sound_bytes), rate,
+		                                             bitmap_source->second.hash, sound_source->second.hash);
 		prepared_bank_cache = prepared;
 	}
 	state->banks = std::move(prepared);
@@ -1895,8 +1893,14 @@ XlPreparedResources::XlPreparedResources(const char *level_filename, const xl_co
 
 void XlPreparedResources::prepare_level_resources(const char *level_filename, const xl_compat::Inventory *level, int ordinal, mission_preparation *mission, xl_compat::TargetSources *target)
 {
+#ifdef __ANDROID__
+	auto phase_started = android_profile_monotonic_us();
+#endif
 	if (target) ordinal = target->ordinal(level_filename, ordinal);
 	if (level) prepare_banks(level->palette);
+#ifdef __ANDROID__
+	const auto banks_us = android_profile_take_elapsed_us(&phase_started);
+#endif
 	if (!ordinal) {
 		for (int candidate = Last_secret_level; candidate <= Last_level; ++candidate) {
 			if (!candidate) continue;
@@ -1908,6 +1912,9 @@ void XlPreparedResources::prepare_level_resources(const char *level_filename, co
 	}
 	if (level) state->messages = xl_compat::prepare_messages(level_filename, *level, target);
 	if (level) state->audio = xl_compat::prepare_named_audio(level_filename, *level, ordinal, state->banks.get(), target);
+#ifdef __ANDROID__
+	const auto audio_us = android_profile_take_elapsed_us(&phase_started);
+#endif
 	if (level) {
 		state->particle_image = xl_compat::prepare_particle_image(*level, 3, target);
 		state->smoke_image = xl_compat::prepare_particle_image(*level, 0, target);
@@ -1923,6 +1930,9 @@ void XlPreparedResources::prepare_level_resources(const char *level_filename, co
 		if (state->time_equipment_required)
 			for (unsigned i = 0; i < 2; ++i) state->time_equipment_images[i] = xl_compat::prepare_time_equipment_image(i, target);
 	}
+#ifdef __ANDROID__
+	const auto effects_us = android_profile_take_elapsed_us(&phase_started);
+#endif
 	std::string base = level_filename;
 	const auto dot = base.find_last_of('.');
 	if (dot != std::string::npos) base.resize(dot);
@@ -1966,7 +1976,13 @@ void XlPreparedResources::prepare_level_resources(const char *level_filename, co
 	if (target) {
 		if (const auto bytes = target->archive_bytes(hxm_name, 64 * 1024 * 1024)) xl_read_retained_resource(*bytes, prepare_level_hxm);
 	} else if (auto file = companion(hxm_name)) prepare_level_hxm(file.get());
+#ifdef __ANDROID__
+	const auto definitions_us = android_profile_take_elapsed_us(&phase_started);
+#endif
 	state->prepare_models(ordinal, mission);
+#ifdef __ANDROID__
+	const auto models_us = android_profile_take_elapsed_us(&phase_started);
+#endif
 	if (state->classic_lighting)
 		state->owned_models.sources.insert(state->lighting.sources.begin(), state->lighting.sources.end());
 	if (level && std::any_of(level->objects.begin(), level->objects.end(), [](const xl_compat::Object &object) { return object.type == 16; })) {
@@ -2001,6 +2017,11 @@ void XlPreparedResources::prepare_level_resources(const char *level_filename, co
 		if (const auto bytes = target->archive_bytes(pog_name, 64 * 1024 * 1024)) xl_read_retained_resource(*bytes, prepare_level_pog);
 	} else if (auto file = companion(pog_name)) prepare_level_pog(file.get());
 	state->audio_install = std::make_unique<xl_compat::PreparedAudioInstall>(state->audio);
+#ifdef __ANDROID__
+	if (level)
+		debug_log_force(DLOG_PROFILING, "XL level resource detail: ordinal=%d banks_us=%lld audio_us=%lld effects_us=%lld definitions_us=%lld models_us=%lld finish_us=%lld",
+		                ordinal, banks_us, audio_us, effects_us, definitions_us, models_us, android_profile_take_elapsed_us(&phase_started));
+#endif
 }
 
 void XlPreparedResources::prepare_pog(PHYSFS_file *file, const xl_compat::Inventory *level)
