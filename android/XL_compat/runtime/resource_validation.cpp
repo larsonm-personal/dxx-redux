@@ -896,11 +896,17 @@ xl_compat::OwnedModelSet prepare_owned_models(int ordinal, mission_preparation *
 			auto compiled = xl_compat::compile_ase_mesh(xl_compat::decode_ase_model(xl_compat::read_ase_records(text)));
 			resource->model.textures = std::move(compiled.textures);
 			resource->mesh = std::move(compiled.geometry);
-			resource->gunpoints = std::move(compiled.gunpoints);
+			for (const auto &entry : compiled.gunpoints) {
+				const auto &point = entry.second;
+				resource->gunpoints.emplace(entry.first, xl_compat::GunVector{ xl_compat::gun_fixed(point[0] * 65536.0),
+				                                                               xl_compat::gun_fixed(point[1] * 65536.0),
+				                                                               xl_compat::gun_fixed(point[2] * 65536.0) });
+			}
 			resource->thrusters = std::move(compiled.thrusters);
 		} else {
 			resource->model = xl_compat::read_oof(model_bytes);
 			resource->mesh = xl_compat::compile_oof_mesh(resource->model, mapping.flip_v);
+			resource->gunpoints = xl_compat::compile_oof_gun_points(resource->model);
 		}
 		for (auto texture : resource->model.textures) {
 			if (texture.empty() || texture == "." || texture == ".." || texture.find_first_of("/\\:") != std::string::npos)
@@ -1243,9 +1249,9 @@ extern "C" int xl_model_gun_point(int model, int gun, vms_vector *point)
 	*point = {};
 	const auto found = resource->gunpoints.find(gun);
 	if (found != resource->gunpoints.end()) {
-		point->x = fix(found->second[0] * 65536);
-		point->y = fix(found->second[1] * 65536);
-		point->z = fix(found->second[2] * 65536);
+		point->x = found->second[0];
+		point->y = found->second[1];
+		point->z = found->second[2];
 	}
 	return 1;
 }

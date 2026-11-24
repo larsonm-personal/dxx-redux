@@ -16,7 +16,7 @@ struct OofResource {
 	OofModel model;
 	OofMesh mesh;
 	std::vector<std::shared_ptr<const PogBitmap>> skins;
-	std::map<int, OofVector> gunpoints;
+	std::map<int, GunVector> gunpoints;
 	std::vector<AseThruster> thrusters;
 };
 struct OwnedModelSet {

@@ -30,6 +30,34 @@ inline void metadata_controls()
 	const auto base = fixture(-1, 2, 0, "", 1, 1);
 	const auto original = xl_compat::compile_oof_mesh(xl_compat::read_oof(base), false);
 	const auto rejects = [&](const Bytes &b) {bool failed=false;try{(void)xl_compat::compile_oof_mesh(xl_compat::read_oof(b),false);}catch(const std::runtime_error&){failed=true;}require(failed,"Malformed or unsupported OOF metadata admitted"); };
+	{
+		Bytes points;
+		integer(points, 9);
+		for (int index = 0; index < 9; ++index) {
+			integer(points, index == 8 ? uint32_t(-1) : 0);
+			vector(points, float(index) + 0.5f, -2, 1);
+			vector(points, 0, 0, -1);
+		}
+		auto bytes = base;
+		chunk(bytes, "GPNT", points);
+		const auto model = xl_compat::read_oof(bytes);
+		const auto guns = xl_compat::compile_oof_gun_points(model);
+		require(model.gun_points.size() == 9 && model.gun_points[8].parent == -1 &&
+		            model.gun_points[8].direction == xl_compat::OofVector{ 0, 0, -1 } &&
+		            model.additional_chunks[0].bytes == points,
+		        "OOF gun point parsing lost the ninth record or direction");
+		require(guns.size() == 8 && guns.at(0) == xl_compat::GunVector{ 163840, 65536, 327680 } &&
+		            guns.at(7) == xl_compat::GunVector{ 622592, 65536, 327680 } && same_mesh(original, xl_compat::compile_oof_mesh(model, false)),
+		        "OOF gun point slot limit, parent offset or geometry changed");
+		chunk(bytes, "GPNT", points);
+		rejects(bytes);
+		bytes = base;
+		patch32(points, 4, 1);
+		chunk(bytes, "GPNT", points);
+		rejects(bytes);
+		bytes.pop_back();
+		rejects(bytes);
+	}
 	for (int variant : { 0, 1 }) {
 		const auto bytes = metadata_fixture(variant);
 		const auto parsed = xl_compat::read_oof(bytes);

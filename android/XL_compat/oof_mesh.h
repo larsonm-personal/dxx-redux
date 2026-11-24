@@ -7,6 +7,7 @@
 #ifdef _MSC_VER
 #pragma pack(push, 8)
 #endif
+#include "robot_gun_point.h"
 namespace xl_compat
 {
 struct OofRenderVertex {
@@ -37,6 +38,7 @@ inline OofMesh compile_oof_mesh(const OofModel &model, bool flip_v)
 	std::size_t vertex_budget = 1024 * 1024;
 	for (const auto &chunk : model.additional_chunks)
 		if (chunk.type != "PINF" && !(chunk.type == "SPCL" && model.has_special_points) &&
+		    !(chunk.type == "GPNT" && model.has_gun_points) &&
 		    !(chunk.type == "RANI" && model.has_rotation_tracks && model.rotation_tracks.size() == model.submodels.size()))
 			throw std::runtime_error("OOF runtime does not support chunk " + chunk.type);
 	bool points = false;
@@ -110,6 +112,28 @@ inline OofMesh compile_oof_mesh(const OofModel &model, bool flip_v)
 	if (!points || mesh.faces.empty()) throw std::runtime_error("OOF mesh has no geometry");
 	mesh.hitboxes = owned_model_hitboxes(bounds);
 	return mesh;
+}
+
+inline std::map<int, GunVector> compile_oof_gun_points(const OofModel &model)
+{
+	std::map<int, GunVector> result;
+	// SetGunPoints applies the eight gameplay slots after reading every point
+	for (int index = 0; index < int(model.gun_points.size()) && index < 8; ++index) {
+		const auto &gun = model.gun_points[index];
+		GunVector point{};
+		for (unsigned axis = 0; axis < point.size(); ++axis) point[axis] = gun_fixed(gun.position[axis] * 65536.0);
+		int parent = gun.parent;
+		for (std::size_t depth = 0; parent != -1; ++depth) {
+			const auto found = model.submodels.find(parent);
+			if (found == model.submodels.end() || depth >= model.submodels.size()) throw std::runtime_error("Invalid OOF gun point hierarchy");
+			const auto &part = found->second;
+			for (unsigned axis = 0; axis < point.size(); ++axis)
+				point[axis] = gun_fixed(double(point[axis]) + gun_fixed(part.offset[axis] * 65536.0));
+			parent = part.parent == parent ? -1 : part.parent;
+		}
+		result.emplace(index, point);
+	}
+	return result;
 }
 } // namespace xl_compat
 #ifdef _MSC_VER

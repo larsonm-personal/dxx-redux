@@ -49,6 +49,10 @@ struct OofSpecialPoint {
 	OofVector position{};
 	float radius = 0;
 };
+struct OofGunPoint {
+	int parent = -1;
+	OofVector position{}, direction{};
+};
 struct OofRotationFrame {
 	int start = 0, angle = 0;
 	OofVector axis{}, normalized_axis{};
@@ -66,9 +70,10 @@ struct OofModel {
 	std::map<int, OofSubmodel> submodels;
 	// Preserve raw extension bytes even when typed metadata is qualified
 	std::vector<OofChunk> additional_chunks;
-	bool has_special_points = false, has_rotation_tracks = false;
+	bool has_special_points = false, has_rotation_tracks = false, has_gun_points = false;
 	std::vector<OofSpecialPoint> special_points;
 	std::vector<OofRotationTrack> rotation_tracks;
+	std::vector<OofGunPoint> gun_points;
 };
 
 namespace oof_detail
@@ -258,6 +263,15 @@ inline OofModel read_oof(const std::vector<uint8_t> &bytes)
 				point.radius = r.real();
 				if (point.radius < 0) throw std::runtime_error("Negative OOF special point radius");
 				model.special_points.push_back(std::move(point));
+			}
+			r.end();
+		} else if (chunk.type == "GPNT") {
+			if (model.has_gun_points) throw std::runtime_error("Duplicate OOF gun points");
+			model.has_gun_points = true;
+			for (int n = r.count(4096); n; --n) {
+				const int parent = r.integer();
+				if (parent < -1 || parent >= submodels) throw std::runtime_error("Invalid OOF gun point parent");
+				model.gun_points.push_back({ parent, r.vector(), r.vector() });
 			}
 			r.end();
 		} else if (chunk.type == "RANI") {
