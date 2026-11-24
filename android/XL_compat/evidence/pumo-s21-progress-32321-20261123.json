@@ -1,0 +1,36 @@
+{
+  "date": "2026-11-23",
+  "device": {
+    "model": "SM-G996U",
+    "android_version": 15,
+    "input": "protected automation with screen recording",
+    "difficulty": "Rookie"
+  },
+  "build": {
+    "version": 32321,
+    "package": "com.dxxredux.app.nsdtest",
+    "diagnostic_apk_sha256": "25926d46d6c046c046fda082ba3b816f7610d6727232212433c36e436f2a9784",
+    "original_pumo_archive_sha256": "82c8cc4cfc740c8169f9d21a961c9ac5d2518342b3e27ac3ac438c91ca8f2ddf"
+  },
+  "protected_run": {
+    "id": "7dba8eb997154f1f92d00e17ad163b4d",
+    "result": "PASS",
+    "steps": "35/35",
+    "route": "Mineral Valley level 1 hub to level 2 Crauphel Scilab, concussion missile near room 129 before and after quickload",
+    "profile_hashes_restored": true,
+    "stay_on_while_plugged_in_original_and_restored": 0
+  },
+  "visual_recording": {
+    "private_ignored_path": "temp/xl-pumo-s21-20261123/s21-visual-32321-r3.mp4",
+    "sha256": "81147c29143c4908d7f760ad6d19469878afa15f571fa76391109eaed69c6728",
+    "observations": [
+      "Mission verification: amber fill and white label visible on a dark backing panel.",
+      "Difficulty to first briefing: PREPARING FIRST PAGE and moving amber fill visible.",
+      "Level 1 score to Crauphel briefing: CHECKING LEVEL RESOURCES AND GRAPHICS, then PREPARING FIRST PAGE, with moving amber fill visible.",
+      "First briefing to hub flight: PREPARE FOR DESCENT and moving amber fill visible during texture caching; the bar then disappeared while that screen remained during level music start.",
+      "Crauphel briefing to flight: PREPARE FOR DESCENT and moving amber fill visible during texture caching."
+    ],
+    "source_log_music_gap": "On hub entry, texture caching ended at 08:22:18.751 and level music became ready at 08:22:21.319, a 2568 ms gap; the nested cache progress end hid the outer level-load indicator during that gap."
+  },
+  "coverage_limit": "This is a diagnostic package and automated route. It does not verify the ordinary kit under human touch, the reporter's exact missile aim, or the unidentified green-on-green briefing page. Raw video, logs, profiles and saves remain private."
+}

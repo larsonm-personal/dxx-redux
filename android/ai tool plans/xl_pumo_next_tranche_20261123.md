@@ -15,10 +15,13 @@ steering. This touch shot remains the first unresolved gameplay action.
 Keep **Show progress bars** enabled. Time difficulty selection to the first
 briefing, score-screen advance to the next briefing and final briefing-page
 dismissal to ship control as separate waits. Record the visible label, whether
-the bar moves and approximate elapsed time. The score-to-briefing bar has an
-S21 diagnostic witness. Build 32321 makes the bar and label higher contrast,
-but still needs an ordinary-phone visual check. The last-page-to-flight gap
-also needs ordinary-phone observation. Ask for the first words or a screenshot
+the bar moves and approximate elapsed time. The score-to-briefing and
+last-page-to-flight bars have an
+[S21 diagnostic visual witness](../XL_compat/evidence/pumo-s21-progress-32321-20261123.json).
+Build 32321 makes the bar and label higher contrast, but the bar disappears
+for about 2.6 seconds while level music starts after texture caching. Keep
+the bar visible through the whole level load, then retest on S21 and the
+ordinary phone kit. Ask for the first words or a screenshot
 of the green-on-green briefing page. Each report needs kit version, phone,
 Android version,
 difficulty, input method, episode, checkpoint, last successful action and
@@ -79,7 +82,7 @@ Android behavior. Keep private game assets, profiles, saves and logs off Git.
 
 ## Fork and handoff
 
-The ready-for-review personal-fork PRs #726-#740 are registered in
+The ready-for-review personal-fork PRs #726-#741 are registered in
 [stack 720](https://github.com/larsonm-personal/dxx-redux/stack/720), each
 based on its immediate predecessor. Check the final execution report for
 exact heads and CI results. The private XL workflow may skip a PR below the

@@ -14,10 +14,15 @@ protected S21 automated shots before and after quickload stayed in control;
 those inputs do not reproduce the reported aim or prove the human issue closed.
 
 The S21 diagnostic route used the exact original Pumo v1.1 archive, Rookie,
-640 x 480, and returned 35/35 actions on both speed-pipeline runs. Profile
-hashes were restored. A score-to-next-briefing progress bar was shown on the
-device. The last-briefing-page-to-flight bar and contrast of the unidentified
-green page still need physical play on the ordinary package.
+640 x 480, and returned 35/35 actions on both speed-pipeline runs and the
+later version 32321 visual run. Profile hashes were restored. The recording
+shows a moving amber bar and readable white label at mission verification,
+difficulty-to-briefing, score-to-next-briefing, and briefing-to-flight. On hub
+entry, the bar disappears during a remaining 2.6-second level-music start
+while **PREPARE FOR DESCENT** still shows. The nested texture-cache progress
+owner ends before the outer level load completes. This is a real remaining
+visible-gap defect; the ordinary package and the unidentified green page
+still need human play. [S21 recording receipt](../XL_compat/evidence/pumo-s21-progress-32321-20261123.json).
 
 The original Mineral Valley briefing script has a plausible contrast
 candidate: the mainframe page beginning “And there it is!” requests bright
@@ -46,10 +51,11 @@ adds a dark backing panel, amber fill
 and white label to the Android loading indicator after the prior S21 capture
 showed the bar was present but difficult to see on the score art. Scoped
 Android quality, ktlint, the layout unit test and the three-ABI build passed.
-The protected S21 visual check awaits the device display: two initial attempts
-failed during import while the screen was off or showing NotificationShade;
-profile hashes restored after each. No gameplay conclusion was drawn from
-those attempts. The ordinary package had no active test pilot or manual save, so
+The protected S21 visual check subsequently passed after the display was
+unlocked: the original archive imported, all 35 gameplay actions completed,
+and the profile hashes restored. Two earlier attempts failed during import
+while the screen was off or showing NotificationShade; profile hashes restored
+after each, and no gameplay conclusion was drawn from them. The ordinary package had no active test pilot or manual save, so
 the checkpoint install dry run stopped at its documented prerequisite before
 writing. The private kits and saves remain in ignored `temp/`. After the
 earlier phone experiments, the S21's `stay_on_while_plugged_in` setting was

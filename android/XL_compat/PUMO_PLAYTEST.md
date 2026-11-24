@@ -9,7 +9,7 @@ for the next physical-phone session. The ordinary universal APK is
 It keeps the original earned checkpoints with their individual digests. The
 APK and all 11 checkpoint digests match the local manifest. Version 32321
 was installed and hash-verified on SM-G996U (Android 15). The isolated diagnostic
-package passed the original Pumo Rookie hub-to-Crauphel 35-step route twice,
+package passed the original Pumo Rookie hub-to-Crauphel 35-step route three times,
 including a room 129 missile before and after quickload. The ordinary package
 has no active pilot on that S21, so its checkpoint installer correctly stopped
 at the manual-save prerequisite during a dry run. Those automated inputs do
@@ -18,10 +18,12 @@ not resolve the separate SM-S931U touch report on Play build 31950.
 Keep **Show progress bars** enabled. From a fresh Mineral Valley start, record
 the time and visible label from difficulty selection to the first briefing,
 from advancing the level 1 score screen to the Crauphel briefing, and from
-dismissing the last briefing page to flight. The score-to-briefing transition
-now shows a moving bar on the S21 diagnostic recording; version 32321 gives
-that bar a dark backing panel, amber fill and white label. The
-last-briefing-to-flight gap needs a human observation on the ordinary kit.
+dismissing the last briefing page to flight. The score-to-briefing and
+briefing-to-flight transitions show moving bars on the
+[S21 diagnostic recording](evidence/pumo-s21-progress-32321-20261123.json);
+version 32321 gives the bar a dark backing panel, amber fill and white label.
+On hub entry the bar vanishes while **PREPARE FOR DESCENT** remains for about
+2.6 seconds of music startup. Note whether the ordinary kit shows that gap.
 For the reported exit, save before the Crauphel Scilab level 2 missile shot,
 repeat the same aim and missile after a load, and note whether control
 returns. Include a screenshot or first words of the green-on-green briefing
