@@ -1,0 +1,41 @@
+{
+  "schema": 1,
+  "date": "2026-11-23",
+  "regression": {
+    "original_pr_head": "dbdd23c678df224a51b037913d36c8b538f10820",
+    "private_ci_run": 45208568520,
+    "attempts_failed": [1, 2],
+    "native_test": "xl_water_arena",
+    "cause": "The broad robotless exception admitted the original Water Arena package after the test deliberately removed its declared rtarena.HXM companion."
+  },
+  "fix": {
+    "head": "c0c6100e900f98ed7d8ee93c615f4140c6709a37",
+    "rule": "The exception now requires at least one wall action and permits only named-sound type 30 actions, in addition to the existing single-level and zero robot-producer checks.",
+    "private_water_arena_local_result": "passed, including missing HXM rejection, original recovery and water traversal",
+    "private_water_arena_local_engine_sha256": "621c6d68d565453941eef112961fcdb503e9cb52a996c0e6e382d0b5029ea8e9"
+  },
+  "exact_original_subspace_forest_cluster": {
+    "subspace": "loaded_ticked, 120 frames, XL active",
+    "forest": "load_failed on custom robot declaration because the level has a robot generator",
+    "engine_sha256": "84279290127b784ca3b12cf9579195bb56273ebae5fc131d73bb8a8bb0baaa40"
+  },
+  "full_prior_miss_cohort": {
+    "catalog_sha256": "304660efeaa0626593cdfd652fb30302592679aa2066ad28b02b0267088fd531",
+    "same_original_distributions_ordinals_and_inputs": true,
+    "denominator": 120,
+    "passing": 26,
+    "remaining": 94,
+    "outcomes": {
+      "load_failed": 86,
+      "loaded_ticked": 26,
+      "simulation_failed": 4,
+      "timeout": 1,
+      "unsupported_format": 3,
+      "infrastructure_error": 0
+    },
+    "comparison_with_prior_clean_120_case_retry": "All 120 IDs have identical outcome, frame count and XL-active state; no new blocker was exposed.",
+    "engine_sha256": "84279290127b784ca3b12cf9579195bb56273ebae5fc131d73bb8a8bb0baaa40",
+    "conditional_integrated_count": "1560/1654 if the prior 1534 passing starts remain passing"
+  },
+  "limits": "The replay proves startup and 120 idle frames for the selected original entries, not full traversal, sound parity or a fresh 1654-start census. Private level files and test logs remain outside Git."
+}
