@@ -42,15 +42,29 @@ fourteen levels contain invalid packed ranges. The corrected signed-source
 comparison additionally records 28 count differences and 332 source overruns.
 Their bytes resemble older side/count encoding,
 but the pinned reference selects packed decoding for their declared version.
-The port rejects these ranges with the segment, side, count, first index and
-available delta count. It does not silently reinterpret malformed originals.
+Before the complete-table qualification below, the port rejected these ranges
+with the segment, side, count, first index and available delta count.
 
-Alarlof alone decodes. The later [HXM gameplay tranche](hxm-gameplay.md) implements
+Before this qualification, Redux decoded Alarlof alone. The later [HXM gameplay tranche](hxm-gameplay.md) implements
 its original companion and verifies the authored custom actor, combat and
 restoration. The format integration now requires original admission before
 starting its isolated geometry fixture. [The candidate report](format-15-34-candidates.json)
 records static decoding only, with every runtime_qualified value false; it does
 not summarize the later HXM controls or qualify the campaign.
+
+The subsequent Alien Frontier audit found a second, complete layout in this
+version pair. Fourteen original members encode the side and count as separate
+bytes. For each member, those counts cover its declared delta table exactly
+once, with no invalid face, empty range or overlap. Alarlof instead has a
+complete packed table, and 59 of its rows fail the byte-count interpretation.
+Redux now selects the byte-count interpretation only when the entire 15/34
+table proves that partition and at least one packed range is invalid. Other
+malformed tables still reject. This is a source-data inference: the pinned
+D2X-XL reader continues to select packed counts for all fifteen members.
+At lighting method 0, its ordinal 9 light-off action would traverse beyond
+the declared delta array. The bounded reference action and the qualified
+byte-count action are recorded separately in the dated Alien Frontier report;
+neither is an unmodified original action replay.
 
 ## Derived native controls
 

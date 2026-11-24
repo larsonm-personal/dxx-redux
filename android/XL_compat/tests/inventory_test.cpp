@@ -1065,6 +1065,28 @@ void version_34_contract()
 	rejects([&] { xl_compat::inspect_level(bad); });
 	lights.pop_back();
 	rejects([&] { xl_compat::inspect_level(lights); });
+	auto byte_count = bytes;
+	patch(byte_count, inventory.game_offset + 35 + 7 * 12, static_cast<std::uint32_t>(byte_count.size()));
+	patch(byte_count, inventory.game_offset + 39 + 7 * 12, 1);
+	put(byte_count, 0, 2);
+	put(byte_count, 2, 1);
+	put(byte_count, 3, 1);
+	put(byte_count, 0, 2);
+	patch(byte_count, inventory.game_offset + 35 + 8 * 12, static_cast<std::uint32_t>(byte_count.size()));
+	patch(byte_count, inventory.game_offset + 39 + 8 * 12, 3);
+	for (int i = 0; i < 3; ++i) {
+		put(byte_count, 0, 2);
+		put(byte_count, 4, 1);
+		put(byte_count, 0, 1);
+		for (int corner = 0; corner < 4; ++corner) put(byte_count, corner + 1, 1);
+	}
+	const auto qualified = xl_compat::inspect_level(byte_count);
+	check(qualified.light_indices.at(0) == std::array<int, 4>{ 0, 2, 3, 0 } &&
+	          std::any_of(qualified.observations.begin(), qualified.observations.end(), [](const auto &item) { return item.feature == "byte_count_light_indices"; }),
+	      "Complete 15/34 byte-count table was not qualified");
+	bad = byte_count;
+	patch(bad, index_offset + 3, 2, 1);
+	rejects([&] { xl_compat::inspect_level(bad); });
 	unsigned light_cases = 0;
 	for (int version : { 33, 34 })
 		for (int count : { 0, 1, 31, 32, 127, 128, 255, 256, 300, 8191 })

@@ -1,5 +1,6 @@
 #include "inventory.h"
 #include "hog.h"
+#include <algorithm>
 #include <array>
 #include <cstdint>
 #include <fstream>
@@ -96,12 +97,14 @@ int main(int argc, char **argv)
 			gameStates.render.bD2XLights = true;
 			CFile file{ b, offset };
 			std::vector<std::array<int, 4>> rows;
+			std::vector<std::array<int, 4>> byte_rows;
 			bool ranges_valid = true;
 			for (unsigned n = 0; n < count; ++n) {
 				CLightDeltaIndex index{};
 				index.Read(file);
 				const auto encoded_count = word(b, offset + n * 6 + 2) >> 3;
 				rows.push_back({ index.nSegment, index.nSide, int(encoded_count), index.index });
+				byte_rows.push_back({ index.nSegment, int(b.at(offset + n * 6 + 2)), int(b.at(offset + n * 6 + 3)), index.index });
 				if (index.count != encoded_count) ++original_differences;
 				if (index.index > deltas || index.count > deltas - index.index) ++signed_overruns;
 				ranges_valid &= index.nSide < 6 && index.index <= deltas && encoded_count <= deltas - index.index;
@@ -111,6 +114,14 @@ int main(int argc, char **argv)
 				const auto decoded = xl_compat::inspect_level(b);
 				require(decoded.light_indices == rows, "Production indices differ from unsigned encoded records");
 				if (!modern) require(member.name == "alarlof.rl2", "Unexpected valid original needs evidence update");
+				++valid;
+			} else if (!modern) {
+				const auto decoded = xl_compat::inspect_level(b);
+				require(decoded.light_indices == byte_rows, "Complete byte-count table differs from source records");
+				require(std::any_of(decoded.observations.begin(), decoded.observations.end(), [](const auto &item) {
+					        return item.feature == "byte_count_light_indices";
+				        }),
+				        "Byte-count table was admitted without its layout observation");
 				++valid;
 			} else {
 				bool refused = false;
@@ -124,7 +135,7 @@ int main(int argc, char **argv)
 				std::cout << member.name << ": invalid authored light range remains rejected\n";
 			}
 		}
-		if (!modern) require(valid == 1 && rejected == 14, "Incomplete original 15/34 audit");
+		if (!modern) require(valid == 15 && rejected == 0, "Incomplete original 15/34 audit");
 		else require(valid + rejected > 0, "No modern original levels inspected");
 		std::cout << indices << " original indices: " << valid << " valid levels, " << rejected << " rejected, " << original_differences << " source signed-count differences, " << signed_overruns << " source ranges overrun; no runtime qualification\n";
 	} catch (const std::exception &e) {

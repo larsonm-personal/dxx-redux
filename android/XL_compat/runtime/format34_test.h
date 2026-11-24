@@ -72,6 +72,32 @@ static int format34_test(int argc, char **argv)
 		require(!game_is_time_paused(), "15/34 save/restore left the simulation paused");
 		require(add_light(light[0], light[1]) == 1, "15/34 restored light cannot be enabled");
 		std::cout << "XL 15/34 native geometry, 68 packed light sources, 5083 deltas and disk-through-stock controls passed\n";
+		std::filesystem::copy_file(root / "orig34.hog", root / "alien34.hog", std::filesystem::copy_options::overwrite_existing);
+		{
+			std::ofstream descriptor(root / "alien34.mn2", std::ios::binary);
+			descriptor << "d2x-name = Derived Alien Frontier ordinal 9\nnum_levels = 1\nlakshmid.rl2\n";
+		}
+		require(load_base_mission("alien34", error, sizeof(error)), error);
+		require(xl_level_supported("lakshmid.rl2", 0), xl_level_rejection());
+		require(!load_level("lakshmid.rl2") && xl_level_extensions_active() && xl_light_index_count() == 57 && xl_light_delta_count() == 3860,
+		        "Alien Frontier byte-count owner did not load");
+		std::strcpy(Players[Player_num].callsign, "XLTest");
+		input_demo_set_skip_level_intro(1);
+		StartNewGame(1);
+		require(xl_level_extensions_active() && Num_triggers > 18 && Triggers[18].type == TT_LIGHT_OFF && Triggers[16].type == TT_LIGHT_ON,
+		        "Alien Frontier authored light actions changed");
+		const std::array<std::array<int, 2>, 5> targets{ { { 692, 1 }, { 743, 4 }, { 743, 5 }, { 730, 5 }, { 729, 4 } } };
+		const auto before = face_lights();
+		require(check_trigger_sub(18, Player_num, 1) == 0 && face_lights() != before,
+		        "Alien Frontier light-off did not alter the original faces");
+		for (const auto &target : targets)
+			require(Light_subtracted[target[0]] & (1 << target[1]), "Alien Frontier light-off lost a source mask");
+		const auto dark = face_lights();
+		require(check_trigger_sub(16, Player_num, 1) == 0 && face_lights() != dark,
+		        "Alien Frontier light-on did not restore face lighting");
+		for (const auto &target : targets)
+			require(!(Light_subtracted[target[0]] & (1 << target[1])), "Alien Frontier light-on retained a source mask");
+		std::cout << "Alien Frontier ordinal 9 native light-off/on actions passed with 57 byte-count sources and 3860 deltas\n";
 		return 0;
 	} catch (const std::exception &e) {
 		std::cerr << "XL 15/34 failed: " << e.what() << '\n';

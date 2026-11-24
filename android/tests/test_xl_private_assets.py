@@ -1327,13 +1327,18 @@ class XlPrivateTests(unittest.TestCase):
                             with self.assertRaises(ValueError):
                                 runner.format_results(Path("inspect"), work, work, {"format_witnesses": [witness]})
 
-    def test_format34_preserves_the_original_packed_light_rejection(self):
+    def test_format34_requires_complete_byte_count_observation(self):
         with tempfile.TemporaryDirectory() as temporary:
             work = Path(temporary)
             witness = {"level_version": 15, "game_version": 34, "hog_member": "test.rl2"}
-            for mode in ("decoded", "rejected", "unsupported-format", "playable"):
-                inventory = {"status": "inspection_only", "level_version": 15, "game_version": 34}
-                if mode != "decoded":
+            for mode in ("decoded", "missing-observation", "rejected", "unsupported-format", "playable"):
+                inventory = {
+                    "status": "inspection_only",
+                    "level_version": 15,
+                    "game_version": 34,
+                    "observations": [] if mode == "missing-observation" else [{"feature": "byte_count_light_indices"}],
+                }
+                if mode in ("rejected", "unsupported-format"):
                     inventory = {
                         "status": "rejected",
                         "reason": "unsupported level/game version pair 15/34"
@@ -1345,10 +1350,10 @@ class XlPrivateTests(unittest.TestCase):
                     Path(command[2]).write_text(
                         json.dumps({"playable": mode == "playable", "levels": [{"inventory": inventory}]})
                     )
-                    return subprocess.CompletedProcess(command, 0 if mode == "decoded" else 1)
+                    return subprocess.CompletedProcess(command, 1 if mode in ("rejected", "unsupported-format") else 0)
 
                 with patch.object(runner.subprocess, "run", side_effect=inspect):
-                    if mode == "rejected":
+                    if mode == "decoded":
                         self.assertEqual(
                             runner.format_results(Path("inspect"), work, work, {"format_witnesses": [witness]}), 1
                         )
