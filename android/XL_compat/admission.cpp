@@ -110,7 +110,7 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 	}
 	for (const auto &issue : level.unknown) {
 		if (issue.feature == "segment_owner_group" && issue.record >= 0 && std::size_t(issue.record) < level.segments.size() &&
-		    legacy_team_ownership(level, level.segments[issue.record])) continue;
+		    qualified_team_ownership(level, level.segments[issue.record])) continue;
 		// These describe validation stages, not serialized unknown features
 		if (issue.feature != "object_dependencies" && issue.feature != "assets" && issue.feature != "runtime_semantics")
 			result.push_back(issue);

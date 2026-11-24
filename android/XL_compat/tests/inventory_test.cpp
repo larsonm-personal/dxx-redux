@@ -1918,6 +1918,13 @@ int main(int argc, char **argv)
 			check(xl_compat::runtime_blockers(team_rooms).empty(), "Valid legacy team owner and group were rejected");
 			team_rooms.segments[0].owner = 3;
 			check(!xl_compat::runtime_blockers(team_rooms).empty(), "Undefined legacy team owner was admitted");
+			auto modern_team = xl_compat::inspect_level(fixture(23, 0, 1, 8));
+			modern_team.segments[0].owner = 2;
+			modern_team.segments[0].group = 54;
+			modern_team.unknown.push_back({ "segment_owner_group", 0, "2/54" });
+			check(xl_compat::runtime_blockers(modern_team).empty(), "Valid 23/40 team ownership was rejected");
+			modern_team.segments[0].group = -2;
+			check(!xl_compat::runtime_blockers(modern_team).empty(), "Undefined team group was admitted");
 		}
 		{
 			const auto translated_skybox = xl_compat::prepare_gameplay_probe(fixture(23, 0, 1, 10));
