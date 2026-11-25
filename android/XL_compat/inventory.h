@@ -178,9 +178,14 @@ inline bool segment_is_skybox(const Inventory &level, const Segment &segment)
 	return level.level_version >= 21 && segment.function == 10;
 }
 
+inline bool early_colored_wall_layout(const Inventory &level)
+{
+	return level.level_version == 11 && level.game_version == 31;
+}
+
 inline bool supported_xl_layout(const Inventory &level)
 {
-	return (level.level_version == 15 && (level.game_version == 33 || level.game_version == 34)) ||
+	return early_colored_wall_layout(level) || (level.level_version == 15 && (level.game_version == 33 || level.game_version == 34)) ||
 	       ((level.level_version == 17 || level.level_version == 18) && level.game_version == 36) ||
 	       (level.level_version == 19 && level.game_version == 40) || modern_runtime_layout(level);
 }

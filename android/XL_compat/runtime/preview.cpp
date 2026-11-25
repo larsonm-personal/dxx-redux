@@ -1005,7 +1005,7 @@ static void rebuild_xl_ambient()
 		for (unsigned channel = 0; channel < 3; ++channel) {
 			const auto serialized = source->texture_colors.at(i).rgb[channel];
 			// Match ReadColor: floating v15 or integer v17, without narrowing v15 to int32
-			const float loaded = source->level_version == 15 ? static_cast<float>(serialized) : static_cast<float>(std::round(serialized * 2147483647.0)) / static_cast<float>(0x7fffffff);
+			const float loaded = source->level_version <= 15 ? static_cast<float>(serialized) : static_cast<float>(std::round(serialized * 2147483647.0)) / static_cast<float>(0x7fffffff);
 			if (!std::isfinite(loaded)) throw std::runtime_error("XL ambient texture color exceeds finite float range");
 			colors[i][channel] = loaded;
 		}

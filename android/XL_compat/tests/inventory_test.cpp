@@ -94,14 +94,21 @@ Bytes fixture(int version = 15, int segment_flags = 0, int segment_count = 1, in
 	}
 	for (int i = 0; !classic && i < 8 + segment_count * 6; ++i) {
 		put(b, 1, 1);
-		put(b, 2147483647, 4);
-		put(b, 1073741824, 4);
-		put(b, 0, 4);
+		if (version == 11) {
+			for (const auto high : { 0x3ff00000, 0x3fe00000, 0 }) {
+				put(b, 0, 4);
+				put(b, high, 4);
+			}
+		} else {
+			put(b, 2147483647, 4);
+			put(b, 1073741824, 4);
+			put(b, 0, 4);
+		}
 	}
 	// Texture colors switch from double to integer components after level 15
 	for (int i = 0; !classic && i < 910; ++i) {
 		put(b, 1, 1);
-		if (version == 15) {
+		if (version <= 15) {
 			put(b, 0, 4);
 			put(b, 0x3ff00000, 4);
 			for (int j = 0; j < 4; ++j) put(b, 0, 4);
@@ -114,9 +121,9 @@ Bytes fixture(int version = 15, int segment_flags = 0, int segment_count = 1, in
 	const auto game = b.size();
 	patch(b, 12, static_cast<std::uint32_t>(game));
 	put(b, 0x6705, 2);
-	put(b, classic ? 31 : version == 15 ? 33
-	                  : version >= 19   ? 40
-	                                    : 36,
+	put(b, version <= 11 ? 31 : version == 15 ? 33
+	                        : version >= 19   ? 40
+	                                          : 36,
 	    2);
 	b.resize(b.size() + 31);
 	for (int i = 0; i < (version <= 15 ? 9 : 10); ++i) {
@@ -129,7 +136,7 @@ Bytes fixture(int version = 15, int segment_flags = 0, int segment_count = 1, in
 	put(b, 0, 2);
 	if (!classic) {
 		patch(b, game + 71, static_cast<std::uint32_t>(b.size()));
-		put(b, 0, 4);
+		if (version >= 15) put(b, 0, 4);
 	}
 	if (version == 17 || version == 18) put(b, 0, 2);
 	return b;
@@ -235,11 +242,12 @@ Bytes single_wall_fixture(int version)
 	auto original = fixture(version);
 	const auto empty = xl_compat::inspect_level(original);
 	const auto mask = empty.mine_offset + 5 + 8 * 12 + 2 + 1 + 16;
+	const int wall_reference_width = version == 11 ? 1 : 2;
 	original.at(mask) = 1;
-	original.insert(original.begin() + mask + 1, 2, 0);
-	const auto game = empty.game_offset + 2;
+	original.insert(original.begin() + mask + 1, wall_reference_width, 0);
+	const auto game = empty.game_offset + wall_reference_width;
 	patch(original, 12, game);
-	const auto row = empty.sections[3].offset + 2;
+	const auto row = empty.sections[3].offset + wall_reference_width;
 	const bool modern = empty.game_version >= 37;
 	const int stride = modern ? 25 : 24;
 	patch(original, game + 71, row + stride);
@@ -252,6 +260,22 @@ Bytes single_wall_fixture(int version)
 	original.at(row + 21 + int(modern)) = 1;
 	return original;
 }
+void early_colored_wall_contract()
+{
+	auto bytes = single_wall_fixture(11);
+	const auto source = xl_compat::inspect_level(bytes);
+	patch(bytes, source.sections[1].offset + 16, xl_compat::colored_wall_type, 1);
+	const auto probe = xl_compat::prepare_gameplay_probe(bytes);
+	check(probe.source.segments[0].sides[0].wall == 0 && probe.source.walls[0].type == xl_compat::colored_wall_type,
+	      "Early XL colored wall lost its byte-sized side reference");
+	const std::array<double, 3> ambient{ 1, 0.5, 0 };
+	check(probe.source.vertex_colors[0].rgb == ambient && probe.source.side_colors[0].rgb == ambient &&
+	          probe.source.texture_colors[0].rgb == std::array<double, 3>{ 1, 0, 0 },
+	      "Early XL color tables did not preserve their double components");
+	patch(bytes, source.game_offset + 2, 32, 2);
+	rejects([&] { xl_compat::inspect_level(bytes); });
+}
+
 void wall_key_contract()
 {
 	unsigned count = 0;
@@ -1743,6 +1767,7 @@ int main(int argc, char **argv)
 		generator_assignment_contract();
 		object_capacity_contract();
 		wide_wall_contract();
+		early_colored_wall_contract();
 		wall_key_contract();
 		trigger_capacity_contract();
 		if (argc == 3 && std::string(argv[1]) == "--object-fixtures") {
