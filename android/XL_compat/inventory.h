@@ -165,6 +165,11 @@ inline bool legacy_team_room_layout(const Inventory &level)
 	return level.level_version == 17 && level.game_version == 36;
 }
 
+inline bool legacy_game35_layout(const Inventory &level)
+{
+	return level.level_version == 17 && level.game_version == 35;
+}
+
 inline bool qualified_team_ownership(const Inventory &level, const Segment &segment)
 {
 	// The pinned geometry reader uses the same signed owner/group bytes in
@@ -175,7 +180,7 @@ inline bool qualified_team_ownership(const Inventory &level, const Segment &segm
 
 inline bool segment_is_skybox(const Inventory &level, const Segment &segment)
 {
-	return level.level_version >= 21 && segment.function == 10;
+	return (level.level_version >= 21 && segment.function == 10) || (legacy_game35_layout(level) && segment.function == 14);
 }
 
 inline bool early_colored_wall_layout(const Inventory &level)
@@ -185,7 +190,7 @@ inline bool early_colored_wall_layout(const Inventory &level)
 
 inline bool supported_xl_layout(const Inventory &level)
 {
-	return early_colored_wall_layout(level) || (level.level_version == 15 && (level.game_version == 33 || level.game_version == 34)) ||
+	return early_colored_wall_layout(level) || legacy_game35_layout(level) || (level.level_version == 15 && (level.game_version == 33 || level.game_version == 34)) ||
 	       ((level.level_version == 17 || level.level_version == 18) && level.game_version == 36) ||
 	       (level.level_version == 19 && level.game_version == 40) || modern_runtime_layout(level);
 }

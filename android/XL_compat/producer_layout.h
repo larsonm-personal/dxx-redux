@@ -14,7 +14,7 @@ inline int producer_function(const Segment &segment)
 
 inline bool equipment_layout(const Inventory &level)
 {
-	return modern_runtime_layout(level) || (level.level_version == 19 && level.game_version == 40);
+	return legacy_game35_layout(level) || modern_runtime_layout(level) || (level.level_version == 19 && level.game_version == 40);
 }
 
 inline bool equipment_segment(const Inventory &level, const Segment &segment)

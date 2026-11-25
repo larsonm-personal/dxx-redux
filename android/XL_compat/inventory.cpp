@@ -387,7 +387,7 @@ static Inventory read_level_inventory(const Bytes &bytes, bool allow_classic)
 		if (seg.group != -1) issue(out.observations, "segment_group", i, std::to_string(seg.group));
 		out.segments.push_back(seg);
 	}
-	const bool qualified_reserved_segment_flags = early_colored_wall_layout(out) || (out.level_version == 15 && out.game_version == 34) ||
+	const bool qualified_reserved_segment_flags = early_colored_wall_layout(out) || legacy_game35_layout(out) || (out.level_version == 15 && out.game_version == 34) ||
 	                                              ((out.level_version == 17 || out.level_version == 18) && out.game_version == 36) ||
 	                                              ((out.level_version == 19 || out.level_version == 21) && out.game_version == 40);
 	for (int i = 0; i < segment_count; ++i) {

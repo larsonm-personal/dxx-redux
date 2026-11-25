@@ -160,6 +160,7 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 		if (modern_runtime_layout(level) && issue.feature == "segment_function_v21" && issue.detail == "2") continue;
 		if (modern_runtime_layout(level) && issue.feature == "segment_function_v21" && (issue.detail == "7" || issue.detail == "8")) continue;
 		if (modern_runtime_layout(level) && issue.feature == "segment_function_v21" && issue.detail == "11") continue;
+		if (issue.feature == "segment_function" && issue.record >= 0 && std::size_t(issue.record) < level.segments.size() && segment_is_skybox(level, level.segments[issue.record])) continue;
 		if (equipment_layout(level) && issue.feature == "segment_function" && issue.detail == "15") continue;
 		if (issue.feature == "segment_function" && (issue.detail == "11" || issue.detail == "12")) continue;
 		if (issue.feature == "segment_function_v21" && issue.detail == "9") continue;
@@ -288,7 +289,7 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 	for (std::size_t i = 0; i < level.object_trigger_records.size(); ++i) texture_action(level.object_trigger_records[i].action, int(i), "object trigger texture");
 	limit(level.matcens.size() > 20, "generator capacity", "more than 20 robot centers");
 	limit(level.equipment.size() > 128, "equipment capacity", "more than 128 equipment makers");
-	limit(!level.equipment.empty() && !equipment_layout(level), "equipment layout", "equipment makers require an audited game-40 profile");
+	limit(!level.equipment.empty() && !equipment_layout(level), "equipment layout", "equipment makers require an audited profile");
 	const auto producers = producer_layout(level);
 	limit(producers.robots.size() > level.matcens.size(), "generator assignment", "robotmaker segment has no disk row after source initialization");
 	limit(producers.equipment.size() != level.equipment.size(), "equipment assignment", "equipment segments and disk rows differ after source initialization");
