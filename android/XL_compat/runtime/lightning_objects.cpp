@@ -5,6 +5,7 @@
 #include "shared_audio_internal.h"
 #include "../lightning_audio.h"
 #include "../lightning_admission.h"
+#include "../particle_admission.h"
 #include "../lightning_visibility.h"
 #include "../transparency_order.h"
 #include <map>
@@ -95,7 +96,7 @@ void xl_compat::bind_lightning_objects(const Inventory &level)
 	std::map<int, Entry> prepared;
 	for (unsigned index = 0; index < level.objects.size(); ++index) {
 		const auto &object = level.objects[index];
-		if (object.render != 12) continue;
+		if (object.render != 12 || disabled_retyped_particle(level, object)) continue;
 		if (object.type != 20 || object.reader_id != 1 || object.reader_render != 12 || object.control || object.movement || !native_lightning(int(index)))
 			throw std::runtime_error("XL lightning object identity changed during native loading");
 		if (object.segment < 0 || std::size_t(object.segment) >= level.segments.size() || Objects[index].segnum != object.segment)

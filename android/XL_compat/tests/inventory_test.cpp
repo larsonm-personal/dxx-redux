@@ -6,6 +6,7 @@
 #include "capacity.h"
 #include "camera_admission.h"
 #include "camera_bindings.h"
+#include "lightning_admission.h"
 #include "classic_segment_function.h"
 #include "wide_wall_fixture.h"
 #include "trigger_capacity_fixture.h"
@@ -1934,6 +1935,19 @@ int main(int argc, char **argv)
 			lightning.unsupported.push_back({ "effect_lightning", -1, "decoded payload" });
 			lightning.unsupported.push_back({ "effect_object_types", -1, "20" });
 			check(xl_compat::runtime_blockers(lightning).empty(), "Implemented original random lightning profile rejected");
+			{
+				auto retyped = xl_compat::inspect_level(fixture(23));
+				owner.reader_id = 0;
+				owner.reader_render = 11;
+				owner.render_data = { 1, 3, 0, 1, 3, -1, 3, 0, 3, 0, 0, 0, 3, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 };
+				retyped.objects.push_back(owner);
+				check(xl_compat::runtime_blockers(retyped).empty() && !xl_compat::authored_lightning_emits(owner), "Source-disabled retyped particle was treated as active lightning");
+				retyped.objects.back().render_data[11] = 1;
+				check(!xl_compat::runtime_blockers(retyped).empty(), "Enabled retyped particle bypassed runtime admission");
+				retyped.objects.back().render_data[11] = 0;
+				retyped.triggers.emplace_back();
+				check(!xl_compat::runtime_blockers(retyped).empty(), "Trigger-bearing level admitted a retyped particle without binding qualified behavior");
+			}
 			auto nonglow = lightning;
 			// Original pmlev3 object 318, with only its segment relocated into this fixture
 			nonglow.objects.back().render_data = { 300, 50, 15, 5, 1, -1, 3, 0, 0, 6, 0, 2, 20, 0, 0, 0, 0, 0, 0, 1, 0, 160, 160, 0, 128, 1 };

@@ -19,6 +19,17 @@ inline bool fire_particle_shape(const Object &object)
 {
 	return authored_particle_shape(object) && object.render_data[11] == 3;
 }
+
+inline bool disabled_retyped_particle(const Inventory &level, const Object &object)
+{
+	if (level.level_version != 23 || level.game_version != 40 || !level.triggers.empty() || !level.object_trigger_records.empty() ||
+	    object.type != 20 || object.reader_id != 0 || object.render != 12 || object.reader_render != 11 ||
+	    object.control || object.movement || object.multiplayer || object.render_data.size() != 26) return false;
+	// FixEffectRenderType changes the reader to particles but keeps the packed lightning fields.
+	// The particle side and kind overlay nChildren, and its enable byte overlays the low byte of nFrames.
+	return object.render_data[10] == 0 && static_cast<uint8_t>(object.render_data[11]) == 0;
+}
+
 struct PreparedFireParticle {
 	ParticleEffect effect;
 	ParticleEmitterDefinition definition;

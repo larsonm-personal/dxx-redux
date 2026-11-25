@@ -267,7 +267,7 @@ static GameplayProbe prepare_probe(const Bytes &original, bool water_segments, i
 			patch(out, offset + 1, (trigger.flags | 4) & (trigger.flags & 128 ? ~8 : ~0), 1);
 		}
 	}
-	const auto owned_effect = [&](const Object &object) { return ambient_sound_shape(object) || authored_particle_shape(object) || authored_lightning_shape(object); };
+	const auto owned_effect = [&](const Object &object) { return ambient_sound_shape(object) || authored_particle_shape(object) || authored_lightning_shape(object) || disabled_retyped_particle(v, object); };
 	const bool owned_objects = std::any_of(v.objects.begin(), v.objects.end(), owned_effect);
 	if (v.game_version > 37 || owned_objects) {
 		// Stock uses explicit section offsets. Retain the original game payload as
