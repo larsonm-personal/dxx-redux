@@ -11,6 +11,7 @@ void bind_lightning_objects(const Inventory &level);
 void lightning_objects_clock(int milliseconds);
 void lightning_objects_frame();
 const LightningEmitter *lightning_object_emitter(int index);
+const LightningPoint *lightning_waypoint_position(int index);
 const LightningRenderFrame *lightning_object_render_frame(int index, unsigned bolt);
 std::vector<LightningSceneItem> lightning_scene_items(const std::vector<int> &visible, const std::vector<int> &rendered_objects, const LightningPoint &eye, int maximum_depth);
 bool lightning_scene_item_valid(const LightningSceneItem &item);

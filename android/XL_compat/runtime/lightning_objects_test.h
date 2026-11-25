@@ -361,3 +361,77 @@ static void lightning_objects_native_case(bool active, int profile = 0)
 	                                                                                                        : "glowing")
 	          << "): creation, clock, movement, activation, atomic restore and signature lifetime passed\n";
 }
+
+static void lightning_waypoint_native_case(const xl_compat::Bytes &archive)
+{
+	using namespace xl_compat;
+	const auto members = read_hog(archive);
+	const auto level = std::find_if(members.begin(), members.end(), [](const auto &member) { return member.name == "neptunxl.rl2"; });
+	require(level != members.end(), "Waypoint controls require the original level");
+	auto source = inspect_level(level->bytes);
+	struct Guard {
+		std::vector<int> objects;
+		~Guard()
+		{
+			xl_lightning_objects_clear();
+			for (int object : objects) obj_delete(object);
+		}
+	} guard;
+	const int segment = ConsoleObject->segnum;
+	vms_vector center;
+	compute_segment_center(&center, &Segments[segment]);
+	for (int i = 0; i < 6; ++i) {
+		const bool emitter = i < 2;
+		const int actor = obj_create(static_cast<object_type_t>(20), emitter ? 1 : 3, segment, &center, &vmd_identity_matrix, F1_0, CT_NONE, MT_NONE, RT_NONE);
+		require(actor >= 0, "Cannot allocate the waypoint control object");
+		guard.objects.push_back(actor);
+		if (source.objects.size() <= std::size_t(actor)) source.objects.resize(actor + 1);
+		auto &object = source.objects[actor];
+		object = {};
+		object.type = 20;
+		object.id = object.reader_id = emitter ? 1 : 3;
+		object.segment = segment;
+		const int pair = i % 2;
+		const int logical = 10 * (pair + 1);
+		object.position = { center.x + (i >= 4 ? (pair + 1) * 3 * F1_0 : 0), center.y + pair * 8 * F1_0, center.z };
+		if (emitter) {
+			object.render = object.reader_render = 12;
+			object.render_data = { 60000, 0, 0, 8, 0, logical, 1, pair + 1, 2 - pair, 50, 0, 3, 6, 0, 255, 0, 0, 0, 0, 0, 0, 255, 200, 0, 200, 1 };
+		} else {
+			object.control = 17;
+			object.reader_render = 0;
+			object.control_data = { logical + (i >= 4), logical + (i < 4), i < 4 ? 40 : 0 };
+		}
+	}
+	bind_lightning_objects(source);
+	const int first = guard.objects[0], second = guard.objects[1];
+	const auto tick = [](int number) {
+		lightning_objects_clock(6000000 + 25 * number);
+		lightning_objects_frame();
+	};
+	const auto position = [](int owner) {
+		const auto *point = lightning_waypoint_position(owner);
+		require(point, "Routed lightning lost its presentation position");
+		return *point;
+	};
+	auto initial = position(first);
+	for (int frame = 0; frame < 3; ++frame) tick(frame);
+	require(position(first) == initial && position(second)[0] == center.x + 3 * F1_0, "The first waypoint pair did not wait at its zero-speed return");
+	const auto saved = lightning_objects_snapshot();
+	for (int frame = 3; frame < 7; ++frame) tick(frame);
+	const int first_steps = first < second ? 1 : 2;
+	require(position(first)[0] == center.x + first_steps * F1_0 && position(second)[0] == center.x + F1_0,
+	        "The waypoint pair did not resume in object order");
+	require(Objects[first].pos.x == center.x && Objects[second].pos.x == center.x, "Waypoint movement changed the native simulation objects");
+	const auto continued = lightning_objects_snapshot();
+	lightning_objects_frame();
+	require(lightning_objects_snapshot() == continued, "Waypoint movement repeated the same clock tick");
+	auto malformed = saved;
+	for (auto &row : malformed)
+		if (row[0] == first) row[4][3][0] = center.x + F1_0;
+	require(!restore_lightning_objects(malformed, true) && lightning_objects_snapshot() == continued, "Malformed waypoint restore replaced live movement");
+	require(restore_lightning_objects(saved, true) && lightning_objects_snapshot() == saved, "Paired waypoint readiness did not restore atomically");
+	for (int frame = 7; frame < 11; ++frame) tick(frame);
+	require(lightning_objects_snapshot() == continued, "Restored waypoint pair continued along different routes");
+	std::cout << "XL waypoint pairs passed bound presentation, zero-speed synchronization and exact phase restore\n";
+}

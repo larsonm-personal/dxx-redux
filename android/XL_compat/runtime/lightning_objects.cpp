@@ -3,6 +3,7 @@
 #include "particle_world.h"
 #include "linked_audio.h"
 #include "shared_audio_internal.h"
+#include "slow_motion_runtime.h"
 #include "../lightning_audio.h"
 #include "../lightning_admission.h"
 #include "../particle_admission.h"
@@ -35,10 +36,14 @@ struct Entry {
 	std::vector<std::optional<xl_compat::LightningRenderFrame>> render_frames;
 	int sound = 0;
 	bool restored_audio = false;
+	xl_compat::LightningWaypointState waypoint{};
+	xl_compat::LightningPoint route_position{};
 };
 std::map<int, Entry> entries;
 xl_compat::ParticleWorld world;
+xl_compat::LightningWaypoints waypoints;
 int clock_time = 0, last_tick = 0, tick_time = 0;
+int last_waypoint_tick = -1;
 struct EffectsRandom {
 	int bounded(int limit) const
 	{
@@ -49,14 +54,46 @@ struct EffectsRandom {
 		return double(d_rand_presentation()) / 32767.0;
 	}
 };
-bool native_lightning(int index)
+bool native_effect(int index, int id)
 {
-	return index >= 0 && index <= Highest_object_index && Objects[index].type == 20 && Objects[index].id == 1 &&
+	return index >= 0 && index <= Highest_object_index && Objects[index].type == 20 && Objects[index].id == id &&
 	       Objects[index].control_type == CT_NONE && Objects[index].movement_type == MT_NONE && Objects[index].render_type == RT_NONE;
 }
 bool bound(int index, const Entry &entry)
 {
-	return entry.alive && native_lightning(index) && Objects[index].signature == entry.signature;
+	return entry.alive && native_effect(index, 1) && Objects[index].signature == entry.signature;
+}
+xl_compat::LightningPoint lightning_position(int index, const Entry &entry)
+{
+	if (entry.waypoint.node >= 0) return entry.route_position;
+	const auto &position = Objects[index].pos;
+	return { position.x, position.y, position.z };
+}
+void move_waypoint_owners()
+{
+	if (waypoints.owners.empty() || tick_time < 25 || last_waypoint_tick == clock_time) return;
+	last_waypoint_tick = clock_time;
+	const float slow_motion = xl_runtime::slow_motion_state().clocks[0].speed;
+	for (const auto &[index, route] : waypoints.owners) {
+		auto &entry = entries.at(index);
+		auto &partner = entries.at(route.partner);
+		if (bound(index, entry))
+			xl_compat::move_lightning_waypoint(waypoints.nodes, entry.waypoint, bound(route.partner, partner) ? &partner.waypoint : nullptr,
+			                                   entry.route_position, slow_motion);
+	}
+}
+bool valid_waypoint_state(int object, const xl_compat::LightningWaypointState &state, const xl_compat::LightningPoint &position)
+{
+	if (state.node < 0 || std::size_t(state.node) >= waypoints.nodes.size()) return false;
+	const auto &point = waypoints.nodes[state.node];
+	if (!point.speed || point.route != waypoints.nodes[waypoints.owners.at(object).node].route) return false;
+	if (state.waiting) return position == point.position;
+	const auto &next = waypoints.nodes[xl_compat::waypoint_successor(point, state.reverse)];
+	for (unsigned axis = 0; axis < position.size(); ++axis) {
+		const auto [low, high] = std::minmax(point.position[axis], next.position[axis]);
+		if (position[axis] < low || position[axis] > high) return false;
+	}
+	return true;
 }
 void create_sound(int index, const Entry &entry)
 {
@@ -93,21 +130,30 @@ void destroy_sound(int index, const Entry &entry)
 
 void xl_compat::bind_lightning_objects(const Inventory &level)
 {
+	auto routes = prepare_lightning_waypoints(level);
 	std::map<int, Entry> prepared;
 	for (unsigned index = 0; index < level.objects.size(); ++index) {
 		const auto &object = level.objects[index];
+		if (authored_waypoint_shape(object) && (!native_effect(int(index), 3) || Objects[index].segnum != object.segment))
+			throw std::runtime_error("XL waypoint controller identity changed during native loading");
 		if (object.render != 12 || disabled_retyped_particle(level, object)) continue;
-		if (object.type != 20 || object.reader_id != 1 || object.reader_render != 12 || object.control || object.movement || !native_lightning(int(index)))
+		if (!authored_lightning_shape(object) || !native_effect(int(index), 1))
 			throw std::runtime_error("XL lightning object identity changed during native loading");
 		if (object.segment < 0 || std::size_t(object.segment) >= level.segments.size() || Objects[index].segnum != object.segment)
 			throw std::runtime_error("XL lightning object segment changed during native loading");
 		const auto definition = prepare_authored_lightning(level, object);
 		prepared.emplace(int(index), Entry{ definition, Objects[index].signature, object.render_data[7], object.render_data[8], object.render_data[2] });
 	}
+	for (const auto &[index, route] : routes.owners) {
+		auto &entry = prepared.at(index);
+		entry.waypoint.node = route.node;
+		entry.route_position = routes.nodes[route.node].position;
+	}
 	auto geometry = prepared.empty() ? ParticleWorld{} : compile_particle_world(level);
 	xl_lightning_objects_clear();
 	entries = std::move(prepared);
 	world = std::move(geometry);
+	waypoints = std::move(routes);
 }
 
 extern "C" void xl_lightning_objects_clear(void)
@@ -116,6 +162,8 @@ extern "C" void xl_lightning_objects_clear(void)
 		if (entry.sound > 0 || entry.restored_audio) destroy_sound(index, entry);
 	entries.clear();
 	world = {};
+	waypoints = {};
+	last_waypoint_tick = -1;
 }
 
 extern "C" void xl_lightning_objects_mute(void)
@@ -158,6 +206,13 @@ const xl_compat::LightningEmitter *xl_compat::lightning_object_emitter(int index
 {
 	const auto found = entries.find(index);
 	return found != entries.end() && bound(index, found->second) && found->second.emitter ? &*found->second.emitter : nullptr;
+}
+
+const xl_compat::LightningPoint *xl_compat::lightning_waypoint_position(int index)
+{
+	const auto found = entries.find(index);
+	if (found == entries.end() || !bound(index, found->second) || found->second.waypoint.node < 0) return nullptr;
+	return &found->second.route_position;
 }
 
 const xl_compat::LightningRenderFrame *xl_compat::lightning_object_render_frame(int index, unsigned bolt)
@@ -218,6 +273,7 @@ std::map<int, xl_compat::LightningSegmentLight> xl_compat::lightning_object_ligh
 void xl_compat::lightning_objects_frame()
 {
 	if (!xl_level_extensions_active() || game_is_time_paused()) return;
+	move_waypoint_owners();
 	EffectsRandom random;
 	// Source's pool visits newest first; StaticFrame creates all bound owners
 	// in ascending object order after the existing emitters have updated
@@ -250,7 +306,7 @@ void xl_compat::lightning_objects_frame()
 			if (sound_action == LightningSoundAction::create) create_sound(index, entry);
 			else if (sound_action == LightningSoundAction::destroy) destroy_sound(index, entry);
 			const auto &object = Objects[index];
-			lightning_emitter_move(*entry.emitter, { object.pos.x, object.pos.y, object.pos.z }, object.segnum);
+			lightning_emitter_move(*entry.emitter, lightning_position(index, entry), object.segnum);
 		}
 	}
 	for (auto &[index, entry] : entries) {
@@ -260,14 +316,14 @@ void xl_compat::lightning_objects_frame()
 		if (!entry.definition.random_end && entry.target_id) {
 			for (const auto &[target, candidate] : entries) {
 				if (target == index || candidate.authored_id != entry.target_id || !bound(target, candidate)) continue;
-				const auto &position = Objects[target].pos;
-				endpoint = LightningPoint{ position.x, position.y, position.z };
+				endpoint = lightning_position(target, candidate);
 				break;
 			}
 		}
-		endpoint = place_authored_lightning(entry.definition, { object.pos.x, object.pos.y, object.pos.z },
+		const auto position = lightning_position(index, entry);
+		endpoint = place_authored_lightning(entry.definition, position,
 		                                    { object.orient.fvec.x, object.orient.fvec.y, object.orient.fvec.z }, entry.authored_length, endpoint);
-		entry.emitter = create_lightning_emitter(entry.definition, { object.pos.x, object.pos.y, object.pos.z }, random, object.segnum, endpoint);
+		entry.emitter = create_lightning_emitter(entry.definition, position, random, object.segnum, endpoint);
 		entry.render_frames.resize(entry.emitter->bolts.size());
 		entry.sound = entry.definition.sound;
 		create_sound(index, entry);
@@ -287,8 +343,11 @@ extern "C" void xl_lightning_objects_frame(void)
 nlohmann::json xl_compat::lightning_objects_snapshot()
 {
 	auto state = nlohmann::json::array();
-	for (const auto &[index, entry] : entries)
+	for (const auto &[index, entry] : entries) {
 		state.push_back({ index, entry.signature, entry.definition.enabled, bound(index, entry) });
+		if (entry.waypoint.node >= 0)
+			state.back().push_back({ entry.waypoint.node, entry.waypoint.reverse, entry.waypoint.waiting, entry.route_position });
+	}
 	return state;
 }
 
@@ -300,7 +359,8 @@ bool xl_compat::restore_lightning_objects(const nlohmann::json &state, bool appl
 		unsigned ordinal = 0;
 		for (auto &[index, entry] : prepared) {
 			const auto &row = state[ordinal++];
-			if (!row.is_array() || row.size() != 4 || !row[0].is_number_integer() || row[0] != index || !row[1].is_number_integer() ||
+			const bool routed = entry.waypoint.node >= 0;
+			if (!row.is_array() || row.size() != (routed ? 5u : 4u) || !row[0].is_number_integer() || row[0] != index || !row[1].is_number_integer() ||
 			    (row[1].is_number_unsigned() && row[1].get<std::uint64_t>() > INT32_MAX) ||
 			    row[1].get<std::int64_t>() < 0 || row[1].get<std::int64_t>() > INT32_MAX || !row[2].is_boolean() || !row[3].is_boolean()) return false;
 			entry.signature = row[1].get<int>();
@@ -310,8 +370,20 @@ bool xl_compat::restore_lightning_objects(const nlohmann::json &state, bool appl
 			entry.render_frames.clear();
 			entry.sound = 0;
 			entry.restored_audio = true;
-			const bool native = native_lightning(index) && Objects[index].signature == entry.signature;
-			if (entry.alive ? !native : native_lightning(index)) return false;
+			const bool native = native_effect(index, 1) && Objects[index].signature == entry.signature;
+			if (entry.alive ? !native : native_effect(index, 1)) return false;
+			if (routed) {
+				const auto &phase = row[4];
+				if (!phase.is_array() || phase.size() != 4 || !phase[0].is_number_integer() || phase[0] < 0 ||
+				    phase[0] >= waypoints.nodes.size() || !phase[1].is_boolean() || !phase[2].is_boolean() ||
+				    !phase[3].is_array() || phase[3].size() != entry.route_position.size()) return false;
+				for (const auto &coordinate : phase[3])
+					if (!coordinate.is_number_integer() || (coordinate.is_number_unsigned() && coordinate.get<std::uint64_t>() > INT32_MAX) ||
+					    coordinate.get<std::int64_t>() < INT32_MIN || coordinate.get<std::int64_t>() > INT32_MAX) return false;
+				entry.waypoint = { phase[0].get<int>(), phase[1].get<bool>(), phase[2].get<bool>() };
+				entry.route_position = phase[3].get<LightningPoint>();
+				if (!valid_waypoint_state(index, entry.waypoint, entry.route_position)) return false;
+			}
 		}
 		// Source saves activation and rebuilds transient bolts after level restore
 		if (apply) entries = std::move(prepared);
@@ -327,7 +399,7 @@ bool xl_compat::lightning_audio_matches(const nlohmann::json &audio)
 		for (const auto &owner : audio.at("linked").at("owners")) {
 			const int index = owner.at("object").get<int>();
 			const auto found = entries.find(index);
-			if (found == entries.end() || !native_lightning(index) || owner.at("signature") != Objects[index].signature) continue;
+			if (found == entries.end() || !native_effect(index, 1) || owner.at("signature") != Objects[index].signature) continue;
 			const auto &definition = found->second.definition;
 			if (!definition.sound || owner.at("class") != 0 || owner.at("max_distance") != 256 * F1_0 ||
 			    owner.at("loop_start") != -1 || owner.at("loop_end") != -1 || owner.at("custom").get<bool>()) return false;

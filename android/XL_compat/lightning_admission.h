@@ -1,7 +1,8 @@
 #ifndef DXX_XL_LIGHTNING_ADMISSION_H
 #define DXX_XL_LIGHTNING_ADMISSION_H
-#include "lightning_path.h"
+#include "lightning_waypoints.h"
 #include "lighting.h"
+#include <algorithm>
 
 namespace xl_compat
 {
@@ -37,6 +38,75 @@ inline int authored_lightning_target(const Inventory &level, const Object &objec
 		return int(i);
 	}
 	return -1;
+}
+
+inline bool authored_waypoint_shape(const Object &object)
+{
+	return object.type == 20 && object.reader_id == 3 && object.control == 17 && !object.movement &&
+	       !object.render && !object.reader_render && !object.multiplayer && object.control_data.size() == 3;
+}
+
+inline int lightning_waypoint_id(const Object &object)
+{
+	return authored_lightning_shape(object) && object.render_data.size() == 26 ? object.render_data[5] : -1;
+}
+
+inline LightningPoint authored_lightning_position(const Inventory &level, const Object &object)
+{
+	const int id = lightning_waypoint_id(object);
+	if (id < 0) return object.position;
+	const auto node = std::find_if(level.objects.begin(), level.objects.end(), [id](const Object &candidate) {
+		return authored_waypoint_shape(candidate) && candidate.control_data[0] == id;
+	});
+	if (node == level.objects.end()) throw std::runtime_error("XL moving lightning references a missing waypoint");
+	return node->position;
+}
+
+inline LightningWaypoints prepare_lightning_waypoints(const Inventory &level)
+{
+	LightningWaypoints result;
+	std::map<int, int> indices;
+	for (const auto &object : level.objects) {
+		if (object.control != 17) continue;
+		if ((level.level_version != 23 && level.level_version != 26) || level.game_version != 40 || !authored_waypoint_shape(object))
+			throw std::runtime_error("XL waypoint requires a 23/40 or 26/40 effect controller");
+		const auto id = object.control_data[0];
+		const auto speed = object.control_data[2];
+		if (id < 0 || speed < 0 || !indices.emplace(id, int(result.nodes.size())).second)
+			throw std::runtime_error("XL waypoint has an invalid or duplicate ID or negative speed");
+		result.nodes.push_back({ object.position, speed, object.control_data[1] });
+	}
+	for (int index = 0; index < int(result.nodes.size()); ++index) {
+		auto &node = result.nodes[index];
+		const auto next = indices.find(node.next);
+		if (next == indices.end() || next->second == index || result.nodes[next->second].previous >= 0)
+			throw std::runtime_error("XL waypoint movement requires closed unbranched routes");
+		node.next = next->second;
+		result.nodes[node.next].previous = index;
+	}
+	for (int index = 0; index < int(result.nodes.size()); ++index) {
+		const auto &node = result.nodes[index];
+		for (int successor : { node.next, node.previous }) {
+			const auto span = lightning_detail::subtract(result.nodes[successor].position, node.position);
+			if (waypoint_distance(span) <= float(node.speed) / 40.0f)
+				throw std::runtime_error("XL waypoint leg is too short for the authored speed");
+		}
+		for (int current = index; result.nodes[current].route < 0; current = result.nodes[current].next)
+			result.nodes[current].route = index;
+	}
+	for (int index = 0; index < int(level.objects.size()); ++index) {
+		const auto &object = level.objects[index];
+		const int id = lightning_waypoint_id(object);
+		if (id < 0) continue;
+		const auto node = indices.find(id);
+		const int partner = authored_lightning_target(level, object);
+		if (node == indices.end() || !result.nodes[node->second].speed || partner < 0 ||
+		    !authored_lightning_emits(level.objects[partner]) || lightning_waypoint_id(level.objects[partner]) < 0 ||
+		    authored_lightning_target(level, level.objects[partner]) != index)
+			throw std::runtime_error("XL moving lightning requires a positive-speed start and a reciprocal routed target");
+		result.owners.emplace(index, LightningWaypointOwner{ node->second, partner });
+	}
+	return result;
 }
 
 inline int authored_lightning_target_length(const LightningPoint &position, const LightningPoint &endpoint)
@@ -77,12 +147,12 @@ inline LightningDefinition prepare_authored_lightning(const Inventory &level, co
 	const int target = authored_lightning_target(level, object);
 	const bool random_end = object.render_data[19] && !object.render_data[13];
 	auto definition = lightning_definition(object, authored_lightning_global_style, random_end ? std::nullopt : std::optional<int>(0));
-	const auto endpoint = place_authored_lightning(definition, object.position,
+	const auto endpoint = place_authored_lightning(definition, authored_lightning_position(level, object),
 	                                               { object.orientation[6], object.orientation[7], object.orientation[8] }, object.render_data[2],
-	                                               target < 0 ? std::nullopt : std::optional<LightningPoint>(level.objects[target].position));
+	                                               target < 0 ? std::nullopt : std::optional<LightningPoint>(authored_lightning_position(level, level.objects[target])));
 	if (definition.glow < 0)
 		throw std::runtime_error("XL lightning single-layer glow remains unsupported");
-	if (object.render_data[5] != -1 || definition.angle < 0 || definition.in_plane || (definition.clamp && definition.amplitude <= 0) ||
+	if (object.render_data[5] < -1 || definition.angle < 0 || definition.in_plane || (definition.clamp && definition.amplitude <= 0) ||
 	    definition.style < -1 || definition.style > 2 || lightning_active_style(definition) || definition.frames <= 0 || definition.nodes > 32767 || definition.bolts <= 0 || definition.bolts > 32767)
 		throw std::runtime_error("XL lightning owner requires the implemented style-0 endpoint profile");
 	(void) lightning_lifetime(definition, endpoint.has_value(), authored_lightning_children);
