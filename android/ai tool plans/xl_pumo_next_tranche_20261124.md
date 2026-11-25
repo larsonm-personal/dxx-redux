@@ -20,7 +20,7 @@ if the low contrast reappears.
    full cluster starts in Redux; trigger 18 and the matching trigger 16 pass
    the native runtime check. The pinned original's packed traversal remains
    out of range. Preserve the bounded action audit and the distinction
-   between the instrumented original and unmodified original.
+   between pinned D2X-XL starts, pre-fix Redux starts and authored actions.
    [Alien Frontier qualification](../XL_compat/evidence/gameplay-alien-frontier-byte-count-20261124.json)
 3. Take the next independent runnable-original case from the new census.
    Amalthea's authored robot generator count and negative flicker delay are

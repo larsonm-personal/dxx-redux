@@ -267,9 +267,12 @@ valid faces, nonzero bounded ranges, exact coverage and no overlaps before
 using the alternate interpretation. It continues to reject malformed
 tables that fail those conditions.
 
-An unmodified pinned D2X-XL run started ordinal 6 only. A locally
-instrumented copy that records invalid packed indices started all fifteen
-at Hotshot for 120 unassisted frames. A separate bounded action copy kept
+Pinned D2X-XL with read-only light-index logging started all fifteen
+unchanged ordinals at Hotshot for 120 unassisted frames. It did not reject
+the live out-of-range source during those idle starts. Pre-fix Redux with
+the same unchanged HOG started only ordinal 6; a diagnostic reencoding of
+608 index rows admitted the other fourteen in that older runtime. A separate
+bounds-checked original action copy kept
 lighting method 0 and dispatched ordinal 9 light-off trigger 18 from
 segment 691, side 2. It changed face lighting, but the packed source at
 segment 692, side 1 declared 5,696 deltas from offset 2,991 in a 3,860

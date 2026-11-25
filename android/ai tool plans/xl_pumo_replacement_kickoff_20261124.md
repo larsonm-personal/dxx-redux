@@ -29,9 +29,10 @@ these human-visible results from native phase timers.
 The Alien Frontier 15/34 cluster is now admitted by a complete byte-count
 partition rule: Redux started all fifteen advertised ordinals at Hotshot for
 120 unassisted frames; native trigger 18 darkened its five sources and trigger
-16 restored them. The unmodified pinned D2X-XL started only ordinal 6;
-ordinal 9's packed live source is out of range. The bounded reference action,
-qualified byte-count action and instrumented original starts are separately
+16 restored them. Pinned D2X-XL with read-only index logging started all
+fifteen unchanged ordinals, while pre-fix Redux admitted only ordinal 6.
+Ordinal 9's packed live source is out of range. The bounded reference action,
+qualified byte-count action and original idle starts are separately
 labeled. Android diagnostic version 32530 and a windowed local D2X-XL index
 audit captured the same ordinal 9 opening chamber. See
 `android/XL_compat/evidence/gameplay-alien-frontier-byte-count-20261124.json`.
