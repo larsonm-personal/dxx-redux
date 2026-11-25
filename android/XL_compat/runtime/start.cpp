@@ -189,7 +189,9 @@ extern "C" int xl_preview_split_face_visible(int segment_index, int side_index, 
 	segment *seg = &Segments[segment_index];
 	const side *face = &seg->sides[side_index];
 	if (face->type != SIDE_IS_TRI_02 && face->type != SIDE_IS_TRI_13) return 0;
-	const auto &anchor = Vertices[seg->verts[Side_to_verts[side_index][face->type == SIDE_IS_TRI_13 ? 3 : 0]]];
+	int vertices[4];
+	get_side_verts(vertices, segment_index, side_index);
+	const auto &anchor = Vertices[vertices[face->type == SIDE_IS_TRI_13 ? 3 : 0]];
 	vms_vector normals[2];
 #ifdef COMPACT_SEGS
 	get_side_normals(seg, side_index, &normals[0], &normals[1]);

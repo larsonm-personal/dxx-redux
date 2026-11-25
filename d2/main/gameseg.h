@@ -42,8 +42,10 @@ extern void compute_center_point_on_side(vms_vector *vp,segment *sp,int side);
 extern void compute_segment_center(vms_vector *vp,segment *sp);
 extern int find_connect_side(segment *base_seg, segment *con_seg);
 
-// Fill in array with four absolute point numbers for a given side
-void get_side_verts(int *vertlist,int segnum,int sidenum);
+// Fill in the absolute point numbers and return the authored corner count.
+// Unused output slots repeat the final vertex for four-slot data consumers.
+int get_side_verts(int *vertlist,int segnum,int sidenum);
+int get_face_vertex_count(const side *sidep);
 
 //      Create all vertex lists (1 or 2) for faces on a side.
 //      Sets:

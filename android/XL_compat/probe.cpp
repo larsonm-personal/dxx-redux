@@ -89,7 +89,7 @@ static GameplayProbe prepare_probe(const Bytes &original, bool water_segments, i
 	}
 	const Bytes &source = compact.empty() ? original : compact;
 	const auto &v = result.source;
-	auto blockers = runtime_blockers(v, water_segments);
+	auto blockers = runtime_blockers(v, water_segments, source_runtime && singleplayer);
 	const bool serialization_17_36 = v.level_version == 17 && v.game_version == 36;
 	const bool serialization_23_40 = v.level_version == 23 && v.game_version == 40;
 	const bool modern_layout = modern_runtime_layout(v);
@@ -154,7 +154,10 @@ static GameplayProbe prepare_probe(const Bytes &original, bool water_segments, i
 		put(out, children, 1);
 		for (int i = 0; i < 6; ++i)
 			if (children & (1 << i)) put(out, seg.children[i], 2);
-		for (const auto vertex : seg.vertices) put(out, vertex, 2);
+		// Native mesh buffers still have eight slots. Consumers of source topology
+		// use the original slots and skip deleted vertices.
+		const int first_vertex = *std::find_if(seg.vertices.begin(), seg.vertices.end(), [](int vertex) { return vertex < 0xfff8; });
+		for (const auto vertex : seg.vertices) put(out, vertex < 0xfff8 ? vertex : first_vertex, 2);
 		put(out, walls, 1);
 		for (int i = 0; i < 6; ++i) {
 			if (walls & (1 << i)) {

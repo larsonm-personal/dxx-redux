@@ -91,6 +91,8 @@ void xl_preview_reset_player_thrust(void);
 const char *xl_preview_level_path(const char *filename);
 /* Transient permissions for verified private XL level adapters */
 int xl_loading_wide_walls(void);
+const int *xl_level_geometry_corners(int segment, int side);
+unsigned xl_level_geometry_vertex_mask(int segment);
 int xl_preserve_effect_position(int object_type);
 int xl_loading_extended_triggers(void);
 int xl_loading_level_extensions(void);

@@ -31,6 +31,8 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #define SIDE_IS_QUAD    1   // render side as quadrilateral
 #define SIDE_IS_TRI_02  2   // render side as two triangles, triangulated along edge from 0 to 2
 #define SIDE_IS_TRI_13  3   // render side as two triangles, triangulated along edge from 1 to 3
+#define SIDE_IS_TRIANGLE 4
+#define SIDE_HAS_NO_FACE 5
 
 // Set maximum values for segment and face data structures.
 #define MAX_VERTICES_PER_SEGMENT    8

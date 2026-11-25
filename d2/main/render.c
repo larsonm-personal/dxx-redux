@@ -595,7 +595,7 @@ void render_side(segment *segp, int sidenum)
 
 	wid_flags = WALL_IS_DOORWAY(segp,sidenum);
 
-	if (!(wid_flags & WID_RENDER_FLAG))		//if (WALL_IS_DOORWAY(segp, sidenum) == WID_NO_WALL)
+	if (sidep->type == SIDE_HAS_NO_FACE || !(wid_flags & WID_RENDER_FLAG))		//if (WALL_IS_DOORWAY(segp, sidenum) == WID_NO_WALL)
 		return;
 
 #ifdef COMPACT_SEGS
@@ -607,9 +607,10 @@ void render_side(segment *segp, int sidenum)
 
 	//	========== Mark: Here is the change...beginning here: ==========
 
-	if (sidep->type == SIDE_IS_QUAD) {
+	if (sidep->type == SIDE_IS_QUAD || sidep->type == SIDE_IS_TRIANGLE) {
 
-		vm_vec_sub(&tvec, &Viewer_eye, &Vertices[segp->verts[Side_to_verts[sidenum][0]]]);
+		const int corners = get_side_verts(vertnum_list, segp - Segments, sidenum);
+		vm_vec_sub(&tvec, &Viewer_eye, &Vertices[vertnum_list[0]]);
 
 		// -- Old, slow way --	//	Regardless of whether this side is comprised of a single quad, or two triangles, we need to know one normal, so
 		// -- Old, slow way --	//	deal with it, get the dot product.
@@ -618,7 +619,6 @@ void render_side(segment *segp, int sidenum)
 		// -- Old, slow way --	else
 		// -- Old, slow way --		vm_vec_normalized_dir(&tvec, &Viewer_eye, &Vertices[segp->verts[Side_to_verts[sidenum][0]]]);
 
-		get_side_verts(vertnum_list,segp-Segments,sidenum);
 		v_dot_n0 = vm_vec_dot(&tvec, &normals[0]);
 
 // -- flare creates point -- {
@@ -664,24 +664,20 @@ void render_side(segment *segp, int sidenum)
 		if (v_dot_n0 >= 0) {
 #ifdef ANDROID
 			android_merged_wall_set_draw_face_context(segp, sidenum, sidep->tmap_num,
-				sidep->tmap_num2, wid_flags, 4, 0);
+				sidep->tmap_num2, wid_flags, corners, 0);
 			android_merged_wall_log_face(segp, sidenum, sidep->tmap_num, sidep->tmap_num2,
-				wid_flags, f2fl(v_dot_n0), 4, 0);
+				wid_flags, f2fl(v_dot_n0), corners, 0);
 #endif
-			render_face(segp-Segments, sidenum, 4, vertnum_list, sidep->tmap_num, sidep->tmap_num2, sidep->uvls, wid_flags);
+			render_face(segp-Segments, sidenum, corners, vertnum_list, sidep->tmap_num, sidep->tmap_num2, sidep->uvls, wid_flags);
 			#ifdef EDITOR
-			check_face(segp-Segments, sidenum, 0, 4, vertnum_list, sidep->tmap_num, sidep->tmap_num2, sidep->uvls);
+			check_face(segp-Segments, sidenum, 0, corners, vertnum_list, sidep->tmap_num, sidep->tmap_num2, sidep->uvls);
 			#endif
 		}
 	} else {
 		//	Regardless of whether this side is comprised of a single quad, or two triangles, we need to know one normal, so
 		//	deal with it, get the dot product.
-		if (sidep->type == SIDE_IS_TRI_13)
-			vm_vec_normalized_dir_quick(&tvec, &Viewer_eye, &Vertices[segp->verts[Side_to_verts[sidenum][1]]]);
-		else
-			vm_vec_normalized_dir_quick(&tvec, &Viewer_eye, &Vertices[segp->verts[Side_to_verts[sidenum][0]]]);
-
-		get_side_verts(vertnum_list,segp-Segments,sidenum);
+		get_side_verts(vertnum_list, segp - Segments, sidenum);
+		vm_vec_normalized_dir_quick(&tvec, &Viewer_eye, &Vertices[vertnum_list[sidep->type == SIDE_IS_TRI_13 ? 1 : 0]]);
 
 		v_dot_n0 = vm_vec_dot(&tvec, &normals[0]);
 
@@ -1307,6 +1303,18 @@ int Edge_to_sides[8][8][2] = {
 
 
 //given an edge, tell what side is on that edge
+#ifdef DXX_XL_RUNTIME
+static int side_contains_edge(const int *vertices, int count, const int *edge)
+{
+	for (int i = 0; i < count; ++i) {
+		const int a = vertices[i], b = vertices[(i + 1) % count];
+		if ((a == edge[0] && b == edge[1]) || (a == edge[1] && b == edge[0])) return 1;
+	}
+	return 0;
+}
+
+#endif
+
 int find_seg_side(segment *seg,int *verts,int notside)
 {
 	int i;
@@ -1316,8 +1324,17 @@ int find_seg_side(segment *seg,int *verts,int notside)
 	int	v0,v1;
 	int	*vp;
 
-//@@	check_check();
-
+#ifdef DXX_XL_RUNTIME
+	if (xl_level_geometry_corners(seg - Segments, notside)) {
+		for (int side = 0; side < 6; ++side) {
+			if (side == notside) continue;
+			int vertices[4];
+			const int count = get_side_verts(vertices, seg - Segments, side);
+			if (count >= 3 && side_contains_edge(vertices, count, verts)) return side;
+		}
+		return -1;
+	}
+#endif
 	v0 = verts[0];
 	v1 = verts[1];
 	vp = seg->verts;
@@ -1373,10 +1390,24 @@ int find_joining_side_norms(vms_vector *norm0_0,vms_vector *norm0_1,vms_vector *
 	seg0 = &Segments[seg->children[s0]];
 	seg1 = &Segments[seg->children[s1]];
 
-	edge_verts[0] = seg->verts[Two_sides_to_edge[s0][s1][0]];
-	edge_verts[1] = seg->verts[Two_sides_to_edge[s0][s1][1]];
-
-	Assert(edge_verts[0]!=-1 && edge_verts[1]!=-1);
+	#ifdef DXX_XL_RUNTIME
+	if (xl_level_geometry_corners(seg - Segments, s0)) {
+		int first[4], second[4], shared = 0;
+		const int count0 = get_side_verts(first, seg - Segments, s0);
+		const int count1 = get_side_verts(second, seg - Segments, s1);
+		for (int i = 0; i < count0; ++i) {
+			edge_verts[0] = first[i];
+			edge_verts[1] = first[(i + 1) % count0];
+			if (side_contains_edge(second, count1, edge_verts)) { shared = 1; break; }
+		}
+		if (!shared) return 0;
+	} else
+	#endif
+	{
+		edge_verts[0] = seg->verts[Two_sides_to_edge[s0][s1][0]];
+		edge_verts[1] = seg->verts[Two_sides_to_edge[s0][s1][1]];
+		Assert(edge_verts[0] != -1 && edge_verts[1] != -1);
+	}
 
 	notside0 = find_connect_side(seg,seg0);
 	Assert(notside0 != -1);
@@ -1436,8 +1467,11 @@ int find_joining_side_norms(vms_vector *norm0_0,vms_vector *norm0_1,vms_vector *
 		*norm1_1 = seg1->sides[edgeside1].normals[1];
 	#endif
 
-	*pnt0 = &Vertices[seg0->verts[Side_to_verts[edgeside0][seg0->sides[edgeside0].type==3?1:0]]];
-	*pnt1 = &Vertices[seg1->verts[Side_to_verts[edgeside1][seg1->sides[edgeside1].type==3?1:0]]];
+	int vertices0[4], vertices1[4];
+	get_side_verts(vertices0, seg0 - Segments, edgeside0);
+	get_side_verts(vertices1, seg1 - Segments, edgeside1);
+	*pnt0 = &Vertices[vertices0[seg0->sides[edgeside0].type == SIDE_IS_TRI_13 ? 1 : 0]];
+	*pnt1 = &Vertices[vertices1[seg1->sides[edgeside1].type == SIDE_IS_TRI_13 ? 1 : 0]];
 
 	return 1;
 }
@@ -1451,7 +1485,11 @@ int compare_children(segment *seg,short c0,short c1)
 	fix d0_0,d0_1,d1_0,d1_1,d0,d1;
 	int t;
 
-	if (Side_opposite[c0] == c1) return 0;
+	if (Side_opposite[c0] == c1
+#ifdef DXX_XL_RUNTIME
+	    && !xl_level_geometry_corners(seg - Segments, c0)
+#endif
+	) return 0;
 
 	Assert(c0!=-1 && c1!=-1);
 
@@ -2144,15 +2182,16 @@ void build_segment_list(int start_seg_num, int window_num)
 				if ((wid & WID_RENDPAST_FLAG) || (obs && (ch >= 0))) {
 					// Skip sides that are behind the camera (except in observer mode)
 					if (!obs) {
-						const sbyte *sv = Side_to_verts[c];
+						int vertices[4];
+						const int corners = get_side_verts(vertices, segnum, c);
 						ubyte codes_and=0xff;
 						int i;
 
 						rotate_list(8,seg->verts);
 						rotated=1;
 
-						for (i=0;i<4;i++)
-							codes_and &= Segment_points[seg->verts[sv[i]]].p3_codes;
+						for (i = 0; i < corners; ++i)
+							codes_and &= Segment_points[vertices[i]].p3_codes;
 
 						if (codes_and & CC_BEHIND) {
 							if (input_demo_render_probe_should_log_boundary() && (ch >= 0)) {
@@ -2206,9 +2245,10 @@ void build_segment_list(int start_seg_num, int window_num)
 						rotated = 2;
 					}
 
-					for (i=0,codes_and_3d=codes_and_2d=0xff;i<4;i++) {
-						int p = seg->verts[Side_to_verts[siden][i]];
-						g3s_point *pnt = &Segment_points[p];
+					int vertices[4];
+					const int corners = get_side_verts(vertices, segnum, siden);
+					for (i=0,codes_and_3d=codes_and_2d=0xff;i<corners;i++) {
+						g3s_point *pnt = &Segment_points[vertices[i]];
 
 						if (!(pnt->p3_flags&PF_PROJECTED)) {no_proj_flag=1; break;}
 

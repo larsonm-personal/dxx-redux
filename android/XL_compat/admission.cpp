@@ -52,13 +52,76 @@ std::vector<int> object_chain_targets(const Inventory &level, const Trigger &mas
 	return result;
 }
 
-std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_water)
+static bool geometry_issue(const Issue &issue)
+{
+	return issue.feature == "side_geometry" || issue.feature == "segment_geometry";
+}
+
+bool has_explicit_geometry(const Inventory &level)
+{
+	return std::any_of(level.unsupported.begin(), level.unsupported.end(), geometry_issue);
+}
+
+static bool qualified_explicit_geometry(const Inventory &level)
+{
+	if (level.level_version < 25 || !modern_runtime_layout(level)) return false;
+	const auto corners = [](const Segment &room, int side, std::array<int, 4> &vertices) {
+		int count = 0;
+		for (const int slot : room.sides[side].corners) {
+			if (slot == 255) break;
+			vertices[count++] = room.vertices[slot];
+		}
+		return count;
+	};
+	for (std::size_t index = 0; index < level.segments.size(); ++index) {
+		const auto &room = level.segments[index];
+		bool explicit_room = std::any_of(room.vertices.begin(), room.vertices.end(), [](int vertex) { return vertex >= 0xfff8; });
+		for (int side = 0; side < 6; ++side) explicit_room |= room.sides[side].corners != classic_side_corners[side];
+		if (!explicit_room) continue;
+		int faces = 0;
+		std::array<std::array<int, 2>, 24> edges{};
+		int edge_count = 0;
+		for (int side = 0; side < 6; ++side) {
+			std::array<int, 4> vertices{};
+			const int count = corners(room, side, vertices);
+			const int child = room.children[side];
+			if (count < 3) {
+				if (child != -1 || room.sides[side].wall >= 0) return false;
+				continue;
+			}
+			++faces;
+			for (int j = 0; j < count; ++j) edges[edge_count++] = { vertices[j], vertices[(j + 1) % count] };
+			for (auto vertex = vertices.begin(); vertex != vertices.begin() + count; ++vertex)
+				if (std::find(vertices.begin(), vertex, *vertex) != vertex) return false;
+			if (child < 0) continue;
+			const auto &neighbor = level.segments[child];
+			const auto back = std::find(neighbor.children.begin(), neighbor.children.end(), int(index));
+			std::array<int, 4> opposite{};
+			if (back == neighbor.children.end() || corners(neighbor, int(back - neighbor.children.begin()), opposite) != count) return false;
+			const auto start = std::find(opposite.begin(), opposite.begin() + count, vertices[0]);
+			if (start == opposite.begin() + count) return false;
+			for (int j = 1; j < count; ++j)
+				if (vertices[j] != opposite[(int(start - opposite.begin()) + count - j) % count]) return false;
+		}
+		if (faces < 4) return false;
+		const auto end = edges.begin() + edge_count;
+		for (auto edge = edges.begin(); edge != end; ++edge) {
+			const std::array<int, 2> reverse{ (*edge)[1], (*edge)[0] };
+			if (std::count(edges.begin(), end, *edge) != 1 || std::count(edges.begin(), end, reverse) != 1) return false;
+		}
+	}
+	return true;
+}
+
+std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_water, bool explicit_geometry)
 {
 	std::vector<Issue> result;
 	const bool classic_effect = classic_effect_layout(level);
 	const bool colored_walls = modern_runtime_layout(level) || (level.level_version == 18 && level.game_version == 36);
 	const bool legacy_repair_centers = legacy_team_room_layout(level) || (level.level_version == 19 && level.game_version == 40);
+	const bool source_geometry = explicit_geometry && has_explicit_geometry(level) && qualified_explicit_geometry(level);
 	for (const auto &issue : level.unsupported) {
+		if (source_geometry && geometry_issue(issue)) continue;
 		if (classic_effect && issue.feature != "effect_lightning" && issue.feature != "effect_particles" &&
 		    issue.feature != "effect_object_types" && issue.feature != "additive_wall_rendering") {
 			result.push_back(issue);

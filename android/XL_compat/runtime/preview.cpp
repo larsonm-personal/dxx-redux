@@ -147,6 +147,7 @@ class LevelPreparationProgress
 };
 #endif
 std::unique_ptr<xl_compat::Inventory> source;
+const xl_compat::Inventory *explicit_geometry = nullptr;
 std::unique_ptr<xl_compat::ClassicAmbientLighting> classic_ambient;
 std::vector<xl_compat::Rgb> classic_colors;
 std::vector<xl_compat::Rgb> rebuilt_ambient;
@@ -915,6 +916,7 @@ extern "C" int xl_classic_lighting_color(int vertex, float rgb[3])
 
 extern "C" void xl_preview_clear_mission(void)
 {
+	explicit_geometry = nullptr;
 	xl_clear_level_preflight();
 	xl_slow_motion_reset();
 	xl_disarm_clear();
@@ -1118,7 +1120,9 @@ extern "C" int xl_preview_load_level_at(const char *filename, int ordinal)
 		loading_object_capacity = static_cast<int>(xl_object_capacity_for_count(probe.source.objects.size()));
 		loading_wide_walls = probe.source.walls.size() > DXX_CLASSIC_MAX_WALLS;
 		loading_extended_triggers = probe.source.triggers.size() > DXX_CLASSIC_MAX_TRIGGERS;
+		if (xl_compat::has_explicit_geometry(probe.source)) explicit_geometry = &probe.source;
 		result = xl_stock_load_level(filename);
+		explicit_geometry = nullptr;
 		loading_object_capacity = 0;
 		loading_wide_walls = false;
 		loading_extended_triggers = false;
@@ -1139,13 +1143,14 @@ extern "C" int xl_preview_load_level_at(const char *filename, int ordinal)
 		}
 		for (int i = 0; i < Num_segments; ++i)
 			for (unsigned j = 0; j < 8; ++j)
-				if (level->segments[i].vertices[j] != Segments[i].verts[j])
+				if (level->segments[i].vertices[j] < 0xfff8 && level->segments[i].vertices[j] != Segments[i].verts[j])
 					throw std::runtime_error("XL source does not match loaded segment vertices");
 		brightness = xl_compat::vertex_brightness(*level);
 		dynamic_vertices.resize(level->vertices.size());
 		xl_door_phases_bind(*level, resources->dependencies(), resources->wall_texture_playback());
 		xl_set_prepared_resources(filename, std::move(resources));
 		source = std::move(level);
+		if (xl_compat::has_explicit_geometry(*source)) explicit_geometry = source.get();
 		xl_mission_progress_bind(ordinal);
 		xl_seismic_bind();
 		xl_compat::bind_ambient_objects(*source);
@@ -1400,6 +1405,21 @@ extern "C" int object_capacity(void)
 extern "C" int xl_loading_wide_walls(void)
 {
 	return loading_wide_walls;
+}
+
+extern "C" const int *xl_level_geometry_corners(int segment, int side)
+{
+	if (!explicit_geometry || segment < 0 || std::size_t(segment) >= explicit_geometry->segments.size()) return nullptr;
+	return explicit_geometry->segments[segment].sides[side].corners.data();
+}
+
+extern "C" unsigned xl_level_geometry_vertex_mask(int segment)
+{
+	if (!explicit_geometry || segment < 0 || std::size_t(segment) >= explicit_geometry->segments.size()) return 0xff;
+	unsigned mask = 0;
+	for (int i = 0; i < 8; ++i)
+		if (explicit_geometry->segments[segment].vertices[i] < 0xfff8) mask |= 1u << i;
+	return mask;
 }
 
 extern "C" int xl_preview_pilot_active(void)
