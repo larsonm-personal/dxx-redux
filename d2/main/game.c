@@ -2238,6 +2238,10 @@ void flicker_lights()
 		if (f->timer == 0x80000000)		//disabled
 			continue;
 
+		if (!f->delay) {
+			f->timer = INT32_MIN;
+			continue;
+		}
 		if ((f->timer -= FrameTime) < 0) {
 
 			while (f->timer < 0)

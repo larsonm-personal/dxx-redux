@@ -36,10 +36,12 @@ static void flicker_stock_rotation()
 	face.tmap_num = 275;
 	face.tmap_num2 = 0;
 	TmapInfo[275].lighting = F1_0;
-	Num_flickering_lights = 1;
+	Num_flickering_lights = 2;
 	Flickering_lights[0] = { static_cast<short>(target_segment), static_cast<short>(target_side), 2, 0, F1_0 / 4 };
+	Flickering_lights[1] = { static_cast<short>(target_segment), static_cast<short>(target_side), 0, 0, 0 };
 	flicker_frame(1);
 	require(Flickering_lights[0].mask == 4 && Flickering_lights[0].timer == F1_0 / 4 - 1, "Redux flicker rotation changed");
+	require(Flickering_lights[1].timer == INT32_MIN && !Flickering_lights[1].mask, "Classic zero-delay light did not stop without rotating");
 	face = original_face;
 	TmapInfo[275].lighting = original_brightness;
 	Num_flickering_lights = static_cast<int>(saved.size());
