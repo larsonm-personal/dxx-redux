@@ -3,6 +3,7 @@
 #include <string.h>
 #include "physfsx.h"
 #include "mission.h"
+#include "strutil.h"
 #include "mission_resource_scope.h"
 
 int xl_mission_resource_release(xl_mission_resource_scope *scope, const char *archive)
@@ -69,4 +70,36 @@ PHYSFS_file *xl_mission_resource_open(xl_mission_resource_scope *scope,
 	origin = PHYSFS_getRealDir(path);
 	if (!origin || strcmp(origin, archive)) return NULL;
 	return PHYSFSX_openReadBuffered(path);
+}
+
+int xl_resolve_d1_level_archive(const char *descriptor_hog, const char *descriptor_root,
+                                const char *level, char *archive)
+{
+	char sibling[PATH_MAX], real[PATH_MAX];
+	const char *directory_end = strrchr(descriptor_hog, '/');
+	const char *extension = strrchr(level, '.');
+	const int prefix = directory_end ? (int) (directory_end - descriptor_hog + 1) : 0;
+	const char *origin;
+	PHYSFS_file *member;
+	xl_mission_resource_scope scope = { { 0 }, 0 };
+	PHYSFS_uint32 signature, version;
+	int length, valid;
+
+	if (!*descriptor_root || !prepared_resource_name(level) || strchr(level, '/') ||
+	    !extension || extension == level || d_stricmp(extension, ".rdl") || PHYSFSX_exists(level, 1)) return 0;
+	length = snprintf(sibling, sizeof(sibling), "%.*s%s", prefix, descriptor_hog, level);
+	if (length < 0 || (size_t) length >= sizeof(sibling) || PHYSFSX_exists(sibling, 1)) return 0;
+	strcpy(sibling + prefix + (extension - level), ".hog");
+	if (PHYSFSEXT_locateCorrectCase(sibling) != 0) return 0;
+	origin = PHYSFS_getRealDir(sibling);
+	if (!origin || strcmp(origin, descriptor_root) || !PHYSFSX_getRealPath(sibling, real) || PHYSFS_getMountPoint(real)) return 0;
+
+	member = xl_mission_resource_open(&scope, real, NULL, level);
+	valid = member && PHYSFS_fileLength(member) >= 16 &&
+	        PHYSFS_readULE32(member, &signature) && signature == 0x504c564c &&
+	        PHYSFS_readULE32(member, &version) && version == 1;
+	if (member && !PHYSFS_close(member)) valid = 0;
+	if (!xl_mission_resource_release(&scope, real) || !valid || !PHYSFS_mount(real, NULL, 0)) return 0;
+	strcpy(archive, real);
+	return 1;
 }

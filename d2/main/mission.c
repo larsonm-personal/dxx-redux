@@ -1629,6 +1629,10 @@ static int load_mission_internal(mle *mission
 	}
 
 #ifdef DXX_XL_RUNTIME
+	if (EMULATING_D1 && !PLAYING_BUILTIN_MISSION && !Current_mission_hog[0] &&
+	    Last_level == 1 && !Last_secret_level &&
+	    xl_resolve_d1_level_archive(buf, Current_mission_descriptor_root, Level_names[0], Current_mission_hog))
+		input_demo_assets_note_archive("mission_hog", Current_mission_hog);
 	xl_resource_commit_mission();
 #endif
 	// re-read default HAM file, in case this mission brings it's own version of it

@@ -19,6 +19,10 @@ PHYSFS_file *xl_mission_resource_open(xl_mission_resource_scope *scope,
 /* Busy private members retain the lease; borrowed live archives are never unmounted */
 int xl_mission_resource_release(xl_mission_resource_scope *scope, const char *archive);
 
+/* An unpaired single-level D1 descriptor may name its sibling archive through the member stem */
+int xl_resolve_d1_level_archive(const char *descriptor_hog, const char *descriptor_root,
+                                const char *level, char *archive);
+
 #ifdef __cplusplus
 }
 #endif
