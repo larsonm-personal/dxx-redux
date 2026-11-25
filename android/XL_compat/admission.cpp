@@ -200,6 +200,7 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 					result.push_back({ "skybox colored boundary", int(segment), "untextured fog boundary on side " + std::to_string(side) + " requires source draw-state qualification" });
 	for (unsigned index = 0; index < level.objects.size(); ++index) {
 		const auto &object = level.objects[index];
+		if (disabled_retyped_particle(level, object)) continue;
 		if (classic_effect && (object.type == 18 || object.type == 19 || object.type == 20) && !classic_effect_shape(object)) {
 			result.push_back({ "effect_object_types", int(index), "classic 7/31 requires source-owned lightning or smoke" });
 			continue;

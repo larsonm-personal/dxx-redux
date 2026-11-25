@@ -13,6 +13,7 @@ inline bool authored_lightning_shape(const Object &object)
 
 inline bool authored_lightning_emits(const Object &object)
 {
+	if (!authored_lightning_shape(object)) return false;
 	if (object.render_data.size() != 26 || object.render_data[6] < -32768 || object.render_data[6] > 32767)
 		throw std::runtime_error("XL lightning has an invalid bolt-count payload");
 	// StaticFrame skips empty bolt populations before calling the emitter
