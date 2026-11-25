@@ -13,8 +13,8 @@ file(WRITE "${OUTPUT}/preview-user/descent.cfg"
 configure_file("${HOG}" "${OUTPUT}/missions/rtarena.hog" COPYONLY)
 configure_file("${DESCRIPTOR}" "${OUTPUT}/missions/rtarena.mn2" COPYONLY)
 execute_process(
-    COMMAND "${ENGINE}" -arena-test water -xl-water-physics -hogdir "${DATA}" -extra-dir "${OUTPUT}"
-            -userdir "${OUTPUT}/preview-user" -mission rtarena -nosound -nomusic
+    COMMAND "${ENGINE}" -arena-test water -hogdir "${DATA}" -extra-dir "${OUTPUT}" -userdir
+            "${OUTPUT}/preview-user" -mission rtarena -nosound -nomusic
     RESULT_VARIABLE result
     OUTPUT_VARIABLE stdout
     ERROR_VARIABLE stderr
@@ -36,8 +36,7 @@ endif()
 execute_process(
     COMMAND
         "${ENGINE}" -arena-test water -arena-replay "${OUTPUT}/preview-user/xl-water-spawn.dximdemo"
-        -xl-water-physics -hogdir "${DATA}" -extra-dir "${OUTPUT}" -userdir "${OUTPUT}/preview-user"
-        -nosound -nomusic
+        -hogdir "${DATA}" -extra-dir "${OUTPUT}" -userdir "${OUTPUT}/preview-user" -nosound -nomusic
     RESULT_VARIABLE replay_result
     OUTPUT_VARIABLE replay_stdout
     ERROR_VARIABLE replay_stderr
