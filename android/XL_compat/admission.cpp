@@ -130,7 +130,7 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 {
 	std::vector<Issue> result;
 	const bool classic_effect = classic_effect_layout(level);
-	const bool colored_walls = modern_runtime_layout(level) || (level.level_version == 18 && level.game_version == 36);
+	const bool colored_walls = early_colored_wall_layout(level) || modern_runtime_layout(level) || (level.level_version == 18 && level.game_version == 36);
 	const bool legacy_repair_centers = legacy_team_room_layout(level) || (level.level_version == 19 && level.game_version == 40);
 	const bool source_geometry = explicit_geometry && has_explicit_geometry(level) && qualified_explicit_geometry(level);
 	for (const auto &issue : level.unsupported) {

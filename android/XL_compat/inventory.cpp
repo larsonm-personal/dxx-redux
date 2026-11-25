@@ -271,7 +271,7 @@ static Inventory read_level_inventory(const Bytes &bytes, bool allow_classic)
 	require(header.s32() == 0x504c564c, "not a PLVL level");
 	out.level_version = header.s32();
 	const bool classic = allow_classic && out.level_version == 7;
-	require(classic || out.level_version == 15 || (out.level_version >= 17 && out.level_version <= 19) || modern_level_version(out.level_version), "unsupported level version " + std::to_string(out.level_version));
+	require(classic || out.level_version == 11 || out.level_version == 15 || (out.level_version >= 17 && out.level_version <= 19) || modern_level_version(out.level_version), "unsupported level version " + std::to_string(out.level_version));
 	out.mine_offset = header.s32();
 	out.game_offset = header.s32();
 	require(out.mine_offset >= 16 && out.game_offset > out.mine_offset && static_cast<std::size_t>(out.game_offset) < bytes.size(), "invalid mine/game offsets");
@@ -327,6 +327,7 @@ static Inventory read_level_inventory(const Bytes &bytes, bool allow_classic)
 	require(out.secret_return_segment >= 0 && out.secret_return_segment < segment_count, "invalid secret return segment");
 	for (const auto &f : out.flicker_lights) require(f[0] >= 0 && f[0] < segment_count && f[1] >= 0 && f[1] < 6, "invalid flicker target");
 	for (int i = 0; i < vertex_count; ++i) out.vertices.push_back({ mine.s32(), mine.s32(), mine.s32() });
+	const bool byte_wall_references = out.level_version < 13;
 	for (int i = 0; i < segment_count; ++i) {
 		Segment seg{};
 		seg.owner = classic ? -1 : mine.s8();
@@ -349,8 +350,8 @@ static Inventory read_level_inventory(const Bytes &bytes, bool allow_classic)
 		for (int side = 0; side < 6; ++side) {
 			auto &s = seg.sides[side];
 			if (wall_flags & (1 << side)) {
-				s.wall = classic ? mine.u8() : mine.u16();
-				if (s.wall == (classic ? 255 : 65535)) s.wall = -1;
+				s.wall = byte_wall_references ? mine.u8() : mine.u16();
+				if (s.wall == (byte_wall_references ? 255 : 65535)) s.wall = -1;
 				require(s.wall < section(out, "walls").count, "invalid wall reference at segment " + std::to_string(i));
 			}
 		}
@@ -386,7 +387,7 @@ static Inventory read_level_inventory(const Bytes &bytes, bool allow_classic)
 		if (seg.group != -1) issue(out.observations, "segment_group", i, std::to_string(seg.group));
 		out.segments.push_back(seg);
 	}
-	const bool qualified_reserved_segment_flags = (out.level_version == 15 && out.game_version == 34) ||
+	const bool qualified_reserved_segment_flags = early_colored_wall_layout(out) || (out.level_version == 15 && out.game_version == 34) ||
 	                                              ((out.level_version == 17 || out.level_version == 18) && out.game_version == 36) ||
 	                                              ((out.level_version == 19 || out.level_version == 21) && out.game_version == 40);
 	for (int i = 0; i < segment_count; ++i) {
@@ -411,9 +412,9 @@ static Inventory read_level_inventory(const Bytes &bytes, bool allow_classic)
 		}
 	}
 	if (!classic) {
-		read_colors(mine, out.vertex_colors, vertex_count, false);
-		read_colors(mine, out.side_colors, static_cast<std::size_t>(segment_count) * 6, false);
-		read_colors(mine, out.texture_colors, 910, out.level_version == 15);
+		read_colors(mine, out.vertex_colors, vertex_count, out.level_version <= 14);
+		read_colors(mine, out.side_colors, static_cast<std::size_t>(segment_count) * 6, out.level_version <= 13);
+		read_colors(mine, out.texture_colors, 910, out.level_version <= 15);
 	}
 	if (mine.position() != static_cast<std::size_t>(out.game_offset)) issue(out.unknown, "mine_trailing_bytes", -1, std::to_string(out.game_offset - mine.position()));
 
