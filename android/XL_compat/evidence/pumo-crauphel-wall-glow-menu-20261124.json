@@ -1,0 +1,169 @@
+{
+    "schema": 1,
+    "date": "2026-11-24",
+    "comparison": "Exact installed APK and native Graphics Options pilot setting",
+    "android_version_code": 32338,
+    "apk_sha256": "bcbedc967a08c37af3079ea19003d5d2c81fd8c6f47b8533d0f347f52cc92c6c",
+    "viewport": [
+        640,
+        480
+    ],
+    "room": 105,
+    "fixed_position": [
+        -485850,
+        -5439488,
+        -16540829
+    ],
+    "reference_head": "2576a98b5de310e3ac7c9777df2677d1627b8bae",
+    "comparison_frame_scope": "One Android frame per setting and closest of nine reference phases by sign regions",
+    "settings": [
+        {
+            "enabled_in_menu": false,
+            "persisted": true,
+            "runtime_run_id": "3197a1804fb14128a6757afb64546199",
+            "steps": 42,
+            "profile_hashes_restored": true,
+            "corona_draws": 0,
+            "corona_depth_failures": 0,
+            "android_pixels_sha256": "7a26957a571a4719c6f94c018ba13af8593ef7a83df716ae272216beb4ce52d6",
+            "closest_default_reference_frame_sha256": "71923a42af3fd3d5552f1fb456cbea5bfb8fd991721899fbec350cd005cf9e61",
+            "mean_absolute_rgb_to_closest_default_reference": {
+                "ceiling": [
+                    0.863,
+                    1.118,
+                    0.802
+                ],
+                "left_side_wall": [
+                    0.956,
+                    0.486,
+                    0.851
+                ],
+                "right_side_wall": [
+                    0.657,
+                    0.581,
+                    0.594
+                ],
+                "center_above_reticle": [
+                    0.276,
+                    0.188,
+                    0.188
+                ],
+                "left_sign": [
+                    0.044,
+                    0.348,
+                    2.685
+                ],
+                "right_sign": [
+                    0.047,
+                    0.356,
+                    2.739
+                ],
+                "left_sign_surround": [
+                    0.048,
+                    0.102,
+                    0.609
+                ],
+                "right_sign_surround": [
+                    0.035,
+                    0.101,
+                    0.562
+                ]
+            }
+        },
+        {
+            "enabled_in_menu": true,
+            "persisted": true,
+            "runtime_run_id": "0727b2ac714749baa9a731ec9eaf6d5b",
+            "steps": 44,
+            "profile_hashes_restored": true,
+            "corona_draws": 390,
+            "corona_depth_failures": 0,
+            "android_pixels_sha256": "1761187a9da8cf71c21b7069617a032e627a3e8da981028ebb9abd1b06127141",
+            "closest_default_reference_frame_sha256": "d23d2b7fea246bdc90a88e3d864d226feabf9e92d8b5efb7ceafc4a37fc1a669",
+            "mean_absolute_rgb_to_closest_default_reference": {
+                "ceiling": [
+                    0.391,
+                    0.389,
+                    0.335
+                ],
+                "left_side_wall": [
+                    0.504,
+                    0.451,
+                    0.37
+                ],
+                "right_side_wall": [
+                    0.602,
+                    0.561,
+                    0.472
+                ],
+                "center_above_reticle": [
+                    0.276,
+                    0.188,
+                    0.188
+                ],
+                "left_sign": [
+                    53.551,
+                    47.318,
+                    32.621
+                ],
+                "right_sign": [
+                    53.341,
+                    47.26,
+                    32.612
+                ],
+                "left_sign_surround": [
+                    12.593,
+                    10.577,
+                    6.898
+                ],
+                "right_sign_surround": [
+                    11.985,
+                    10.068,
+                    6.569
+                ]
+            }
+        }
+    ],
+    "feature_source_head": "eb2aa07e4ac000b265197c76e62c10f282d70b67",
+    "application_build_source_head": "d7110584d7df1f84b70cdedfb3e378ef161f5df3",
+    "restack_scope": "Application inputs match across two host oracle test files and two Neptune fixture files",
+    "graphics_defaults": {
+        "reference_glow": false,
+        "redux_glow": false
+    },
+    "setup_retry": {
+        "apk_changed": false,
+        "failure": "Incorrect menu array path in the local automation assertion",
+        "prior_runtime_run_id": "016154dac1f841939f4e6e494e08da2c",
+        "prior_profile_hashes_restored": true
+    },
+    "captured_comparison_sha256": "71ed16ed0ed4ff82043da868cfe913528d4cf2ff5f7a511072b61842b8619fe9",
+    "original_android_controls": [
+        {
+            "case": "konflict",
+            "runtime_run_id": "b3bf6498a6d94ab4bdbc99ead4e98afe",
+            "steps": 36,
+            "receipt_sha256": "d3b65ec00fafa533beef8b5480117ef1d3b2cee37cbb928d70f5edf828bbb309"
+        },
+        {
+            "case": "neptune",
+            "runtime_run_id": "0bfda45e01674cd2ad81b4839872e263",
+            "steps": 68,
+            "receipt_sha256": "0924f5a3557b73baf0059a293d846bed3a48259d285fd1e80a80eea2c88ecc44"
+        },
+        {
+            "case": "pilot-corona",
+            "runtime_run_id": "259610af81034411a6da0e21c8a2b7bc",
+            "steps": 31,
+            "receipt_sha256": "f751724730fff077d5e03b5a5016a73b87b568b826a230a9adc1de33d4cc6abc"
+        }
+    ],
+    "original_android_control_retries": {
+        "launch": "Started the checked-in scripts from the launcher to complete the engine automation handshake",
+        "neptune": "Replaced the stale multiplayer-only rejection with an unsupported object type",
+        "prior_neptune_run_id": "57aeb2cef0114d5998d1ae1fc69606bd",
+        "prior_neptune_steps": 14,
+        "neptune_profile_hashes_restored": true,
+        "same_apk": true
+    }
+}

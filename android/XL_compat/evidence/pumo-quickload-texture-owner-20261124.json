@@ -1,0 +1,171 @@
+{
+    "schema": 1,
+    "date": "2026-11-24",
+    "feature_source_head": "20658fbf7cc20a30fb19f0be6ecdac37b7cb3a11",
+    "application_build_source_head": "7c51e6992310f048fa3df2e95b3e89fe189823c3",
+    "restack_scope": "The application inputs match across the restack; two Python host test files changed",
+    "platform": "Android 14 isolated read-only emulator",
+    "archive": {
+        "name": "pmines_v11.7z",
+        "sha256": "82c8cc4cfc740c8169f9d21a961c9ac5d2518342b3e27ac3ac438c91ca8f2ddf"
+    },
+    "coverage": "Same protected 35-step original Pumo archive import, hub advance, Crauphel shot, quickload and repeat",
+    "comparison": {
+        "baseline": {
+            "version": 32335,
+            "apk_sha256": "918a4f92b5f466db84fa7c9fc41d0c4286ec705c55e8ad1f28e8f429277f5187",
+            "run_id": "fddd372c1d4048719eb623eb9644e425",
+            "steps": 35,
+            "profile_restored": true,
+            "log_sha256": "fa0ab46ee8c48bc225224eb2a1aaf075ad471fbd3be4f5048420c09747ce7d6d",
+            "quickload_request_to_active_ms": 8238,
+            "phases": [
+                {
+                    "ordinal": 1,
+                    "images": {
+                        "ordinal": 1,
+                        "count": 80,
+                        "reused": 0,
+                        "parallel": 80,
+                        "headers_us": 60960,
+                        "reads_us": 283399,
+                        "decode_us": 397375,
+                        "shrink_us": 12,
+                        "hash_us": 297666
+                    },
+                    "scoped": {
+                        "ordinal": 1,
+                        "images_us": 654912,
+                        "playback_us": 4068,
+                        "storage_us": 483557
+                    },
+                    "prebriefing_us": 3143111,
+                    "name": "cold_hub"
+                },
+                {
+                    "ordinal": 2,
+                    "images": {
+                        "ordinal": 2,
+                        "count": 144,
+                        "reused": 19,
+                        "parallel": 143,
+                        "headers_us": 51590,
+                        "reads_us": 885160,
+                        "decode_us": 1253661,
+                        "shrink_us": 119544,
+                        "hash_us": 926225
+                    },
+                    "scoped": {
+                        "ordinal": 2,
+                        "images_us": 1898755,
+                        "playback_us": 2966,
+                        "storage_us": 371154
+                    },
+                    "prebriefing_us": 3625731,
+                    "name": "hub_to_crauphel"
+                },
+                {
+                    "ordinal": 2,
+                    "images": {
+                        "ordinal": 2,
+                        "count": 144,
+                        "reused": 0,
+                        "parallel": 143,
+                        "headers_us": 67319,
+                        "reads_us": 687654,
+                        "decode_us": 1069562,
+                        "shrink_us": 85486,
+                        "hash_us": 782691
+                    },
+                    "scoped": {
+                        "ordinal": 2,
+                        "images_us": 1540981,
+                        "playback_us": 2142,
+                        "storage_us": 158932
+                    },
+                    "name": "crauphel_quickload"
+                }
+            ]
+        },
+        "candidate": {
+            "version": 32337,
+            "apk_sha256": "58803e42d50281c566885c7205dc45a98d6d5b907a4f8104e8737c2a9255ce82",
+            "run_id": "0bc3a9f1b9394340ad2a866124fcc054",
+            "steps": 35,
+            "profile_restored": true,
+            "log_sha256": "e4ee0fc10d4df148862ea3d6e806e5e2de99b2a8f5ed25abe5ad4fa6ca1bcc6e",
+            "quickload_request_to_active_ms": 7400,
+            "phases": [
+                {
+                    "ordinal": 1,
+                    "images": {
+                        "ordinal": 1,
+                        "count": 80,
+                        "reused": 0,
+                        "parallel": 80,
+                        "headers_us": 43468,
+                        "reads_us": 294790,
+                        "decode_us": 508390,
+                        "shrink_us": 50,
+                        "hash_us": 382455
+                    },
+                    "scoped": {
+                        "ordinal": 1,
+                        "images_us": 735451,
+                        "playback_us": 2043,
+                        "storage_us": 698696
+                    },
+                    "prebriefing_us": 3609426,
+                    "name": "cold_hub"
+                },
+                {
+                    "ordinal": 2,
+                    "images": {
+                        "ordinal": 2,
+                        "count": 144,
+                        "reused": 19,
+                        "parallel": 143,
+                        "headers_us": 56574,
+                        "reads_us": 757753,
+                        "decode_us": 1152355,
+                        "shrink_us": 111969,
+                        "hash_us": 913975
+                    },
+                    "scoped": {
+                        "ordinal": 2,
+                        "images_us": 1782828,
+                        "playback_us": 4284,
+                        "storage_us": 144290
+                    },
+                    "prebriefing_us": 3254200,
+                    "name": "hub_to_crauphel"
+                },
+                {
+                    "ordinal": 2,
+                    "images": {
+                        "ordinal": 2,
+                        "count": 144,
+                        "reused": 144,
+                        "parallel": 143,
+                        "headers_us": 82486,
+                        "reads_us": 743725,
+                        "decode_us": 0,
+                        "shrink_us": 0,
+                        "hash_us": 815196
+                    },
+                    "scoped": {
+                        "ordinal": 2,
+                        "images_us": 1064285,
+                        "playback_us": 1302,
+                        "storage_us": 127077
+                    },
+                    "name": "crauphel_quickload"
+                }
+            ]
+        },
+        "measurement": "One protected Android 14 run per APK on the same recipe"
+    },
+    "cold_load_limitation": "The first hub has no previous texture owner and still verifies and decodes its original images",
+    "save_verification": "Source identity, file hash, dimensions and shrink factor verified before reusing decoded pixels",
+    "comparison_sha256": "42d2be05df681b98bc257decd68c5d442aa4a1165c7977fb4064625ee80a2715"
+}

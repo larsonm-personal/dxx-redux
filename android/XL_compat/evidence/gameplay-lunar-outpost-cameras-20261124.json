@@ -1,0 +1,128 @@
+{
+    "schema": 1,
+    "date": "2026-11-24",
+    "reference_head": "2576a98b5de310e3ac7c9777df2677d1627b8bae",
+    "original_lunar_outpost": {
+        "ordinal": 1,
+        "member": "d1fs01xl.rl2",
+        "difficulty": "Hotshot",
+        "frames": 120,
+        "descriptor_sha256": "9913f35cc875a39dc3748f20283f14ca2b6e3ebdf29a0d0edc34dc46b371dacf",
+        "trace_sha256": "f47b8bea6a0fad9af29d957f6256a6d77a7066f3a570217cc49a4ddaa6403aad",
+        "observer_sha256": "f5aae6346c8a0ad683f622d66c01c859739be7d6fcac56b15bef488796828740",
+        "camera_faces": [
+            {
+                "segment": 2964,
+                "side": 2,
+                "camera_index": 0,
+                "owner": 89,
+                "robot": 78,
+                "control": 18,
+                "movement": 0,
+                "model": 179
+            },
+            {
+                "segment": 2957,
+                "side": 2,
+                "camera_index": 1,
+                "owner": 90,
+                "robot": 78,
+                "control": 18,
+                "movement": 0,
+                "model": 179
+            }
+        ],
+        "normalized_segment_flag_counts": {
+            "0": 3873,
+            "2": 316,
+            "204": 736
+        }
+    },
+    "source_layout": [
+        18,
+        36
+    ],
+    "first_blocker_before": "Old object trigger type 16",
+    "first_blocker_after_camera_only": "d1fs01xl.POG: Scoped wall strip lacks a qualified first-frame door binding: clip 0, door use 0, other wall use 1, first image frames 16",
+    "camera_only_engine_log_sha256": "8c2f5772ce77ee4b1b049e2bb2225b7a80fd02a42ead850f8a031e4af09cc5e9",
+    "source_pog_control": "11 static colored walls had clip 0 and no external trigger target; the 16-frame alias was retained",
+    "windows_lunar_and_warp_shock": {
+        "source_head": "ef91c47ab7cdab49f45d48dcceb49f437ec3babc",
+        "executable_sha256": "133407ffbc1decffc6cf63dfead2460c379cb027496e24a1f6e9027f86a13b53",
+        "receipt_sha256": "abed3a260fc17553a5dc72cb24f3524c6b7c8331a45fbb6626fe3a8baa2fe0a0",
+        "denominator": 2,
+        "passed": 2,
+        "cases": [
+            {
+                "case": "levelpack.7z/missions/d1fsxl/d1fs-xl.mn2:1",
+                "ordinal": 1,
+                "member": "d1fs01xl.rl2",
+                "outcome": "loaded_ticked",
+                "frames": 120,
+                "xl_active": true,
+                "engine_log_sha256": "a46b94bde8df18988af866e8759701f092e31fcd05fab4d181382e9a70542763",
+                "level_source_sha256": "5ab19fc955deda5ee163307e734c18c34bcb69ffb20a2a3bbb41db3d963b8435"
+            },
+            {
+                "case": "wshock20.7z/missions/single/wshock20.mn2:6",
+                "ordinal": 6,
+                "member": "warplab.rl2",
+                "outcome": "loaded_ticked",
+                "frames": 120,
+                "xl_active": true,
+                "engine_log_sha256": "4a4e4be9a15fec08551578d587e430a3cb1243c94a31be08b06bc31041ae622a",
+                "level_source_sha256": "be4f85abafe25df133bce95e3e7ce73e87a355e3040aa87f753fca76e61cc7da"
+            }
+        ]
+    },
+    "windows_local_colored_wall_control": {
+        "source_head": "ef91c47ab7cdab49f45d48dcceb49f437ec3babc",
+        "executable_sha256": "133407ffbc1decffc6cf63dfead2460c379cb027496e24a1f6e9027f86a13b53",
+        "receipt_sha256": "b5f1a2cbe38fed7b2158aac16eb3770e31515a181bf7af28a83b68c0af3589c2",
+        "denominator": 1,
+        "passed": 1,
+        "cases": [
+            {
+                "case": "levels_multiplayer/g-house.7z/missions/diedel/d3/g-house.mn2:1",
+                "ordinal": 1,
+                "member": "g-house.rl2",
+                "outcome": "loaded_ticked",
+                "frames": 120,
+                "xl_active": true,
+                "engine_log_sha256": "393cc64e681468fde3e294c570d6f4de9349df3bb9e034932a998d1884ca2753",
+                "level_source_sha256": "6927a028eec845d596c8296cc1ddb00d0193ff4a55ce1fc0bd33b780558ed7ee"
+            }
+        ]
+    },
+    "windows_pinned_colored_wall_controls": {
+        "source_head": "ef91c47ab7cdab49f45d48dcceb49f437ec3babc",
+        "executable_sha256": "133407ffbc1decffc6cf63dfead2460c379cb027496e24a1f6e9027f86a13b53",
+        "receipt_sha256": "ea7d47127c1294a3efb0d0a90a21d28a43705ee5afed7f559981569f8772a395",
+        "denominator": 2,
+        "passed": 2,
+        "cases": [
+            {
+                "case": "levelpack.7z/missions/d1fsxl/d1fs-xl.mn2:1",
+                "ordinal": 1,
+                "member": "d1fs01xl.rl2",
+                "outcome": "loaded_ticked",
+                "frames": 120,
+                "xl_active": true,
+                "engine_log_sha256": "a46b94bde8df18988af866e8759701f092e31fcd05fab4d181382e9a70542763",
+                "level_source_sha256": "5ab19fc955deda5ee163307e734c18c34bcb69ffb20a2a3bbb41db3d963b8435"
+            },
+            {
+                "case": "levelpack.7z/missions/diedel/g-house.mn2:1",
+                "ordinal": 1,
+                "member": "g-house.rl2",
+                "outcome": "loaded_ticked",
+                "frames": 120,
+                "xl_active": true,
+                "engine_log_sha256": "393cc64e681468fde3e294c570d6f4de9349df3bb9e034932a998d1884ca2753",
+                "level_source_sha256": "848f233f938bf4215e8ce7917077dcefd34ebea2e58ab201a3a7b663a2348de3"
+            }
+        ]
+    },
+    "native_descriptor_log_sha256": "2c64b2e307eedcd840c4de41cac467b5ac8dba3cd0051cfb74e18b9c3e1c7b22",
+    "coverage": "Unassisted Hotshot starts and unchanged source bindings. Live monitor interaction remains unverified."
+}

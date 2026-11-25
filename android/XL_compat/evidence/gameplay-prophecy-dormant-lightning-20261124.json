@@ -1,0 +1,333 @@
+{
+    "schema": 1,
+    "date": "2026-11-24",
+    "reference_source_head": "2576a98b5de310e3ac7c9777df2677d1627b8bae",
+    "criteria": {
+        "difficulty": "Hotshot",
+        "input": "unassisted at the advertised ordinal",
+        "frames": 120,
+        "windows_fixed_hz": 60,
+        "windows_seed": 1,
+        "reference_windowed": true
+    },
+    "reference_runs": [
+        {
+            "case": "pinned-speed",
+            "effect_mode": "default",
+            "ordinal": 1,
+            "member": "speed.rl2",
+            "reference_sha256": "751567f6c4c5a2e666c06d9075147912691fede1b0aa52f8d9fed77db2237b12",
+            "descriptor_sha256": "e1f4194daf83ff07eb8721f8db7e479ca5c4447c120a8ea19ff5415ad45ed1c4",
+            "enabled": false,
+            "style": 0,
+            "static_objects": 8,
+            "live_handles": 0,
+            "receipt_sha256": "8b32cebdad838d27ab2f1380cf8feca076d60628556e010b4cb670f831797288",
+            "trace_sha256": "710bbb819a03e822f6597a94660ce0675fbe0db488186393a9b08c269ef2a005"
+        },
+        {
+            "case": "pinned-steel",
+            "effect_mode": "default",
+            "ordinal": 1,
+            "member": "steel-xl.rl2",
+            "reference_sha256": "751567f6c4c5a2e666c06d9075147912691fede1b0aa52f8d9fed77db2237b12",
+            "descriptor_sha256": "cae6e7976e777766573eb0ae61505aa455c6a71a1ecb22c550d37fa546b5b364",
+            "enabled": false,
+            "style": 0,
+            "static_objects": 2,
+            "live_handles": 0,
+            "receipt_sha256": "aa69f37fe20907138038674edd3629016f44f25ef62e00a962c08cdf6c2386bd",
+            "trace_sha256": "ff9c0dbe0cc9c8f18dde3a9058635be6762d5603f404703f14d2455d1379259c"
+        },
+        {
+            "case": "local-amalthea",
+            "effect_mode": "default",
+            "ordinal": 1,
+            "member": "amalthea.rl2",
+            "reference_sha256": "751567f6c4c5a2e666c06d9075147912691fede1b0aa52f8d9fed77db2237b12",
+            "descriptor_sha256": "0692183d44ebaf93302f634553090b6924d7d52f5c187d917e79b84d8f223d12",
+            "enabled": false,
+            "style": 0,
+            "static_objects": 86,
+            "live_handles": 0,
+            "receipt_sha256": "ecd9d5079049006add121cf3c4f0504bd7db84dcf3b3d29636341860eabc7d8f",
+            "trace_sha256": "1779a95fab314fa8ede0eaf7a02e53e978199456bd3052cac3a658e61ab9f343"
+        },
+        {
+            "case": "local-steel",
+            "effect_mode": "default",
+            "ordinal": 1,
+            "member": "steel-xl.rl2",
+            "reference_sha256": "751567f6c4c5a2e666c06d9075147912691fede1b0aa52f8d9fed77db2237b12",
+            "descriptor_sha256": "cae6e7976e777766573eb0ae61505aa455c6a71a1ecb22c550d37fa546b5b364",
+            "enabled": false,
+            "style": 0,
+            "static_objects": 2,
+            "live_handles": 0,
+            "receipt_sha256": "aa69f37fe20907138038674edd3629016f44f25ef62e00a962c08cdf6c2386bd",
+            "trace_sha256": "d390e41f0287651935d9b79c5f65637000db7c105f54ca16af373fc6758d4f78"
+        },
+        {
+            "case": "local-speed",
+            "effect_mode": "default",
+            "ordinal": 1,
+            "member": "speed.rl2",
+            "reference_sha256": "751567f6c4c5a2e666c06d9075147912691fede1b0aa52f8d9fed77db2237b12",
+            "descriptor_sha256": "555154db0d7a95cf149e8e3f8eba6972fbe30bdfc735b1aef1a9728df499649d",
+            "enabled": false,
+            "style": 0,
+            "static_objects": 8,
+            "live_handles": 0,
+            "receipt_sha256": "800bd5db47bc961d1e236bb9f839fb7673645010b1c36f8b4f50abbe1dedb6d7",
+            "trace_sha256": "6f39a79f1e4fbe3c5c51ddce012196db6e7a18f9eb99c5a8790dd06959c7899c"
+        },
+        {
+            "case": "prophecy",
+            "effect_mode": "default",
+            "ordinal": 3,
+            "member": "auora1.rl2",
+            "reference_sha256": "751567f6c4c5a2e666c06d9075147912691fede1b0aa52f8d9fed77db2237b12",
+            "descriptor_sha256": "8a47df99aaa72d34366d8ae357f1303e2c82c631163b062636b19d20c878b62b",
+            "enabled": false,
+            "style": 0,
+            "static_objects": 2,
+            "live_handles": 0,
+            "receipt_sha256": "538e9728dca1e6de51d6593f1fbfe1f39962f9a4a2b441b451147225cae00cf0",
+            "trace_sha256": "6296e5ca4229555a37a0a78b22e31b14102d3f9f0e6892a29f9d8f9b6a21d6ce"
+        },
+        {
+            "case": "pinned-steel",
+            "effect_mode": "forced",
+            "ordinal": 1,
+            "member": "steel-xl.rl2",
+            "reference_sha256": "751567f6c4c5a2e666c06d9075147912691fede1b0aa52f8d9fed77db2237b12",
+            "descriptor_sha256": "cae6e7976e777766573eb0ae61505aa455c6a71a1ecb22c550d37fa546b5b364",
+            "enabled": true,
+            "style": 1,
+            "static_objects": 2,
+            "live_handles": 2,
+            "receipt_sha256": "aa69f37fe20907138038674edd3629016f44f25ef62e00a962c08cdf6c2386bd",
+            "trace_sha256": "d2d0ea252499c4a5ae8f1fa87ebcf311e907e89c5902287e2bda84202fd2dfad"
+        },
+        {
+            "case": "local-amalthea",
+            "effect_mode": "forced",
+            "ordinal": 1,
+            "member": "amalthea.rl2",
+            "reference_sha256": "751567f6c4c5a2e666c06d9075147912691fede1b0aa52f8d9fed77db2237b12",
+            "descriptor_sha256": "0692183d44ebaf93302f634553090b6924d7d52f5c187d917e79b84d8f223d12",
+            "enabled": true,
+            "style": 1,
+            "static_objects": 86,
+            "live_handles": 85,
+            "receipt_sha256": "ecd9d5079049006add121cf3c4f0504bd7db84dcf3b3d29636341860eabc7d8f",
+            "trace_sha256": "969bd063a1dc9815c5b1e40d358fdfa68b3fd33cfbd0c28e7d516f425191d638"
+        },
+        {
+            "case": "prophecy",
+            "effect_mode": "forced",
+            "ordinal": 3,
+            "member": "auora1.rl2",
+            "reference_sha256": "751567f6c4c5a2e666c06d9075147912691fede1b0aa52f8d9fed77db2237b12",
+            "descriptor_sha256": "8a47df99aaa72d34366d8ae357f1303e2c82c631163b062636b19d20c878b62b",
+            "enabled": true,
+            "style": 1,
+            "static_objects": 2,
+            "live_handles": 0,
+            "receipt_sha256": "538e9728dca1e6de51d6593f1fbfe1f39962f9a4a2b441b451147225cae00cf0",
+            "trace_sha256": "489c0e9be1a773a21b5b91053580452a749e86de10443409bb05a05fd3a2d45d"
+        }
+    ],
+    "prophecy_objects_at_frame_120": [
+        {
+            "authored_object": 186,
+            "life_ms": 0,
+            "runtime_length": 51,
+            "bolts": 5,
+            "nodes": 3,
+            "emitter_handle": -1
+        },
+        {
+            "authored_object": 187,
+            "life_ms": 0,
+            "runtime_length": 2,
+            "bolts": 5,
+            "nodes": 3,
+            "emitter_handle": -1
+        }
+    ],
+    "windows_identity": {
+        "local": {
+            "source_head": "1853bbbea5f79bc4c3513a64d6ddf3f309c1ad90",
+            "engine_sha256": "c13d7b7eca66862207f1b4a0c286baf55902c93c9f27d01c7110d99ec7cf7cf3",
+            "catalog_sha256": "e7d480aa401522d37f6ec75da01f6cec7c314c901728f1b291131e52a62818df",
+            "receipt_sha256": "67a1a1b765e293d7e2e59ad9a110698cf0209c1217e777737a3178c755967b67"
+        },
+        "pinned": {
+            "source_head": "1853bbbea5f79bc4c3513a64d6ddf3f309c1ad90",
+            "engine_sha256": "c13d7b7eca66862207f1b4a0c286baf55902c93c9f27d01c7110d99ec7cf7cf3",
+            "catalog_sha256": "bf4356a7a5fbe64832a40d7065ea02d8b81276ebd8bbba6874012f7851fa0cf8",
+            "receipt_sha256": "c318e62fb75ab608ba530fcba74e306490f99b446a6a2ba40e1f9ced74b90336"
+        }
+    },
+    "windows_cases": [
+        {
+            "catalog": "local",
+            "case": "levels/amalthea.zip/amalthea/Amalthea.mn2:1",
+            "member": "amalthea.rl2",
+            "ordinal": 1,
+            "previous": "load_failed",
+            "current": "load_failed",
+            "frames": 0,
+            "load_receipt_sha256": "61df3a7f777b97b494998533256c5c29e8935aed7f7da9fbf3a05ce6f778840f",
+            "previous_first_rejection": "gameplay probe: effect_lightning at record 1129: XL lightning cannot create the authored bolt population",
+            "first_rejection": "gameplay probe: generator capacity: more than 20 robot centers"
+        },
+        {
+            "catalog": "local",
+            "case": "levels_multiplayer/firsteel.7z/steel-xl.mn2:1",
+            "member": "steel-xl.rl2",
+            "ordinal": 1,
+            "previous": "load_failed",
+            "current": "load_failed",
+            "frames": 0,
+            "load_receipt_sha256": "61df3a7f777b97b494998533256c5c29e8935aed7f7da9fbf3a05ce6f778840f",
+            "previous_first_rejection": "gameplay probe: effect_lightning at record 141: XL lightning requires a stationary uncontrolled single-player lightning object",
+            "first_rejection": "gameplay probe: effect_lightning at record 141: XL lightning requires a stationary uncontrolled single-player lightning object"
+        },
+        {
+            "catalog": "local",
+            "case": "levels_multiplayer/speed.7z/missions/diedel/d3/speed.mn2:1",
+            "member": "speed.rl2",
+            "ordinal": 1,
+            "previous": "load_failed",
+            "current": "load_failed",
+            "frames": 0,
+            "load_receipt_sha256": "61df3a7f777b97b494998533256c5c29e8935aed7f7da9fbf3a05ce6f778840f",
+            "previous_first_rejection": "gameplay probe: waypoint_controllers: 20 decoded controllers; runtime behavior unimplemented",
+            "first_rejection": "gameplay probe: waypoint_controllers: 20 decoded controllers; runtime behavior unimplemented"
+        },
+        {
+            "catalog": "local",
+            "case": "prophxl131beta.zip/missions/sapphire wolf sp/PROPHXL.MN2:1",
+            "member": "aqunia.rl2",
+            "ordinal": 1,
+            "previous": "load_failed",
+            "current": "load_failed",
+            "frames": 0,
+            "load_receipt_sha256": "61df3a7f777b97b494998533256c5c29e8935aed7f7da9fbf3a05ce6f778840f",
+            "previous_first_rejection": "water physics: the experimental fluid profile is not enabled; Android and presentation qualification is incomplete",
+            "first_rejection": "water physics: the experimental fluid profile is not enabled; Android and presentation qualification is incomplete"
+        },
+        {
+            "catalog": "local",
+            "case": "prophxl131beta.zip/missions/sapphire wolf sp/PROPHXL.MN2:2",
+            "member": "phoenix.rl2",
+            "ordinal": 2,
+            "previous": "loaded_ticked",
+            "current": "loaded_ticked",
+            "frames": 120,
+            "load_receipt_sha256": "0575ba5ef147c5b2824373b8e36adc23c6ef1969df3d7f4d66926db90090636d",
+            "level_source_sha256": "5d4c0dc3cc2c569929c781d93914552de4b2336613e7b6502b6c103c52ddea19"
+        },
+        {
+            "catalog": "local",
+            "case": "prophxl131beta.zip/missions/sapphire wolf sp/PROPHXL.MN2:3",
+            "member": "auora1.rl2",
+            "ordinal": 3,
+            "previous": "load_failed",
+            "current": "loaded_ticked",
+            "frames": 120,
+            "load_receipt_sha256": "7b07287f243278409c1be6511e943e2309eb226cf2d164f5f4703800154231be",
+            "level_source_sha256": "f1b67a7d715fcf9eae077b3899972e52b2b97dbf42c4fe9bec6c8e4b92eaa1cc"
+        },
+        {
+            "catalog": "local",
+            "case": "prophxl131beta.zip/missions/sapphire wolf sp/PROPHXL.MN2:4",
+            "member": "delta.rl2",
+            "ordinal": 4,
+            "previous": "loaded_ticked",
+            "current": "loaded_ticked",
+            "frames": 120,
+            "load_receipt_sha256": "495a16c34eb59da0824d1f585fb7b752679725b0ea9ce951e6e6bef930c6cd66",
+            "level_source_sha256": "3847ce9ac711d210ae6d13e102fcd61ab60c70bf7cfc6b7b179bd755579ec4fe"
+        },
+        {
+            "catalog": "local",
+            "case": "prophxl131beta.zip/missions/sapphire wolf sp/PROPHXL.MN2:5",
+            "member": "hyperion.rl2",
+            "ordinal": 5,
+            "previous": "loaded_ticked",
+            "current": "loaded_ticked",
+            "frames": 120,
+            "load_receipt_sha256": "de1a2e06c85ee1329deb58454e6fd9e1728500369edd7570c5095c6ca002e2ad",
+            "level_source_sha256": "e2931fbb9d9b0e943bfe17bbfd2b81ca66983d23043b19719d33f6ff7ffe100d"
+        },
+        {
+            "catalog": "local",
+            "case": "prophxl131beta.zip/missions/sapphire wolf sp/PROPHXL.MN2:-1",
+            "member": "bps1.rl2",
+            "ordinal": -1,
+            "previous": "loaded_ticked",
+            "current": "loaded_ticked",
+            "frames": 120,
+            "load_receipt_sha256": "8c7079309af31b068ea6a16b067c2e18f549dd739531ecba50b44f95a29ee0c2",
+            "level_source_sha256": "1e1665bfe8baecbd63c045e569227add604deb053825f7102f998ec69d8d3d01"
+        },
+        {
+            "catalog": "local",
+            "case": "prophxl131beta.zip/missions/sapphire wolf sp/PROPHXL.MN2:-2",
+            "member": "bps2.rl2",
+            "ordinal": -2,
+            "previous": "loaded_ticked",
+            "current": "loaded_ticked",
+            "frames": 120,
+            "load_receipt_sha256": "a357dd841a9a185d937de8791e03226cc7f08f7a3a1507f426730c3c03a13bbe",
+            "level_source_sha256": "609471a98857ed1f28ad5feec3ef7b202b01ec4f509194e76b026892e1163b49"
+        },
+        {
+            "catalog": "local",
+            "case": "prophxl131beta.zip/missions/sapphire wolf sp/PROPHXL.MN2:-3",
+            "member": "bps3.rl2",
+            "ordinal": -3,
+            "previous": "loaded_ticked",
+            "current": "loaded_ticked",
+            "frames": 120,
+            "load_receipt_sha256": "023488010b487b838d4a5eab2fb48412ea1b3251d9c2599735e4fffe8e1b6bf8",
+            "level_source_sha256": "fed0e533929e8dc1f7fc2a3f9f61c535af2cf85a86fff81df815715550ec4067"
+        },
+        {
+            "catalog": "pinned",
+            "case": "levelpack.7z/missions/diedel/speed.mn2:1",
+            "member": "speed.rl2",
+            "ordinal": 1,
+            "previous": "load_failed",
+            "current": "load_failed",
+            "frames": 0,
+            "load_receipt_sha256": "61df3a7f777b97b494998533256c5c29e8935aed7f7da9fbf3a05ce6f778840f",
+            "previous_first_rejection": "gameplay probe: waypoint_controllers: 20 decoded controllers; runtime behavior unimplemented",
+            "first_rejection": "gameplay probe: waypoint_controllers: 20 decoded controllers; runtime behavior unimplemented"
+        },
+        {
+            "catalog": "pinned",
+            "case": "levelpack.7z/missions/diedel/steel-xl.mn2:1",
+            "member": "steel-xl.rl2",
+            "ordinal": 1,
+            "previous": "load_failed",
+            "current": "load_failed",
+            "frames": 0,
+            "load_receipt_sha256": "61df3a7f777b97b494998533256c5c29e8935aed7f7da9fbf3a05ce6f778840f",
+            "previous_first_rejection": "gameplay probe: effect_lightning at record 141: XL lightning requires a stationary uncontrolled single-player lightning object",
+            "first_rejection": "gameplay probe: effect_lightning at record 141: XL lightning requires a stationary uncontrolled single-player lightning object"
+        }
+    ],
+    "local_gains": 1,
+    "newly_exposed_first_rejections": [
+        "levels/amalthea.zip/amalthea/Amalthea.mn2:1"
+    ],
+    "regressions": 0,
+    "prophecy_starts": 7,
+    "prophecy_denominator": 8,
+    "effect_lifecycle_passed": true,
+    "effect_lifecycle_receipt_sha256": "51e1bb2d0826f9cced21bfe09023e247a99e78ba19ae70cda9e194ae19176604"
+}

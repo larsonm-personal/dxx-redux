@@ -1,0 +1,403 @@
+{
+    "schema": 1,
+    "date": "2026-11-24",
+    "reference_head": "2576a98b5de310e3ac7c9777df2677d1627b8bae",
+    "original_boiling_point": [
+        {
+            "ordinal": 2,
+            "member": "control.rl2",
+            "difficulty": "Hotshot",
+            "frames": 120,
+            "descriptor_sha256": "a9e35d1ca3e77693c1be2eab8e353a08ee108f9da0ac2b1e348b9107722433db",
+            "trace_sha256": "fb1d78ec526aefab349e29f2090c0577f0c77dbbbbff29f560d0237d46eed208",
+            "observer_sha256": "298734d63e3ef1e6321947ae901b32a779ed3af73aaa9a4f29f6d9aa4e6a8428",
+            "layout": [
+                27,
+                40
+            ],
+            "source_index_count": 135,
+            "source_delta_count": 32769,
+            "original_invalid_indices": [
+                {
+                    "row": 0,
+                    "segment": 0,
+                    "side": 5,
+                    "count": 5728,
+                    "first": 28025
+                },
+                {
+                    "row": 1,
+                    "segment": 424,
+                    "side": 7,
+                    "count": 1,
+                    "first": 26950
+                },
+                {
+                    "row": 130,
+                    "segment": 4059,
+                    "side": 6,
+                    "count": 539,
+                    "first": 4066
+                },
+                {
+                    "row": 131,
+                    "segment": 4062,
+                    "side": 0,
+                    "count": 315,
+                    "first": 24937
+                },
+                {
+                    "row": 132,
+                    "segment": 26878,
+                    "side": 1,
+                    "count": 128,
+                    "first": 15
+                },
+                {
+                    "row": 133,
+                    "segment": 27904,
+                    "side": 0,
+                    "count": 3872,
+                    "first": 45829
+                },
+                {
+                    "row": 134,
+                    "segment": 30976,
+                    "side": 0,
+                    "count": 185,
+                    "first": 28331
+                }
+            ]
+        },
+        {
+            "ordinal": 2,
+            "member": "control.rl2",
+            "difficulty": "Hotshot",
+            "frames": 120,
+            "descriptor_sha256": "a9e35d1ca3e77693c1be2eab8e353a08ee108f9da0ac2b1e348b9107722433db",
+            "trace_sha256": "9fb320aa3d1ace2bb13d6546fbf6750d48ba123f390fc3112bcab24ebce1d0ce",
+            "observer_sha256": "298734d63e3ef1e6321947ae901b32a779ed3af73aaa9a4f29f6d9aa4e6a8428",
+            "layout": [
+                23,
+                40
+            ],
+            "source_index_count": 135,
+            "source_delta_count": 32769,
+            "original_invalid_indices": [
+                {
+                    "row": 0,
+                    "segment": 0,
+                    "side": 5,
+                    "count": 5728,
+                    "first": 28025
+                },
+                {
+                    "row": 1,
+                    "segment": 424,
+                    "side": 7,
+                    "count": 1,
+                    "first": 26950
+                },
+                {
+                    "row": 130,
+                    "segment": 4059,
+                    "side": 6,
+                    "count": 539,
+                    "first": 4066
+                },
+                {
+                    "row": 131,
+                    "segment": 4062,
+                    "side": 0,
+                    "count": 315,
+                    "first": 24937
+                },
+                {
+                    "row": 132,
+                    "segment": 26878,
+                    "side": 1,
+                    "count": 128,
+                    "first": 15
+                },
+                {
+                    "row": 133,
+                    "segment": 27904,
+                    "side": 0,
+                    "count": 3872,
+                    "first": 45829
+                },
+                {
+                    "row": 134,
+                    "segment": 30976,
+                    "side": 0,
+                    "count": 185,
+                    "first": 28331
+                }
+            ]
+        }
+    ],
+    "admitted_dormant_shapes": [
+        "Impossible face coordinates",
+        "Untextured reciprocal open portal with neither face targeted"
+    ],
+    "source_portal": {
+        "segment": 0,
+        "side": 5,
+        "raw_index": 0,
+        "outside_delta_slice": [
+            28025,
+            5728
+        ]
+    },
+    "coverage": "21 Windows Hotshot starts across all three distributions and a rejected live-source control",
+    "boiling_point_started": 21,
+    "boiling_point_denominator": 21,
+    "windows_local": {
+        "source_head": "1bef0480fbf7ba2b7832cf45a5922a8866fdd5ca",
+        "executable_sha256": "5d1324f60c3e643708f29c85953bc8799cd41ef6735e8db71d2a13e16434eb08",
+        "receipt_sha256": "c3cf977aff7e7536576c41b1c10aa752051fc0be5a881a9d20ad72ead8b71978",
+        "denominator": 7,
+        "passed": 7,
+        "cases": [
+            {
+                "case": "boilpnt.7z/missions/single/boilpnt.mn2:1",
+                "ordinal": 1,
+                "member": "watrwrks.rl2",
+                "outcome": "loaded_ticked",
+                "frames": 120,
+                "xl_active": true,
+                "engine_log_sha256": "f33c8b6d0938c7cb241a2cce624ccdf50b4a85a3823e6ec4c4862c527c6be0f8",
+                "level_source_sha256": "13ed67aa5396d325e08214d13f6965ee4beede458ebf6d29958e81af2b291784"
+            },
+            {
+                "case": "boilpnt.7z/missions/single/boilpnt.mn2:2",
+                "ordinal": 2,
+                "member": "control.rl2",
+                "outcome": "loaded_ticked",
+                "frames": 120,
+                "xl_active": true,
+                "engine_log_sha256": "8177349ceb89b0d2d078eb2451ac052049948454eb9433edf1e083ef7bc40761",
+                "level_source_sha256": "0d2d135ed7062bd1c9572cf3f5e3f8c9935dcdbd32f50176d16a41acc186c727"
+            },
+            {
+                "case": "boilpnt.7z/missions/single/boilpnt.mn2:3",
+                "ordinal": 3,
+                "member": "canyon.rl2",
+                "outcome": "loaded_ticked",
+                "frames": 120,
+                "xl_active": true,
+                "engine_log_sha256": "09594789c4b6a27ddb00d53aa2e67536904231833553582cb990b63207a9d407",
+                "level_source_sha256": "0802bb85508c528fd2f9e2bbce8e6222404477dc9f4f53e97c3a1537c41ef692"
+            },
+            {
+                "case": "boilpnt.7z/missions/single/boilpnt.mn2:4",
+                "ordinal": 4,
+                "member": "subzero.rl2",
+                "outcome": "loaded_ticked",
+                "frames": 120,
+                "xl_active": true,
+                "engine_log_sha256": "459f6e16b2cbb4223e85df7001bc4755b7b5e09a5e6a627cf3dc701872ecc179",
+                "level_source_sha256": "77d0f94d30c903371cb0ba4e03015bc1692fcff09186c5e12afeba4784603041"
+            },
+            {
+                "case": "boilpnt.7z/missions/single/boilpnt.mn2:5",
+                "ordinal": 5,
+                "member": "boilpnt.rl2",
+                "outcome": "loaded_ticked",
+                "frames": 120,
+                "xl_active": true,
+                "engine_log_sha256": "53a3e7b23776f38550c74d7e25c35f1576fb25fe4c84fa4ae30341a2699cd2db",
+                "level_source_sha256": "a8e41c518f9b36d0c9e312c82e019487c2bc72750072954cd8db84b1719aa507"
+            },
+            {
+                "case": "boilpnt.7z/missions/single/boilpnt.mn2:6",
+                "ordinal": 6,
+                "member": "canyon2.rl2",
+                "outcome": "loaded_ticked",
+                "frames": 120,
+                "xl_active": true,
+                "engine_log_sha256": "428314ff6a3b432b6f61b4e29b3139ea6888192c7a220276c4f7ab2522675b0c",
+                "level_source_sha256": "a75a929f96eb3dc0070eab90cb01cc92011266ac7c6c7d65d45758782e595a11"
+            },
+            {
+                "case": "boilpnt.7z/missions/single/boilpnt.mn2:7",
+                "ordinal": 7,
+                "member": "control2.rl2",
+                "outcome": "loaded_ticked",
+                "frames": 120,
+                "xl_active": true,
+                "engine_log_sha256": "153ac12ec7eb4606005c647a31d4c7d6d70e8b4bc2fd8af7d089b75c82548ed0",
+                "level_source_sha256": "28a21f68d71a7c76e2ed63da036e07f3d7e8522c9437ea49f01ad5b38ee2693c"
+            }
+        ]
+    },
+    "windows_pinned": {
+        "source_head": "1bef0480fbf7ba2b7832cf45a5922a8866fdd5ca",
+        "executable_sha256": "5d1324f60c3e643708f29c85953bc8799cd41ef6735e8db71d2a13e16434eb08",
+        "receipt_sha256": "1c3ed660af7e811876f5bf11e941aa8737aedbbff194e082640413ebf053b35d",
+        "denominator": 15,
+        "passed": 14,
+        "cases": [
+            {
+                "case": "BoilingPoint-XL.zip/missions/boilpnt.mn2:1",
+                "ordinal": 1,
+                "member": "watrwrks.rl2",
+                "outcome": "loaded_ticked",
+                "frames": 120,
+                "xl_active": true,
+                "engine_log_sha256": "ee70b54a9eb987a09c7a7808da4781768b8d9a85412c5292c1df59997442b698",
+                "level_source_sha256": "c60ed421f6147e95939e38d07d92d00ed1467397991cc35e933a02675c444205"
+            },
+            {
+                "case": "BoilingPoint-XL.zip/missions/boilpnt.mn2:2",
+                "ordinal": 2,
+                "member": "control.rl2",
+                "outcome": "loaded_ticked",
+                "frames": 120,
+                "xl_active": true,
+                "engine_log_sha256": "d359b464b35fdde14d662e979050ecd43911c65c584faf86998d5115f050183a",
+                "level_source_sha256": "e33a4feb6e376d93108a8cb0dd6a2cc9346113ab2ffac690388d5484102ebed9"
+            },
+            {
+                "case": "BoilingPoint-XL.zip/missions/boilpnt.mn2:3",
+                "ordinal": 3,
+                "member": "canyon.rl2",
+                "outcome": "loaded_ticked",
+                "frames": 120,
+                "xl_active": true,
+                "engine_log_sha256": "97c43b9b57e74f7d0d87be2d17b457349be2a7a73d92e9617289de21c56b66f2",
+                "level_source_sha256": "f855d6348eb0d8f4a1dc0a54ab0e526f73f3317f7c58ae0c386e0ba0f91000d0"
+            },
+            {
+                "case": "BoilingPoint-XL.zip/missions/boilpnt.mn2:4",
+                "ordinal": 4,
+                "member": "subzero.rl2",
+                "outcome": "loaded_ticked",
+                "frames": 120,
+                "xl_active": true,
+                "engine_log_sha256": "c861e006521f106022b7e2cb7c460db39581dc93d5019174b0bf69fc56402dae",
+                "level_source_sha256": "41a119e267513dff3e0f5ce399e4eab666f8d380bf2ae32f7694c6e4cc094b1e"
+            },
+            {
+                "case": "BoilingPoint-XL.zip/missions/boilpnt.mn2:5",
+                "ordinal": 5,
+                "member": "boilpnt.rl2",
+                "outcome": "loaded_ticked",
+                "frames": 120,
+                "xl_active": true,
+                "engine_log_sha256": "ddc09e88ce1982e17015cc0718fc58d05cb49c1166463cd326809ffadcff64d8",
+                "level_source_sha256": "a8e41c518f9b36d0c9e312c82e019487c2bc72750072954cd8db84b1719aa507"
+            },
+            {
+                "case": "BoilingPoint-XL.zip/missions/boilpnt.mn2:6",
+                "ordinal": 6,
+                "member": "canyon2.rl2",
+                "outcome": "loaded_ticked",
+                "frames": 120,
+                "xl_active": true,
+                "engine_log_sha256": "00cc7bf7e3b3c0858b46a63575f25ee3eff66bb8d70297ff4cfac68224c708e2",
+                "level_source_sha256": "ee816c232f07f4a5de77d837774106c0f90280b9d16b680775f35e08972e115d"
+            },
+            {
+                "case": "BoilingPoint-XL.zip/missions/boilpnt.mn2:7",
+                "ordinal": 7,
+                "member": "control2.rl2",
+                "outcome": "loaded_ticked",
+                "frames": 120,
+                "xl_active": true,
+                "engine_log_sha256": "cdd80935b407897978ebc117b0760780fb876b525656bf0f3b4dd1b9ba348213",
+                "level_source_sha256": "cfdfdd6d46eb2a4e933478f9ae37ea5cd7533ec2f7e53e649221fb6fc67c30ef"
+            },
+            {
+                "case": "levelpack.7z/missions/single/af-xl.mn2:1",
+                "ordinal": 1,
+                "member": "sdg22.rl2",
+                "outcome": "load_failed",
+                "frames": 0,
+                "xl_active": null,
+                "engine_log_sha256": "e40c2fe118e364270bf1430447c06246c1191de5ae8d46f720f92e42e0a50a2b"
+            },
+            {
+                "case": "levelpack.7z/missions/single/boilpnt.mn2:1",
+                "ordinal": 1,
+                "member": "watrwrks.rl2",
+                "outcome": "loaded_ticked",
+                "frames": 120,
+                "xl_active": true,
+                "engine_log_sha256": "f33c8b6d0938c7cb241a2cce624ccdf50b4a85a3823e6ec4c4862c527c6be0f8",
+                "level_source_sha256": "c60ed421f6147e95939e38d07d92d00ed1467397991cc35e933a02675c444205"
+            },
+            {
+                "case": "levelpack.7z/missions/single/boilpnt.mn2:2",
+                "ordinal": 2,
+                "member": "control.rl2",
+                "outcome": "loaded_ticked",
+                "frames": 120,
+                "xl_active": true,
+                "engine_log_sha256": "8177349ceb89b0d2d078eb2451ac052049948454eb9433edf1e083ef7bc40761",
+                "level_source_sha256": "1bef7c4cb9ebf2ce9da42014a0fe73591828c695b1c689d24a57b01c8d7d946e"
+            },
+            {
+                "case": "levelpack.7z/missions/single/boilpnt.mn2:3",
+                "ordinal": 3,
+                "member": "canyon.rl2",
+                "outcome": "loaded_ticked",
+                "frames": 120,
+                "xl_active": true,
+                "engine_log_sha256": "09594789c4b6a27ddb00d53aa2e67536904231833553582cb990b63207a9d407",
+                "level_source_sha256": "f855d6348eb0d8f4a1dc0a54ab0e526f73f3317f7c58ae0c386e0ba0f91000d0"
+            },
+            {
+                "case": "levelpack.7z/missions/single/boilpnt.mn2:4",
+                "ordinal": 4,
+                "member": "subzero.rl2",
+                "outcome": "loaded_ticked",
+                "frames": 120,
+                "xl_active": true,
+                "engine_log_sha256": "459f6e16b2cbb4223e85df7001bc4755b7b5e09a5e6a627cf3dc701872ecc179",
+                "level_source_sha256": "41a119e267513dff3e0f5ce399e4eab666f8d380bf2ae32f7694c6e4cc094b1e"
+            },
+            {
+                "case": "levelpack.7z/missions/single/boilpnt.mn2:5",
+                "ordinal": 5,
+                "member": "boilpnt.rl2",
+                "outcome": "loaded_ticked",
+                "frames": 120,
+                "xl_active": true,
+                "engine_log_sha256": "53a3e7b23776f38550c74d7e25c35f1576fb25fe4c84fa4ae30341a2699cd2db",
+                "level_source_sha256": "a8e41c518f9b36d0c9e312c82e019487c2bc72750072954cd8db84b1719aa507"
+            },
+            {
+                "case": "levelpack.7z/missions/single/boilpnt.mn2:6",
+                "ordinal": 6,
+                "member": "canyon2.rl2",
+                "outcome": "loaded_ticked",
+                "frames": 120,
+                "xl_active": true,
+                "engine_log_sha256": "428314ff6a3b432b6f61b4e29b3139ea6888192c7a220276c4f7ab2522675b0c",
+                "level_source_sha256": "ee816c232f07f4a5de77d837774106c0f90280b9d16b680775f35e08972e115d"
+            },
+            {
+                "case": "levelpack.7z/missions/single/boilpnt.mn2:7",
+                "ordinal": 7,
+                "member": "control2.rl2",
+                "outcome": "loaded_ticked",
+                "frames": 120,
+                "xl_active": true,
+                "engine_log_sha256": "153ac12ec7eb4606005c647a31d4c7d6d70e8b4bc2fd8af7d089b75c82548ed0",
+                "level_source_sha256": "cfdfdd6d46eb2a4e933478f9ae37ea5cd7533ec2f7e53e649221fb6fc67c30ef"
+            }
+        ]
+    },
+    "alien_frontier_original": {
+        "ordinal": 1,
+        "member": "sdg22.rl2",
+        "difficulty": "Hotshot",
+        "frames": 120,
+        "descriptor_sha256": "776bc92f8aa56fcf37ce43cab85a5c93777741e15e88c3f28178803796374723",
+        "trace_sha256": "538203ce72d0d618f9b58c1e6dd2d2a29049689e955faea79f4f2db1aa645f2c",
+        "observer_sha256": "298734d63e3ef1e6321947ae901b32a779ed3af73aaa9a4f29f6d9aa4e6a8428"
+    },
+    "alien_frontier_windows_reason": "invalid packed light index 0 in 15/34: segment=0 side=1 count=3328 first=0 available=1803",
+    "native_inventory_contract_log_sha256": "dadee3a22acff6b16d1a92ddecb4c5a52f849eb21f6a07ca64cd9e4ee6c08b43"
+}

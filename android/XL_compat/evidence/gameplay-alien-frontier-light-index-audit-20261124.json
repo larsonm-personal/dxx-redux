@@ -1,0 +1,1069 @@
+{
+    "archive_sha256": "f0611f1428549373526dfca8ca5a1e1883ace910f4209a938698086d189919db",
+    "descriptor_sha256": "776bc92f8aa56fcf37ce43cab85a5c93777741e15e88c3f28178803796374723",
+    "inspection_sha256": "0d8ab0edf7f520ce439fdb75cb6ef2f823bb669bccd2f50a1f68319a0296ed8f",
+    "indices": 676,
+    "cases": [
+        {
+            "ordinal": 1,
+            "level": "sdg22.rl2",
+            "member_sha256": "df9ff3bfa2530f8eceb4234d1c4aa50b776a2c532e298cd87a694c8431b5abfb",
+            "indices": 33,
+            "deltas": 1803,
+            "counts": {
+                "unsigned_out_of_bounds": 28,
+                "pinned_out_of_bounds": 28,
+                "classic_out_of_bounds": 0,
+                "signed_count_differences": 0,
+                "overflow_with_textured_face": 28,
+                "overflow_with_overlay": 27,
+                "overflow_with_trigger_target": 3,
+                "overflow_with_light_action": 0,
+                "overflow_with_flicker": 0
+            },
+            "built_in_light_actions": 0,
+            "flickers": 0,
+            "first_overflow": [
+                {
+                    "row": 0,
+                    "face": [
+                        0,
+                        1
+                    ],
+                    "encoded": [
+                        1,
+                        104
+                    ],
+                    "unsigned": 3328,
+                    "pinned": 3328,
+                    "classic": 104,
+                    "first_delta": 0,
+                    "classic_fits": true,
+                    "textures": [
+                        175,
+                        293
+                    ],
+                    "flicker": false,
+                    "light_action": false,
+                    "other_trigger_target": false
+                }
+            ],
+            "authored_overflow_actions": []
+        },
+        {
+            "ordinal": 2,
+            "level": "esonapri.rl2",
+            "member_sha256": "3084f78db26c94bbd80748d91ee662619ff91fc6541072e2ceee7b39048f477a",
+            "indices": 11,
+            "deltas": 109,
+            "counts": {
+                "unsigned_out_of_bounds": 11,
+                "pinned_out_of_bounds": 11,
+                "classic_out_of_bounds": 0,
+                "signed_count_differences": 0,
+                "overflow_with_textured_face": 11,
+                "overflow_with_overlay": 1,
+                "overflow_with_trigger_target": 0,
+                "overflow_with_light_action": 0,
+                "overflow_with_flicker": 0
+            },
+            "built_in_light_actions": 0,
+            "flickers": 0,
+            "first_overflow": [
+                {
+                    "row": 0,
+                    "face": [
+                        52,
+                        0
+                    ],
+                    "encoded": [
+                        0,
+                        6
+                    ],
+                    "unsigned": 192,
+                    "pinned": 192,
+                    "classic": 6,
+                    "first_delta": 0,
+                    "classic_fits": true,
+                    "textures": [
+                        361,
+                        0
+                    ],
+                    "flicker": false,
+                    "light_action": false,
+                    "other_trigger_target": false
+                }
+            ],
+            "authored_overflow_actions": []
+        },
+        {
+            "ordinal": 3,
+            "level": "serduta.rl2",
+            "member_sha256": "8f07b772de22d652196e40837dfd9814bb7cb1303cd910b87be49b96f5914194",
+            "indices": 95,
+            "deltas": 4771,
+            "counts": {
+                "unsigned_out_of_bounds": 27,
+                "pinned_out_of_bounds": 27,
+                "classic_out_of_bounds": 0,
+                "signed_count_differences": 0,
+                "overflow_with_textured_face": 27,
+                "overflow_with_overlay": 27,
+                "overflow_with_trigger_target": 1,
+                "overflow_with_light_action": 0,
+                "overflow_with_flicker": 0
+            },
+            "built_in_light_actions": 0,
+            "flickers": 0,
+            "first_overflow": [
+                {
+                    "row": 68,
+                    "face": [
+                        607,
+                        2
+                    ],
+                    "encoded": [
+                        2,
+                        80
+                    ],
+                    "unsigned": 2560,
+                    "pinned": 2560,
+                    "classic": 80,
+                    "first_delta": 3334,
+                    "classic_fits": true,
+                    "textures": [
+                        95,
+                        293
+                    ],
+                    "flicker": false,
+                    "light_action": false,
+                    "other_trigger_target": false
+                }
+            ],
+            "authored_overflow_actions": []
+        },
+        {
+            "ordinal": 4,
+            "level": "chacshir.rl2",
+            "member_sha256": "22a3e6afcca34999798df521883c52ecfb86fa58064819dd3e73fc9719dc2587",
+            "indices": 27,
+            "deltas": 1103,
+            "counts": {
+                "unsigned_out_of_bounds": 24,
+                "pinned_out_of_bounds": 24,
+                "classic_out_of_bounds": 0,
+                "signed_count_differences": 0,
+                "overflow_with_textured_face": 24,
+                "overflow_with_overlay": 22,
+                "overflow_with_trigger_target": 3,
+                "overflow_with_light_action": 0,
+                "overflow_with_flicker": 0
+            },
+            "built_in_light_actions": 0,
+            "flickers": 0,
+            "first_overflow": [
+                {
+                    "row": 0,
+                    "face": [
+                        7,
+                        4
+                    ],
+                    "encoded": [
+                        4,
+                        46
+                    ],
+                    "unsigned": 1472,
+                    "pinned": 1472,
+                    "classic": 46,
+                    "first_delta": 0,
+                    "classic_fits": true,
+                    "textures": [
+                        198,
+                        49450
+                    ],
+                    "flicker": false,
+                    "light_action": false,
+                    "other_trigger_target": false
+                }
+            ],
+            "authored_overflow_actions": []
+        },
+        {
+            "ordinal": 5,
+            "level": "tefoleg.rl2",
+            "member_sha256": "3c6fd53d595d5c201a185a1e9adcef28c15ba1f211ff03fa190297671c39d5ac",
+            "indices": 33,
+            "deltas": 2997,
+            "counts": {
+                "unsigned_out_of_bounds": 33,
+                "pinned_out_of_bounds": 33,
+                "classic_out_of_bounds": 0,
+                "signed_count_differences": 0,
+                "overflow_with_textured_face": 33,
+                "overflow_with_overlay": 20,
+                "overflow_with_trigger_target": 8,
+                "overflow_with_light_action": 0,
+                "overflow_with_flicker": 0
+            },
+            "built_in_light_actions": 0,
+            "flickers": 0,
+            "first_overflow": [
+                {
+                    "row": 0,
+                    "face": [
+                        290,
+                        4
+                    ],
+                    "encoded": [
+                        4,
+                        108
+                    ],
+                    "unsigned": 3456,
+                    "pinned": 3456,
+                    "classic": 108,
+                    "first_delta": 0,
+                    "classic_fits": true,
+                    "textures": [
+                        348,
+                        182
+                    ],
+                    "flicker": false,
+                    "light_action": false,
+                    "other_trigger_target": true
+                }
+            ],
+            "authored_overflow_actions": []
+        },
+        {
+            "ordinal": 6,
+            "level": "alarlof.rl2",
+            "member_sha256": "df172e675c3754db2401ba8cbbf7e8747732666d3682918843a7e05d58d1a7e5",
+            "indices": 68,
+            "deltas": 5083,
+            "counts": {
+                "unsigned_out_of_bounds": 0,
+                "pinned_out_of_bounds": 1,
+                "classic_out_of_bounds": 59,
+                "signed_count_differences": 28,
+                "overflow_with_textured_face": 1,
+                "overflow_with_overlay": 1,
+                "overflow_with_trigger_target": 0,
+                "overflow_with_light_action": 0,
+                "overflow_with_flicker": 0
+            },
+            "built_in_light_actions": 1,
+            "flickers": 0,
+            "first_overflow": [
+                {
+                    "row": 67,
+                    "face": [
+                        794,
+                        4
+                    ],
+                    "encoded": [
+                        132,
+                        2
+                    ],
+                    "unsigned": 80,
+                    "pinned": 112,
+                    "classic": 2,
+                    "first_delta": 5003,
+                    "classic_fits": false,
+                    "textures": [
+                        274,
+                        276
+                    ],
+                    "flicker": false,
+                    "light_action": false,
+                    "other_trigger_target": false
+                }
+            ],
+            "authored_overflow_actions": []
+        },
+        {
+            "ordinal": 7,
+            "level": "cefispar.rl2",
+            "member_sha256": "71115d346906d67601639c1c38c8080fb55b7ae0bca77c0d220ef61cde322845",
+            "indices": 74,
+            "deltas": 2995,
+            "counts": {
+                "unsigned_out_of_bounds": 34,
+                "pinned_out_of_bounds": 34,
+                "classic_out_of_bounds": 0,
+                "signed_count_differences": 0,
+                "overflow_with_textured_face": 34,
+                "overflow_with_overlay": 25,
+                "overflow_with_trigger_target": 4,
+                "overflow_with_light_action": 0,
+                "overflow_with_flicker": 0
+            },
+            "built_in_light_actions": 0,
+            "flickers": 0,
+            "first_overflow": [
+                {
+                    "row": 26,
+                    "face": [
+                        264,
+                        2
+                    ],
+                    "encoded": [
+                        2,
+                        80
+                    ],
+                    "unsigned": 2560,
+                    "pinned": 2560,
+                    "classic": 80,
+                    "first_delta": 468,
+                    "classic_fits": true,
+                    "textures": [
+                        432,
+                        0
+                    ],
+                    "flicker": false,
+                    "light_action": false,
+                    "other_trigger_target": true
+                }
+            ],
+            "authored_overflow_actions": []
+        },
+        {
+            "ordinal": 8,
+            "level": "ganeshd.rl2",
+            "member_sha256": "e1bd326dc9dae23dba1e2e7a9edde1563d56ba02ea3131669e5bf78019d14e99",
+            "indices": 68,
+            "deltas": 3297,
+            "counts": {
+                "unsigned_out_of_bounds": 32,
+                "pinned_out_of_bounds": 32,
+                "classic_out_of_bounds": 0,
+                "signed_count_differences": 0,
+                "overflow_with_textured_face": 32,
+                "overflow_with_overlay": 27,
+                "overflow_with_trigger_target": 4,
+                "overflow_with_light_action": 0,
+                "overflow_with_flicker": 0
+            },
+            "built_in_light_actions": 0,
+            "flickers": 0,
+            "first_overflow": [
+                {
+                    "row": 2,
+                    "face": [
+                        30,
+                        1
+                    ],
+                    "encoded": [
+                        1,
+                        137
+                    ],
+                    "unsigned": 4384,
+                    "pinned": 4384,
+                    "classic": 137,
+                    "first_delta": 139,
+                    "classic_fits": true,
+                    "textures": [
+                        98,
+                        278
+                    ],
+                    "flicker": false,
+                    "light_action": false,
+                    "other_trigger_target": false
+                }
+            ],
+            "authored_overflow_actions": []
+        },
+        {
+            "ordinal": 9,
+            "level": "lakshmid.rl2",
+            "member_sha256": "72270d390f109d3a56bff6212bf4cb822728ffadf49551ef8efff7edbbe129f3",
+            "indices": 57,
+            "deltas": 3860,
+            "counts": {
+                "unsigned_out_of_bounds": 28,
+                "pinned_out_of_bounds": 28,
+                "classic_out_of_bounds": 0,
+                "signed_count_differences": 0,
+                "overflow_with_textured_face": 28,
+                "overflow_with_overlay": 26,
+                "overflow_with_trigger_target": 7,
+                "overflow_with_light_action": 4,
+                "overflow_with_flicker": 0
+            },
+            "built_in_light_actions": 5,
+            "flickers": 0,
+            "first_overflow": [
+                {
+                    "row": 18,
+                    "face": [
+                        456,
+                        4
+                    ],
+                    "encoded": [
+                        4,
+                        96
+                    ],
+                    "unsigned": 3072,
+                    "pinned": 3072,
+                    "classic": 96,
+                    "first_delta": 932,
+                    "classic_fits": true,
+                    "textures": [
+                        407,
+                        0
+                    ],
+                    "flicker": false,
+                    "light_action": false,
+                    "other_trigger_target": true
+                }
+            ],
+            "authored_overflow_actions": [
+                {
+                    "row": 48,
+                    "face": [
+                        692,
+                        1
+                    ],
+                    "encoded": [
+                        1,
+                        178
+                    ],
+                    "unsigned": 5696,
+                    "pinned": 5696,
+                    "classic": 178,
+                    "first_delta": 2991,
+                    "classic_fits": true,
+                    "textures": [
+                        3,
+                        301
+                    ],
+                    "flicker": false,
+                    "light_action": true,
+                    "other_trigger_target": true
+                },
+                {
+                    "row": 50,
+                    "face": [
+                        730,
+                        5
+                    ],
+                    "encoded": [
+                        5,
+                        76
+                    ],
+                    "unsigned": 2432,
+                    "pinned": 2432,
+                    "classic": 76,
+                    "first_delta": 3175,
+                    "classic_fits": true,
+                    "textures": [
+                        49,
+                        307
+                    ],
+                    "flicker": false,
+                    "light_action": true,
+                    "other_trigger_target": true
+                },
+                {
+                    "row": 51,
+                    "face": [
+                        743,
+                        4
+                    ],
+                    "encoded": [
+                        4,
+                        166
+                    ],
+                    "unsigned": 5312,
+                    "pinned": 5312,
+                    "classic": 166,
+                    "first_delta": 3251,
+                    "classic_fits": true,
+                    "textures": [
+                        46,
+                        49450
+                    ],
+                    "flicker": false,
+                    "light_action": true,
+                    "other_trigger_target": true
+                },
+                {
+                    "row": 52,
+                    "face": [
+                        743,
+                        5
+                    ],
+                    "encoded": [
+                        5,
+                        166
+                    ],
+                    "unsigned": 5312,
+                    "pinned": 5312,
+                    "classic": 166,
+                    "first_delta": 3417,
+                    "classic_fits": true,
+                    "textures": [
+                        46,
+                        49450
+                    ],
+                    "flicker": false,
+                    "light_action": true,
+                    "other_trigger_target": true
+                }
+            ]
+        },
+        {
+            "ordinal": 10,
+            "level": "fbasin.rl2",
+            "member_sha256": "d5a9c8bcbbd7be9ca35076eb99f3caa51c792d65b4384a04e0f4fd85dd6c9e4f",
+            "indices": 20,
+            "deltas": 1284,
+            "counts": {
+                "unsigned_out_of_bounds": 18,
+                "pinned_out_of_bounds": 18,
+                "classic_out_of_bounds": 0,
+                "signed_count_differences": 0,
+                "overflow_with_textured_face": 18,
+                "overflow_with_overlay": 18,
+                "overflow_with_trigger_target": 0,
+                "overflow_with_light_action": 0,
+                "overflow_with_flicker": 0
+            },
+            "built_in_light_actions": 0,
+            "flickers": 0,
+            "first_overflow": [
+                {
+                    "row": 2,
+                    "face": [
+                        63,
+                        0
+                    ],
+                    "encoded": [
+                        0,
+                        81
+                    ],
+                    "unsigned": 2592,
+                    "pinned": 2592,
+                    "classic": 81,
+                    "first_delta": 37,
+                    "classic_fits": true,
+                    "textures": [
+                        177,
+                        298
+                    ],
+                    "flicker": false,
+                    "light_action": false,
+                    "other_trigger_target": false
+                }
+            ],
+            "authored_overflow_actions": []
+        },
+        {
+            "ordinal": 11,
+            "level": "aurabyss.rl2",
+            "member_sha256": "5dcdfa263e99eb4460ffd8514bdcafa03a3d31cf2010397872e484603f13cf43",
+            "indices": 21,
+            "deltas": 836,
+            "counts": {
+                "unsigned_out_of_bounds": 11,
+                "pinned_out_of_bounds": 11,
+                "classic_out_of_bounds": 0,
+                "signed_count_differences": 0,
+                "overflow_with_textured_face": 11,
+                "overflow_with_overlay": 11,
+                "overflow_with_trigger_target": 1,
+                "overflow_with_light_action": 0,
+                "overflow_with_flicker": 0
+            },
+            "built_in_light_actions": 0,
+            "flickers": 0,
+            "first_overflow": [
+                {
+                    "row": 0,
+                    "face": [
+                        3,
+                        1
+                    ],
+                    "encoded": [
+                        1,
+                        42
+                    ],
+                    "unsigned": 1344,
+                    "pinned": 1344,
+                    "classic": 42,
+                    "first_delta": 0,
+                    "classic_fits": true,
+                    "textures": [
+                        187,
+                        306
+                    ],
+                    "flicker": false,
+                    "light_action": false,
+                    "other_trigger_target": true
+                }
+            ],
+            "authored_overflow_actions": []
+        },
+        {
+            "ordinal": 12,
+            "level": "ursula.rl2",
+            "member_sha256": "966f92a2f4944a5e246d5502165b98beb6d8c260ad365e2f238c56a98b0f76c1",
+            "indices": 44,
+            "deltas": 2269,
+            "counts": {
+                "unsigned_out_of_bounds": 21,
+                "pinned_out_of_bounds": 21,
+                "classic_out_of_bounds": 0,
+                "signed_count_differences": 0,
+                "overflow_with_textured_face": 21,
+                "overflow_with_overlay": 21,
+                "overflow_with_trigger_target": 0,
+                "overflow_with_light_action": 0,
+                "overflow_with_flicker": 0
+            },
+            "built_in_light_actions": 0,
+            "flickers": 0,
+            "first_overflow": [
+                {
+                    "row": 17,
+                    "face": [
+                        338,
+                        4
+                    ],
+                    "encoded": [
+                        4,
+                        82
+                    ],
+                    "unsigned": 2624,
+                    "pinned": 2624,
+                    "classic": 82,
+                    "first_delta": 540,
+                    "classic_fits": true,
+                    "textures": [
+                        160,
+                        298
+                    ],
+                    "flicker": false,
+                    "light_action": false,
+                    "other_trigger_target": false
+                }
+            ],
+            "authored_overflow_actions": []
+        },
+        {
+            "ordinal": 13,
+            "level": "lvoxonbt.rl2",
+            "member_sha256": "4d5ec57fdb6833b284ee1066050b3154a26fdcbbd6c714c4c97da9083be8e924",
+            "indices": 79,
+            "deltas": 4706,
+            "counts": {
+                "unsigned_out_of_bounds": 27,
+                "pinned_out_of_bounds": 27,
+                "classic_out_of_bounds": 0,
+                "signed_count_differences": 0,
+                "overflow_with_textured_face": 27,
+                "overflow_with_overlay": 21,
+                "overflow_with_trigger_target": 4,
+                "overflow_with_light_action": 0,
+                "overflow_with_flicker": 0
+            },
+            "built_in_light_actions": 0,
+            "flickers": 0,
+            "first_overflow": [
+                {
+                    "row": 20,
+                    "face": [
+                        220,
+                        2
+                    ],
+                    "encoded": [
+                        2,
+                        112
+                    ],
+                    "unsigned": 3584,
+                    "pinned": 3584,
+                    "classic": 112,
+                    "first_delta": 1167,
+                    "classic_fits": true,
+                    "textures": [
+                        95,
+                        293
+                    ],
+                    "flicker": false,
+                    "light_action": false,
+                    "other_trigger_target": false
+                }
+            ],
+            "authored_overflow_actions": []
+        },
+        {
+            "ordinal": 14,
+            "level": "laradhes.rl2",
+            "member_sha256": "fba369d80ebbee0762ca59fa697a82e0cf1705b9dac82a8221112c6d932c4d0f",
+            "indices": 40,
+            "deltas": 2705,
+            "counts": {
+                "unsigned_out_of_bounds": 31,
+                "pinned_out_of_bounds": 31,
+                "classic_out_of_bounds": 0,
+                "signed_count_differences": 0,
+                "overflow_with_textured_face": 31,
+                "overflow_with_overlay": 13,
+                "overflow_with_trigger_target": 5,
+                "overflow_with_light_action": 0,
+                "overflow_with_flicker": 0
+            },
+            "built_in_light_actions": 0,
+            "flickers": 0,
+            "first_overflow": [
+                {
+                    "row": 0,
+                    "face": [
+                        25,
+                        1
+                    ],
+                    "encoded": [
+                        1,
+                        124
+                    ],
+                    "unsigned": 3968,
+                    "pinned": 3968,
+                    "classic": 124,
+                    "first_delta": 0,
+                    "classic_fits": true,
+                    "textures": [
+                        432,
+                        0
+                    ],
+                    "flicker": false,
+                    "light_action": false,
+                    "other_trigger_target": false
+                }
+            ],
+            "authored_overflow_actions": []
+        },
+        {
+            "ordinal": 15,
+            "level": "thorium.rl2",
+            "member_sha256": "f964ad8e1b6217844af28f0aa8f59ac9f1de4f0e750a21501a97f9d11dbceaad",
+            "indices": 6,
+            "deltas": 423,
+            "counts": {
+                "unsigned_out_of_bounds": 6,
+                "pinned_out_of_bounds": 6,
+                "classic_out_of_bounds": 0,
+                "signed_count_differences": 0,
+                "overflow_with_textured_face": 6,
+                "overflow_with_overlay": 6,
+                "overflow_with_trigger_target": 2,
+                "overflow_with_light_action": 0,
+                "overflow_with_flicker": 0
+            },
+            "built_in_light_actions": 0,
+            "flickers": 0,
+            "first_overflow": [
+                {
+                    "row": 0,
+                    "face": [
+                        640,
+                        4
+                    ],
+                    "encoded": [
+                        4,
+                        51
+                    ],
+                    "unsigned": 1632,
+                    "pinned": 1632,
+                    "classic": 51,
+                    "first_delta": 0,
+                    "classic_fits": true,
+                    "textures": [
+                        146,
+                        382
+                    ],
+                    "flicker": false,
+                    "light_action": false,
+                    "other_trigger_target": true
+                }
+            ],
+            "authored_overflow_actions": []
+        }
+    ],
+    "totals": {
+        "unsigned_out_of_bounds": 331,
+        "pinned_out_of_bounds": 332,
+        "classic_out_of_bounds": 59,
+        "signed_count_differences": 28,
+        "overflow_with_textured_face": 332,
+        "overflow_with_overlay": 266,
+        "overflow_with_trigger_target": 42,
+        "overflow_with_light_action": 4,
+        "overflow_with_flicker": 0
+    },
+    "schema": 1,
+    "date": "2026-11-24",
+    "distribution": "pinned levelpack.7z",
+    "descriptor": "missions/single/af-xl.mn2",
+    "reference_head": "2576a98b5de310e3ac7c9777df2677d1627b8bae",
+    "scope": "Bounds-checked inspection of all advertised levels and a real unassisted original start at ordinal 1",
+    "read_only_bounds_audit": true,
+    "affected_levels": 14,
+    "level_denominator": 15,
+    "ordinal_9_authored_wall_actions": [
+        {
+            "trigger": 18,
+            "action": "light off",
+            "owner_face": [
+                691,
+                2
+            ],
+            "targets": [
+                [
+                    692,
+                    1
+                ],
+                [
+                    743,
+                    4
+                ],
+                [
+                    743,
+                    5
+                ],
+                [
+                    730,
+                    5
+                ],
+                [
+                    729,
+                    4
+                ]
+            ]
+        },
+        {
+            "trigger": 16,
+            "action": "light on",
+            "owner_face": [
+                734,
+                0
+            ],
+            "targets": [
+                [
+                    692,
+                    1
+                ],
+                [
+                    743,
+                    4
+                ],
+                [
+                    743,
+                    5
+                ],
+                [
+                    730,
+                    5
+                ],
+                [
+                    729,
+                    4
+                ]
+            ]
+        }
+    ],
+    "reference_ordinal_1": {
+        "member": "sdg22.rl2",
+        "difficulty": "Hotshot",
+        "rendered_frames": 120,
+        "outcome": "started_and_ran",
+        "engine_sha256": "298734d63e3ef1e6321947ae901b32a779ed3af73aaa9a4f29f6d9aa4e6a8428",
+        "receipt_sha256": "9fb37333eb3a6069d4836e9e9e9859055594a8e869626182499cdc9fe696db8c",
+        "trace_sha256": "538203ce72d0d618f9b58c1e6dd2d2a29049689e955faea79f4f2db1aa645f2c",
+        "packed_indices": true,
+        "lighting_method": 0,
+        "index_count": 33,
+        "delta_count": 1803,
+        "runtime_out_of_bounds": 28
+    },
+    "source_observations": {
+        "read": "LoadGameData selects packed CLightDeltaIndex records in XL game data version 34",
+        "apply": "ChangeLight uses the scalar delta path when the lighting method is disabled or nostalgia is active",
+        "remaining": "Original authored light actions for the four affected faces in ordinal 9 have no runtime comparison yet",
+        "loadobjects_sha256": "01fe3cbc1cf781d1180921c9e235593f1b79d68924c0d49a42502ef8c3ffcd3c",
+        "light_sha256": "ca95b9183729c7f3665ef0706206afce093b53b0d97aa6ba11379dd5fdf5f36f"
+    },
+    "audit_summary_sha256": "cd11bc2981c7bb2485b4a52095a145d8df1ee54b619ba4abe4c57df06687397a",
+    "paired_start_cluster": {
+        "scope": "Unassisted Hotshot starts at matching input archive and ordinal",
+        "reference_starts": 15,
+        "windows_starts": 1,
+        "denominator": 15,
+        "windows_source_head": "1853bbbea5f79bc4c3513a64d6ddf3f309c1ad90",
+        "rows": [
+            {
+                "ordinal": 1,
+                "level": "sdg22.rl2",
+                "observed_frames": 120,
+                "lighting_method": 0,
+                "recorded_out_of_bounds": 28,
+                "receipt_sha256": "9fb37333eb3a6069d4836e9e9e9859055594a8e869626182499cdc9fe696db8c",
+                "trace_sha256": "939f4e598eb86209c77be1c6944a6333b0328c81b2636c0c8061873eab45656b",
+                "windows_outcome": "load_failed",
+                "windows_load_receipt_sha256": "61df3a7f777b97b494998533256c5c29e8935aed7f7da9fbf3a05ce6f778840f"
+            },
+            {
+                "ordinal": 2,
+                "level": "esonapri.rl2",
+                "observed_frames": 120,
+                "lighting_method": 0,
+                "recorded_out_of_bounds": 11,
+                "receipt_sha256": "cfa89c31b486c90cfeeaca5fcc9d8b117b5a7b6d5a16ae6351dce2d8ce204689",
+                "trace_sha256": "d287e799ed3161a9a772233c9388aa5b00995cf64fc5f7b2fdb5d331c47a3dac",
+                "windows_outcome": "load_failed",
+                "windows_load_receipt_sha256": "61df3a7f777b97b494998533256c5c29e8935aed7f7da9fbf3a05ce6f778840f"
+            },
+            {
+                "ordinal": 3,
+                "level": "serduta.rl2",
+                "observed_frames": 120,
+                "lighting_method": 0,
+                "recorded_out_of_bounds": 27,
+                "receipt_sha256": "4fce3c814a4c8f12b5438b44c05ba74666c6110f1c14a49221dc76c1bd7b6870",
+                "trace_sha256": "a657652e2acf9d36ff47bd11e82bb28c7fde241214affe69cc52f0167234fe1a",
+                "windows_outcome": "load_failed",
+                "windows_load_receipt_sha256": "61df3a7f777b97b494998533256c5c29e8935aed7f7da9fbf3a05ce6f778840f"
+            },
+            {
+                "ordinal": 4,
+                "level": "chacshir.rl2",
+                "observed_frames": 120,
+                "lighting_method": 0,
+                "recorded_out_of_bounds": 24,
+                "receipt_sha256": "92670f371815df5b09637cbdeddb2560a876bfa71c9d43ae043c74f8eb543bfb",
+                "trace_sha256": "3aebd7c1d447e544b106f98d11bc828419cca6477e7ca016db80185524eae40c",
+                "windows_outcome": "load_failed",
+                "windows_load_receipt_sha256": "61df3a7f777b97b494998533256c5c29e8935aed7f7da9fbf3a05ce6f778840f"
+            },
+            {
+                "ordinal": 5,
+                "level": "tefoleg.rl2",
+                "observed_frames": 120,
+                "lighting_method": 0,
+                "recorded_out_of_bounds": 33,
+                "receipt_sha256": "fac453bd58449a6cc321d1febec39a6782afc9c53315eb4e565ed2a60b0a7226",
+                "trace_sha256": "bf11d6b9301bc7c39ddcd37577c98b5754a4f4ace023ce8a4e717fce5887f5c1",
+                "windows_outcome": "load_failed",
+                "windows_load_receipt_sha256": "61df3a7f777b97b494998533256c5c29e8935aed7f7da9fbf3a05ce6f778840f"
+            },
+            {
+                "ordinal": 6,
+                "level": "alarlof.rl2",
+                "observed_frames": 120,
+                "lighting_method": 0,
+                "recorded_out_of_bounds": 1,
+                "receipt_sha256": "7b96f6661320374755260803e0ea45109636bbfec28c3cdce8fbfef3c0f3c371",
+                "trace_sha256": "13ce88f217a3323d3f06f69735d59c7878e5ab3b1f49ac176c5f665f28017bec",
+                "windows_outcome": "loaded_ticked",
+                "windows_load_receipt_sha256": "44ae14b54782e6fbf475a4a0c4753ba0ac6e803debfd1f8ef809ea72342f729d"
+            },
+            {
+                "ordinal": 7,
+                "level": "cefispar.rl2",
+                "observed_frames": 120,
+                "lighting_method": 0,
+                "recorded_out_of_bounds": 34,
+                "receipt_sha256": "c51a674b20b29e50933d89cc6df878dc2cd55e26f91debd7c07d288b90589912",
+                "trace_sha256": "0f70648b2ee3770a80602f8c425806cdb07d03613fa8b8a3259ebbd615a1aa97",
+                "windows_outcome": "load_failed",
+                "windows_load_receipt_sha256": "61df3a7f777b97b494998533256c5c29e8935aed7f7da9fbf3a05ce6f778840f"
+            },
+            {
+                "ordinal": 8,
+                "level": "ganeshd.rl2",
+                "observed_frames": 120,
+                "lighting_method": 0,
+                "recorded_out_of_bounds": 32,
+                "receipt_sha256": "3aee012400f1a0dd4d987cc820d4bc839a11a4b2e7694ddc3064adaa95824755",
+                "trace_sha256": "bb3ebe753a323f4d1f2d332f2322807776af2ed544eb18880bdfc309d8f6a9bc",
+                "windows_outcome": "load_failed",
+                "windows_load_receipt_sha256": "61df3a7f777b97b494998533256c5c29e8935aed7f7da9fbf3a05ce6f778840f"
+            },
+            {
+                "ordinal": 9,
+                "level": "lakshmid.rl2",
+                "observed_frames": 120,
+                "lighting_method": 0,
+                "recorded_out_of_bounds": 28,
+                "receipt_sha256": "9e5db1ace1b062a44a30517796cf9798188f1d342a967fe276b971e321e12e72",
+                "trace_sha256": "ceb0e8dc71cf11178552253c2dffc8730c89496070ee77c817105d85aa1f68ed",
+                "windows_outcome": "load_failed",
+                "windows_load_receipt_sha256": "61df3a7f777b97b494998533256c5c29e8935aed7f7da9fbf3a05ce6f778840f"
+            },
+            {
+                "ordinal": 10,
+                "level": "fbasin.rl2",
+                "observed_frames": 120,
+                "lighting_method": 0,
+                "recorded_out_of_bounds": 18,
+                "receipt_sha256": "c75b5e782cc69d1db3a51f9ffa04a048fb03845bea1cdad86641b8b4191802d8",
+                "trace_sha256": "ecf5d4051636806f6cf0dde59241c81e47ca66cc222704c2dfa51dca0c8b68dc",
+                "windows_outcome": "load_failed",
+                "windows_load_receipt_sha256": "61df3a7f777b97b494998533256c5c29e8935aed7f7da9fbf3a05ce6f778840f"
+            },
+            {
+                "ordinal": 11,
+                "level": "aurabyss.rl2",
+                "observed_frames": 120,
+                "lighting_method": 0,
+                "recorded_out_of_bounds": 11,
+                "receipt_sha256": "66ba0475cf0f7e2fca625acc7db5db744cc449500fab760ed5289e649887bc4b",
+                "trace_sha256": "d94afc1d94c346a8f5821907b0e7defc7d879d7ec941db9479dfb3db13f9e5c7",
+                "windows_outcome": "load_failed",
+                "windows_load_receipt_sha256": "61df3a7f777b97b494998533256c5c29e8935aed7f7da9fbf3a05ce6f778840f"
+            },
+            {
+                "ordinal": 12,
+                "level": "ursula.rl2",
+                "observed_frames": 120,
+                "lighting_method": 0,
+                "recorded_out_of_bounds": 21,
+                "receipt_sha256": "878aa701d898825bba473160d8bc3423fdabb47dc23bfce9a3bddeda084dd2d8",
+                "trace_sha256": "58f3c6068d3f9bd8228ce1ae14d977fec358f1d8f154143037eb16f5dfecd49c",
+                "windows_outcome": "load_failed",
+                "windows_load_receipt_sha256": "61df3a7f777b97b494998533256c5c29e8935aed7f7da9fbf3a05ce6f778840f"
+            },
+            {
+                "ordinal": 13,
+                "level": "lvoxonbt.rl2",
+                "observed_frames": 120,
+                "lighting_method": 0,
+                "recorded_out_of_bounds": 27,
+                "receipt_sha256": "c131578c068455505296ceecc2276f43fef2b2cd92bec01bb4dca01b2ba263fb",
+                "trace_sha256": "ed4c5534bff47c38d52e5aed0c2b83130906f26c84243216dc0012a845d7d36c",
+                "windows_outcome": "load_failed",
+                "windows_load_receipt_sha256": "61df3a7f777b97b494998533256c5c29e8935aed7f7da9fbf3a05ce6f778840f"
+            },
+            {
+                "ordinal": 14,
+                "level": "laradhes.rl2",
+                "observed_frames": 120,
+                "lighting_method": 0,
+                "recorded_out_of_bounds": 31,
+                "receipt_sha256": "474a7e473d4edcc577e2997cc5b7e40e5c7e694350ab28e40b83afe581b72ddd",
+                "trace_sha256": "fececb954812420c6c1f005643c8cd93c74b8f1442c4646671955a440c19f41b",
+                "windows_outcome": "load_failed",
+                "windows_load_receipt_sha256": "61df3a7f777b97b494998533256c5c29e8935aed7f7da9fbf3a05ce6f778840f"
+            },
+            {
+                "ordinal": 15,
+                "level": "thorium.rl2",
+                "observed_frames": 120,
+                "lighting_method": 0,
+                "recorded_out_of_bounds": 6,
+                "receipt_sha256": "55657e1ce9fa1cc0b3cf199f741a2ea468578337e08794660fd28b09db02e0fb",
+                "trace_sha256": "d4fbd61afdfa2f813cda14b9aa941a6d230066249c17eebbdbad3067025fba7f",
+                "windows_outcome": "load_failed",
+                "windows_load_receipt_sha256": "61df3a7f777b97b494998533256c5c29e8935aed7f7da9fbf3a05ce6f778840f"
+            }
+        ]
+    }
+}

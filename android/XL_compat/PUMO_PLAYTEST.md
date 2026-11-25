@@ -3,8 +3,9 @@
 ## November 24 ordinary phone kit
 
 Use [ordinary 32333 and its checked manifest](../../temp/xl-pumo-phone-s21-20261124-32333/README.md)
-for the next manual session. The SHA-256 and all 11 original checkpoint
-digests are in the kit. Keep the kit version with every report.
+for the next manual session. The kit installs `com.dxxredux.app` alongside
+the Play internal build. Its manifest includes the APK SHA-256 and digests
+for all 11 earned checkpoints. Keep the kit version with every report.
 
 On the SM-G996U with Android 15, ordinary 32333 imported the original archive
 and eight raw addons. It passed 35/35 scripted Rookie steps, including the
@@ -14,14 +15,32 @@ fixed-view Concussion shot near room 129 and the same shot after quickload.
 Both checks started from the earned checkpoint and used scripted inputs.
 [Ordinary S21 receipts](evidence/pumo-s21-ordinary-32333-20261124.json).
 
-The first manual check is the original Rookie touch shot in Crauphel. Save
-the approach in another slot, fire the same missile toward the same landmark
-if known, check steering, then close, load and repeat. Keep the original
-issue save. Record phone, Android version, difficulty, input method, episode,
+The first manual check is the Rookie touch shot near room 129 in Crauphel
+Scilab, Mineral Valley level 2. Start at the hub and take the Mineral Valley
+entrance. Keep the original issue save. Use another slot to save the approach,
+fire the same missile toward the same landmark if known, and check whether
+steering still responds. If the original aim is unknown, record the wall or
+doorway you choose. Return to the launcher, load the approach and repeat.
+Record kit, phone, Android version, difficulty, input method, episode,
 checkpoint, last successful action, missile, aim and save/load result.
-Enable **Show progress bars** and **Mission zip** music for the three loading
-intervals below. Include the first words or a screenshot of any low-contrast
-briefing page.
+
+Enable **Show progress bars** in the launcher settings and press **Save**.
+Choose **Mission zip** in the music overlay. Time these intervals and record
+the visible labels and whether the bar moved or disappeared.
+
+1. From choosing difficulty on a fresh Mineral Valley start to the first briefing.
+   Watch for **CHECKING LEVEL RESOURCES AND GRAPHICS**.
+2. From advancing the hub score screen to the Crauphel briefing. Record when
+   the next label appears.
+3. From dismissing the final briefing page to flight. Watch for **CACHING LEVEL
+   TEXTURES** and **STARTING LEVEL MUSIC**.
+
+Include the first words or a screenshot of any low-contrast briefing page.
+The captured candidate begins **And there it is!**. The page from the original
+report is still unidentified. For an ending check, open `mineral-ending` after
+the level 9 exit or `kartsal-final-checkpoint` aboard the Black Hole. Advance
+the score screen and report the first words of the closing page and the last
+action that accepted input.
 
 ## November 24 S21 diagnostic
 
@@ -37,10 +56,10 @@ briefing. Keep **Show progress bars** enabled and record the full interval
 and visible label when testing by hand.
 [S21 profile and native audio receipts](evidence/pumo-s21-audio-preparation-20261124.json).
 
-## November 23 evening ordinary phone kit
+## Archived November 23 evening phone kit
 
-Use [version 32325 and its checked manifest](../../temp/xl-pumo-phone-s21-20261123-32325/README.md)
-for the next physical-phone session. The ordinary universal APK is
+The earlier [version 32325 comparison and manifest](../../temp/xl-pumo-phone-s21-20261123-32325/README.md)
+records the ordinary universal APK
 `com.dxxredux.app`, SHA-256
 `296735f503ecebf43e0d24c492c30dc377980342f96ecb8921d5583ceeafe3f4`.
 All 11 earned checkpoints match their prior digests. The exact APK passed
@@ -166,8 +185,9 @@ emulator reached both authored endings using the checkpoints below. A Samsung
 SM-S931U running the Play Store internal build 31950 (Android SDK 37) reported
 an exit after firing a missile in Mineral Valley level 2, **Crauphel Scilab**.
 The phone log shows Rookie, touch input and last sampled room 129. The
-report also covers music, loading times and briefing text. The supplied ending checkpoints still need a
-physical-phone report. [Phone report and reproduction](../ai%20tool%20plans/pumo_phone_feedback_20261121.md)
+report also covers music, loading times and briefing text. The November 24
+kit results above include the later S21 ending checks.
+[Phone report and reproduction](../ai%20tool%20plans/pumo_phone_feedback_20261121.md)
 
 To check the hub control, choose **Mission zip** as the music source. Start
 a new Pumo game at level 1. Time the resource check from difficulty selection
@@ -197,10 +217,10 @@ before and after loading the pre-shot save. The phone retest is open.
 
 | Session                      | Kit   | Start and first action                                                                                                                                                                                 |
 | ---------------------------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Short Kartsal ending         | 32325 | Load `kartsal-final-checkpoint`, fly straight through the checkpoint aboard the Black Hole, then advance the score screen.                                                                             |
-| Short Mineral Valley ending  | 32325 | Load `mineral-ending`. The ship enters the exit as it resumes. Advance **Level 9 Complete** and read through the closing briefing.                                                                     |
-| Longer Mineral Valley flight | 32325 | Load `umbriel-blue` for the red-key grate and boss, or `mercury-arrival` for the full level. Make a manual save at a recognizable landmark, exit to the launcher, then use **Load Game** and continue. |
-| Start from the hub           | 32325 | Start Pumo level 1 with a separate test pilot. Record which episode entrance you take.                                                                                                                 |
+| Short Kartsal ending         | 32333 | Load `kartsal-final-checkpoint`, fly straight through the checkpoint aboard the Black Hole, then advance the score screen.                                                                             |
+| Short Mineral Valley ending  | 32333 | Load `mineral-ending`. The ship enters the exit as it resumes. Advance **Level 9 Complete** and read through the closing briefing.                                                                     |
+| Longer Mineral Valley flight | 32333 | Load `umbriel-blue` for the red-key grate and boss, or `mercury-arrival` for the full level. Make a manual save at a recognizable landmark, exit to the launcher, then use **Load Game** and continue. |
+| Start from the hub           | 32333 | Start Pumo level 1 with a separate test pilot. Record which episode entrance you take.                                                                                                                 |
 
 Check the kit's `manifest.json` for the APK and checkpoint digests. Follow its
 slot installer instructions if you use an earned save. Keep the supplied save
@@ -223,7 +243,7 @@ private transfer is arranged. The existing Windows runs used ordinary-input
 steering through the connected episodes. Android automation and fixed-position
 checks are recorded with the corresponding checkpoint.
 
-Build 32030 originally fixed a Kartsal level 13 flight that could leave the ship trapped in the skybox. The Android 14 emulator imported the original release and cold-loaded the device-written checkpoints. In current kit 32325, choose `kartsal-all-keys` to resume in room 3021 with the blue, gold and red keys, two lives and score 40,220. Choose `iquaxel-from-coldrom` to resume level 5 after the secret mission with score 83,440. [Build 32030 historical kit](../../temp/xl-pumo-phone-32030/README.md)
+Build 32030 originally fixed a Kartsal level 13 flight that could leave the ship trapped in the skybox. The Android 14 emulator imported the original release and cold-loaded the device-written checkpoints. In current kit 32333, choose `kartsal-all-keys` to resume in room 3021 with the blue, gold and red keys, two lives and score 40,220. Choose `iquaxel-from-coldrom` to resume level 5 after the secret mission with score 83,440. [Build 32030 historical kit](../../temp/xl-pumo-phone-32030/README.md)
 
 ### Play the Kartsal ending
 

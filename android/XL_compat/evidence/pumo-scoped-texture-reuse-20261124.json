@@ -1,0 +1,187 @@
+{
+    "schema": 1,
+    "date": "2026-11-24",
+    "source_head": "2f93568d4fb7b515777f7e450790e284dfe6b462",
+    "native_benchmark_controls": [
+        {
+            "ordinal": 1,
+            "selected_images_reused": 22,
+            "older_original_frames": 120,
+            "same_size_change_rejected": true,
+            "recovered_exact_source_identity": true,
+            "verified_inputs_unchanged": true,
+            "engine_sha256": "3a22b09f21fcb801721f5447933c2a75008d83c3ebdaf349290503cb05fd536a",
+            "result_sha256": "b9c5aaaef7800bbbac7cfe5cd78d5b92490c2366b8da80107316cfc51b45144f"
+        },
+        {
+            "ordinal": 7,
+            "selected_images_reused": 16,
+            "older_original_frames": 120,
+            "same_size_change_rejected": true,
+            "recovered_exact_source_identity": true,
+            "verified_inputs_unchanged": true,
+            "engine_sha256": "3a22b09f21fcb801721f5447933c2a75008d83c3ebdaf349290503cb05fd536a",
+            "result_sha256": "73cd0d69a9be96613ebf89708aa9fc5f81338a5522aea50626324ff466153e72"
+        }
+    ],
+    "android_comparison_context": "Two 35-step runs on an isolated Android 14 emulator using the same original Pumo archive, raw addons, Rookie route and settings.",
+    "android_comparison": {
+        "baseline": {
+            "version": 32332,
+            "apk_sha256": "7b3a8d17e8e2bda53069e5796fb597fbbcb5bc0f5e1346c4d80e580796195b7e",
+            "run_id": "c49a3c29453c4faca15dc85034fc8a7b",
+            "steps": 35,
+            "profile_restored": true,
+            "log_sha256": "640d17b9d11c10dd2cefb4b84cc7d1bff698ab7bb61f11c161155958677f5795",
+            "phases": [
+                {
+                    "ordinal": 1,
+                    "images": {
+                        "ordinal": 1,
+                        "count": 80,
+                        "parallel": 80,
+                        "headers_us": 53147,
+                        "reads_us": 478660,
+                        "decode_us": 698470,
+                        "shrink_us": 19,
+                        "hash_us": 555668
+                    },
+                    "scoped": {
+                        "ordinal": 1,
+                        "images_us": 1080976,
+                        "playback_us": 2854,
+                        "storage_us": 462823
+                    },
+                    "prebriefing_us": 3916709,
+                    "name": "cold_hub"
+                },
+                {
+                    "ordinal": 2,
+                    "images": {
+                        "ordinal": 2,
+                        "count": 144,
+                        "parallel": 143,
+                        "headers_us": 75281,
+                        "reads_us": 872686,
+                        "decode_us": 1292303,
+                        "shrink_us": 131497,
+                        "hash_us": 848742
+                    },
+                    "scoped": {
+                        "ordinal": 2,
+                        "images_us": 1816410,
+                        "playback_us": 2802,
+                        "storage_us": 394199
+                    },
+                    "prebriefing_us": 4095111,
+                    "name": "hub_to_crauphel"
+                },
+                {
+                    "ordinal": 2,
+                    "images": {
+                        "ordinal": 2,
+                        "count": 144,
+                        "parallel": 143,
+                        "headers_us": 60387,
+                        "reads_us": 736865,
+                        "decode_us": 1027116,
+                        "shrink_us": 87259,
+                        "hash_us": 706176
+                    },
+                    "scoped": {
+                        "ordinal": 2,
+                        "images_us": 1495159,
+                        "playback_us": 1410,
+                        "storage_us": 149159
+                    },
+                    "name": "crauphel_quickload"
+                }
+            ]
+        },
+        "candidate": {
+            "version": 32335,
+            "apk_sha256": "918a4f92b5f466db84fa7c9fc41d0c4286ec705c55e8ad1f28e8f429277f5187",
+            "run_id": "fddd372c1d4048719eb623eb9644e425",
+            "steps": 35,
+            "profile_restored": true,
+            "log_sha256": "fa0ab46ee8c48bc225224eb2a1aaf075ad471fbd3be4f5048420c09747ce7d6d",
+            "phases": [
+                {
+                    "ordinal": 1,
+                    "images": {
+                        "ordinal": 1,
+                        "count": 80,
+                        "reused": 0,
+                        "parallel": 80,
+                        "headers_us": 60960,
+                        "reads_us": 283399,
+                        "decode_us": 397375,
+                        "shrink_us": 12,
+                        "hash_us": 297666
+                    },
+                    "scoped": {
+                        "ordinal": 1,
+                        "images_us": 654912,
+                        "playback_us": 4068,
+                        "storage_us": 483557
+                    },
+                    "prebriefing_us": 3143111,
+                    "name": "cold_hub"
+                },
+                {
+                    "ordinal": 2,
+                    "images": {
+                        "ordinal": 2,
+                        "count": 144,
+                        "reused": 19,
+                        "parallel": 143,
+                        "headers_us": 51590,
+                        "reads_us": 885160,
+                        "decode_us": 1253661,
+                        "shrink_us": 119544,
+                        "hash_us": 926225
+                    },
+                    "scoped": {
+                        "ordinal": 2,
+                        "images_us": 1898755,
+                        "playback_us": 2966,
+                        "storage_us": 371154
+                    },
+                    "prebriefing_us": 3625731,
+                    "name": "hub_to_crauphel"
+                },
+                {
+                    "ordinal": 2,
+                    "images": {
+                        "ordinal": 2,
+                        "count": 144,
+                        "reused": 0,
+                        "parallel": 143,
+                        "headers_us": 67319,
+                        "reads_us": 687654,
+                        "decode_us": 1069562,
+                        "shrink_us": 85486,
+                        "hash_us": 782691
+                    },
+                    "scoped": {
+                        "ordinal": 2,
+                        "images_us": 1540981,
+                        "playback_us": 2142,
+                        "storage_us": 158932
+                    },
+                    "name": "crauphel_quickload"
+                }
+            ]
+        }
+    },
+    "observed_scope": "The hub-to-Crauphel transition reused 19 of 144 images. The image phase was slower in this pair. Quickload reused zero images. Cold load and total prebriefing time also varied.",
+    "infrastructure_retry": {
+        "first_baseline_transport_failed": true,
+        "first_baseline_owner_receipt_sha256": "b19a40c72e1a724b62b0a529d12a88b65aaa97e30b64eab741b09f5d96aa368d",
+        "first_guest_profile_hash_restoration_verified": false,
+        "read_only_avd": true,
+        "host_protected_snapshot_retained": true,
+        "retry_kept_same_baseline_apk_and_route": true,
+        "completed_pair_profile_hashes_verified": true
+    }
+}

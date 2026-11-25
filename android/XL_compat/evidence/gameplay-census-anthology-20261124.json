@@ -1,0 +1,179 @@
+{
+    "schema": 1,
+    "date": "2026-11-24",
+    "source_head": "2a5092ce9924b621f403fe59e15e5668b469afec",
+    "engine_sha256": "09d67a3d6e5416e7c0f22d205c710b22b45b96171c448892776af92813078195",
+    "criterion": "120 unassisted frames at 60 Hz and seed 1 on the requested level, without death or transition",
+    "original_integrated_passed": 1534,
+    "previous_full_passed": 1563,
+    "current_full_passed": 1567,
+    "full_denominator": 1654,
+    "frozen_case_register_sha256": "be85403713651a8f25274c762f9b1f320cad68666f1aee7389f5573720f3d9f1",
+    "raw_aggregate_receipt_sha256": "02a0924228b6553e781d49d7188c87d791e2d2228be443731db00bac944ec98a",
+    "catalogs": [
+        {
+            "catalog": "local",
+            "cases": 543,
+            "earlier_passed": 514,
+            "outcomes": {
+                "loaded_ticked": 518,
+                "load_failed": 21,
+                "unsupported_format": 1,
+                "simulation_failed": 2,
+                "timeout": 1
+            },
+            "receipt_sha256": "deccd51a136ba0f33fddc76ecb6b163036ad541195cadb74aeea0317093f9c27"
+        },
+        {
+            "catalog": "pinned",
+            "cases": 1111,
+            "earlier_passed": 1049,
+            "outcomes": {
+                "loaded_ticked": 1049,
+                "load_failed": 58,
+                "simulation_failed": 2,
+                "unsupported_format": 2
+            },
+            "receipt_sha256": "f51601807376892330cfbddf4f61f7b76df4c6da397cdc5373c7a4a5f950129a"
+        }
+    ],
+    "changes_from_previous_full_run": [
+        {
+            "case": "anthology(split).7z/missions/single/antho1-3.mn2:1",
+            "from": "load_failed",
+            "to": "loaded_ticked"
+        },
+        {
+            "case": "anthology(split).7z/missions/single/antho1-3.mn2:2",
+            "from": "load_failed",
+            "to": "loaded_ticked"
+        },
+        {
+            "case": "anthology(split).7z/missions/single/antho1-3.mn2:3",
+            "from": "load_failed",
+            "to": "loaded_ticked"
+        },
+        {
+            "case": "anthology.7z/missions/sirius/antholgy.mn2:1",
+            "from": "load_failed",
+            "to": "loaded_ticked"
+        }
+    ],
+    "frozen_previous_misses": 120,
+    "current_misses": 87,
+    "pinned_original_observations": {
+        "started_and_ran": 50,
+        "simulation_unverified": 3,
+        "mission_rejected": 31,
+        "advertised_member_lookup_empty": 3
+    },
+    "remaining_first_blockers": [
+        {
+            "blocker": "Advertised level file missing",
+            "cases": 34,
+            "pinned_original": {
+                "mission_rejected": 31,
+                "advertised_member_lookup_empty": 3
+            }
+        },
+        {
+            "blocker": "Custom base definitions",
+            "cases": 2,
+            "pinned_original": {
+                "started_and_ran": 2
+            }
+        },
+        {
+            "blocker": "Fluid behavior",
+            "cases": 4,
+            "pinned_original": {
+                "started_and_ran": 4
+            }
+        },
+        {
+            "blocker": "Light index bounds",
+            "cases": 16,
+            "pinned_original": {
+                "started_and_ran": 16
+            }
+        },
+        {
+            "blocker": "Lightning effects",
+            "cases": 5,
+            "pinned_original": {
+                "started_and_ran": 5
+            }
+        },
+        {
+            "blocker": "Non-hexahedral geometry",
+            "cases": 4,
+            "pinned_original": {
+                "started_and_ran": 4
+            }
+        },
+        {
+            "blocker": "Robot definitions",
+            "cases": 2,
+            "pinned_original": {
+                "started_and_ran": 2
+            }
+        },
+        {
+            "blocker": "Robot fire killed the idle pilot",
+            "cases": 4,
+            "pinned_original": {
+                "started_and_ran": 4
+            }
+        },
+        {
+            "blocker": "Segment flags",
+            "cases": 1,
+            "pinned_original": {
+                "started_and_ran": 1
+            }
+        },
+        {
+            "blocker": "Segment functions",
+            "cases": 5,
+            "pinned_original": {
+                "started_and_ran": 5
+            }
+        },
+        {
+            "blocker": "Segment ownership and groups",
+            "cases": 3,
+            "pinned_original": {
+                "started_and_ran": 3
+            }
+        },
+        {
+            "blocker": "Unsupported level format",
+            "cases": 3,
+            "pinned_original": {
+                "started_and_ran": 2,
+                "simulation_unverified": 1
+            }
+        },
+        {
+            "blocker": "Wall types",
+            "cases": 3,
+            "pinned_original": {
+                "simulation_unverified": 1,
+                "started_and_ran": 2
+            }
+        },
+        {
+            "blocker": "timeout",
+            "cases": 1,
+            "pinned_original": {
+                "simulation_unverified": 1
+            }
+        }
+    ],
+    "first_launch_retry": {
+        "cause": "The copied Windows engine lacked its runtime DLL search path. Its application entry point was never reached.",
+        "failed_batch_log_sha256": "998119e9c01d8c1f8444f87067e0639dab872c8fb3245abaef2acd1169b9d42a",
+        "retry": "Relaunched the unchanged executable and catalog plan with the build runtime path verified at its application entry point.",
+        "retry_entry_receipt_sha256": "248c68e08a57416faed1d1e55566bcd7614fca6e00ee21b195a4aaecd796d4d2"
+    }
+}

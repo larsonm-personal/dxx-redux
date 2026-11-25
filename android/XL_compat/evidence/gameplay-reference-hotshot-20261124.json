@@ -1,0 +1,268 @@
+{
+    "schema": 1,
+    "date": "2026-11-24",
+    "reference_source": "2576a98b5de310e3ac7c9777df2677d1627b8bae",
+    "difficulty": "Hotshot (2)",
+    "input": "No steering or firing",
+    "criterion": "120 unassisted rendered iterations in pinned D2X-XL at the requested level",
+    "cause_for_repeat": "Windows readiness starts at Hotshot. The first reference harness invocations inherited its Rookie default.",
+    "cases_ran": 15,
+    "denominator": 15,
+    "cases": [
+        {
+            "id": "anthology(split).7z/missions/single/antho1-3.mn2:1",
+            "cluster": "OOF models",
+            "ordinal": 1,
+            "advertised_member": "antho-d1.rl2",
+            "descriptor_sha256": "0cea5acd2280ae70ebb93b96359eeeefe25c35e4d67f00372d05311fb2718113",
+            "earlier_rookie_trace_sha256": "c3b0be76804cdd78b97139a5880717a7abb820a8b125fa7d684fb503b4383f25",
+            "hotshot_reference_engine_sha256": "eabab1bc9e8d6bb14a8e1ffce5d8720e2ec51aeec54723bb1bbd7bdb1c09d9c3",
+            "hotshot_trace_sha256": "0a832251653e67d8ae4b59105c62c41157dabf9caabecebf53f0b250aa8f8737",
+            "hotshot_observation": "started_and_ran",
+            "hotshot_frames": 120,
+            "compared_native_record_counts": [
+                14,
+                14
+            ],
+            "native_records_identical": true
+        },
+        {
+            "id": "anthology(split).7z/missions/single/antho1-3.mn2:2",
+            "cluster": "OOF models",
+            "ordinal": 2,
+            "advertised_member": "antho-d2.rl2",
+            "descriptor_sha256": "0cea5acd2280ae70ebb93b96359eeeefe25c35e4d67f00372d05311fb2718113",
+            "earlier_rookie_trace_sha256": "7b005ed9f83b248c04f0a11e051930a5d3c559b117d1b94ac3dea9ef89c5e409",
+            "hotshot_reference_engine_sha256": "eabab1bc9e8d6bb14a8e1ffce5d8720e2ec51aeec54723bb1bbd7bdb1c09d9c3",
+            "hotshot_trace_sha256": "22efa72b184571b9bb10c3df38cbf1ffa9ccb59ecdd59811597d2a7ba65504f9",
+            "hotshot_observation": "started_and_ran",
+            "hotshot_frames": 120,
+            "compared_native_record_counts": [
+                14,
+                14
+            ],
+            "native_records_identical": true
+        },
+        {
+            "id": "anthology(split).7z/missions/single/antho1-3.mn2:3",
+            "cluster": "OOF models",
+            "ordinal": 3,
+            "advertised_member": "antho-d3.rl2",
+            "descriptor_sha256": "0cea5acd2280ae70ebb93b96359eeeefe25c35e4d67f00372d05311fb2718113",
+            "earlier_rookie_trace_sha256": "099d6e492bc1475d5db79eb1e7f4e36e23fc6101d80c0238061a6625e7329c9c",
+            "hotshot_reference_engine_sha256": "eabab1bc9e8d6bb14a8e1ffce5d8720e2ec51aeec54723bb1bbd7bdb1c09d9c3",
+            "hotshot_trace_sha256": "ab20720aa3e8eacda552f469e8fa3ac43fbe5cbaa031408476751aa4d32567cb",
+            "hotshot_observation": "started_and_ran",
+            "hotshot_frames": 120,
+            "compared_native_record_counts": [
+                46,
+                46
+            ],
+            "native_records_identical": true
+        },
+        {
+            "id": "anthology.7z/missions/sirius/antholgy.mn2:1",
+            "cluster": "OOF models",
+            "ordinal": 1,
+            "advertised_member": "antholgy.rl2",
+            "descriptor_sha256": "04fc68d1babb53df330b88a400dabc0e478a61dc7f8c57ea8e5b4eb1c7ce6d46",
+            "earlier_rookie_trace_sha256": "5b85db9da0bd69e0f9fff9edbc4c9f596f6d4781f661050e7f8a2c80d41256c6",
+            "hotshot_reference_engine_sha256": "eabab1bc9e8d6bb14a8e1ffce5d8720e2ec51aeec54723bb1bbd7bdb1c09d9c3",
+            "hotshot_trace_sha256": "ddc1e23acd1c7d79dd2cef3dbec969eb08cff73a53250af5877932b08d1076fd",
+            "hotshot_observation": "started_and_ran",
+            "hotshot_frames": 120,
+            "compared_native_record_counts": [
+                58,
+                58
+            ],
+            "native_records_identical": true
+        },
+        {
+            "id": "levels_multiplayer/g-house.7z/missions/diedel/d3/g-house.mn2:1",
+            "cluster": "Colored walls",
+            "ordinal": 1,
+            "advertised_member": "g-house.rl2",
+            "descriptor_sha256": "3e8100b1a1fc8babae88283f5d8e1620eaebc6c9c1f4c82e358b2930576e0f5f",
+            "earlier_rookie_trace_sha256": "f9dd672f5c7ac68a8708d476ac30f8c354a043846a67223209f2d8a53974ee04",
+            "hotshot_reference_engine_sha256": "fb6ee0e2c3d9fe6148499def625f85a5419ccd2039bb8530539f6b0fcdfe145d",
+            "hotshot_trace_sha256": "761e3ffd474efb1b4673c5c37743b32914ed8882c157a74ece2a23775880f10b",
+            "hotshot_observation": "started_and_ran",
+            "hotshot_frames": 120,
+            "compared_native_record_counts": [
+                126,
+                126
+            ],
+            "native_records_identical": true
+        },
+        {
+            "id": "levelpack.7z/missions/diedel/g-house.mn2:1",
+            "cluster": "Colored walls",
+            "ordinal": 1,
+            "advertised_member": "g-house.rl2",
+            "descriptor_sha256": "aa22ec3a6557934b517f8c7fb7626f19ceb5d0d001fae34a6f3f71aec5d24903",
+            "earlier_rookie_trace_sha256": "834117c31f1eb6a0f712e6b282fb1ab7f9221a7db0cd4e3072179547efa136f3",
+            "hotshot_reference_engine_sha256": "fb6ee0e2c3d9fe6148499def625f85a5419ccd2039bb8530539f6b0fcdfe145d",
+            "hotshot_trace_sha256": "c1fbbb33432389ec6aa5027a96a2fba4273c45149d1acf495f351c0127097a68",
+            "hotshot_observation": "started_and_ran",
+            "hotshot_frames": 120,
+            "compared_native_record_counts": [
+                126,
+                126
+            ],
+            "native_records_identical": true
+        },
+        {
+            "id": "levelpack.7z/missions/d1fsxl/d1fs-xl.mn2:1",
+            "cluster": "Colored walls",
+            "ordinal": 1,
+            "advertised_member": "d1fs01xl.rl2",
+            "descriptor_sha256": "9913f35cc875a39dc3748f20283f14ca2b6e3ebdf29a0d0edc34dc46b371dacf",
+            "earlier_rookie_trace_sha256": "1b660ab4e51a1bf64b6c1be7fe1423ccaf12d673fdaaee8587a7b77ebc0d3863",
+            "hotshot_reference_engine_sha256": "fb6ee0e2c3d9fe6148499def625f85a5419ccd2039bb8530539f6b0fcdfe145d",
+            "hotshot_trace_sha256": "caba482506789e4c914c1e74ed66c5851970a5f652a9c7ee79227d7d6185b3f8",
+            "hotshot_observation": "started_and_ran",
+            "hotshot_frames": 120,
+            "compared_native_record_counts": [
+                12,
+                12
+            ],
+            "native_records_identical": true
+        },
+        {
+            "id": "levelpack.7z/missions/sirius/fv24b.mn2:1",
+            "cluster": "Segment rooms",
+            "ordinal": 1,
+            "advertised_member": "fv24b.rl2",
+            "descriptor_sha256": "99cdc7e5f4baeae3d715d69bf8fe48c66672d4d8aa03898aa5131fbb4fdafbc1",
+            "earlier_rookie_trace_sha256": "dbd03b0b2caf25600215ceea19736cd63b04b2f60620685b327965889b84db72",
+            "hotshot_reference_engine_sha256": "eabab1bc9e8d6bb14a8e1ffce5d8720e2ec51aeec54723bb1bbd7bdb1c09d9c3",
+            "hotshot_trace_sha256": "9e42c37892691aacad57059692e5e1b90d47bcaef3333ca04318e0ffa63487c3",
+            "hotshot_observation": "started_and_ran",
+            "hotshot_frames": 120,
+            "compared_native_record_counts": [
+                13,
+                13
+            ],
+            "native_records_identical": true
+        },
+        {
+            "id": "levels_multiplayer/biohzrd.zip/biohzrd.mn2:1",
+            "cluster": "Segment rooms",
+            "ordinal": 1,
+            "advertised_member": "biohzrd.rl2",
+            "descriptor_sha256": "f022ef06ad0a6de29f127705af4d7ed56890d4ed5393f0d2c53ab5f413bff29f",
+            "earlier_rookie_trace_sha256": "be76d9fbcea85551764872e4433a0058e17dac733666acb8dac6090c5f67f2b5",
+            "hotshot_reference_engine_sha256": "eabab1bc9e8d6bb14a8e1ffce5d8720e2ec51aeec54723bb1bbd7bdb1c09d9c3",
+            "hotshot_trace_sha256": "3f0f1e6d1cac29577d455f36790fc41eaa913191792dd1150088ccdf6a519f2a",
+            "hotshot_observation": "started_and_ran",
+            "hotshot_frames": 120,
+            "compared_native_record_counts": [
+                34,
+                34
+            ],
+            "native_records_identical": true
+        },
+        {
+            "id": "levels_multiplayer/emtombz.zip/emtombz.mn2:1",
+            "cluster": "Segment rooms",
+            "ordinal": 1,
+            "advertised_member": "emtombz.rl2",
+            "descriptor_sha256": "bb78417651897eac180c34558737e4f6a48ccceba29f11d14482952295e2fa96",
+            "earlier_rookie_trace_sha256": "30a0491fd5a5ec946d4c0d3adc51c7abed19b89af10d30869ec4c25fbbf37d42",
+            "hotshot_reference_engine_sha256": "eabab1bc9e8d6bb14a8e1ffce5d8720e2ec51aeec54723bb1bbd7bdb1c09d9c3",
+            "hotshot_trace_sha256": "147ac7449e588b0f91f60116c3a5b951165dbe590d687314f7fade4c2f48b33f",
+            "hotshot_observation": "started_and_ran",
+            "hotshot_frames": 120,
+            "compared_native_record_counts": [
+                78,
+                78
+            ],
+            "native_records_identical": true
+        },
+        {
+            "id": "levels_multiplayer/etombz.zip/etombz.mn2:1",
+            "cluster": "Segment rooms",
+            "ordinal": 1,
+            "advertised_member": "etombz.rl2",
+            "descriptor_sha256": "d2be0abfcb3d834afb159292afc1d256470809900bc701e7bba104aad873afaf",
+            "earlier_rookie_trace_sha256": "9f5d3055a3acd8dffb6b50622f05e58a2b302ee8471a5440f0205fd1a240d541",
+            "hotshot_reference_engine_sha256": "eabab1bc9e8d6bb14a8e1ffce5d8720e2ec51aeec54723bb1bbd7bdb1c09d9c3",
+            "hotshot_trace_sha256": "05fc5e61f2da2701cac44a03370aa4e97c70730a0249220e2db200b5a23c4565",
+            "hotshot_observation": "started_and_ran",
+            "hotshot_frames": 120,
+            "compared_native_record_counts": [
+                127,
+                127
+            ],
+            "native_records_identical": true
+        },
+        {
+            "id": "prophxl131beta.zip/missions/sapphire wolf sp/PROPHXL.MN2:3",
+            "cluster": "Segment rooms",
+            "ordinal": 3,
+            "advertised_member": "auora1.rl2",
+            "descriptor_sha256": "8a47df99aaa72d34366d8ae357f1303e2c82c631163b062636b19d20c878b62b",
+            "earlier_rookie_trace_sha256": "7c1f801a7671fcf8b0781db19f469741f46028c47ffb025ad68b72e24ab4cef1",
+            "hotshot_reference_engine_sha256": "eabab1bc9e8d6bb14a8e1ffce5d8720e2ec51aeec54723bb1bbd7bdb1c09d9c3",
+            "hotshot_trace_sha256": "554e35b9c756b1952b3fb5ab416d48d52f06fd2672072b64416def0cb91a0cd9",
+            "hotshot_observation": "started_and_ran",
+            "hotshot_frames": 120,
+            "compared_native_record_counts": [
+                22,
+                22
+            ],
+            "native_records_identical": true
+        },
+        {
+            "id": "levelpack.7z/missions/diedel/biohzrd.mn2:1",
+            "cluster": "Segment rooms",
+            "ordinal": 1,
+            "advertised_member": "biohzrd.rl2",
+            "descriptor_sha256": "be2a1daf62c8fcb5128e6316506a449676c5f6a11b0fad0e320d73df50906b51",
+            "earlier_rookie_trace_sha256": "f994999b9593b98854abee74088a5d4c75e9e880a13450503c02c4f502cb5185",
+            "hotshot_reference_engine_sha256": "eabab1bc9e8d6bb14a8e1ffce5d8720e2ec51aeec54723bb1bbd7bdb1c09d9c3",
+            "hotshot_trace_sha256": "f8749735d930bbfced64d3d1a1629901039dbcce24aa4769b918400c68925eeb",
+            "hotshot_observation": "started_and_ran",
+            "hotshot_frames": 120,
+            "compared_native_record_counts": [
+                34,
+                34
+            ],
+            "native_records_identical": true
+        },
+        {
+            "id": "levelpack.7z/missions/diedel/emtombz.mn2:1",
+            "cluster": "Segment rooms",
+            "ordinal": 1,
+            "advertised_member": "emtombz.rl2",
+            "descriptor_sha256": "0195529894e4a40b7158ee6f3f9020dba05312200975f52cba6fb149a2b2024a",
+            "earlier_rookie_trace_sha256": "5e74cb6ba4a0d670999592e98d1cbd458c92f120451779ce0ec033b972635996",
+            "hotshot_reference_engine_sha256": "eabab1bc9e8d6bb14a8e1ffce5d8720e2ec51aeec54723bb1bbd7bdb1c09d9c3",
+            "hotshot_trace_sha256": "acc6d7eb54bf872000cf74f0e34233eb02abe27a16a2d88d3e5f55331f55c389",
+            "hotshot_observation": "started_and_ran",
+            "hotshot_frames": 120,
+            "compared_native_record_counts": [
+                78,
+                78
+            ],
+            "native_records_identical": true
+        },
+        {
+            "id": "levelpack.7z/missions/diedel/etombz.mn2:1",
+            "cluster": "Segment rooms",
+            "ordinal": 1,
+            "advertised_member": "etombz.rl2",
+            "descriptor_sha256": "eb65bcd6ed15a25581434f4fc593b24604b7f7451b6b8d2945d8e56984b91e97",
+            "earlier_rookie_trace_sha256": "3af9a59d6baa79a69ce390b32a4ac557ee4694a2515f5e1de97bfd9ffca522a6",
+            "hotshot_reference_engine_sha256": "eabab1bc9e8d6bb14a8e1ffce5d8720e2ec51aeec54723bb1bbd7bdb1c09d9c3",
+            "hotshot_trace_sha256": "3fc447c8193aecad681f03c2652fe5a07708e0de622e05c94d41b9f835e63b09",
+            "hotshot_observation": "started_and_ran",
+            "hotshot_frames": 120,
+            "compared_native_record_counts": [
+                127,
+                127
+            ],
+            "native_records_identical": true
+        }
+    ]
+}
