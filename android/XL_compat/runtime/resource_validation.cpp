@@ -2007,6 +2007,12 @@ void XlPreparedResources::prepare_level_resources(const char *level_filename, co
 				state->lighting.sources.emplace(startup_colors->source, startup_colors->hash);
 			}
 			state->classic_lighting = true;
+		} else if (level && xl_compat::legacy_level10_layout(*level)) {
+			// The early mine does not replace its level or startup CLR table.
+			if (!state->lighting.colors && startup_colors) {
+				state->lighting.colors = startup_colors->colors;
+				state->lighting.sources.emplace(startup_colors->source, startup_colors->hash);
+			}
 		} else if (state->lighting.colors) {
 			// These layouts read and validate the companion before replacing all 910 colors from geometry
 			const bool embedded = level && (xl_compat::supported_xl_layout(*level) && level->level_version >= 17);
@@ -2418,6 +2424,20 @@ bool XlPreparedResources::texture_brightness(int texture, int &brightness) const
 	if (!state->lighting.brightness || texture < 0 || std::size_t(texture) >= state->lighting.brightness->size()) return false;
 	brightness = (*state->lighting.brightness)[texture];
 	return true;
+}
+
+bool XlPreparedResources::companion_texture_rgb(int texture, float rgb[3]) const
+{
+	const auto &colors = state->lighting.colors;
+	if (!colors || texture < 0 || std::size_t(texture) >= colors->size()) return false;
+	for (unsigned channel = 0; channel < 3; ++channel)
+		rgb[channel] = float((*colors)[texture].channels[channel]) / float(0x7fffffff);
+	return true;
+}
+
+bool xl_prepared_companion_texture_rgb(int texture, float rgb[3])
+{
+	return prepared_resources && prepared_resources->companion_texture_rgb(texture, rgb);
 }
 
 const xl_compat::MissionLightingCompanions *XlPreparedResources::classic_lighting() const

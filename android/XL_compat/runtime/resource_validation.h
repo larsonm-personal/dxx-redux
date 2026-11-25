@@ -114,6 +114,7 @@ class XlPreparedResources
 	void begin_hitbox_frame();
 	void initialize_camera_objects();
 	bool texture_brightness(int texture, int &brightness) const;
+	bool companion_texture_rgb(int texture, float rgb[3]) const;
 	const xl_compat::MissionLightingCompanions *classic_lighting() const;
 	bool pog_receipt(int bitmap, unsigned *bytes, unsigned *fnv1a) const;
 	int custom_model_radius(int model, int fallback) const;
@@ -151,6 +152,7 @@ const xl_compat::ParticleImageResource *xl_prepared_lightning_image();
 const xl_compat::ParticleImageResource *xl_prepared_powerup_glare_image();
 const xl_compat::AnimatedImageResource *xl_prepared_time_equipment_image(unsigned index);
 bool xl_prepared_time_equipment_required();
+bool xl_prepared_companion_texture_rgb(int texture, float rgb[3]);
 const xl_compat::MissionLightingCompanions *xl_prepared_classic_lighting();
 #endif
 

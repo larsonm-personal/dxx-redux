@@ -1001,7 +1001,11 @@ static void rebuild_xl_ambient()
 		if (xl_prepared_texture_brightness(i, &value)) table[i] = value;
 	}
 	xl_compat::TextureRgbTable colors{};
-	for (unsigned i = 0; i < colors.size(); ++i)
+	for (unsigned i = 0; i < colors.size(); ++i) {
+		if (source->texture_colors.empty()) {
+			xl_prepared_companion_texture_rgb(i, colors[i].data());
+			continue;
+		}
 		for (unsigned channel = 0; channel < 3; ++channel) {
 			const auto serialized = source->texture_colors.at(i).rgb[channel];
 			// Match ReadColor: floating v15 or integer v17, without narrowing v15 to int32
@@ -1009,6 +1013,7 @@ static void rebuild_xl_ambient()
 			if (!std::isfinite(loaded)) throw std::runtime_error("XL ambient texture color exceeds finite float range");
 			colors[i][channel] = loaded;
 		}
+	}
 	const auto lights = xl_compat::compile_classic_geometry_lights(table, colors);
 	const xl_compat::ClassicAmbientLighting ambient(lights, xl_compat::classic_default_lighting_camera());
 	rebuilt_ambient = ambient.gather(xl_compat::ClassicAmbientProfile{});
@@ -1816,15 +1821,19 @@ extern "C" int xl_preview_texture_emitter(int segment_number, int side_number, x
 		case 409: intensity *= 2; break;
 		default: break;
 	}
-	if (texture < 0 || texture >= NumTextures || std::size_t(texture) >= (classic ? classic->colors->size() : source->texture_colors.size())) return 0;
+	if (texture < 0 || texture >= NumTextures) return 0;
 	const auto bitmap = Textures[texture].index;
 	if (bitmap >= Num_bitmap_files) return 0;
 	const char *name = piggy_game_bitmap_name(&GameBitmaps[bitmap]);
 	if (!name || std::strstr(name, "metl") || std::strstr(name, "rock") || std::strstr(name, "water")) return 0;
+	if (classic || source->texture_colors.empty()) {
+		if (!xl_prepared_companion_texture_rgb(texture, emitter->rgb)) return 0;
+	} else {
+		if (std::size_t(texture) >= source->texture_colors.size()) return 0;
+		for (unsigned c = 0; c < 3; ++c) emitter->rgb[c] = float(source->texture_colors[texture].rgb[c]);
+	}
 	emitter->texture = texture;
 	emitter->intensity = intensity;
-	for (unsigned c = 0; c < 3; ++c)
-		emitter->rgb[c] = classic ? float((*classic->colors)[texture].channels[c]) / float(0x7fffffff) : float(source->texture_colors[texture].rgb[c]);
 	return 1;
 }
 
