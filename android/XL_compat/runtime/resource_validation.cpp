@@ -84,6 +84,8 @@ namespace
 static_assert(MAX_SUBMODELS == 10, "Update the bounded XL model geometry capacity with native submodels");
 using File = std::unique_ptr<PHYSFS_file, decltype(&PHYSFS_close)>;
 std::string startup_ham_name, startup_ham_hash, startup_origin, base_rejection;
+std::string owned_base_ham_hash;
+constexpr char retail_ham_name[] = "descent2.ham";
 std::optional<xl_compat::StartupTextureColors> startup_colors;
 std::string startup_color_rejection;
 char startup_model_names[MAX_POLYGON_MODELS][FILENAME_LEN]{};
@@ -589,6 +591,7 @@ extern "C" void xl_resource_select_mission(int requires_xl)
 	mission_hxm_robot_replacements = false;
 	mission_generated_models.clear();
 	mission_requires_xl = requires_xl != 0;
+	owned_base_ham_hash.clear();
 	base_rejection.clear();
 	vertigo_rejection.clear();
 	mod_rejection.clear();
@@ -600,6 +603,7 @@ extern "C" int xl_resource_load_vertigo(void)
 {
 	if (!mission_requires_xl || !Current_mission || Current_mission->descent_version != 2) return 0;
 	vertigo_rejection.clear();
+	if (!owned_base_ham_hash.empty()) return 0; // The owned full HAM supersedes the initial Vertigo layer
 	constexpr const char *mount = "__xl_vertigo_resources__.hog";
 	bool mounted = false;
 	try {
@@ -1062,7 +1066,9 @@ extern "C" int xl_resource_load_mod_data(void)
 	mod_rejection.clear();
 	try {
 		std::map<std::string, std::string> sources;
-		const auto ham = owned_mod_file(".ham"), hxm = owned_mod_file(".hxm"), vham = owned_mod_file(".vham");
+		if (!owned_base_ham_hash.empty()) sources.emplace(retail_ham_name, owned_base_ham_hash);
+		const auto ham = owned_base_ham_hash.empty() ? owned_mod_file(".ham") : std::string{};
+		const auto hxm = owned_mod_file(".hxm"), vham = owned_mod_file(".vham");
 		for (const auto &path : { vham }) {
 			if (!ham.empty() || path.empty()) continue;
 			File file(PHYSFSX_openReadBuffered(path.c_str()), PHYSFS_close);
@@ -1104,9 +1110,9 @@ extern "C" int xl_resource_load_mod_data(void)
 		mission_oof_models = std::move(staged_models.models);
 		install_missing_oof_geometry();
 		mission_mod_sources = std::move(sources);
-		if (ham.empty() && hxm.empty() && vham.empty() && mission_oof_models.empty()) return 0;
+		if (owned_base_ham_hash.empty() && ham.empty() && hxm.empty() && vham.empty() && mission_oof_models.empty()) return 0;
 		con_printf(CON_NORMAL, "XL mission definitions: HAM=%s HXM=%s VHAM=%s robots=%d models=%d\n",
-		           ham.c_str(), hxm.c_str(), vham.c_str(), N_robot_types, N_polygon_models);
+		           owned_base_ham_hash.empty() ? ham.c_str() : retail_ham_name, hxm.c_str(), vham.c_str(), N_robot_types, N_polygon_models);
 		return 1;
 	} catch (const std::exception &error) {
 		// The caller has already reset to retail data; failed layers must not survive
@@ -1313,8 +1319,14 @@ extern "C" const char *xl_resource_base_rejection(void)
 		if (startup_ham_hash.empty()) throw std::runtime_error("trusted startup base HAM is unavailable for XL resource admission");
 		File file(PHYSFSX_openReadBuffered(startup_ham_name.c_str()), PHYSFS_close);
 		if (!file) throw std::runtime_error("required base HAM is missing: " + startup_ham_name);
-		if (resource_hash(file.get(), startup_ham_name) != startup_ham_hash)
-			throw std::runtime_error("mission overrides base HAM definitions: custom HAM gameplay support is unqualified; previous resources were retained");
+		const auto hash = resource_hash(file.get(), startup_ham_name);
+		if (hash == startup_ham_hash) owned_base_ham_hash.clear();
+		else {
+			if (startup_ham_name != retail_ham_name || !mission_owns_resource_archive(PHYSFS_getRealDir(startup_ham_name.c_str())))
+				throw std::runtime_error("mission overrides base HAM definitions outside the owned HOG; previous resources were retained");
+			if (hash != owned_base_ham_hash) (void) XlPreparedHam(file.get());
+			owned_base_ham_hash = hash;
+		}
 		for (std::size_t i = 0; i < sound_banks.size(); ++i)
 			if (optional_resource_hash(sound_banks[i]) != startup_sound_hashes[i])
 				throw std::runtime_error(std::string("mission changes base sound bank ") + sound_banks[i] + ": custom sound-bank initialization is unqualified; previous resources were retained");
@@ -1322,6 +1334,7 @@ extern "C" const char *xl_resource_base_rejection(void)
 		if (Current_mission && Current_mission->enhanced == MISSION_ENHANCED_XL)
 			xl_validate_level_graphics(DEFAULT_LEVEL_PALETTE);
 	} catch (const std::exception &error) {
+		owned_base_ham_hash.clear();
 		base_rejection = error.what();
 	}
 	return base_rejection.c_str();
@@ -1513,8 +1526,15 @@ std::unique_ptr<XlPreparedResources> XlPreparedResources::prepare_mission(missio
 {
 	if (mission && (!mission_prepared_descriptor(mission) || mission_prepared_descriptor(mission)->descent_version != 2))
 		throw std::runtime_error("Incoming resource preparation requires a D2 descriptor");
-	const auto ham = owned_mod_file(".ham", {}, mission);
+	std::optional<std::vector<unsigned char>> archive_ham;
+	if (mission && startup_ham_name == retail_ham_name) {
+		xl_compat::TargetSources target(mission, startup_origin);
+		archive_ham = target.archive_bytes(retail_ham_name, 64 * 1024 * 1024);
+		if (archive_ham && picosha2::hash256_hex_string(*archive_ham) == startup_ham_hash) archive_ham.reset();
+	}
+	const auto ham = archive_ham ? std::string{} : owned_mod_file(".ham", {}, mission);
 	XlPreparedHam incoming = [&] {
+		if (archive_ham) return XlPreparedHam(std::move(*archive_ham));
 		if (ham.empty()) {
 			if (startup_ham_hash.empty() || startup_origin.empty())
 				throw std::runtime_error("Incoming mission has no trusted startup HAM origin");
@@ -1531,7 +1551,7 @@ std::unique_ptr<XlPreparedResources> XlPreparedResources::prepare_mission(missio
 	result->state->complete_mission = true;
 	result->state->definition_sources[ham.empty() ? resource_key(startup_ham_name) : ham] = hash;
 	// Source stage zero loads Vertigo before a full custom HAM replaces the tables
-	if (ham.empty() && mission && mission_prepared_descriptor(mission)->enhanced == MISSION_ENHANCED_XL) {
+	if (!archive_ham && ham.empty() && mission && mission_prepared_descriptor(mission)->enhanced == MISSION_ENHANCED_XL) {
 		xl_compat::TargetSources sources(mission, startup_origin);
 		const auto owned_bytes = [&](const char *path) {
 			auto bytes = sources.directory_bytes(path, 64 * 1024 * 1024);

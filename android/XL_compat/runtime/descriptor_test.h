@@ -1012,6 +1012,30 @@ static int descriptor_test(int argc, char **argv)
 		        "descriptor selection decoded or freed shadowed gameplay resources");
 		require(load_base_mission("d2", error, sizeof(error)) && load_level("d2leva-1.rl2") == 0, "shadow HAM recovery failed");
 		{
+			std::unique_ptr<PHYSFS_file, decltype(&PHYSFS_close)> base(PHYSFS_openRead("descent2.ham"), PHYSFS_close);
+			auto ham = xl_retain_resource(base.get());
+			base.reset();
+			const auto previous = picosha2::hash256_hex_string(ham);
+			// Change a bounded bitmap translation entry without rewriting the retail definitions
+			ham.at(ham.size() - 2) = ham.at(ham.size() - 2) ? 0 : 1;
+			ham.back() = 0;
+			const auto expected = picosha2::hash256_hex_string(ham);
+			xl_compat::Bytes archive{ 'D', 'H', 'F' };
+			xl_test::hog_member(archive, "descent2.ham", ham, false);
+			write_bytes((root / "xlhamown.hog").string().c_str(), archive);
+			fixture("xlhamown", "d2x-name = Owned full HAM\nnum_levels = 1\nd2leva-1.rl2\n", true);
+			require(previous != expected && load_mission_ham() == 1 && xl_resource_mod_sources().at("descent2.ham") == expected,
+			        "Owned full HAM did not reach the mounted mission resource table");
+			auto *owned = mission_prepare_by_name("xlhamown");
+			require(owned, "Cannot prepare owned full HAM target");
+			const auto prepared = XlPreparedResources::prepare_mission(owned);
+			require(mission_discard_prepared(&owned) && prepared->sources().at("descent2.ham") == expected,
+			        "Incoming mission prepared a different full HAM source");
+			require(load_base_mission("d2", error, sizeof(error)) && load_level("d2leva-1.rl2") == 0 &&
+			            gameplay_definitions() == stock_definitions && xl_resource_mod_sources().empty(),
+			        "Owned full HAM survived the return to stock gameplay");
+		}
+		{
 			const char graphics_member[13] = "groupa.pig";
 			std::copy(graphics_member, graphics_member + sizeof(graphics_member), shadow.begin() + 3);
 			write_bytes((root / "xlgfx.hog").string().c_str(), shadow);
