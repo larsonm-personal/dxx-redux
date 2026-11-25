@@ -129,6 +129,7 @@
     {
       "ordinal": 9,
       "level": "lakshmid.rl2",
+      "instrumented_index_audit": true,
       "indices": 57,
       "deltas": 3860,
       "covered_byte_count_deltas": 3860,
@@ -340,15 +341,6 @@
     ]
   },
   "current_runs": {
-    "original_unchanged": {
-      "ordinal_count": 15,
-      "starts": 15,
-      "difficulty": "Hotshot (2)",
-      "frames_each": 120,
-      "display_preserved": true,
-      "ordinal_9_advertised": "lakshmid.rl2",
-      "engine_sha256": "298734d63e3ef1e6321947ae901b32a779ed3af73aaa9a4f29f6d9aa4e6a8428"
-    },
     "redux": {
       "ordinal_count": 15,
       "starts": 15,
@@ -386,6 +378,16 @@
       "xl_format34_native": "passed",
       "native_light_action": "trigger 18 darkens five source masks and trigger 16 restores them after original data load"
     },
-    "limitations": "Original packed-count dispatch is shown only in a bounded instrumented local copy because the live source ranges exceed the declared delta table. Runtime qualification uses complete byte/count partitions and never traverses the original out-of-range count. Android image is local; no private inputs, screenshots, profiles, saves or raw logs are committed."
+    "limitations": "Original packed-count dispatch is shown only in a bounded instrumented local copy because the live source ranges exceed the declared delta table. Runtime qualification uses complete byte/count partitions and never traverses the original out-of-range count. Android image is local; no private inputs, screenshots, profiles, saves or raw logs are committed.",
+    "original_index_audit": {
+      "ordinal_count": 15,
+      "starts": 15,
+      "difficulty": "Hotshot (2)",
+      "frames_each": 120,
+      "display_preserved": true,
+      "ordinal_9_advertised": "lakshmid.rl2",
+      "engine_sha256": "298734d63e3ef1e6321947ae901b32a779ed3af73aaa9a4f29f6d9aa4e6a8428",
+      "qualification": "Locally instrumented pinned original executable that records invalid packed indices and continues; source mission bytes unchanged. This is not an unmodified original start. The unmodified original started only ordinal 6."
+    }
   }
 }

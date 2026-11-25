@@ -42,8 +42,8 @@ fourteen levels contain invalid packed ranges. The corrected signed-source
 comparison additionally records 28 count differences and 332 source overruns.
 Their bytes resemble older side/count encoding,
 but the pinned reference selects packed decoding for their declared version.
-The port rejects these ranges with the segment, side, count, first index and
-available delta count. It does not silently reinterpret malformed originals.
+Before the complete-table qualification below, the port rejected these ranges
+with the segment, side, count, first index and available delta count.
 
 Alarlof alone decodes. The later [HXM gameplay tranche](hxm-gameplay.md) implements
 its original companion and verifies the authored custom actor, combat and
