@@ -370,10 +370,23 @@ DecodedHxm validate_hxm_dependencies(PHYSFS_file *file, MissionDefinitions &defi
 			robots.emplace_back();
 			decoded.camera_robot = id;
 		}
-		robot_info_read_n(&robots.at(id), 1, file);
+		auto &robot = robots.at(id);
+		robot_info_read_n(&robot, 1, file);
+		if (defer_robots && !camera && robot.model_num >= MAX_POLYGON_MODELS) {
+			// Keep the slot unusable. Preserve arbitrary-spawn eligibility so a
+			// reference through that selection is rejected by the level dependency walk.
+			const bool eligible = !robot.boss_flag && !robot.companion && robot.score_value >= 700;
+			con_printf(CON_VERBOSE, "XL HXM left robot %d inert because model %d is outside native capacity\n", id, robot.model_num);
+			robot = {};
+			robot.model_num = -1;
+			robot.score_value = eligible ? 700 : 0;
+			robot.always_0xabcd = 0xabcd;
+			changed_robots.insert(id);
+			continue;
+		}
 		static_assert(sizeof(jointlist) == 4, "XL HXM joint-list storage must match the serialized pair");
 		if (!d2_ham_normalize_xl_unused_joint_lists(
-		        reinterpret_cast<uint8_t *>(&robots.at(id).anim_states[0][0]), robots.at(id).n_guns))
+		        reinterpret_cast<uint8_t *>(&robot.anim_states[0][0]), robot.n_guns))
 			throw std::runtime_error("HXM robot gun count invalid");
 		changed_robots.insert(id);
 	}
