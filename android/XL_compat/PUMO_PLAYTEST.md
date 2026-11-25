@@ -16,8 +16,11 @@ in a one-second-frame S21 recording. **CHECKING LEVEL RESOURCES AND GRAPHICS**
 changed to **PREPARING FIRST PAGE**; the gold bar moved and then disappeared.
 Directly selecting level 2 captured a green page beginning **TAKING ADVANTAGE
 OF THE LATEST TOP OF THE LINE TECH**. It did not traverse the hub score screen.
-The hub score-to-Crauphel briefing and final briefing dismissal-to-flight
-timings remain open.
+On a separate direct level-2 start, the final **CRAUPHEL SCILAB; INFESTATION:
+LOW** page was dismissed without **SKIP**. Flight appeared about 5–6 seconds
+later. The moving gold bar showed **LOADING LEVEL**, **VERIFYING MISSION
+ARCHIVE** and resource identifiers, then disappeared. The hub score-to-Crauphel
+briefing timing remains open; repeat the dismissal timing on that route.
 
 Use [ordinary 32333 and its checked manifest](../../temp/xl-pumo-phone-s21-20261124-32333/README.md)
 for the next manual session. The kit installs `com.dxxredux.app` alongside

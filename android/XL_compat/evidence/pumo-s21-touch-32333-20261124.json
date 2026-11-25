@@ -46,7 +46,11 @@
     {
       "interval": "final Crauphel briefing dismissal to flight",
       "version": 32333,
-      "status": "not measured; the direct-start sequence used SKIP after story pages"
+      "route": "direct selection of Mineral Valley level 2 on the separate codex24 pilot; story pages advanced individually, without SKIP; distinct from the hub score transition",
+      "seconds_approx": "5-6 from video frames: final page still visible at t=1.5 s, loading by t=1.75 s, flight by t=7.25 s",
+      "labels": ["LOADING LEVEL", "VERIFYING MISSION ARCHIVE", "ROCK322", "ROCK113", "CTRL04#5"],
+      "bar": "gold bar moved through the loading labels and resource identifiers, then disappeared on the cockpit",
+      "final_briefing_words": "CRAUPHEL SCILAB; INFESTATION: LOW; YOUR FIRST DESTINATION IS AN OLD INFECTED MINING RESEARCH FACILITY"
     }
   ],
   "additional_briefing": "A green page in the direct level-2 story began TAKING ADVANTAGE OF THE LATEST TOP OF THE LINE TECH. Captured locally; the reporter's hard-to-read page remains unidentified.",
@@ -57,6 +61,7 @@
     "first_steer_image_sha256": "8720e021818aa96b045c36bb01072d29b7c6b75c3364ea7f226fe1b0930621be",
     "repeat_shot_image_sha256": "c98dccc401f75eb3cc0c15d5b34e0f40606679303a41976ec80c1df3dd3db17c",
     "repeat_steer_image_sha256": "4a89fd486c3dea92549c310dd6a34da1995f2c0cc33eff7f70c68a4cb48099c8",
-    "green_page_image_sha256": "86ce7ab4eb03238269a0b4f0af2eb4784e21b3fcf3e025aeb88f32dffbc1bf5e"
+    "green_page_image_sha256": "86ce7ab4eb03238269a0b4f0af2eb4784e21b3fcf3e025aeb88f32dffbc1bf5e",
+    "direct_level2_final_dismissal_video_sha256": "903f048ca9f53f4eb4671f382efaa79c0d8dc4a25a2f2f618276841a7da16a81"
   }
 }

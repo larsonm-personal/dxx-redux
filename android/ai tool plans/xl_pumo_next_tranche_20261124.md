@@ -17,9 +17,12 @@ if the low contrast reappears.
 
 1. The ordinary S21 32333 cold hub selection to first briefing took about
    9–10 seconds with a moving bar and visible **CHECKING LEVEL RESOURCES AND
-   GRAPHICS** then **PREPARING FIRST PAGE** labels. Time hub score advance to
-   Crauphel briefing and final briefing dismissal to flight. Keep **Show
-   progress bars** and
+   GRAPHICS** then **PREPARING FIRST PAGE** labels. A separate direct level-2
+   start timed the final **CRAUPHEL SCILAB; INFESTATION: LOW** briefing
+   dismissal to flight at about 5–6 seconds: **LOADING LEVEL**, **VERIFYING
+   MISSION ARCHIVE** and resource identifiers appeared, the gold bar moved,
+   then disappeared. Time the still-open hub score advance to Crauphel
+   briefing on the continuous level-1 route. Keep **Show progress bars** and
    **Mission zip** music enabled. Record the label, motion and elapsed time
    for each. Use the same original archive and matching kit checkpoint. Check
    a genuine load and a same-mission repeat before choosing the next wait to

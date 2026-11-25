@@ -52,8 +52,12 @@ FIRST PAGE** appeared; the gold bar moved and disappeared as the page beginning
 **WELCOME TO PUMO MINES, AND THANKS A LOT FOR CHOOSING TO PLAY THIS SINGLE
 PLAYER CAMPAIGN** appeared. Direct selection of level 2 later captured a green
 page beginning **TAKING ADVANTAGE OF THE LATEST TOP OF THE LINE TECH** and
-reached Crauphel flight after **SKIP**. The hub score-to-Crauphel briefing and
-final-page dismissal-to-flight intervals were not measured by that route.
+reached Crauphel flight after **SKIP**. A separate direct level-2 start then
+advanced every story page and timed dismissal of the final **CRAUPHEL SCILAB;
+INFESTATION: LOW** page to flight at about 5–6 seconds on 32333. The gold bar
+moved through **LOADING LEVEL**, **VERIFYING MISSION ARCHIVE** and resource
+identifiers, then disappeared on the cockpit. This direct start did not measure
+the hub score-to-Crauphel briefing interval.
 [Touch shot and loading receipt](../XL_compat/evidence/pumo-s21-touch-32333-20261124.json)
 
 Earlier protected S21 runs verified that the native loading bar stayed visible
