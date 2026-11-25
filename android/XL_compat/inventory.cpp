@@ -271,7 +271,7 @@ static Inventory read_level_inventory(const Bytes &bytes, bool allow_classic)
 	require(header.s32() == 0x504c564c, "not a PLVL level");
 	out.level_version = header.s32();
 	const bool classic = allow_classic && out.level_version == 7;
-	require(classic || out.level_version == 11 || out.level_version == 15 || (out.level_version >= 17 && out.level_version <= 19) || modern_level_version(out.level_version), "unsupported level version " + std::to_string(out.level_version));
+	require(classic || out.level_version == 10 || out.level_version == 11 || out.level_version == 15 || (out.level_version >= 17 && out.level_version <= 19) || modern_level_version(out.level_version), "unsupported level version " + std::to_string(out.level_version));
 	out.mine_offset = header.s32();
 	out.game_offset = header.s32();
 	require(out.mine_offset >= 16 && out.game_offset > out.mine_offset && static_cast<std::size_t>(out.game_offset) < bytes.size(), "invalid mine/game offsets");
@@ -414,7 +414,11 @@ static Inventory read_level_inventory(const Bytes &bytes, bool allow_classic)
 	if (!classic) {
 		read_colors(mine, out.vertex_colors, vertex_count, out.level_version <= 14);
 		read_colors(mine, out.side_colors, static_cast<std::size_t>(segment_count) * 6, out.level_version <= 13);
-		read_colors(mine, out.texture_colors, 910, out.level_version <= 15);
+		// The original 10/31 release ends the mine after its complete side color table.
+		if (legacy_level10_layout(out))
+			require(mine.position() == static_cast<std::size_t>(out.game_offset), "legacy 10/31 side colors must end at the game data offset");
+		else
+			read_colors(mine, out.texture_colors, 910, out.level_version <= 15);
 	}
 	if (mine.position() != static_cast<std::size_t>(out.game_offset)) issue(out.unknown, "mine_trailing_bytes", -1, std::to_string(out.game_offset - mine.position()));
 

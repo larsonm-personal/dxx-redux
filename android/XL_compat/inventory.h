@@ -160,9 +160,14 @@ inline bool modern_runtime_layout(const Inventory &level)
 	return level.game_version == 40 && modern_level_version(level.level_version);
 }
 
+inline bool legacy_level10_layout(const Inventory &level)
+{
+	return level.level_version == 10 && level.game_version == 31;
+}
+
 inline bool legacy_team_room_layout(const Inventory &level)
 {
-	return level.level_version == 17 && level.game_version == 36;
+	return legacy_level10_layout(level) || (level.level_version == 17 && level.game_version == 36);
 }
 
 inline bool legacy_game35_layout(const Inventory &level)
@@ -190,7 +195,7 @@ inline bool early_colored_wall_layout(const Inventory &level)
 
 inline bool supported_xl_layout(const Inventory &level)
 {
-	return early_colored_wall_layout(level) || legacy_game35_layout(level) || (level.level_version == 15 && (level.game_version == 33 || level.game_version == 34)) ||
+	return legacy_level10_layout(level) || early_colored_wall_layout(level) || legacy_game35_layout(level) || (level.level_version == 15 && (level.game_version == 33 || level.game_version == 34)) ||
 	       ((level.level_version == 17 || level.level_version == 18) && level.game_version == 36) ||
 	       (level.level_version == 19 && level.game_version == 40) || modern_runtime_layout(level);
 }

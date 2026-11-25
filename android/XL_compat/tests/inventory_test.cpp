@@ -95,7 +95,7 @@ Bytes fixture(int version = 15, int segment_flags = 0, int segment_count = 1, in
 	}
 	for (int i = 0; !classic && i < 8 + segment_count * 6; ++i) {
 		put(b, 1, 1);
-		if (version == 11) {
+		if (version == 10 || version == 11) {
 			for (const auto high : { 0x3ff00000, 0x3fe00000, 0 }) {
 				put(b, 0, 4);
 				put(b, high, 4);
@@ -107,7 +107,7 @@ Bytes fixture(int version = 15, int segment_flags = 0, int segment_count = 1, in
 		}
 	}
 	// Texture colors switch from double to integer components after level 15
-	for (int i = 0; !classic && i < 910; ++i) {
+	for (int i = 0; !classic && version != 10 && i < 910; ++i) {
 		put(b, 1, 1);
 		if (version <= 15) {
 			put(b, 0, 4);
@@ -275,6 +275,39 @@ void early_colored_wall_contract()
 	      "Early XL color tables did not preserve their double components");
 	patch(bytes, source.game_offset + 2, 32, 2);
 	rejects([&] { xl_compat::inspect_level(bytes); });
+}
+
+void legacy_color_boundary_contract()
+{
+	auto bytes = fixture(10, 0, 1, 10);
+	const auto mine = xl_compat::inspect_level(bytes).mine_offset;
+	const auto first_segment = mine + 5 + 8 * 12;
+	bytes.at(first_segment) = 2;
+	const auto probe = xl_compat::prepare_source_runtime_probe(bytes, false, true);
+	const auto &level = probe.source;
+	const std::array<double, 3> ambient{ 1, 0.5, 0 };
+	check(level.vertex_colors.size() == 8 && level.side_colors.size() == 6 && level.texture_colors.empty() &&
+	          level.vertex_colors[0].rgb == ambient && level.side_colors[5].rgb == ambient,
+	      "The legacy mine did not preserve both complete double color tables");
+	check(level.segments[0].owner == 2 && level.segments[0].function == 10 &&
+	          !xl_compat::segment_is_skybox(level, level.segments[0]),
+	      "The legacy team room lost its authored ownership or identity");
+	std::uint32_t stock_game = 0;
+	for (unsigned byte = 0; byte < 4; ++byte) stock_game |= std::uint32_t(probe.stock_level.at(12 + byte)) << (8 * byte);
+	check(probe.stock_level.at(stock_game - 8) == 0, "An early team room created a native station");
+	rejects([&] { xl_compat::prepare_gameplay_probe(fixture(10, 0, 1, 2)); });
+	auto wrong_version = bytes;
+	patch(wrong_version, 4, 11);
+	rejects([&] { xl_compat::inspect_level(wrong_version); });
+	for (const int size_change : { -1, 1 }) {
+		auto wrong_extent = bytes;
+		const auto boundary = level.game_offset;
+		if (size_change < 0) wrong_extent.erase(wrong_extent.begin() + boundary - 1);
+		else wrong_extent.insert(wrong_extent.begin() + boundary, 0);
+		patch(wrong_extent, 12, boundary + size_change);
+		patch(wrong_extent, boundary + size_change + 71, wrong_extent.size());
+		rejects([&] { xl_compat::inspect_level(wrong_extent); });
+	}
 }
 
 void legacy_game35_contract()
@@ -1791,6 +1824,7 @@ int main(int argc, char **argv)
 		object_capacity_contract();
 		wide_wall_contract();
 		early_colored_wall_contract();
+		legacy_color_boundary_contract();
 		legacy_game35_contract();
 		wall_key_contract();
 		trigger_capacity_contract();
