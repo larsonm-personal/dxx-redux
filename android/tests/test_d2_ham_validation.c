@@ -227,6 +227,13 @@ int main(int argc, char **argv)
 	put16(joint_hxm, 16 + 296 + 1 * 5 * 4, -1);
 	expect(!d2_ham_validate_xl_hxm(joint_hxm, position, &validation_limits, 66, 1145, 166, &report),
 	       "XL HXM still rejects a malformed active gun group");
+	put32(joint_hxm, 16, validation_limits.max_models + 17);
+	expect(!d2_ham_validate_hxm(joint_hxm, position, &validation_limits, 66, 1145, 166, &report),
+	       "stock HXM rejects a replacement with an unusable model");
+	expect(d2_ham_validate_xl_hxm(joint_hxm, position, &validation_limits, 66, 1145, 166, &report),
+	       "XL level staging can retain a bounded unusable robot slot for dependency validation");
+	expect(!d2_ham_validate_xl_hxm(joint_hxm, position - 1, &validation_limits, 66, 1145, 166, &report),
+	       "an unusable XL robot does not excuse a truncated HXM");
 	{
 		unsigned char xl_extra[512] = { 0 };
 		size_t size = 0;

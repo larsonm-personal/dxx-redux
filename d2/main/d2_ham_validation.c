@@ -427,8 +427,11 @@ static int d2_ham_validate_hxm_internal(const uint8_t *data, size_t size,
 		return 0;
 	for (i = 0; i < count; ++i) {
 		if (!d2_ham_read_i32(&cursor, &index) || index < 0 || index >= robot_count ||
-		    !d2_ham_take(&cursor, D2_HAM_ROBOT_RECORD_SIZE, &record) ||
-		    !d2_ham_read_robot_meta(record, &robot, report, xl_deferred) ||
+		    !d2_ham_take(&cursor, D2_HAM_ROBOT_RECORD_SIZE, &record))
+			return 0;
+		/* XL level dependency checks reject any use of a slot with an unusable model */
+		if (xl_deferred && d2_ham_i32(record) >= limits->max_models) continue;
+		if (!d2_ham_read_robot_meta(record, &robot, report, xl_deferred) ||
 		    !d2_ham_validate_robot_meta(&robot, xl_deferred ? limits->max_models : model_count,
 		                                xl_deferred ? limits->max_joints : joint_count))
 			return 0;

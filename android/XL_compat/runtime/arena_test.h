@@ -601,6 +601,20 @@ static int arena_test(int argc, char **argv)
 				missing_weapon = std::strstr(error.what(), "missing weapon") != nullptr;
 			}
 			require(missing_weapon, "staged robot checked live definition instead of its replacement");
+			auto unusable = original_robot;
+			unusable.model_num = MAX_POLYGON_MODELS + 17;
+			unusable.n_guns = 1;
+			unusable.gun_submodels[0] = 21;
+			write_robot(unusable);
+			require(xl_level_supported("rtarena.rl2", 0), "unreferenced unusable HXM slot blocked the level");
+			bool unusable_model = false;
+			try {
+				XlPreparedResources prepared("rtarena.rl2");
+				prepared.dependencies().robot(0);
+			} catch (const std::exception &error) {
+				unusable_model = std::strstr(error.what(), "unusable model") != nullptr;
+			}
+			require(unusable_model, "reachable unusable HXM slot borrowed the stock robot");
 			require(!std::memcmp(&Robot_info[0], &original_robot, sizeof(original_robot)), "robot preflight changed live definition");
 			require(PHYSFS_removeFromSearchPath(resource_shadow.string().c_str()), "cannot unmount staged robot control");
 			require(std::filesystem::remove(path), "cannot remove staged robot control");
