@@ -506,7 +506,7 @@ foreach ($scenario in @('chooser', 'already_open', 'missing_second_observation')
         $observed = @{ Xml = '' }
         function Send-MpCommand {
             param($Serial, $Command, $Extras)
-            if ($Command -cne 'tap_button' -or $Extras[-1] -cne "'Select Game Files or Archive to Import'") { throw 'Initial chooser request changed' }
+            if ($Command -cne 'tap_button' -or $Extras[-1] -cne "'Import files'") { throw 'Initial chooser request changed' }
             $events.Add('request')
         }
         function Adb {

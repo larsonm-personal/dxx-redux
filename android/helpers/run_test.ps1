@@ -21,6 +21,7 @@ param(
     [switch]$Install,
     [switch]$LeaveRunning,
     [switch]$PreserveState,
+    [switch]$PreserveScriptIntrospection,
     [switch]$NoEmulatorRecovery,
     [int]$TimeoutSeconds = 300,
     [ValidateSet("d1", "d2")]
@@ -455,12 +456,14 @@ try {
                     Write-Host $failedState
                 }
             }
-            $failedGameState = Get-GameIntrospection -Serial $Serial -Fresh
-            if ($failedGameState) {
-                Write-Status "--- fresh game introspection at failure ---" "Yellow"
-                Write-Host ($failedGameState | ConvertTo-Json -Depth 10 -Compress)
-            } else {
-                Write-Status "Fresh game introspection unavailable at failure" "Yellow"
+            if (-not $PreserveScriptIntrospection) {
+                $failedGameState = Get-GameIntrospection -Serial $Serial -Fresh
+                if ($failedGameState) {
+                    Write-Status "--- fresh game introspection at failure ---" "Yellow"
+                    Write-Host ($failedGameState | ConvertTo-Json -Depth 10 -Compress)
+                } else {
+                    Write-Status "Fresh game introspection unavailable at failure" "Yellow"
+                }
             }
             $allPassed = $false
             if ($gameList.Count -gt 1) { Write-Status "FAIL for $($gameId.ToUpper())" "Red"; continue }
@@ -469,12 +472,14 @@ try {
 
         # -- Step 7: Dump introspection -------------------------------
 
-        Write-Status "Dumping final introspection state..."
-        $intro = Get-GameIntrospection -Serial $Serial -Fresh
-        if ($intro) {
-            Write-Host ($intro | ConvertTo-Json -Depth 10 -Compress)
-        } else {
-            Write-Status "Fresh final game introspection unavailable" "Yellow"
+        if (-not $PreserveScriptIntrospection) {
+            Write-Status "Dumping final introspection state..."
+            $intro = Get-GameIntrospection -Serial $Serial -Fresh
+            if ($intro) {
+                Write-Host ($intro | ConvertTo-Json -Depth 10 -Compress)
+            } else {
+                Write-Status "Fresh final game introspection unavailable" "Yellow"
+            }
         }
 
         if ($gameList.Count -gt 1) {

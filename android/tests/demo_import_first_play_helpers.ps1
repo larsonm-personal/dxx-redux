@@ -294,7 +294,7 @@ function Test-FirstPlayDocumentsUiCancel {
     # One click request only: retrying while the previous MP coroutine scrolls can
     # leave overlapping gestures after the dialog or system picker has opened
     Adb -AdbArgs @('logcat', '-c') | Out-Null
-    Send-MpCommand -Serial $Serial -Command 'tap_button' -Extras @('--es', 'text', "'Select Game Files or Archive to Import'")
+    Send-MpCommand -Serial $Serial -Command 'tap_button' -Extras @('--es', 'text', "'Import files'")
     $dump = '/sdcard/first-play-picker.xml'
     # The Compose chooser owns a separate window; observe the actual focused UI
     # rather than the MP helper's covered activity root (test_mac_extract_saf pattern)
@@ -692,8 +692,10 @@ function Invoke-FirstPlayPhase {
     $pwsh = Get-RegressionCurrentPwshPath
     $phaseTimeout = if ($Phase -like 'interruption_*') { 120 } else { 180 }
     # No Params or edition override: only these exact reviewed repository scripts bypass data recovery seeding
+    # The launcher return leaves no running game to replace the script's native snapshot.
     & $pwsh -NoProfile -NonInteractive -File "$PSScriptRoot/../helpers/run_test.ps1" `
-        -ScriptName $name -Serial $Serial -PreserveState -LeaveRunning -TimeoutSeconds $phaseTimeout 2>&1 |
+        -ScriptName $name -Serial $Serial -PreserveState -LeaveRunning -PreserveScriptIntrospection `
+        -TimeoutSeconds $phaseTimeout 2>&1 |
         Tee-Object -FilePath (Join-Path $phaseOutput 'runner.log') | Out-Host
     $exitCode = $LASTEXITCODE
     foreach ($file in @('automation_result.json', 'automation_log.jsonl', 'introspect.json', 'setup_introspect.json')) {
