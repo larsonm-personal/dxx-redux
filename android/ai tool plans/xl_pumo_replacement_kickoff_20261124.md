@@ -6,7 +6,9 @@ Work in `C:/local/dxx-redux`. Read `AGENTS.md`,
 `android/ai tool plans/xl_pumo_next_tranche_20261124.md`. Fetch the personal
 fork, inspect the checkout, worktrees, open PRs and stack #746 before edits.
 Reserve time for live play and exact-head CI. Prior PRs through #763 merged
-into `cmake` before the Alien Frontier branch was created.
+into `cmake` before the Alien Frontier branch was created. New PRs #764 and
+#765 form successor stack #766 because #746's deleted top branch cannot be
+used as the base of a new layer.
 
 Ordinary Pumo kit 32333 remains on the SM-G996U, Android 15. The user was
 unavailable for manual testing on November 24. When available, start with
@@ -51,7 +53,7 @@ preserve device display and stay-awake settings. Keep private game inputs,
 screenshots, profiles, saves and raw logs local. Use hosted Linux CI for
 routine cross-platform work. Commit and push locally tested layers to
 `larsonm-personal/dxx-redux` only, open ready-for-review PRs with the
-immediate predecessor as base, and register them in stack #746. Confirm the
+immediate predecessor as base, and extend stack #766. Confirm the
 predecessor's public replay admission before a dependent PR. Verify each
 exact head's CI and actual test execution, inspect admission logs for skips,
 fix material failures, retain retry evidence and leave PRs open for review.

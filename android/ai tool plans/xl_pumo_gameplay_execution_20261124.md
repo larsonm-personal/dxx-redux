@@ -353,6 +353,15 @@ based on its immediate predecessor in [stack #746](https://github.com/larsonm-pe
 All through #763 have since merged into `cmake`; the current Alien Frontier
 layer begins a new review branch on that tip.
 
+The new source layer is [#764](https://github.com/larsonm-personal/dxx-redux/pull/764)
+against `cmake`; this dated report and handoff is
+[#765](https://github.com/larsonm-personal/dxx-redux/pull/765) against #764's
+branch. Both are ready for review in
+[stack #766](https://github.com/larsonm-personal/dxx-redux/stack/766).
+Appending #764 to the fully merged #746 stack failed because its deleted
+top branch could not serve as #764's base. The new stack keeps the required
+predecessor order without resurrecting a merged branch.
+
 | Layer                                           | Fork PR                                                        | Verified head                              | Passed | Skipped |
 | ----------------------------------------------- | -------------------------------------------------------------- | ------------------------------------------ | -----: | ------: |
 | Pumo resource and audio wait                    | [#751](https://github.com/larsonm-personal/dxx-redux/pull/751) | `86534a4e8081b81f9d5d2f0da9a084ee771085d6` |     34 |       9 |
