@@ -33,6 +33,43 @@ The fixed camera, scripted inputs and checkpoint starts establish those
 specific actions. The original human touch approach and shot are still open.
 [Ordinary S21 recipe and results](../XL_compat/evidence/pumo-s21-ordinary-32333-20261124.json)
 
+Later on November 24, the ordinary 32333 app was operated with on-screen touch
+controls on the same S21. A separate `codex24` pilot imported the original
+archive and addons. A prior fixed-view room 129 save was loaded into an unused
+manual slot and quicksaved before firing. The Concussion shot at the bright
+white octagonal wall panel consumed one missile, showed a close blast, and
+left the app open. Right joystick steering visibly shifted the panel. The
+launcher restored the saved approach with six missiles; after an idle death
+and another fresh load, the immediate repeated touch shot again consumed one
+missile and steering responded. Shields fell to 49 from the close blast. This
+restored pose and chosen aim do not reproduce the reporter's manual route or
+identify the reporter's missile and aim. The original issue save was untouched.
+
+With **Show progress bars** on and **Mission zip** selected, a one-second-frame
+S21 recording puts Rookie selection to the first hub briefing at about 9–10
+seconds on 32333. **CHECKING LEVEL RESOURCES AND GRAPHICS** and **PREPARING
+FIRST PAGE** appeared; the gold bar moved and disappeared as the page beginning
+**WELCOME TO PUMO MINES, AND THANKS A LOT FOR CHOOSING TO PLAY THIS SINGLE
+PLAYER CAMPAIGN** appeared. Direct selection of level 2 later captured a green
+page beginning **TAKING ADVANTAGE OF THE LATEST TOP OF THE LINE TECH** and
+reached Crauphel flight after **SKIP**. A separate direct level-2 start then
+advanced every story page and timed dismissal of the final **CRAUPHEL SCILAB;
+INFESTATION: LOW** page to flight at about 5–6 seconds on 32333. The gold bar
+moved through **LOADING LEVEL**, **VERIFYING MISSION ARCHIVE** and resource
+identifiers, then disappeared on the cockpit. This direct start did not measure
+the hub score-to-Crauphel briefing interval. A separate ordinary-app S21 run
+restored the codex24 hub save in manual slot 0. Touch flight reached blue
+forcefield segment 127 without exiting. A declared `face_view` assist then
+placed the pilot at original hub segment 44 side 2; scripted ordinary laser
+and thrust reached **Level 1 Complete / Temporal Hub Destroyed**, score 600.
+ADB touch advanced the score screen. The first Crauphel story page began
+**OUR STORY BEGINS IN FAR AWAY PLACE IN OUR GALAXY** about 8.4-8.6 seconds
+later in the S21 video. **CHECKING LEVEL RESOURCES AND GRAPHICS** changed to
+**PREPARING FIRST PAGE** over a moving gold bar, which disappeared on the
+page. This is an ordinary 32333 app timing with assisted setup and scripted
+navigation, distinct from a continuous manual flight from the hub spawn.
+[Touch shot and loading receipt](../XL_compat/evidence/pumo-s21-touch-32333-20261124.json)
+
 Earlier protected S21 runs verified that the native loading bar stayed visible
 during level music startup with **Show progress bars** enabled. The ordinary
 32325 recording showed moving bars across all four observed transitions and
@@ -250,6 +287,105 @@ remainder is 73, including 37 with observed starts in the original. The flag
 layer has a 16-case comparison, and the Prophecy snapshot is the latest full
 census. [Later targeted result](../XL_compat/evidence/gameplay-pmanic-d2-segment-flags-20261124.json)
 
+## Alien Frontier light layout, later November 24 session
+
+The personal fork was fetched again. The local `cmake` tip was
+`2fe3b82ab`; all prior stack PRs through #763 had merged, and there were no
+open fork PRs. The #763 public headed replay admission and Linux tests passed
+on its final head. The new branch starts from that `cmake` tip. Workspace
+cleanup was previewed and run through `android/clean-workspace.ps1` with the
+active runs and authentic assets excluded, restoring more than 50 GiB free.
+
+The pinned Alien Frontier HOG was unchanged. Its fifteen 15/34 members have
+676 light indices. Fourteen members divide their delta tables exactly once
+when the third record byte is read as the count; the fifteenth, Alarlof,
+has a valid packed table and fails the separate-byte test. Redux requires
+valid faces, nonzero bounded ranges, exact coverage and no overlaps before
+using the alternate interpretation. It continues to reject malformed
+tables that fail those conditions.
+
+Pinned D2X-XL with read-only light-index logging started all fifteen
+unchanged ordinals at Hotshot for 120 unassisted frames. It did not reject
+the live out-of-range source during those idle starts. Pre-fix Redux with
+the same unchanged HOG started only ordinal 6; a diagnostic reencoding of
+608 index rows admitted the other fourteen in that older runtime. A separate
+bounds-checked original action copy kept
+lighting method 0 and dispatched ordinal 9 light-off trigger 18 from
+segment 691, side 2. It changed face lighting, but the packed source at
+segment 692, side 1 declared 5,696 deltas from offset 2,991 in a 3,860
+entry table; only 869 fit. The five targeted packed sources declared
+18,944 entries and the bounded audit applied 2,798. The complete byte-count
+diagnostic applied all 592 declared deltas and also changed face lighting.
+No unbounded original traversal was attempted.
+
+Redux loaded and ticked all fifteen advertised ordinals at the same Hotshot
+input, 120 frames, 60 Hz and seed 1. The native original-data check loaded
+ordinal 9 with 57 sources and 3,860 deltas, then trigger 18 darkened the
+five source masks and trigger 16 restored them. No new blocker appeared
+within those 120 frames; full authored traversal remains unmeasured.
+The Android diagnostic version 32530 loaded the same unchanged ordinal 9
+member as a derived single-level mission and captured its opening chamber
+on emulator-5588. The matching local D2X-XL windowed capture shows the same
+central rock, side panels and lower blue object. This is presentation at
+spawn, not a gameplay parity claim. The images and raw runs stay local.
+[Byte-count audit and bounded action receipt](../XL_compat/evidence/gameplay-alien-frontier-byte-count-20261124.json).
+
+The focused source comparator, inventory contract and native 15/34 runtime
+checks passed 3/3 after formatting. The Windows D2 build and the isolated
+Android diagnostic APK built. The rebuilt Windows engine
+`5c8bc1e6000e80397c9bbb111ccf646e269422d28721bdc44910ebd95e7d75bf`
+at runtime source commit `b52ad2429` completed the fixed 1,654-case census:
+**1,070/1,111 pinned** and **525/543 local**, for **1,595/1,654**. All prior
+passing cases still pass. The fifteen gains are fourteen pinned Alien
+Frontier ordinals and local Pyromaniac-D2. The 59 remaining include 23 with
+observed starts in the pinned original. The local 543-case run kept the same
+frozen catalog hash and case order but reset its extraction cache after each
+archive to keep C: above the workspace target. The interrupted first attempt
+and cleanup preview remain local; the completed per-archive receipts make the
+final aggregate auditable.
+[Complete census and remaining register](../XL_compat/evidence/gameplay-census-alien-frontier-20261124.json).
+
+| Tracked first blocker after the full rerun  | Cases out of 59 |
+| ------------------------------------------ | ----------------------: |
+| Advertised level file missing              |                      34 |
+| Robot fire killed the idle pilot           |                       4 |
+| Fluid behavior                             |                       4 |
+| Non-hexahedral geometry                    |                       4 |
+| Unsupported level format                   |                       3 |
+| Custom base definitions                    |                       2 |
+| Robot definitions                          |                       2 |
+| Waypoint controllers                       |                       2 |
+| Lightning effects                          |                       2 |
+| Robot generator capacity                   |                       1 |
+| Timeout                                    |                       1 |
+
+The 59 comprise 31 original mission rejections, three empty advertised-member
+lookups, 23 observed original starts and two original simulations not verified.
+
+The first #764 Linux script run failed because its private-policy fixture still
+expected the old 15/34 rejection. The fixture now requires the byte-count
+observation and rejects missing or malformed evidence; all 56 private-policy
+tests passed locally and in hosted Linux on the corrected source. Earlier
+trusted controller runs refused to publish after the candidate head moved;
+their provenance failures are retained. The final source head `a5f6ac5e2`
+passed the trusted exact-head result: 113 required tests, 16 format witnesses,
+three modern source comparisons, 8/8 sampled levels and 64/64 expanded
+levels. The manually dispatched exact-head XL contract workflow also passed.
+The non-tip automatic public replay checks skipped as designed after #765
+opened. A manual public workflow on `a5f6ac5e2` completed admission, save
+integrity and 34/34 native headed replay runs. Its report labels full
+simulation qualification incomplete; this is the established public replay
+scope. [Exact-head public replay](https://github.com/larsonm-personal/dxx-redux/actions/runs/45480690713),
+[trusted XL result](https://github.com/larsonm-personal/dxx-redux/actions/runs/45480343935),
+[manual XL contracts](https://github.com/larsonm-personal/dxx-redux/actions/runs/45480773466).
+
+The S21 ordinary 32333 kit remains installed on the SM-G996U with Android 15.
+The user is not available to perform manual testing now. The original Rookie
+touch missile, aim landmark and saved-approach repeat therefore remain open,
+as do the three human-visible loading intervals. Earlier fixed-camera and
+scripted results above retain their distinct scope. The original issue save
+was not touched in this session.
+
 The Redux readiness harness starts at Hotshot. The first reference runs
 inherited their runner's Rookie default. All 15 were repeated at Hotshot
 with no steering or firing and reached
@@ -276,8 +412,19 @@ captures in all 15. The two engine harnesses record their own clocks.
 
 ## Fork review stack
 
-The ready-for-review PRs target `larsonm-personal/dxx-redux`, each based on
-its immediate predecessor, and remain open in [stack #746](https://github.com/larsonm-personal/dxx-redux/stack/746).
+The prior ready-for-review PRs targeted `larsonm-personal/dxx-redux`, each
+based on its immediate predecessor in [stack #746](https://github.com/larsonm-personal/dxx-redux/stack/746).
+All through #763 have since merged into `cmake`; the current Alien Frontier
+layer begins a new review branch on that tip.
+
+The new source layer is [#764](https://github.com/larsonm-personal/dxx-redux/pull/764)
+against `cmake`; this dated report and handoff is
+[#765](https://github.com/larsonm-personal/dxx-redux/pull/765) against #764's
+branch. Both are ready for review in
+[stack #766](https://github.com/larsonm-personal/dxx-redux/stack/766).
+Appending #764 to the fully merged #746 stack failed because its deleted
+top branch could not serve as #764's base. The new stack keeps the required
+predecessor order without resurrecting a merged branch.
 
 | Layer                                           | Fork PR                                                        | Verified head                              | Passed | Skipped |
 | ----------------------------------------------- | -------------------------------------------------------------- | ------------------------------------------ | -----: | ------: |
