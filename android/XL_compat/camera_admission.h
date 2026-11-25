@@ -5,7 +5,7 @@ namespace xl_compat
 {
 inline bool qualified_camera_layout(const Inventory &level)
 {
-	return modern_runtime_layout(level) || (level.level_version == 18 && level.game_version == 36);
+	return legacy_game35_layout(level) || modern_runtime_layout(level) || (level.level_version == 18 && level.game_version == 36);
 }
 
 inline bool qualified_camera_object(const Object &object)

@@ -276,6 +276,23 @@ void early_colored_wall_contract()
 	rejects([&] { xl_compat::inspect_level(bytes); });
 }
 
+void legacy_game35_contract()
+{
+	const auto game36 = fixture(17, 0xfc, 1, 14);
+	const auto inspected = xl_compat::inspect_level(game36);
+	rejects([&] { xl_compat::prepare_gameplay_probe(game36); });
+	auto game35 = game36;
+	patch(game35, inspected.game_offset + 2, 35, 2);
+	game35.resize(game35.size() - 2); // Game 35 has no empty sparse object-reference count
+	const auto probe = xl_compat::prepare_gameplay_probe(game35);
+	const auto &segment = probe.source.segments.at(0);
+	check(xl_compat::segment_is_skybox(probe.source, segment) && segment.function == 14 && segment.flags == 0xfc,
+	      "Legacy skybox function or reserved flags were lost");
+	std::uint32_t shadow_game = 0;
+	for (unsigned byte = 0; byte < 4; ++byte) shadow_game |= std::uint32_t(probe.stock_level.at(12 + byte)) << (8 * byte);
+	check(probe.stock_level.at(shadow_game - 8) == 0, "Legacy skybox created a classic station");
+}
+
 void wall_key_contract()
 {
 	unsigned count = 0;
@@ -1768,6 +1785,7 @@ int main(int argc, char **argv)
 		object_capacity_contract();
 		wide_wall_contract();
 		early_colored_wall_contract();
+		legacy_game35_contract();
 		wall_key_contract();
 		trigger_capacity_contract();
 		if (argc == 3 && std::string(argv[1]) == "--object-fixtures") {
