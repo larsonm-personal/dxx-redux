@@ -165,14 +165,28 @@ void draw_multi_particle_quads(ParticleTexture &smoke, ParticleTexture &bubble, 
 
 void ParticleTexture::draw_soft_sprite(const ParticleQuad &quad, bool soft)
 {
+	auto mapped = quad;
+	draw_additive_sprites(&mapped, 1, soft, false);
+}
+
+void ParticleTexture::draw_wall_glare(ParticleQuad *quads, std::size_t count)
+{
+	draw_additive_sprites(quads, count, true, true);
+}
+
+void ParticleTexture::draw_additive_sprites(ParticleQuad *quads, std::size_t count, bool soft, bool wall_glare)
+{
 #if defined(OGLES) && !defined(ANDROID)
 	throw std::runtime_error("XL soft sprites require OpenGL 3 or OpenGL ES 3");
 #else
-	if (quad.blend != ParticleBlend::additive) throw std::runtime_error("XL powerup corona requires additive blending");
+	if (!count) return;
 	ParticleSoftRestore restore;
-	auto mapped = quad;
-	for (auto &vertex : mapped.vertices)
-		for (float &coordinate : vertex.uv) coordinate = coordinate * .25f + .25f;
+	for (std::size_t i = 0; i < count; ++i) {
+		auto &quad = quads[i];
+		if (quad.blend != ParticleBlend::additive) throw std::runtime_error("XL corona requires additive blending");
+		for (auto &vertex : quad.vertices)
+			for (float &coordinate : vertex.uv) coordinate = coordinate * .25f + .25f;
+	}
 	const auto image = border_handle();
 	if (soft) {
 		// Source LoadShader can fail independently of loading the optional glare
@@ -188,10 +202,10 @@ void ParticleTexture::draw_soft_sprite(const ParticleQuad &quad, bool soft)
 			soft = false;
 		}
 	}
-	if (soft) draw_soft_particles(image, &mapped, 1);
+	if (soft) draw_soft_particles(image, quads, count, wall_glare);
 	else {
 		particle_program(0);
-		draw_particle_texture(image, &mapped, 1);
+		draw_particle_texture(image, quads, count);
 	}
 #endif
 }

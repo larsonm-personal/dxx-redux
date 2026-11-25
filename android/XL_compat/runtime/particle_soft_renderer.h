@@ -141,7 +141,7 @@ void prepare_particle_soft()
 
 #include "particle_depth_probe.h"
 
-void draw_soft_particles(GLuint image, const xl_compat::ParticleQuad *quads, std::size_t count)
+void draw_soft_particles(GLuint image, const xl_compat::ParticleQuad *quads, std::size_t count, bool wall_glare = false)
 {
 	ParticleSoftRestore restore;
 	prepare_particle_soft();
@@ -196,8 +196,9 @@ void draw_soft_particles(GLuint image, const xl_compat::ParticleQuad *quads, std
 			for (unsigned vertex : { 0u, 1u, 2u, 0u, 2u, 3u }) triangles.push_back(quads[i].vertices[vertex]);
 			++i;
 		}
-		glUniform1i(glGetUniformLocation(particle_soft.program, "blendMode"), smoke ? -1 : alpha ? 0
-		                                                                                         : 2);
+		glUniform1i(glGetUniformLocation(particle_soft.program, "blendMode"), wall_glare ? 3 : smoke ? -1
+		                                                                                   : alpha   ? 0
+		                                                                                             : 2);
 		glBlendFunc(smoke ? GL_DST_COLOR : alpha ? GL_SRC_ALPHA
 		                                         : GL_ONE,
 		            smoke ? GL_ZERO : alpha  ? GL_ONE_MINUS_SRC_ALPHA

@@ -37,6 +37,9 @@ extern "C" {
 #include "named_audio.h"
 #include "ambient_objects.h"
 #include "particle_objects.h"
+#include "particle_renderer.h"
+#include "particle_resources.h"
+#include "../particle_render.h"
 #include "lightning_objects.h"
 #include "skybox_collision.h"
 #include "skybox_render.h"
@@ -78,6 +81,7 @@ extern "C" {
 #include "target_sources.h"
 #include "../static_explosion.h"
 extern "C" {
+#include "3d.h"
 #include "mission_prepare.h"
 #include "inferno.h"
 #include "segment.h"
@@ -153,6 +157,7 @@ bool water_test_profile = false;
 bool classic_light_test_profile = false;
 uint64_t vertex_calls = 0;
 uint64_t corona_draws = 0;
+uint64_t corona_textured_draws = 0;
 uint64_t water_draws = 0, water_depth_failures = 0;
 uint64_t corona_depth_failures = 0;
 uint64_t corona_classic_requested_draws = 0;
@@ -953,6 +958,7 @@ extern "C" void xl_preview_clear_mission(void)
 #endif
 	vertex_calls = 0;
 	corona_draws = 0;
+	corona_textured_draws = 0;
 	water_draws = water_depth_failures = 0;
 	corona_depth_failures = 0;
 	corona_classic_requested_draws = 0;
@@ -1944,9 +1950,65 @@ extern "C" int xl_preview_corona_geometry(int segment_number, int side_number, c
 	return 1;
 }
 
+static std::optional<xl_compat::ParticleQuad> wall_glare_quad(int segment_number, int side_number, const xl_texture_emitter &emitter)
+{
+	using Point = std::array<float, 3>;
+	const auto view_point = [](const vms_vector &world) -> Point {
+		g3s_point view{};
+		g3_rotate_point(&view, &world);
+		return { float(view.p3_vec.x) / 65536.f, float(view.p3_vec.y) / 65536.f, float(view.p3_vec.z) / 65536.f };
+	};
+	const auto dot = [](const Point &a, const Point &b) { return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]; };
+	const auto length = [&](const Point &point) { return std::sqrt(dot(point, point)); };
+	const auto scale = [](const Point &point, float factor) -> Point { return { point[0] * factor, point[1] * factor, point[2] * factor }; };
+	int vertices[4];
+	get_side_verts(vertices, segment_number, side_number);
+	std::array<Point, 4> corners{};
+	for (unsigned i = 0; i < corners.size(); ++i) corners[i] = view_point(Vertices[vertices[i]]);
+	vms_vector center_world{};
+	compute_center_point_on_side(&center_world, &Segments[segment_number], side_number);
+	const auto center = view_point(center_world);
+	Point u{}, v{};
+	for (unsigned axis = 0; axis < 3; ++axis) {
+		u[axis] = (corners[1][axis] + corners[2][axis] - corners[0][axis] - corners[3][axis]) * .25f;
+		v[axis] = (corners[0][axis] + corners[1][axis] - corners[2][axis] - corners[3][axis]) * .25f;
+	}
+	Point normal{ v[1] * u[2] - v[2] * u[1], v[2] * u[0] - v[0] * u[2], v[0] * u[1] - v[1] * u[0] };
+	const float u_length = length(u), v_length = length(v), normal_length = length(normal), center_length = length(center);
+	if (!(u_length > 0 && v_length > 0 && normal_length > 0 && center_length > 0)) return {};
+	const auto eye = scale(center, -1.f / center_length);
+	normal = scale(normal, (dot(eye, normal) >= 0 ? 1.f : -1.f) / normal_length);
+	const float shorter_axis = (std::min) (u_length, v_length);
+	// Widen the face-aligned glare using its two axes and the view direction
+	const auto expand = [&](Point axis, float extent) {
+		const float along_normal = -shorter_axis * dot(eye, axis) / extent;
+		for (unsigned i = 0; i < 3; ++i) axis[i] += normal[i] * along_normal;
+		const float along_eye = dot(eye, axis);
+		for (unsigned i = 0; i < 3; ++i) axis[i] = 1.8f * (axis[i] + eye[i] * along_eye);
+		return axis;
+	};
+	u = expand(u, u_length);
+	v = expand(v, v_length);
+	const float intensity = .5f * emitter.intensity * std::sqrt((std::max) (0.f, dot(eye, normal)));
+	constexpr std::array<std::array<float, 2>, 4> uv{ { { 0, 0 }, { 1, 0 }, { 1, 1 }, { 0, 1 } } };
+	xl_compat::ParticleQuad quad{};
+	quad.blend = xl_compat::ParticleBlend::additive;
+	for (unsigned i = 0; i < quad.vertices.size(); ++i) {
+		auto &vertex = quad.vertices[i];
+		for (unsigned axis = 0; axis < 3; ++axis)
+			vertex.position[axis] = center[axis] + (1 - 2 * uv[i][1]) * u[axis] + (1 - 2 * uv[i][0]) * v[axis];
+		vertex.position[2] = -vertex.position[2];
+		vertex.uv = uv[i];
+		vertex.color = { emitter.rgb[0] * intensity, emitter.rgb[1] * intensity, emitter.rgb[2] * intensity, 1 };
+	}
+	return quad;
+}
+
 extern "C" void xl_preview_render_emitters(const short *segments, int count, const int32_t eye[3], int eye_segment)
 {
 	if (!PlayerCfg.XlWallLightGlow || (!source && !xl_prepared_classic_lighting()) || Game_mode & GM_MULTI) return;
+	const auto *glare = xl_prepared_powerup_glare_image();
+	std::vector<xl_compat::ParticleQuad> quads;
 	for (int i = 0; i < count; ++i) {
 		for (int side = 0; side < 6; ++side) {
 			xl_texture_emitter emitter{};
@@ -1955,14 +2017,35 @@ extern "C" void xl_preview_render_emitters(const short *segments, int count, con
 			float facing;
 			if (!xl_preview_corona_geometry(segments[i], side, eye, eye_segment, center, &radius, &facing)) continue;
 			ogl_record_xl_corona_depth();
+			if (glare && glare->texture) {
+				if (auto quad = wall_glare_quad(segments[i], side, emitter)) {
+					quads.push_back(*quad);
+					continue;
+				}
+			}
 			corona_draws += ogl_draw_xl_corona(center, radius, emitter.rgb, emitter.intensity * facing * 0.5f);
 		}
 	}
+	if (quads.empty()) return;
+	xl_particle_soft_begin_scene();
+	try {
+		glare->texture->draw_wall_glare(quads.data(), quads.size());
+		corona_textured_draws += quads.size();
+		corona_draws += quads.size();
+	} catch (const std::runtime_error &error) {
+		con_printf(CON_URGENT, "XL textured wall glare: %s", error.what());
+	}
+	xl_particle_soft_end_scene();
 }
 
 extern "C" uint64_t xl_preview_corona_draws(void)
 {
 	return corona_draws;
+}
+
+extern "C" uint64_t xl_preview_corona_textured_draws(void)
+{
+	return corona_textured_draws;
 }
 
 extern "C" void xl_preview_record_corona_depth(int enabled, int classic_requested)
