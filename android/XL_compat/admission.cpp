@@ -133,8 +133,16 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 	const bool colored_walls = early_colored_wall_layout(level) || modern_runtime_layout(level) || (level.level_version == 18 && level.game_version == 36);
 	const bool legacy_repair_centers = legacy_team_room_layout(level) || (level.level_version == 19 && level.game_version == 40);
 	const bool source_geometry = explicit_geometry && has_explicit_geometry(level) && qualified_explicit_geometry(level);
+	bool waypoints_admitted = false;
+	try {
+		(void) prepare_lightning_waypoints(level);
+		waypoints_admitted = true;
+	} catch (const std::exception &error) {
+		result.push_back({ "waypoint controllers", -1, error.what() });
+	}
 	for (const auto &issue : level.unsupported) {
 		if (source_geometry && geometry_issue(issue)) continue;
+		if (waypoints_admitted && issue.feature == "waypoint_controllers") continue;
 		if (classic_effect && issue.feature != "effect_lightning" && issue.feature != "effect_particles" &&
 		    issue.feature != "effect_object_types" && issue.feature != "additive_wall_rendering") {
 			result.push_back(issue);
@@ -200,6 +208,7 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 					result.push_back({ "skybox colored boundary", int(segment), "untextured fog boundary on side " + std::to_string(side) + " requires source draw-state qualification" });
 	for (unsigned index = 0; index < level.objects.size(); ++index) {
 		const auto &object = level.objects[index];
+		if (waypoints_admitted && authored_waypoint_shape(object)) continue;
 		if (disabled_retyped_particle(level, object)) continue;
 		if (classic_effect && (object.type == 18 || object.type == 19 || object.type == 20) && !classic_effect_shape(object)) {
 			result.push_back({ "effect_object_types", int(index), "classic 7/31 requires source-owned lightning or smoke" });

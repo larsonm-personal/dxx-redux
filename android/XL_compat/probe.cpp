@@ -267,7 +267,10 @@ static GameplayProbe prepare_probe(const Bytes &original, bool water_segments, i
 			patch(out, offset + 1, (trigger.flags | 4) & (trigger.flags & 128 ? ~8 : ~0), 1);
 		}
 	}
-	const auto owned_effect = [&](const Object &object) { return ambient_sound_shape(object) || authored_particle_shape(object) || authored_lightning_shape(object) || disabled_retyped_particle(v, object); };
+	const auto owned_effect = [&](const Object &object) {
+		return ambient_sound_shape(object) || authored_particle_shape(object) || authored_lightning_shape(object) ||
+		       authored_waypoint_shape(object) || disabled_retyped_particle(v, object);
+	};
 	const bool owned_objects = std::any_of(v.objects.begin(), v.objects.end(), owned_effect);
 	if (v.game_version > 37 || owned_objects) {
 		// Stock uses explicit section offsets. Retain the original game payload as
@@ -283,7 +286,8 @@ static GameplayProbe prepare_probe(const Bytes &original, bool water_segments, i
 			out.insert(out.end(), source.begin() + object.source_offset + (v.game_version > 37 ? 7 : 6), source.begin() + end);
 			if (owned_effect(object)) {
 				patch(out, start + 1, object.reader_id, 1);
-				patch(out, start + 4, 0, 1); // Effect payload and enable state remain source-owned
+				if (authored_waypoint_shape(object)) patch(out, start + 2, 0, 1); // Source owns the movement controller
+				patch(out, start + 4, 0, 1);                                      // Effect payload and enable state remain source-owned
 			}
 			if (object.reader_type == 0 && object.type == 255 &&
 			    (object.segment < 0 || std::size_t(object.segment) >= v.segments.size())) {

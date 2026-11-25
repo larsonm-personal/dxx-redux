@@ -624,7 +624,7 @@ static Inventory read_level_inventory(const Bytes &bytes, bool allow_classic)
 		for (const auto &entry : std::array<std::pair<int, const char *>, 4>{ { { 8, "effect_thrusters" }, { 11, "effect_particles" }, { 12, "effect_lightning" }, { 13, "effect_sounds" } } })
 			if (effect_renders[entry.first]) issue(out.unsupported, entry.second, -1, std::to_string(effect_renders[entry.first]) + " decoded payloads; runtime behavior unimplemented");
 		if (static_objects) issue(out.unsupported, "static_movement", -1, std::to_string(static_objects) + " static objects; reference reader warns, runtime behavior unimplemented");
-		if (waypoints) issue(out.unsupported, "waypoint_controllers", -1, std::to_string(waypoints) + " decoded controllers; runtime behavior unimplemented");
+		if (waypoints) issue(out.unsupported, "waypoint_controllers", -1, std::to_string(waypoints) + " decoded controllers require a qualified movement profile");
 	}
 	const auto &reactor = section(out, "reactor");
 	require(reactor.count <= 1, "multiple reactor trigger records");

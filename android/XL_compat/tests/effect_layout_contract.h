@@ -104,11 +104,67 @@ static void classic_effect_translation(bool smoke)
 	rejects([&] { xl_compat::prepare_source_runtime_probe(bytes); });
 }
 
+static void paired_waypoint_translation(int version)
+{
+	using namespace xl_compat;
+	auto bytes = fixture(version);
+	const auto base = inspect_level(bytes);
+	patch(bytes, base.game_offset + 35, static_cast<unsigned>(bytes.size()));
+	patch(bytes, base.game_offset + 39, 6);
+	patch(bytes, base.game_offset + 43, 264);
+	for (int index = 0; index < 6; ++index) {
+		const int pair = index % 2;
+		Bytes row(80);
+		row[0] = 20;
+		row[1] = index < 2 ? 1 : 3;
+		row[2] = index < 2 ? 0 : 17;
+		row[4] = index < 2 ? 12 : 0;
+		patch(row, 9, (index >= 4 ? (pair + 1) * 3 : 0) * 65536);
+		patch(row, 13, pair * 8 * 65536);
+		for (int i = 0; i < 9; ++i) patch(row, 21 + 4 * i, i % 4 == 0 ? 65536 : 0);
+		if (index < 2) {
+			for (int field : { 60000, 0, 0, 8, 0, 10 * (pair + 1) }) put(row, field, 4);
+			for (int field : { 1, pair + 1, 2 - pair, 50, 0, 3 }) put(row, field, 2);
+			for (int field : { 6, 0, 255, 0, 0, 0, 0, 0, 0, 255, 200, 0, 200, 1 }) put(row, field, 1);
+		} else {
+			const int root = 10 * (pair + 1);
+			for (int field : { root + (index >= 4), root + (index < 4), index < 4 ? 40 : 0 }) put(row, field, 4);
+		}
+		bytes.insert(bytes.end(), row.begin(), row.end());
+	}
+	const auto translated = prepare_source_runtime_probe(bytes);
+	const auto route = prepare_lightning_waypoints(translated.source);
+	check(route.nodes.size() == 4 && route.owners.size() == 2 && route.owners.at(0).partner == 1, "Paired XL waypoint identities changed");
+	const auto read_offset = [&](std::size_t at) {
+		unsigned value = 0;
+		for (unsigned i = 0; i < 4; ++i) value |= unsigned(translated.stock_level.at(at + i)) << (i * 8);
+		return value;
+	};
+	const auto objects = read_offset(read_offset(12) + 35);
+	for (int index = 0; index < 6; ++index) {
+		const auto row = objects + 79 * index;
+		check(translated.stock_level.at(row) == 20 && translated.stock_level.at(row + 1) == (index < 2 ? 1 : 3) &&
+		          !translated.stock_level.at(row + 2) && !translated.stock_level.at(row + 4),
+		      "XL waypoint translation changed object slot or retained native control");
+	}
+	auto malformed = translated.source;
+	malformed.objects[3].control_data[1] = 999;
+	rejects([&] { (void) prepare_lightning_waypoints(malformed); });
+	malformed = translated.source;
+	malformed.objects[1].render_data[8] = 0;
+	rejects([&] { (void) prepare_lightning_waypoints(malformed); });
+	malformed = translated.source;
+	malformed.objects[4].position = malformed.objects[2].position;
+	rejects([&] { (void) prepare_lightning_waypoints(malformed); });
+}
+
 void effect_layout_contract(const char *directory = nullptr)
 {
 	if (directory) std::filesystem::create_directories(directory);
 	classic_effect_translation(false);
 	classic_effect_translation(true);
+	paired_waypoint_translation(23);
+	paired_waypoint_translation(26);
 	// Header widths and legacy function semantics are independent in these releases.
 	for (int version : { 18, 19 }) {
 		const auto bytes = fixture(version);
