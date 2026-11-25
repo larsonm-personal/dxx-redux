@@ -2,11 +2,22 @@
 
 ## November 24 ordinary phone kit
 
-The ordinary kit is still on the SM-G996U with Android 15. Manual play is
-paused because the user is not testing at the moment. No human touch-shot or
-three-transition timing result was collected in the later November 24
-session. The existing fixed-view and scripted checks below are the last
-observations; the original issue save remains untouched.
+The ordinary kit is still on the SM-G996U with Android 15. The user is not
+testing at the moment. A separate `codex24` pilot used on-screen touch controls
+to fire Concussion at a white octagonal panel from a restored fixed-view room
+129 pose, then reloaded its own quicksave and repeated the shot. Both shots
+consumed one missile, steering responded and the app stayed open. The second
+close blast reduced shields to 49. The original issue save remains untouched;
+the reporter's manual approach and exact missile aim still need confirmation.
+[Touch receipt](evidence/pumo-s21-touch-32333-20261124.json).
+
+On 32333, Rookie selection to the first hub briefing took about 9–10 seconds
+in a one-second-frame S21 recording. **CHECKING LEVEL RESOURCES AND GRAPHICS**
+changed to **PREPARING FIRST PAGE**; the gold bar moved and then disappeared.
+Directly selecting level 2 captured a green page beginning **TAKING ADVANTAGE
+OF THE LATEST TOP OF THE LINE TECH**. It did not traverse the hub score screen.
+The hub score-to-Crauphel briefing and final briefing dismissal-to-flight
+timings remain open.
 
 Use [ordinary 32333 and its checked manifest](../../temp/xl-pumo-phone-s21-20261124-32333/README.md)
 for the next manual session. The kit installs `com.dxxredux.app` alongside

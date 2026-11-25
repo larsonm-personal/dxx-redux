@@ -11,20 +11,29 @@ into `cmake` before the Alien Frontier branch was created. New PRs #764 and
 used as the base of a new layer.
 
 Ordinary Pumo kit 32333 remains on the SM-G996U, Android 15. The user was
-unavailable for manual testing on November 24. When available, start with
-Rookie touch in Crauphel Scilab, Mineral Valley level 2 near room 129. Save
-the approach to a separate slot, fire the reported missile toward the same
-landmark, check steering and any exit, load the approach and repeat. Preserve
-the original issue save. Record phone, Android and kit versions, difficulty,
-input, episode, checkpoint, last successful action, missile, aim, save/load
-result and any hard-to-read briefing page's first words or image. Treat the
-previous fixed-camera and scripted checks as separate observations.
+unavailable for manual testing on November 24. An operator used on-screen
+touch controls from a separately restored fixed-view room 129 save on pilot
+`codex24`: Concussion struck a white octagonal wall panel, consumed one
+missile, and steering responded. The launcher reloaded the saved approach,
+and an immediate repeat again consumed one missile with steering intact and
+no app exit. The close blast reduced shields. This does not establish the
+reporter's own approach or exact aim. When available, ask for that Rookie
+touch shot and same-save repeat in Crauphel Scilab, Mineral Valley level 2.
+Preserve the original issue save. Record phone, Android and kit versions,
+difficulty, input, episode, checkpoint, last successful action, missile, aim,
+save/load result and any hard-to-read briefing page's first words or image.
+Keep the restored-pose touch run, fixed-camera checks and scripted navigation
+separate. [Touch receipt](../XL_compat/evidence/pumo-s21-touch-32333-20261124.json)
 
-Leave **Show progress bars** and **Mission zip** enabled. Time difficulty
-selection to the first briefing, hub score advance to the Crauphel briefing,
-and final briefing dismissal to flight. Keep the app version, visible label,
-bar motion or disappearance and duration with each interval. Do not infer
-these human-visible results from native phase timers.
+Leave **Show progress bars** and **Mission zip** enabled. On 32333, Rookie
+selection to the first hub briefing took about 9–10 seconds in a one-second
+frame S21 recording. **CHECKING LEVEL RESOURCES AND GRAPHICS** and
+**PREPARING FIRST PAGE** were visible; the gold bar moved and then disappeared.
+Still time hub score advance to the Crauphel briefing and final briefing
+dismissal to flight. Keep the app version, visible label, bar motion or
+disappearance and duration with each interval. Direct level-2 selection and
+**SKIP** are separate observations. Do not infer human-visible results from
+native phase timers.
 
 The Alien Frontier 15/34 cluster is now admitted by a complete byte-count
 partition rule: Redux started all fifteen advertised ordinals at Hotshot for

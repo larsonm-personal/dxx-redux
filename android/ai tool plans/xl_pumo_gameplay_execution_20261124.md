@@ -33,6 +33,29 @@ The fixed camera, scripted inputs and checkpoint starts establish those
 specific actions. The original human touch approach and shot are still open.
 [Ordinary S21 recipe and results](../XL_compat/evidence/pumo-s21-ordinary-32333-20261124.json)
 
+Later on November 24, the ordinary 32333 app was operated with on-screen touch
+controls on the same S21. A separate `codex24` pilot imported the original
+archive and addons. A prior fixed-view room 129 save was loaded into an unused
+manual slot and quicksaved before firing. The Concussion shot at the bright
+white octagonal wall panel consumed one missile, showed a close blast, and
+left the app open. Right joystick steering visibly shifted the panel. The
+launcher restored the saved approach with six missiles; after an idle death
+and another fresh load, the immediate repeated touch shot again consumed one
+missile and steering responded. Shields fell to 49 from the close blast. This
+restored pose and chosen aim do not reproduce the reporter's manual route or
+identify the reporter's missile and aim. The original issue save was untouched.
+
+With **Show progress bars** on and **Mission zip** selected, a one-second-frame
+S21 recording puts Rookie selection to the first hub briefing at about 9–10
+seconds on 32333. **CHECKING LEVEL RESOURCES AND GRAPHICS** and **PREPARING
+FIRST PAGE** appeared; the gold bar moved and disappeared as the page beginning
+**WELCOME TO PUMO MINES, AND THANKS A LOT FOR CHOOSING TO PLAY THIS SINGLE
+PLAYER CAMPAIGN** appeared. Direct selection of level 2 later captured a green
+page beginning **TAKING ADVANTAGE OF THE LATEST TOP OF THE LINE TECH** and
+reached Crauphel flight after **SKIP**. The hub score-to-Crauphel briefing and
+final-page dismissal-to-flight intervals were not measured by that route.
+[Touch shot and loading receipt](../XL_compat/evidence/pumo-s21-touch-32333-20261124.json)
+
 Earlier protected S21 runs verified that the native loading bar stayed visible
 during level music startup with **Show progress bars** enabled. The ordinary
 32325 recording showed moving bars across all four observed transitions and
