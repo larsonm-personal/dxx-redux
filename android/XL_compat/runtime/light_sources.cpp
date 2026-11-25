@@ -85,6 +85,7 @@ bool destructible_texture(int texture)
 bool textured_face(int segment, int side)
 {
 	const auto &seg = Segments[segment];
+	if (seg.sides[side].type == SIDE_HAS_NO_FACE) return false;
 	const auto wall_index = seg.sides[side].wall_num;
 	if (wall_index < 0 || wall_index >= Num_walls) return seg.children[side] == -1;
 	const auto &wall = Walls[wall_index];
@@ -105,13 +106,16 @@ std::vector<int> classic_lighting_face_vertices(int segment)
 	if (!geometry_lighting_available() || segment < 0 || segment > Highest_segment_index)
 		throw std::runtime_error("Invalid classic lighting mesh segment");
 	std::vector<int> vertices;
-	for (int side = 0; side < 6; ++side)
-		if (textured_face(segment, side))
-			for (int corner = 0; corner < 4; ++corner) {
-				const int vertex = Segments[segment].verts[Side_to_verts_int[side][corner]];
-				if (vertex < 0 || vertex > Highest_vertex_index) throw std::runtime_error("Invalid classic mesh face vertex");
-				vertices.push_back(vertex);
-			}
+	for (int side = 0; side < 6; ++side) {
+		if (!textured_face(segment, side)) continue;
+		int corners[4];
+		const int count = get_side_verts(corners, segment, side);
+		for (int corner = 0; corner < count; ++corner) {
+			const int vertex = corners[corner];
+			if (vertex < 0 || vertex > Highest_vertex_index) throw std::runtime_error("Invalid classic mesh face vertex");
+			vertices.push_back(vertex);
+		}
+	}
 	std::sort(vertices.begin(), vertices.end());
 	vertices.erase(std::unique(vertices.begin(), vertices.end()), vertices.end());
 	return vertices;
@@ -131,9 +135,9 @@ std::vector<GeometryLightDistance> classic_nearest_vertex_lights(int vertex,
 		if (source.segment < 0 || source.segment > Highest_segment_index || source.side < 0 || source.side >= 6 ||
 		    visibility[source.segment].size() != static_cast<std::size_t>(Highest_vertex_index) + 1)
 			throw std::runtime_error("Invalid classic nearest-light source or visibility row");
-		bool own_vertex = false;
-		for (int corner = 0; corner < 4; ++corner)
-			if (Segments[source.segment].verts[Side_to_verts_int[source.side][corner]] == vertex) own_vertex = true;
+		int vertices[4];
+		const int count = get_side_verts(vertices, source.segment, source.side);
+		const bool own_vertex = std::find(vertices, vertices + count, vertex) != vertices + count;
 		const bool visible = visibility[source.segment][vertex];
 		if (!own_vertex && !visible) continue;
 		const auto distance = geometry_vertex_candidate(own_vertex ? 0 : geometry_fixed_distance(point, source.geometry.center), source.radius, own_vertex, visible);
@@ -228,8 +232,7 @@ ClassicAmbientLighting::ClassicAmbientLighting(const std::vector<ClassicGeometry
 		Source source;
 		source.light = light;
 		source.segment_radius = radii.at(light.segment);
-		for (int corner = 0; corner < 4; ++corner)
-			source.vertices[corner] = Segments[light.segment].verts[Side_to_verts_int[light.side][corner]];
+		get_side_verts(source.vertices.data(), light.segment, light.side);
 		sources_.push_back(source);
 	}
 }

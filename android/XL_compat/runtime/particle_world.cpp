@@ -12,12 +12,21 @@ ParticleSide compile_particle_side(int segment, int side, const ClassicLightingS
 {
 	const auto &native = Segments[segment];
 	ParticleSide compiled;
-	compiled.faces = 2;
 	compiled.child = native.children[side];
+	if (geometry.face.corner_count < 3) return compiled;
 	compiled.normals = geometry.fixed_normals;
+	int vertices[4];
+	get_side_verts(vertices, segment, side);
+	if (geometry.face.corner_count == 3) {
+		compiled.faces = 1;
+		const auto &anchor = Vertices[(std::min) ({ vertices[0], vertices[1], vertices[2] })];
+		compiled.anchor = { anchor.x, anchor.y, anchor.z };
+		return compiled;
+	}
+	compiled.faces = 2;
 	std::array<int, 6> triangles;
 	for (unsigned face = 0; face < 2; ++face)
-		for (unsigned corner = 0; corner < 3; ++corner) triangles[face * 3 + corner] = native.verts[classic_side_corners[side][geometry.face.triangles[face][corner]]];
+		for (unsigned corner = 0; corner < 3; ++corner) triangles[face * 3 + corner] = vertices[geometry.face.triangles[face][corner]];
 	const int anchor = std::min(triangles[0], triangles[2]), opposite = std::min(triangles[1], triangles[4]);
 	const auto &a = Vertices[anchor], &b = Vertices[opposite];
 	compiled.anchor = { a.x, a.y, a.z };
@@ -39,7 +48,7 @@ ParticleWorld compile_particle_world(const Inventory &source)
 	for (std::size_t index = 0; index < result.segments.size(); ++index) {
 		const auto &native = Segments[index];
 		for (unsigned vertex = 0; vertex < 8; ++vertex)
-			if (source.segments[index].vertices[vertex] != native.verts[vertex])
+			if (source.segments[index].vertices[vertex] < 0xfff8 && source.segments[index].vertices[vertex] != native.verts[vertex])
 				throw std::runtime_error("XL particle world connectivity does not match the loaded mine");
 		auto &segment = result.segments[index];
 		segment.bounds = { ParticlePoint{ INT32_MAX, INT32_MAX, INT32_MAX }, ParticlePoint{ INT32_MIN, INT32_MIN, INT32_MIN } };
@@ -50,15 +59,14 @@ ParticleWorld compile_particle_world(const Inventory &source)
 		for (unsigned side = 0; side < 6; ++side) {
 			if (source.segments[index].children[side] != native.children[side])
 				throw std::runtime_error("XL particle world portals do not match the loaded mine");
-			if (source.segments[index].sides[side].corners != classic_side_corners[side])
-				throw std::runtime_error("XL particle world requires supported classic side topology");
 			const auto geometry = compile_classic_lighting_side(int(index), int(side));
 			segment.center = geometry.segment_center;
 			auto &compiled = segment.sides[side];
 			compiled = compile_particle_side(int(index), int(side), geometry);
+			if (!compiled.faces) continue;
 			std::int64_t distance = 0;
 			unsigned inside = 0;
-			for (unsigned face = 0; face < 2; ++face) {
+			for (unsigned face = 0; face < compiled.faces; ++face) {
 				const int projection = particle_plane_distance(segment.center, compiled, face);
 				if (projection >= -ParticleWorld::plane_tolerance) {
 					distance += projection;
@@ -68,7 +76,8 @@ ParticleWorld compile_particle_world(const Inventory &source)
 			if (inside == 2) distance /= 2;
 			segment.inner_radius = std::min(segment.inner_radius, particle_detail::signed_checked(distance));
 		}
-		for (const auto id : Segments[index].verts) {
+		for (const auto id : source.segments[index].vertices) {
+			if (id >= 0xfff8) continue;
 			if (id < 0 || id > Highest_vertex_index) throw std::runtime_error("Invalid XL particle-world vertex");
 			const auto &v = Vertices[id];
 			const ParticlePoint vertex{ v.x, v.y, v.z };

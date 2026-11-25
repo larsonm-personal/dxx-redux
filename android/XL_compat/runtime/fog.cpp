@@ -34,7 +34,7 @@ extern "C" int xl_fog_boundary_points(int segment, int side, int near_cap, int32
 	const auto boundary = xl_compat::fog_boundary(*source, segment, side, near_cap != 0);
 	if (!boundary.type) return 0;
 	int vertices[4];
-	get_side_verts(vertices, boundary.segment, boundary.side);
+	if (get_side_verts(vertices, boundary.segment, boundary.side) < 3) return 0;
 	const auto &face = Segments[boundary.segment].sides[boundary.side];
 	for (int i = 0; i < 4; ++i) {
 		const auto &point = Vertices[vertices[(i + (face.type == SIDE_IS_TRI_13 ? 1 : 0)) % 4]];

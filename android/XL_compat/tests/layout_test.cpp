@@ -309,7 +309,7 @@ void write_runtime_fixture(const std::filesystem::path &path, const std::filesys
 	xl_compat::Bytes output{ 'D', 'H', 'F' }, reader{ 'D', 'H', 'F' };
 	std::filesystem::create_directories(directory);
 	std::ofstream descriptor(directory / "rtlayout.mn2", std::ios::binary);
-	const auto level_count = versions.size() * (damage ? 5 : 1) + 4;
+	const auto level_count = versions.size() * (damage ? 5 : 1) + 5;
 	descriptor << "d2x-name = Derived XL layouts\nnum_levels = " << level_count << '\n';
 	for (int version : versions) descriptor << "rt" << version << ".rl2\n";
 	descriptor << "fg27.rl2\nbadprop.rl2\nbadside.rl2\nbadcorn.rl2\n";
@@ -317,6 +317,7 @@ void write_runtime_fixture(const std::filesystem::path &path, const std::filesys
 		for (int version : versions) {
 			for (const char *variant : { "dr", "ds", "dm", "dz" }) descriptor << variant << version << ".rl2\n";
 		}
+	descriptor << "rot27.rl2\n";
 	for (int version : versions) {
 		auto fixture = version <= 23 ? xl_test::RuntimeLayoutFixture{ base, {}, {}, {}, 0 } : xl_test::runtime_layout_fixture(base, version);
 		if (version >= 25) {
@@ -382,6 +383,8 @@ void write_runtime_fixture(const std::filesystem::path &path, const std::filesys
 			changed = fixture.bytes;
 			const auto corners = fixture.corners[0][0];
 			std::rotate(changed.begin() + corners, changed.begin() + corners + 1, changed.begin() + corners + 4);
+			xl_test::hog_member(output, "rot27.rl2", changed, false);
+			changed.at(corners) = changed.at(corners + 1);
 			xl_test::hog_member(output, "badside.rl2", changed, false);
 			changed.at(corners) = 8;
 			xl_test::hog_member(output, "badcorn.rl2", changed, false);

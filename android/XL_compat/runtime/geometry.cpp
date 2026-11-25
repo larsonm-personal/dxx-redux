@@ -7,6 +7,7 @@ extern "C" {
 #include "vecmat.h"
 #include "segment.h"
 #include "gameseg.h"
+#include "preview.h"
 }
 
 namespace xl_compat
@@ -70,13 +71,52 @@ ClassicLightingSide compile_classic_lighting_side(int segment_index, int side_in
 	ClassicLightingSide result{};
 	std::array<FixedLightPoint, 4> fixed_corners;
 	std::array<std::uint16_t, 4> ids;
+	int vertices[4];
+	result.face.corner_count = get_side_verts(vertices, segment_index, side_index);
 	for (unsigned i = 0; i < 4; ++i) {
-		const auto id = segment.verts[Side_to_verts_int[side_index][i]];
+		const auto id = vertices[i];
 		if (id < 0 || id >= 0xffff || id > Highest_vertex_index) throw std::runtime_error("Invalid classic lighting vertex");
 		ids[i] = static_cast<std::uint16_t>(id);
 		const auto &v = Vertices[id];
 		fixed_corners[i] = { v.x, v.y, v.z };
 		result.face.corners[i] = { v.x / 65536.0f, v.y / 65536.0f, v.z / 65536.0f };
+	}
+	LightPoint sum{};
+	unsigned count = 0;
+	const unsigned slots = xl_level_geometry_vertex_mask(segment_index);
+	for (unsigned slot = 0; slot < 8; ++slot) {
+		if (!(slots & (1u << slot))) continue;
+		const int id = segment.verts[slot];
+		if (id < 0 || id > Highest_vertex_index) throw std::runtime_error("Invalid classic segment vertex");
+		const auto &v = Vertices[id];
+		sum[0] += v.x / 65536.0f;
+		sum[1] += v.y / 65536.0f;
+		sum[2] += v.z / 65536.0f;
+		++count;
+	}
+	for (unsigned axis = 0; axis < 3; ++axis)
+		result.segment_center[axis] = static_cast<std::int32_t>(sum[axis] / float(count) * 65536.0f);
+	if (result.face.corner_count < 3) {
+		result.face.triangle_count = 0;
+		return result;
+	}
+	if (result.face.corner_count == 3) {
+		result.face.triangle_count = 1;
+		vms_vector normal;
+#ifdef COMPACT_SEGS
+		get_side_normal(&Segments[segment_index], side_index, 0, &normal);
+#else
+		normal = segment.sides[side_index].normals[0];
+#endif
+		result.fixed_normals.fill({ normal.x, normal.y, normal.z });
+		result.average_normal = { normal.x / 65536.0f, normal.y / 65536.0f, normal.z / 65536.0f };
+		result.face.normals.fill(result.average_normal);
+		result.face.triangles = { { { 0, 1, 2 }, { 0, 1, 2 } } };
+		for (unsigned axis = 0; axis < 3; ++axis)
+			result.center[axis] = static_cast<std::int32_t>((result.face.corners[0][axis] + result.face.corners[1][axis] + result.face.corners[2][axis]) / 3.0f * 65536.0f);
+		for (int i = 0; i < 3; ++i)
+			result.outer_radius = (std::max) (result.outer_radius, geometry_fixed_distance(result.center, fixed_corners[i]));
+		return result;
 	}
 	const bool solid = segment.children[side_index] < 0;
 	if (solid) {
@@ -113,19 +153,10 @@ ClassicLightingSide compile_classic_lighting_side(int segment_index, int side_in
 	}
 	result.center = geometry_side_center(result.face.corners, result.fixed_normals, fixed_corners[0]);
 	for (const auto &corner : fixed_corners) result.outer_radius = (std::max) (result.outer_radius, geometry_fixed_distance(result.center, corner));
-	LightPoint sum{};
-	for (const auto id : segment.verts) {
-		if (id < 0 || id > Highest_vertex_index) throw std::runtime_error("Invalid classic segment vertex");
-		const auto &v = Vertices[id];
-		sum[0] += v.x / 65536.0f;
-		sum[1] += v.y / 65536.0f;
-		sum[2] += v.z / 65536.0f;
-	}
 	FixedLightPoint direction;
 	LightPoint float_direction;
 	float squared = 0;
 	for (unsigned axis = 0; axis < 3; ++axis) {
-		result.segment_center[axis] = static_cast<std::int32_t>(sum[axis] / 8.0f * 65536.0f);
 		const auto delta = std::int64_t(result.segment_center[axis]) - result.center[axis];
 		if (delta < (std::numeric_limits<std::int32_t>::min)() || delta > (std::numeric_limits<std::int32_t>::max)()) throw std::runtime_error("XL center direction exceeds fixed-point range");
 		direction[axis] = static_cast<std::int32_t>(delta);
@@ -147,8 +178,11 @@ std::int32_t classic_segment_average_radius(int segment)
 	std::int32_t inner = (std::numeric_limits<std::int32_t>::max)(), outer = 0;
 	for (int side = 0; side < 6; ++side) {
 		const auto geometry = compile_classic_lighting_side(segment, side);
+		if (geometry.face.corner_count < 3) continue;
+		int vertices[4];
+		get_side_verts(vertices, segment, side);
 		const int a = geometry.split_13 ? 3 : 0, b = geometry.split_13 ? 1 : 2;
-		const int anchor = (std::min) (Segments[segment].verts[Side_to_verts_int[side][a]], Segments[segment].verts[Side_to_verts_int[side][b]]);
+		const int anchor = geometry.face.corner_count == 3 ? (std::min) ({ vertices[0], vertices[1], vertices[2] }) : (std::min) (vertices[a], vertices[b]);
 		if (anchor < 0 || anchor > Highest_vertex_index) throw std::runtime_error("Invalid classic radius anchor");
 		const auto &v = Vertices[anchor];
 		const FixedLightPoint point{ v.x, v.y, v.z };
@@ -189,8 +223,11 @@ std::vector<ClassicVertexNormal> compile_classic_vertex_normals()
 			LightPoint average;
 			for (unsigned axis = 0; axis < 3; ++axis)
 				average[axis] = static_cast<float>((std::int64_t(geometry.fixed_normals[0][axis]) + geometry.fixed_normals[1][axis]) / 2) / 65536.0f;
-			for (int corner = 0; corner < 4; ++corner) {
-				const int vertex = Segments[segment].verts[Side_to_verts_int[side][corner]];
+			if (geometry.face.corner_count < 3) continue;
+			int vertices[4];
+			get_side_verts(vertices, segment, side);
+			for (unsigned corner = 0; corner < geometry.face.corner_count; ++corner) {
+				const int vertex = vertices[corner];
 				if (vertex < 0 || vertex > Highest_vertex_index)
 					throw std::runtime_error("Invalid classic normal vertex");
 				auto &entry = result[vertex];

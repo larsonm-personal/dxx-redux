@@ -35,6 +35,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "byteswap.h"
 #ifdef DXX_XL_RUNTIME
 #include "changing_light.h"
+#include "preview.h"
 #include "skybox_render.h"
 #endif
 #include "mission.h"
@@ -46,19 +47,57 @@ dl_index		Dl_indices[MAX_DL_INDICES];
 delta_light Delta_lights[MAX_DELTA_LIGHTS];
 int	Num_static_lights;
 
+static int side_points(const segment *sp, int sidenum, int *vertices)
+{
+	int i;
+#ifdef DXX_XL_RUNTIME
+	const int *slots = xl_level_geometry_corners(sp - Segments, sidenum);
+	if (slots) {
+		int count = 0;
+		while (count < 4 && slots[count] != 255) {
+			vertices[count] = sp->verts[slots[count]];
+			++count;
+		}
+		for (i = count; i < 4; ++i)
+			vertices[i] = count ? vertices[count - 1] : sp->verts[0];
+		return count;
+	}
+#endif
+	for (i = 0; i < 4; ++i)
+		vertices[i] = sp->verts[Side_to_verts[sidenum][i]];
+	return 4;
+}
+
+static unsigned segment_vertex_mask(const segment *sp)
+{
+#ifdef DXX_XL_RUNTIME
+	return xl_level_geometry_vertex_mask(sp - Segments);
+#else
+	(void)sp;
+	return 0xff;
+#endif
+}
+
 // ------------------------------------------------------------------------------------------
 // Compute the center point of a side of a segment.
 //	The center point is defined to be the average of the 4 points defining the side.
 void compute_center_point_on_side(vms_vector *vp,segment *sp,int side)
 {
-	int			v;
-
+	int v, vertices[4];
+	const int count = side_points(sp, side, vertices);
+	if (!count) {
+		compute_segment_center(vp, sp);
+		return;
+	}
 	vm_vec_zero(vp);
-
-	for (v=0; v<4; v++)
-		vm_vec_add2(vp,&Vertices[sp->verts[Side_to_verts[side][v]]]);
-
-	vm_vec_scale(vp,F1_0/4);
+	for (v = 0; v < count; ++v)
+		vm_vec_add2(vp, &Vertices[vertices[v]]);
+	if (count == 4) vm_vec_scale(vp, F1_0 / 4);
+	else {
+		vp->x /= count;
+		vp->y /= count;
+		vp->z /= count;
+	}
 }
 
 // ------------------------------------------------------------------------------------------
@@ -66,14 +105,20 @@ void compute_center_point_on_side(vms_vector *vp,segment *sp,int side)
 //	The center point is defined to be the average of the 8 points defining the segment.
 void compute_segment_center(vms_vector *vp,segment *sp)
 {
-	int			v;
-
+	int v, count = 0;
+	const unsigned mask = segment_vertex_mask(sp);
 	vm_vec_zero(vp);
-
-	for (v=0; v<8; v++)
-		vm_vec_add2(vp,&Vertices[sp->verts[v]]);
-
-	vm_vec_scale(vp,F1_0/8);
+	for (v = 0; v < 8; ++v) {
+		if (!(mask & (1u << v))) continue;
+		vm_vec_add2(vp, &Vertices[sp->verts[v]]);
+		++count;
+	}
+	if (count == 8) vm_vec_scale(vp, F1_0 / 8);
+	else {
+		vp->x /= count;
+		vp->y /= count;
+		vp->z /= count;
+	}
 }
 
 // -----------------------------------------------------------------------------
@@ -101,13 +146,16 @@ int find_connect_side(segment *base_seg, segment *con_seg)
 int get_num_faces(side *sidep)
 {
 	switch (sidep->type) {
-		case SIDE_IS_QUAD:	
+		case SIDE_IS_QUAD:
+		case SIDE_IS_TRIANGLE:
 			return 1;	
 			break;
 		case SIDE_IS_TRI_02:
 		case SIDE_IS_TRI_13:	
 			return 2;	
 			break;
+		case SIDE_HAS_NO_FACE:
+			return 0;
 		default:
 			Error("Illegal type = %i\n", sidep->type);
 			break;
@@ -115,15 +163,15 @@ int get_num_faces(side *sidep)
 	return 0;
 }
 
-// Fill in array with four absolute point numbers for a given side
-void get_side_verts(int *vertlist,int segnum,int sidenum)
+int get_face_vertex_count(const side *sidep)
 {
-	int	i;
-	const sbyte   *sv = Side_to_verts[sidenum];
-	int	*vp = Segments[segnum].verts;
+	if (sidep->type == SIDE_HAS_NO_FACE) return 0;
+	return sidep->type == SIDE_IS_QUAD ? 4 : 3;
+}
 
-	for (i=4; i--;)
-		vertlist[i] = vp[sv[i]];
+int get_side_verts(int *vertlist,int segnum,int sidenum)
+{
+	return side_points(&Segments[segnum], sidenum, vertlist);
 }
 
 
@@ -206,12 +254,16 @@ void create_all_vertnum_lists(int *num_faces, int *vertnums, int segnum, int sid
 	Assert((segnum <= Highest_segment_index) && (segnum >= 0));
 
 	switch (sidep->type) {
+		case SIDE_HAS_NO_FACE:
+			*num_faces = 0;
+			break;
+		case SIDE_IS_TRIANGLE:
 		case SIDE_IS_QUAD:
 
 			vertnums[0] = 0;
 			vertnums[1] = 1;
 			vertnums[2] = 2;
-			vertnums[3] = 3;
+			vertnums[3] = sidep->type == SIDE_IS_TRIANGLE ? 2 : 3;
 
 			*num_faces = 1;
 			break;
@@ -254,32 +306,37 @@ void create_all_vertnum_lists(int *num_faces, int *vertnums, int segnum, int sid
 // like create_all_vertex_lists(), but generate absolute point numbers
 void create_abs_vertex_lists(int *num_faces, int *vertices, int segnum, int sidenum, char *calling_file, int calling_linenum)
 {
-	int	*vp = Segments[segnum].verts;
+	int points[4];
 	side	*sidep = &Segments[segnum].sides[sidenum];
-	const int  *sv = Side_to_verts_int[sidenum];
 
 	Assert((segnum <= Highest_segment_index) && (segnum >= 0));
 	
+	get_side_verts(points, segnum, sidenum);
+
 	switch (sidep->type) {
+		case SIDE_HAS_NO_FACE:
+			*num_faces = 0;
+			break;
+		case SIDE_IS_TRIANGLE:
 		case SIDE_IS_QUAD:
 
-			vertices[0] = vp[sv[0]];
-			vertices[1] = vp[sv[1]];
-			vertices[2] = vp[sv[2]];
-			vertices[3] = vp[sv[3]];
+			vertices[0] = points[0];
+			vertices[1] = points[1];
+			vertices[2] = points[2];
+			vertices[3] = points[3];
 
 			*num_faces = 1;
 			break;
 		case SIDE_IS_TRI_02:
 			*num_faces = 2;
 
-			vertices[0] = vp[sv[0]];
-			vertices[1] = vp[sv[1]];
-			vertices[2] = vp[sv[2]];
+			vertices[0] = points[0];
+			vertices[1] = points[1];
+			vertices[2] = points[2];
 
-			vertices[3] = vp[sv[2]];
-			vertices[4] = vp[sv[3]];
-			vertices[5] = vp[sv[0]];
+			vertices[3] = points[2];
+			vertices[4] = points[3];
+			vertices[5] = points[0];
 
 			//IMPORTANT: DON'T CHANGE THIS CODE WITHOUT CHANGING GET_SEG_MASKS(),
 			//CREATE_ABS_VERTEX_LISTS(), CREATE_ALL_VERTEX_LISTS(), CREATE_ALL_VERTNUM_LISTS()
@@ -287,13 +344,13 @@ void create_abs_vertex_lists(int *num_faces, int *vertices, int segnum, int side
 		case SIDE_IS_TRI_13:
 			*num_faces = 2;
 
-			vertices[0] = vp[sv[3]];
-			vertices[1] = vp[sv[0]];
-			vertices[2] = vp[sv[1]];
+			vertices[0] = points[3];
+			vertices[1] = points[0];
+			vertices[2] = points[1];
 
-			vertices[3] = vp[sv[1]];
-			vertices[4] = vp[sv[2]];
-			vertices[5] = vp[sv[3]];
+			vertices[3] = points[1];
+			vertices[4] = points[2];
+			vertices[5] = points[3];
 
 			//IMPORTANT: DON'T CHANGE THIS CODE WITHOUT CHANGING GET_SEG_MASKS()
 			//CREATE_ABS_VERTEX_LISTS(), CREATE_ALL_VERTEX_LISTS(), CREATE_ALL_VERTNUM_LISTS()
@@ -345,6 +402,10 @@ segmasks get_seg_masks(const vms_vector *checkp, int segnum, fix rad, char *call
 		//then a point is on the back of the side if it is behind BOTH faces,
 		//but if the side pokes in, a point is on the back if behind EITHER face.
 
+		if (!num_faces) {
+			facebit <<= 2;
+			continue;
+		}
 		if (num_faces==2) {
 			fix	dist;
 			int	side_count,center_count;
@@ -493,6 +554,10 @@ static ubyte get_side_dists(const vms_vector *checkp,int segnum,fix *side_dists)
 		//then a point is on the back of the side if it is behind BOTH faces,
 		//but if the side pokes in, a point is on the back if behind EITHER face.
 
+		if (!num_faces) {
+			facebit <<= 2;
+			continue;
+		}
 		if (num_faces==2) {
 			fix	dist;
 			int	center_count;
@@ -650,6 +715,11 @@ int check_segment_connections(void)
 					if (num_faces == 1) {
 						int t;
 
+						if (seg->sides[sidenum].type == SIDE_IS_TRIANGLE || cseg->sides[csidenum].type == SIDE_IS_TRIANGLE) {
+							if (seg->sides[sidenum].type != cseg->sides[csidenum].type) errors = 1;
+							else errors |= check_norms(segnum, sidenum, 0, csegnum, csidenum, 0);
+							continue;
+						}
 						for (t=0;t<4 && con_vertex_list[t]!=vertex_list[0];t++);
 
 						if (t==4 ||
@@ -1317,6 +1387,14 @@ void extract_vector_from_segment(segment *sp, vms_vector *vp, int start, int end
 	int			i;
 	vms_vector	vs,ve;
 
+#ifdef DXX_XL_RUNTIME
+	if (xl_level_geometry_corners(sp - Segments, start)) {
+		compute_center_point_on_side(&vs, sp, start);
+		compute_center_point_on_side(&ve, sp, end);
+		vm_vec_sub(vp, &ve, &vs);
+		return;
+	}
+#endif
 	vm_vec_zero(&vs);
 	vm_vec_zero(&ve);
 
@@ -1518,11 +1596,12 @@ void get_verts_for_normal(int va, int vb, int vc, int vd, int *v0, int *v1, int 
 void add_side_as_2_triangles(segment *sp, int sidenum)
 {
 	vms_vector	norm;
-	const sbyte       *vs = Side_to_verts[sidenum];
+	int points[4];
 	fix			dot;
 	vms_vector	vec_13;		//	vector from vertex 1 to vertex 3
 
 	side	*sidep = &sp->sides[sidenum];
+	side_points(sp, sidenum, points);
 
 	//	Choose how to triangulate.
 	//	If a wall, then
@@ -1530,8 +1609,8 @@ void add_side_as_2_triangles(segment *sp, int sidenum)
 	//		Use Matt's formula: Na . AD > 0, where ABCD are vertices on side, a is face formed by A,B,C, Na is normal from face a.
 	//	If not a wall, then triangulate so whatever is on the other side is triangulated the same (ie, between the same absoluate vertices)
 	if (!IS_CHILD(sp->children[sidenum])) {
-		vm_vec_normal(&norm,  &Vertices[sp->verts[vs[0]]], &Vertices[sp->verts[vs[1]]], &Vertices[sp->verts[vs[2]]]);
-		vm_vec_sub(&vec_13, &Vertices[sp->verts[vs[3]]], &Vertices[sp->verts[vs[1]]]);
+		vm_vec_normal(&norm,  &Vertices[points[0]], &Vertices[points[1]], &Vertices[points[2]]);
+		vm_vec_sub(&vec_13, &Vertices[points[3]], &Vertices[points[1]]);
 		dot = vm_vec_dot(&norm, &vec_13);
 
 		//	Now, signifiy whether to triangulate from 0:2 or 1:3
@@ -1543,14 +1622,14 @@ void add_side_as_2_triangles(segment *sp, int sidenum)
 		#ifndef COMPACT_SEGS
 		//	Now, based on triangulation type, set the normals.
 		if (sidep->type == SIDE_IS_TRI_02) {
-			vm_vec_normal(&norm,  &Vertices[sp->verts[vs[0]]], &Vertices[sp->verts[vs[1]]], &Vertices[sp->verts[vs[2]]]);
+			vm_vec_normal(&norm,  &Vertices[points[0]], &Vertices[points[1]], &Vertices[points[2]]);
 			sidep->normals[0] = norm;
-			vm_vec_normal(&norm, &Vertices[sp->verts[vs[0]]], &Vertices[sp->verts[vs[2]]], &Vertices[sp->verts[vs[3]]]);
+			vm_vec_normal(&norm, &Vertices[points[0]], &Vertices[points[2]], &Vertices[points[3]]);
 			sidep->normals[1] = norm;
 		} else {
-			vm_vec_normal(&norm, &Vertices[sp->verts[vs[0]]], &Vertices[sp->verts[vs[1]]], &Vertices[sp->verts[vs[3]]]);
+			vm_vec_normal(&norm, &Vertices[points[0]], &Vertices[points[1]], &Vertices[points[3]]);
 			sidep->normals[0] = norm;
-			vm_vec_normal(&norm, &Vertices[sp->verts[vs[1]]], &Vertices[sp->verts[vs[2]]], &Vertices[sp->verts[vs[3]]]);
+			vm_vec_normal(&norm, &Vertices[points[1]], &Vertices[points[2]], &Vertices[points[3]]);
 			sidep->normals[1] = norm;
 		}
 		#endif
@@ -1559,7 +1638,7 @@ void add_side_as_2_triangles(segment *sp, int sidenum)
 		int	negate_flag;
 
 		for (i=0; i<4; i++)
-			v[i] = sp->verts[vs[i]];
+			v[i] = points[i];
 
 		get_verts_for_normal(v[0], v[1], v[2], v[3], &vsorted[0], &vsorted[1], &vsorted[2], &vsorted[3], &negate_flag);
 
@@ -1618,10 +1697,27 @@ void create_walls_on_side(segment *sp, int sidenum)
 	vms_vector vn;
 	fix	dist_to_plane;
 
-	v0 = sp->verts[Side_to_verts[sidenum][0]];
-	v1 = sp->verts[Side_to_verts[sidenum][1]];
-	v2 = sp->verts[Side_to_verts[sidenum][2]];
-	v3 = sp->verts[Side_to_verts[sidenum][3]];
+	int points[4];
+	const int corners = side_points(sp, sidenum, points);
+	if (corners < 4) {
+		side *face = &sp->sides[sidenum];
+		face->type = corners == 3 ? SIDE_IS_TRIANGLE : SIDE_HAS_NO_FACE;
+#ifndef COMPACT_SEGS
+		if (corners == 3) {
+			get_verts_for_normal(points[0], points[1], points[2], 0xffff, &vm0, &vm1, &vm2, &vm3, &negate_flag);
+			vm_vec_normal(&face->normals[0], &Vertices[vm0], &Vertices[vm1], &Vertices[vm2]);
+			if (negate_flag) vm_vec_negate(&face->normals[0]);
+		} else
+			vm_vec_zero(&face->normals[0]);
+		face->normals[1] = face->normals[0];
+#endif
+		return;
+	}
+
+	v0 = points[0];
+	v1 = points[1];
+	v2 = points[2];
+	v3 = points[3];
 
 	get_verts_for_normal(v0, v1, v2, v3, &vm0, &vm1, &vm2, &vm3, &negate_flag);
 
@@ -1803,26 +1899,33 @@ void get_side_normals(segment *sp, int sidenum, vms_vector * vm1, vms_vector * v
 void uncached_get_side_normal(segment *sp, int sidenum, int face_num, vms_vector * vm )
 {
 	int	vm0, vm1, vm2, vm3, negate_flag;
-	char	*vs = Side_to_verts[sidenum];
+	int points[4];
+	side_points(sp, sidenum, points);
 
 	switch( sp->sides[sidenum].type )	{
+	case SIDE_HAS_NO_FACE:
+		vm_vec_zero(vm);
+		break;
+	case SIDE_IS_TRIANGLE:
+		vm_vec_normal(vm, &Vertices[points[0]], &Vertices[points[1]], &Vertices[points[2]]);
+		break;
 	case SIDE_IS_QUAD:
-		get_verts_for_normal(sp->verts[vs[0]], sp->verts[vs[1]], sp->verts[vs[2]], sp->verts[vs[3]], &vm0, &vm1, &vm2, &vm3, &negate_flag);
+		get_verts_for_normal(points[0], points[1], points[2], points[3], &vm0, &vm1, &vm2, &vm3, &negate_flag);
 		vm_vec_normal(vm, &Vertices[vm0], &Vertices[vm1], &Vertices[vm2]);
 		if (negate_flag)
 			vm_vec_negate(vm);
 		break;
 	case SIDE_IS_TRI_02:
 		if ( face_num == 0 )
-			vm_vec_normal(vm, &Vertices[sp->verts[vs[0]]], &Vertices[sp->verts[vs[1]]], &Vertices[sp->verts[vs[2]]]);
+			vm_vec_normal(vm, &Vertices[points[0]], &Vertices[points[1]], &Vertices[points[2]]);
 		else
-			vm_vec_normal(vm, &Vertices[sp->verts[vs[0]]], &Vertices[sp->verts[vs[2]]], &Vertices[sp->verts[vs[3]]]);
+			vm_vec_normal(vm, &Vertices[points[0]], &Vertices[points[2]], &Vertices[points[3]]);
 		break;
 	case SIDE_IS_TRI_13:
 		if ( face_num == 0 )
-			vm_vec_normal(vm, &Vertices[sp->verts[vs[0]]], &Vertices[sp->verts[vs[1]]], &Vertices[sp->verts[vs[3]]]);
+			vm_vec_normal(vm, &Vertices[points[0]], &Vertices[points[1]], &Vertices[points[3]]);
 		else
-			vm_vec_normal(vm, &Vertices[sp->verts[vs[1]]], &Vertices[sp->verts[vs[2]]], &Vertices[sp->verts[vs[3]]]);
+			vm_vec_normal(vm, &Vertices[points[1]], &Vertices[points[2]], &Vertices[points[3]]);
 		break;
 	}
 }
@@ -1830,23 +1933,29 @@ void uncached_get_side_normal(segment *sp, int sidenum, int face_num, vms_vector
 void uncached_get_side_normals(segment *sp, int sidenum, vms_vector * vm1, vms_vector * vm2 )
 {
 	int	vvm0, vvm1, vvm2, vvm3, negate_flag;
-	char	*vs = Side_to_verts[sidenum];
+	int points[4];
+	side_points(sp, sidenum, points);
 
 	switch( sp->sides[sidenum].type )	{
+	case SIDE_HAS_NO_FACE:
+	case SIDE_IS_TRIANGLE:
+		uncached_get_side_normal(sp, sidenum, 0, vm1);
+		*vm2 = *vm1;
+		break;
 	case SIDE_IS_QUAD:
-		get_verts_for_normal(sp->verts[vs[0]], sp->verts[vs[1]], sp->verts[vs[2]], sp->verts[vs[3]], &vvm0, &vvm1, &vvm2, &vvm3, &negate_flag);
+		get_verts_for_normal(points[0], points[1], points[2], points[3], &vvm0, &vvm1, &vvm2, &vvm3, &negate_flag);
 		vm_vec_normal(vm1, &Vertices[vvm0], &Vertices[vvm1], &Vertices[vvm2]);
 		if (negate_flag)
 			vm_vec_negate(vm1);
 		*vm2 = *vm1;
 		break;
 	case SIDE_IS_TRI_02:
-		vm_vec_normal(vm1, &Vertices[sp->verts[vs[0]]], &Vertices[sp->verts[vs[1]]], &Vertices[sp->verts[vs[2]]]);
-		vm_vec_normal(vm2, &Vertices[sp->verts[vs[0]]], &Vertices[sp->verts[vs[2]]], &Vertices[sp->verts[vs[3]]]);
+		vm_vec_normal(vm1, &Vertices[points[0]], &Vertices[points[1]], &Vertices[points[2]]);
+		vm_vec_normal(vm2, &Vertices[points[0]], &Vertices[points[2]], &Vertices[points[3]]);
 		break;
 	case SIDE_IS_TRI_13:
-		vm_vec_normal(vm1, &Vertices[sp->verts[vs[0]]], &Vertices[sp->verts[vs[1]]], &Vertices[sp->verts[vs[3]]]);
-		vm_vec_normal(vm2, &Vertices[sp->verts[vs[1]]], &Vertices[sp->verts[vs[2]]], &Vertices[sp->verts[vs[3]]]);
+		vm_vec_normal(vm1, &Vertices[points[0]], &Vertices[points[1]], &Vertices[points[3]]);
+		vm_vec_normal(vm2, &Vertices[points[1]], &Vertices[points[2]], &Vertices[points[3]]);
 		break;
 	}
 }
@@ -1936,7 +2045,13 @@ void pick_random_point_in_seg(vms_vector *new_pos, int segnum)
 
 	compute_segment_center(new_pos, &Segments[segnum]);
 	// SIM RNG: this picks a live placement point inside the segment
-	vnum = (d_rand() * MAX_VERTICES_PER_SEGMENT) >> 15;
+	{
+		const unsigned mask = segment_vertex_mask(&Segments[segnum]);
+		int slots[8], count = 0;
+		for (vnum = 0; vnum < 8; ++vnum)
+			if (mask & (1u << vnum)) slots[count++] = vnum;
+		vnum = slots[(d_rand() * count) >> 15];
+	}
 	vm_vec_sub(&vec2, &Vertices[Segments[segnum].verts[vnum]], new_pos);
 	vm_vec_scale(&vec2, d_rand());          // d_rand() always in 0..1/2
 	vm_vec_add2(new_pos, &vec2);

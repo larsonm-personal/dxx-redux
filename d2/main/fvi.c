@@ -967,14 +967,7 @@ int fvi_sub(vms_vector *intp,int *ints,vms_vector *p0,int startseg,vms_vector *p
 		//for each face we are on the back of, check if intersected
 
 		for (side=0,bit=1;side<6 && endmask>=bit;side++) {
-			int num_faces;
-			num_faces = get_num_faces(&seg->sides[side]);
-
-			if (num_faces == 0)
-				num_faces = 1;
-
-			// commented out by mk on 02/13/94:: if ((num_faces=seg->sides[side].num_faces)==0) num_faces=1;
-
+			const int corners = get_face_vertex_count(&seg->sides[side]);
 			for (face=0;face<2;face++,bit<<=1) {
 
 				if (endmask & bit) {            //on the back of this face
@@ -990,13 +983,13 @@ int fvi_sub(vms_vector *intp,int *ints,vms_vector *p0,int startseg,vms_vector *p
 						face_hit_type = special_check_line_to_face( &hit_point,
 										p0,p1,seg,side,
 										face,
-										((num_faces==1)?4:3),rad);
+										corners,rad);
 					else
 						//NOTE LINK TO ABOVE!!
 						face_hit_type = check_line_to_face( &hit_point,
 										p0,p1,seg,side,
 										face,
-										((num_faces==1)?4:3),rad);
+										corners,rad);
 
 	
 					if (face_hit_type) {            //through this wall/door
@@ -1366,7 +1359,7 @@ int sphere_intersects_wall(vms_vector *pnt,int segnum,fix rad,int *hseg,int *hsi
 					create_abs_vertex_lists(&num_faces, vertex_list, seg - Segments, side, __FILE__, __LINE__);
 
 					face_hit_type = check_sphere_to_face( pnt,&seg->sides[side],
-										face,((num_faces==1)?4:3),rad,vertex_list);
+										face,get_face_vertex_count(&seg->sides[side]),rad,vertex_list);
 
 					if (face_hit_type) {            //through this wall/door
 						int child,i;

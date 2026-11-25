@@ -200,6 +200,11 @@ static int runtime_layout_test(int argc, char **argv)
 				const auto fresh = light_snapshot();
 				trailer = PHYSFS_openRead("rtlayout-state.bin");
 				require(trailer && !xl_wall_trigger_read(trailer) && PHYSFS_close(trailer) && same_light_snapshot(fresh, light_snapshot()), "Foreign fog identity trailer changed live state");
+				require(xl_level_supported("rot27.rl2", 0) && !load_level("rot27.rl2"), "Valid explicit corner rotation failed the normal loader");
+				int vertices[4]{};
+				require(get_side_verts(vertices, 0, 0) == 4, "Rotated quad lost a corner");
+				for (int corner = 0; corner < 4; ++corner)
+					require(vertices[corner] == Segments[0].verts[xl_compat::classic_side_corners[0][(corner + 1) % 4]], "Native face lost authored corner order");
 			}
 			require(load_base_mission("d2", error, sizeof(error)) && !load_level("d2leva-1.rl2") && !xl_level_extensions_active(), "Modern-to-stock transition leaked runtime");
 			int brightness = 0;

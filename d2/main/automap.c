@@ -1215,7 +1215,7 @@ void do_automap()
 	if (automap_wind == NULL)
 	{
 		input_demo_record_input_automap(INPUT_DEMO_AUTOMAP_CLOSE);
-		AUTOMAP_LOGE("automap window creation failed — out of memory");
+		AUTOMAP_LOGE("automap window creation failed â€” out of memory");
 		Warning("Out of memory");
 		d_free(am);
 		return;
@@ -1305,7 +1305,7 @@ void do_automap()
 	if (pcx_error != PCX_ERROR_NONE) {
 		AUTOMAP_LOGE("PCX load FAILED: file=%s error=%d (%s)", MAP_BACKGROUND_FILENAME, pcx_error, pcx_errormsg(pcx_error));
 #ifdef ANDROID
-		/* On Android, don't crash — just show a warning and bail out.
+		/* On Android, don't crash â€” just show a warning and bail out.
 		 * The Error() call would exit() the process, which looks like
 		 * a normal quit (restarts SetupActivity). */
 		Warning("Automap: cannot load %s: %s", MAP_BACKGROUND_FILENAME, pcx_errormsg(pcx_error));
@@ -1328,7 +1328,7 @@ void do_automap()
 	g_active_automap = am;
 	Automap_active = 1;
 	input_demo_record_input_automap(INPUT_DEMO_AUTOMAP_ACTIVE);
-	AUTOMAP_LOGI("do_automap() completed successfully — automap is active");
+	AUTOMAP_LOGI("do_automap() completed successfully â€” automap is active");
 }
 
 void adjust_segment_limit(automap *am, int SegmentLimit)
@@ -1737,15 +1737,14 @@ void add_segment_edges(automap *am, segment *seg)
 				no_fade = 1;
 			}
 
-			get_side_verts(vertex_list,segnum,sn);
-			add_one_edge( am, vertex_list[0], vertex_list[1], color, sn, segnum, hidden_flag, 0, no_fade );
-			add_one_edge( am, vertex_list[1], vertex_list[2], color, sn, segnum, hidden_flag, 0, no_fade );
-			add_one_edge( am, vertex_list[2], vertex_list[3], color, sn, segnum, hidden_flag, 0, no_fade );
-			add_one_edge( am, vertex_list[3], vertex_list[0], color, sn, segnum, hidden_flag, 0, no_fade );
+			const int corners = get_side_verts(vertex_list, segnum, sn);
+			if (corners < 3) continue;
+			for (int corner = 0; corner < corners; ++corner)
+				add_one_edge(am, vertex_list[corner], vertex_list[(corner + 1) % corners], color, sn, segnum, hidden_flag, 0, no_fade);
 
-			if ( is_grate )	{
-				add_one_edge( am, vertex_list[0], vertex_list[2], color, sn, segnum, hidden_flag, 1, no_fade );
-				add_one_edge( am, vertex_list[1], vertex_list[3], color, sn, segnum, hidden_flag, 1, no_fade );
+			if (is_grate && corners == 4) {
+				add_one_edge(am, vertex_list[0], vertex_list[2], color, sn, segnum, hidden_flag, 1, no_fade);
+				add_one_edge(am, vertex_list[1], vertex_list[3], color, sn, segnum, hidden_flag, 1, no_fade);
 			}
 		}
 	}
@@ -1764,12 +1763,10 @@ void add_unknown_segment_edges(automap *am, segment *seg)
 
 		// Only add edges that have no children
 		if (seg->children[sn] == -1) {
-			get_side_verts(vertex_list,segnum,sn);
-	
-			add_one_unknown_edge( am, vertex_list[0], vertex_list[1] );
-			add_one_unknown_edge( am, vertex_list[1], vertex_list[2] );
-			add_one_unknown_edge( am, vertex_list[2], vertex_list[3] );
-			add_one_unknown_edge( am, vertex_list[3], vertex_list[0] );
+			const int corners = get_side_verts(vertex_list, segnum, sn);
+			if (corners < 3) continue;
+			for (int corner = 0; corner < corners; ++corner)
+				add_one_unknown_edge(am, vertex_list[corner], vertex_list[(corner + 1) % corners]);
 		}
 	}
 }

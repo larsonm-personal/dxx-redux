@@ -52,8 +52,10 @@ std::optional<std::array<ClassicLightView, 5>> classic_light_views(int segment, 
 		return static_cast<std::int32_t>(value);
 	};
 	std::array<ClassicLightView, 5> views;
+	int vertices[4];
+	get_side_verts(vertices, segment, side);
 	for (unsigned corner = 0; corner < 4; ++corner) {
-		const auto &vertex = Vertices[Segments[segment].verts[Side_to_verts_int[side][corner]]];
+		const auto &vertex = Vertices[vertices[corner]];
 		auto &view = views[corner];
 		view.position = { vertex.x, vertex.y, vertex.z };
 		FixedLightPoint toward_center;
@@ -167,8 +169,10 @@ std::vector<int> visible_segments(int start, const std::function<GeometryScreenP
 			}
 			auto &portal = prepared[side];
 			portal.child = Segments[segment].children[side];
+			int vertices[4];
+			get_side_verts(vertices, segment, side);
 			for (int corner = 0; corner < 4; ++corner)
-				portal.points[corner] = vertex(Segments[segment].verts[Side_to_verts_int[side][corner]]);
+				portal.points[corner] = vertex(vertices[corner]);
 		}
 		return prepared;
 	};
