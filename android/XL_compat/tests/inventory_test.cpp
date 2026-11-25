@@ -434,6 +434,12 @@ void generator_assignment_contract(const char *directory = nullptr)
 		}
 		const auto parsed = xl_compat::inspect_level(bytes);
 		check(parsed.matcens.size() == 3 && parsed.matcens[0][4] == -1 && parsed.matcens[0][5] == 32767, "authored generator fields normalized during inspection");
+		if (version == 23) {
+			auto oversized = parsed;
+			oversized.matcens.resize(DXX_XL_MAX_ROBOT_CENTERS + 1);
+			check(xl_compat::blocker_message(xl_compat::runtime_blockers(oversized)).find("generator capacity") != std::string::npos,
+			      "XL robot center table exceeded the saved readiness mask");
+		}
 		check(feature_row(xl_compat::compatibility_json("generators.rl2", bytes), "generators").find("\"status\": \"partial\"") != std::string::npos, "bounded matcens incorrectly claim complete generator support");
 		const auto translated = xl_compat::prepare_gameplay_probe(bytes).stock_level;
 		const auto read = [&](std::size_t offset, unsigned width = 4) {
@@ -1449,8 +1455,7 @@ void owned_flicker_contract()
 			if (count) {
 				rows.back()[4] = -1;
 				const auto negative = xl_test::flicker_table(fixture(version), rows);
-				check(xl_compat::blocker_message(xl_compat::runtime_blockers(xl_compat::inspect_level(negative))).find("negative delay") != std::string::npos, "Negative flicker delay lacked useful rejection");
-				rejects([&] { xl_compat::prepare_source_runtime_probe(negative); });
+				check(xl_compat::prepare_source_runtime_probe(negative).source.flicker_lights == rows, "Signed flicker delay was lost in translation");
 				rows.back()[4] = 0;
 				check(xl_compat::runtime_blockers(xl_compat::inspect_level(xl_test::flicker_table(fixture(version), rows))).empty(), "Source-disabled zero-delay flicker rejected");
 				rows.back()[1] = 6;

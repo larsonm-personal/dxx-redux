@@ -210,9 +210,10 @@ extern "C" int xl_wall_trigger_write(rewind_file *file)
 				block["objects"].push_back({ state.owner, state.signature, state.type, state.flags, state.value, state.operated, state.destination });
 			}
 		}
+		const auto ready_mask = xl_robot_generator_ready_mask();
+		if (ready_mask || xl_boss_spawn_count()) block["producer_implicit"] = ready_mask;
 		if (xl_boss_spawn_count()) {
 			block["schema"] = 3;
-			block["producer_implicit"] = xl_robot_generator_ready_mask();
 			block["bosses"] = json::array();
 			for (int i = 0; i < xl_boss_spawn_count(); ++i) {
 				xl_boss_spawn_state state;
@@ -380,10 +381,11 @@ extern "C" int xl_apply_saved_trigger_input(rewind_file *file, xl_saved_trigger_
 		require(xl_boss_restore_robotmakers(), "Cannot rebind saved robotmaker bosses");
 		const bool objects = xl_object_trigger_count() != 0;
 		const bool bosses = xl_boss_spawn_count() != 0;
+		const bool producer = bosses || saved.contains("producer_implicit");
 		const bool equipment = xl_equipment_count() != 0;
 		const bool sparse_morphs = saved.at("schema") == 44;
 		if (sparse_morphs) read_morph_layout(saved.at("morph_slots"), nullptr);
-		require(saved.is_object() && saved.size() == 34u + unsigned(objects) + 3u * unsigned(bosses) + unsigned(equipment) + unsigned(sparse_morphs) && (sparse_morphs || saved.at("schema") == 43) &&
+		require(saved.is_object() && saved.size() == 34u + unsigned(objects) + 2u * unsigned(bosses) + unsigned(producer) + unsigned(equipment) + unsigned(sparse_morphs) && (sparse_morphs || saved.at("schema") == 43) &&
 		            saved.at("source").is_number_unsigned() && saved.at("source").get<std::uint64_t>() == xl_level_trigger_identity() && saved.at("states").is_array() && saved.at("states").size() == static_cast<unsigned>(Num_triggers) && Num_triggers <= MAX_TRIGGERS,
 		        "Invalid XL trigger state layout or authored source identity");
 		require(xl_door_phases_restore(saved.at("door_phases"), false), "Invalid XL side animation phases");
@@ -561,7 +563,7 @@ extern "C" int xl_apply_saved_trigger_input(rewind_file *file, xl_saved_trigger_
 				equipment_states.push_back({ row[0].get<std::int64_t>(), row[1].get<int>(), row[2].get<int>(), row[3].get<int>() });
 			}
 		}
-		if (bosses) {
+		if (producer) {
 			const auto &value = saved.at("producer_implicit");
 			require(value.is_number_unsigned() && value.get<std::uint64_t>() <= UINT32_MAX, "Invalid XL producer implicit selection state");
 			ready_mask = value.get<std::uint32_t>();
@@ -651,7 +653,7 @@ extern "C" int xl_apply_saved_trigger_input(rewind_file *file, xl_saved_trigger_
 		xl_boss_spawn_restore(boss_states.data(), static_cast<int>(boss_states.size()), 1);
 		xl_compat::restore_boss_routes(boss_routes, 1);
 		xl_equipment_restore(equipment_states.data(), static_cast<int>(equipment_states.size()), 1);
-		if (bosses) xl_robot_generator_restore_ready(ready_mask, 1);
+		if (producer) xl_robot_generator_restore_ready(ready_mask, 1);
 		xl_boss_restore_robotmakers_commit();
 		// Continue ordinary saves in the same frame and RNG diagnostic domain
 		FrameTime = frame_time.get<int32_t>();

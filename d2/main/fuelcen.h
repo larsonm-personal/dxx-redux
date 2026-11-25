@@ -24,6 +24,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "object.h"
 
 #include "rewind_file.h"
+#include "../../android/XL_compat/capacity.h"
 
 //------------------------------------------------------------
 // A refueling center is one segment... to identify it in the
@@ -116,9 +117,14 @@ typedef struct FuelCenter {
 } __pack__ FuelCenter;
 
 // The max number of robot centers per mine.
-#define MAX_ROBOT_CENTERS  20
+#ifdef DXX_XL_RUNTIME
+#define MAX_ROBOT_CENTERS DXX_XL_MAX_ROBOT_CENTERS
+#else
+#define MAX_ROBOT_CENTERS DXX_CLASSIC_MAX_ROBOT_CENTERS
+#endif
 
 extern int Num_robot_centers;
+int matcen_level_load_limit(void);
 
 typedef struct  {
 	int     robot_flags[1];    // Up to 32 different robots
@@ -174,7 +180,7 @@ void matcen_info_read(matcen_info *ps, rewind_file *fp);
 /*
  * reads n matcen_info structs from a PHYSFS_file and swaps if specified
  */
-void matcen_info_read_n_swap(matcen_info *mi, int n, int swap, rewind_file *fp);
+int matcen_info_read_n_swap(matcen_info *mi, int n, int swap, rewind_file *fp);
 
 void matcen_info_write(matcen_info *mi, short version, rewind_file *fp);
 

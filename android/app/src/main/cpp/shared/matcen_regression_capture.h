@@ -12,6 +12,7 @@ typedef struct matcen_authored_segment {
 } matcen_authored_segment;
 typedef struct matcen_regression_capture {
 	int generated_count, disk_count, declared_disk_count, trigger_count, complete, overflow;
+	int robot_center_limit;
 	matcen_authored_segment segments[MAX_ROBOT_CENTERS];
 	matcen_info records[MAX_ROBOT_CENTERS];
 	trigger triggers[MAX_TRIGGERS];

@@ -1279,7 +1279,7 @@ int load_game_data(PHYSFS_file *LoadFile)
 
 	//================ READ MATERIALOGRIFIZATIONATORS INFO ===============
 	Matcen_regression_capture.declared_disk_count = Num_robot_centers;
-	if (!level_section_seek(LoadFile, matcens_offset, Num_robot_centers, MAX_ROBOT_CENTERS,
+	if (!level_section_seek(LoadFile, matcens_offset, Num_robot_centers, matcen_level_load_limit(),
 	                        game_top_fileinfo_version < 27 ? LEVEL_MATCEN_V25_SERIALIZED_SIZE : LEVEL_MATCEN_SERIALIZED_SIZE,
 	                        "matcens"))
 		return -1;

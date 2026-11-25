@@ -53,15 +53,15 @@ static void flicker_rejection_and_visibility(const std::filesystem::path &root)
 	for (const auto &member : xl_compat::read_hog(bytes))
 		if (member.name == "neptunxl.rl2") {
 			auto rows = xl_compat::inspect_level(member.bytes).flicker_lights;
-			rows.back()[4] = -1;
-			write_bytes((root / "preview-user" / "negative.rl2").string().c_str(), xl_test::flicker_table(member.bytes, rows));
+			rows.back()[1] = 6;
+			write_bytes((root / "preview-user" / "badflick.rl2").string().c_str(), xl_test::flicker_table(member.bytes, rows));
 		}
 	const auto phase = flicker_snapshot();
 	const auto light = light_snapshot();
-	require(!xl_level_supported("negative.rl2", 0) && std::strstr(xl_level_rejection(), "negative delay") &&
-	            xl_preview_load_level("negative.rl2") != 0 && same_flickers(phase, flicker_snapshot()) && same_light_snapshot(light, light_snapshot()),
-	        "Negative flicker delay changed live state or lacked rejection");
-	require(PHYSFS_delete("negative.rl2") && xl_level_supported("neptunxl.rl2", 0), "Valid flicker source did not recover after rejection");
+	require(!xl_level_supported("badflick.rl2", 0) && std::strstr(xl_level_rejection(), "flicker") &&
+	            xl_preview_load_level("badflick.rl2") != 0 && same_flickers(phase, flicker_snapshot()) && same_light_snapshot(light, light_snapshot()),
+	        "Invalid flicker side changed live state or lacked rejection");
+	require(PHYSFS_delete("badflick.rl2") && xl_level_supported("neptunxl.rl2", 0), "Valid flicker source did not recover after rejection");
 	auto &face = Segments[phase[128].segment].sides[phase[128].side];
 	const auto original_face = face;
 	const auto original_wall = Walls[0];
@@ -80,7 +80,7 @@ static void flicker_rejection_and_visibility(const std::filesystem::path &root)
 	flicker_frame(1);
 	xl_flicker_state visible{};
 	require(xl_flicker_get(128, &visible) && visible.timer >= 0 && visible.mask == ((hidden.mask >> 1) | (hidden.mask << 31)), "Visible surface did not resume its earned pattern");
-	std::cout << "Negative-delay admission/recovery and actual visibility disable/restart passed\n";
+	std::cout << "Invalid-target admission/recovery and actual visibility disable/restart passed\n";
 }
 static void flicker_samples(const std::filesystem::path &root)
 {
@@ -105,6 +105,24 @@ static void flicker_samples(const std::filesystem::path &root)
 								++corrected;
 							}
 						}
+	for (const auto &sample : std::array<std::array<int, 7>, 8>{ {
+	         { 16384, -32768, 1092, 1, 1, 15292, -1 },
+	         { 1092, -32768, 1092, 1, 1, 0, -1 },
+	         { 0, -32768, 1092, 1, 1, INT32_MAX - 1091, 1 },
+	         { 0, -32768, 1092, 0, 1, INT32_MIN, -1 },
+	         { 0, -32768, 1092, 1, 0, INT32_MIN, -1 },
+	         { INT32_MIN + 1, -32768, 1092, 1, 1, INT32_MAX - 1090, -1 },
+	         { INT32_MIN + 1, -1, 2, 1, 1, INT32_MAX, -1 },
+	         { 0, INT32_MIN, 1, 1, 1, INT32_MAX, 1 },
+	     } }) {
+		const auto [timer, delay, elapsed, visible, emitting, expected_timer, expected_action] = sample;
+		xl_flicker_state state{ 0, 0, delay, timer, 2 };
+		const int action = xl_flicker_step(&state, elapsed, visible, emitting);
+		require(state.timer == expected_timer && action == expected_action && state.mask == (action == 1 ? 1u : 2u),
+		        "Signed flicker delay did not match wrapped phase and rotation");
+		out << timer << " 2 " << delay << ' ' << elapsed << ' ' << visible << ' ' << emitting << ' ' << state.timer << ' ' << state.mask << ' ' << action << '\n';
+		++defined;
+	}
 	out.close();
 	require(bool(out), "Cannot finish flicker samples");
 	std::cout << defined << " defined flicker samples and " << corrected << " overflow/bounded-catch-up controls passed\n";
@@ -128,6 +146,7 @@ static xl_compat::Inventory write_flicker_fixture(const std::filesystem::path &r
 			}
 			member.bytes = xl_test::changing_light_tables(member.bytes, source.light_indices, deltas, true);
 			std::vector<std::array<int, 5>> rows(128, { source.light_indices[0][0], source.light_indices[0][1], 2, F1_0 / 8, F1_0 / 4 });
+			rows.back()[4] = -32768;
 			rows.push_back({ source.light_indices[1][0], source.light_indices[1][1], 2, F1_0 / 8, F1_0 / 4 });
 			rows.push_back({ source.light_indices[0][0], source.light_indices[0][1], 2, 0, 0 });
 			member.bytes = xl_test::flicker_table(member.bytes, rows);
@@ -228,6 +247,7 @@ static int flicker_test(int argc, char **argv)
 		flicker_frame(1);
 		phase = flicker_snapshot();
 		require(phase[0].mask == 1 && phase[128].mask == 1 && phase[0].timer == F1_0 / 4 - 1, "XL pattern did not rotate right");
+		require(phase[127].delay == -32768 && phase[127].timer == INT32_MAX && phase[127].mask == 1, "Owned signed flicker did not wrap at its first live rotation");
 		flicker_frame(F1_0 / 4);
 		const auto dark = light_snapshot();
 		require(!same_light_snapshot(initial, dark), "Flicker phase did not reach actual light consumers");

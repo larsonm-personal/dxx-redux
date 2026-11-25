@@ -11,3 +11,6 @@ file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xl_reference_flicker.h" CONTEN
 add_executable(xl_flicker_reference tests/reference_flicker.cpp)
 target_include_directories(xl_flicker_reference PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 target_compile_features(xl_flicker_reference PRIVATE cxx_std_17)
+if(CMAKE_CXX_COMPILER_ID MATCHES "^(GNU|Clang|AppleClang)$" AND NOT MSVC)
+    target_compile_options(xl_flicker_reference PRIVATE -fwrapv)
+endif()

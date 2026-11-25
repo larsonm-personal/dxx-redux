@@ -3901,8 +3901,25 @@ int state_restore_all_sub(char *filename, int secret_restore)
 	reactor_countdown_reset_pause();
 	Countdown_timer = PHYSFSX_readSXE32(fp, swap);
 	Countdown_seconds_left = f2i(Countdown_timer + F1_0*7/8);
-	Num_robot_centers = PHYSFSX_readSXE32(fp, swap);
-	matcen_info_read_n_swap(RobotCenters, Num_robot_centers, swap, fp);
+	{
+		matcen_info saved_centers[MAX_ROBOT_CENTERS];
+		int center_limit = DXX_CLASSIC_MAX_ROBOT_CENTERS;
+#ifdef DXX_XL_RUNTIME
+		if (xl_level_extensions_active()) center_limit = DXX_XL_MAX_ROBOT_CENTERS;
+#endif
+		i = PHYSFSX_readSXE32(fp, swap);
+		if (i < 0 || i > center_limit ||
+#ifdef DXX_XL_RUNTIME
+			(xl_level_extensions_active() && i != Num_robot_centers) ||
+#endif
+			!matcen_info_read_n_swap(saved_centers, i, swap, fp)) {
+			Warning("Invalid saved robot center table");
+			PHYSFS_close(fp);
+			return 0;
+		}
+		memcpy(RobotCenters, saved_centers, i * sizeof(matcen_info));
+		Num_robot_centers = i;
+	}
 	if (!control_center_triggers_read_n_swap(&ControlCenterTriggers, 1, swap, fp)) {
 		PHYSFS_close(fp);
 		return 0;

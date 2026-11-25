@@ -2053,7 +2053,7 @@ class ParityTests(unittest.TestCase):
                     fluid_scrape_elapsed=-1,
                     repair_elapsed=65536 // 8,
                     countdown=[65536 // 100, 9, 65535],
-                    flickers=[[0, 5, 16384, -(2**31), 2**31]],
+                    flickers=[[0, 5, -32768, -(2**31), 2**31]],
                 )
 
         self.mutate(path, populate)
@@ -2069,7 +2069,8 @@ class ParityTests(unittest.TestCase):
             lambda e: e["countdown"].__setitem__(2, 65536),
             lambda e: e["flickers"][0].__setitem__(0, 1),
             lambda e: e["flickers"][0].__setitem__(1, 6),
-            lambda e: e["flickers"][0].__setitem__(2, -1),
+            lambda e: e["flickers"][0].__setitem__(2, -(2**31) - 1),
+            lambda e: e["flickers"][0].__setitem__(2, 2**31),
             lambda e: e["flickers"][0].__setitem__(3, -(2**31) - 1),
             lambda e: e["flickers"][0].__setitem__(4, 2**32),
             lambda e: e["flickers"][0].pop(),
