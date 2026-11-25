@@ -134,6 +134,7 @@ char	Special_names[MAX_CENTER_TYPES][11] = {
 void fuelcen_reset()
 {
 	matcen_capture_reset();
+	Matcen_regression_capture.robot_center_limit = matcen_level_load_limit();
 	Num_fuelcenters = 0;
 
 	for(unsigned i=0; i<sizeof(Segment2s)/sizeof(Segment2s[0]); i++ )
