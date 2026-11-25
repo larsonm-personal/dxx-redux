@@ -7,20 +7,6 @@
   "windows_runtime_source": "75f356db49e7696bc06e3fb62b5a008345b7b956",
   "windows_runtime_sha256": "dcd1edd271dc832dc6c4b932d35175899b09ac11fe0bae3964aca061b656bada",
   "qualification": "120 unassisted frames at Hotshot; no engine code changes for the Windows diagnostic",
-  "windows_authored": {
-    "starts": 1,
-    "ordinals": 15,
-    "only_start": 6,
-    "receipt_sha256": "045d53ea56b4aa31e171a23926d563d52d2ae526f01d0e60128d930dfb160996"
-  },
-  "windows_repacked_diagnostic": {
-    "starts": 15,
-    "ordinals": 15,
-    "reencoded_rows": 608,
-    "receipt_sha256": "cc6f4b725b3d24fe36d0d71c856c2488361156b14545989195370a6fef4c4541",
-    "ordinal_6_member_unchanged": true,
-    "new_blockers_within_120_frames": 0
-  },
   "layout": [
     {
       "ordinal": 1,
@@ -387,7 +373,22 @@
       "display_preserved": true,
       "ordinal_9_advertised": "lakshmid.rl2",
       "engine_sha256": "298734d63e3ef1e6321947ae901b32a779ed3af73aaa9a4f29f6d9aa4e6a8428",
-      "qualification": "Locally instrumented pinned original executable that records invalid packed indices and continues; source mission bytes unchanged. This is not an unmodified original start. The unmodified original started only ordinal 6."
+      "qualification": "Pinned D2X-XL source with read-only light-index logging; unchanged original HOG and descriptor. All 15 advertised ordinals started. The executable is instrumented for observation; no reader or mission data was changed."
     }
+  },
+  "windows_runtime_source_description": "Redux before byte-count qualification, not pinned D2X-XL",
+  "redux_before_qualification_authored": {
+    "starts": 1,
+    "ordinals": 15,
+    "only_start": 6,
+    "receipt_sha256": "045d53ea56b4aa31e171a23926d563d52d2ae526f01d0e60128d930dfb160996"
+  },
+  "redux_before_qualification_repacked_diagnostic": {
+    "starts": 15,
+    "ordinals": 15,
+    "reencoded_rows": 608,
+    "receipt_sha256": "cc6f4b725b3d24fe36d0d71c856c2488361156b14545989195370a6fef4c4541",
+    "ordinal_6_member_unchanged": true,
+    "new_blockers_within_120_frames": 0
   }
 }
