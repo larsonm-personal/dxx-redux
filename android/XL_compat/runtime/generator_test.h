@@ -385,7 +385,7 @@ static void generator_behavior_controls(const std::filesystem::path &output)
 	std::cout << "XL generator behavior controls passed: selection/RNG, distance, timing, population, occupancy damage, allocation retry, difficulty and user modes\n";
 }
 
-static void write_generator_fixture(const std::filesystem::path &root, int version = 23)
+static void write_generator_fixture(const std::filesystem::path &root, int version, int center_count)
 {
 	std::ifstream original(root / "neptunxl.hog", std::ios::binary);
 	xl_compat::Bytes bytes{ std::istreambuf_iterator<char>(original), std::istreambuf_iterator<char>() }, output{ 'D', 'H', 'F' };
@@ -400,11 +400,17 @@ static void write_generator_fixture(const std::filesystem::path &root, int versi
 				for (int i = 0; i < width; ++i) member.bytes.push_back(static_cast<unsigned char>(value >> (i * 8)));
 			};
 			const auto properties = source.game_offset - (source.vertices.size() + source.segments.size() * 6 + 910 + source.segments.size()) * 13;
-			for (int i = 0; i < 3; ++i) {
-				const int segment = std::array<int, 3>{ 20, 22, 23 }[i];
+			int next_segment = 25;
+			for (int i = 0; i < center_count; ++i) {
+				if (i >= 3) {
+					while (next_segment < int(source.segments.size()) &&
+					       (source.segments[next_segment].function || source.segments[next_segment].properties)) ++next_segment;
+					require(next_segment < int(source.segments.size()), "generator capacity fixture lacks neutral segments");
+				}
+				const int segment = i < 3 ? std::array<int, 3>{ 20, 22, 23 }[i] : next_segment++;
 				require(source.segments[segment].function == 0 && source.segments[segment].properties == 0, "generator fixture segment is not neutral");
 				patch(properties + segment * 13, SEGMENT_IS_ROBOTMAKER, 1);
-				patch(properties + segment * 13 + 1, std::array<int, 3>{ 2, 0, 1 }[i], 1);
+				patch(properties + segment * 13 + 1, i < 3 ? std::array<int, 3>{ 2, 0, 1 }[i] : i, 1);
 			}
 			const auto &trigger = source.sections.at(3);
 			patch(trigger.offset, TT_MATCEN, 1);
@@ -416,10 +422,10 @@ static void write_generator_fixture(const std::filesystem::path &root, int versi
 				patch(trigger.offset + 32 + i * 2, 0, 2);
 			}
 			patch(source.game_offset + 35 + 6 * 12, static_cast<unsigned>(member.bytes.size()));
-			patch(source.game_offset + 39 + 6 * 12, 3);
+			patch(source.game_offset + 39 + 6 * 12, center_count);
 			patch(source.game_offset + 43 + 6 * 12, 20);
-			for (int row = 0; row < 3; ++row) {
-				append(1u << row, 4);
+			for (int row = 0; row < center_count; ++row) {
+				append(row < 3 ? 1u << row : 0, 4);
 				append(0, 4);
 				append((row + 1) * F1_0, 4);
 				append((row + 4) * F1_0, 4);
@@ -451,13 +457,14 @@ static int generator_assignment_test(int argc, char **argv)
 		const auto root = std::filesystem::path(find_arg_value(argc, argv, "-extra-dir")) / "missions";
 		const auto layout_argument = find_arg_value(argc, argv, "-layout-version");
 		const int version = layout_argument ? std::atoi(layout_argument) : 23;
-		write_generator_fixture(root, version);
+		const int center_count = version == 23 ? DXX_XL_MAX_ROBOT_CENTERS : 3;
+		write_generator_fixture(root, version, center_count);
 		require(load_base_mission("genmap", error, sizeof(error)), error);
 		std::strcpy(Players[Player_num].callsign, "XLTest");
 		input_demo_set_skip_level_intro(1);
 		StartNewGame(1);
 		require(xl_source_level_version() == version, "Generator test loaded the wrong source layout");
-		require(xl_level_extensions_active() && Num_robot_centers == 3, "generator fixture did not load");
+		require(xl_level_extensions_active() && Num_robot_centers == center_count, "generator fixture did not load");
 		const auto verify = [] {
 			for (int native = 0; native < 3; ++native) {
 				const int segment = std::array<int, 3>{ 20, 22, 23 }[native];
@@ -476,6 +483,18 @@ static int generator_assignment_test(int argc, char **argv)
 			require(center.Enabled && center.Lives == 2, "source-linked matcen did not activate");
 			robotmaker_proc(&center);
 			require(center.Flag == 1 && center.Timer == 0, "source-linked matcen did not enter morph effect phase");
+		}
+		constexpr std::uint32_t high_mask = 1u << (DXX_XL_MAX_ROBOT_CENTERS - 1);
+		if (center_count == DXX_XL_MAX_ROBOT_CENTERS) {
+			const int last = center_count - 1;
+			const int station = matcen_get_station_num(last);
+			require(station >= 0 && Station[station].segnum == RobotCenters[last].segnum &&
+			            Segment2s[RobotCenters[last].segnum].matcen_num == last,
+			        "last XL generator lost its native station");
+			xl_robot_generator_has_types(last);
+			require(xl_robot_generator_ready_mask() == high_mask, "last XL generator did not set the high readiness bit");
+		} else {
+			require(!xl_robot_generator_restore_ready(high_mask, 0), "oversized readiness bit accepted on a small level");
 		}
 		char snapshot[] = "genmap.sav", description[20] = "XL generator map";
 		stop_time();
@@ -503,6 +522,7 @@ static int generator_assignment_test(int argc, char **argv)
 		spawn();
 		require(load_base_mission("d2", error, sizeof(error)) && load_level("d2leva-1.rl2") == 0 && !xl_level_extensions_active(), "generator stock transition failed");
 		require(state_restore_all_sub(snapshot, 0) != 0 && xl_level_extensions_active(), "stock-to-generator pending restore failed");
+		require(xl_robot_generator_ready_mask() == (center_count == DXX_XL_MAX_ROBOT_CENTERS ? high_mask : 0u), "generator readiness bits changed across save and restore");
 		verify();
 		for (int i = 0; i < 3; ++i) require(Station[matcen_get_station_num(i)].Flag == 1, "pending generator morph state lost on restore");
 		spawn();

@@ -85,6 +85,14 @@ fix EnergyToCreateOneRobot = i2f(1);
 matcen_info RobotCenters[MAX_ROBOT_CENTERS];
 int Num_robot_centers;
 
+int matcen_level_load_limit(void)
+{
+#ifdef DXX_XL_RUNTIME
+	if (xl_loading_level_extensions()) return DXX_XL_MAX_ROBOT_CENTERS;
+#endif
+	return DXX_CLASSIC_MAX_ROBOT_CENTERS;
+}
+
 FuelCenter Station[MAX_NUM_FUELCENS];
 int Num_fuelcenters = 0;
 
@@ -231,7 +239,7 @@ void matcen_create( segment *segp)
 //	Station[Num_fuelcenters].last_created_sig = -1;
 	compute_segment_center(&Station[Num_fuelcenters].Center, &Segments[seg2p-Segment2s] );
 
-	if ((unsigned)Num_robot_centers >= MAX_ROBOT_CENTERS) {
+	if ((unsigned)Num_robot_centers >= (unsigned)matcen_level_load_limit()) {
 		seg2p->matcen_num = -1;
 		Num_fuelcenters++;
 		return;
@@ -977,15 +985,16 @@ void matcen_info_swap(matcen_info *mi, int swap)
 /*
  * reads n matcen_info structs from a PHYSFS_file and swaps if specified
  */
-void matcen_info_read_n_swap(matcen_info *mi, int n, int swap, PHYSFS_file *fp)
+int matcen_info_read_n_swap(matcen_info *mi, int n, int swap, PHYSFS_file *fp)
 {
 	int i;
 	
-	PHYSFS_read(fp, mi, sizeof(*mi), n);
+	if (n && PHYSFS_read(fp, mi, sizeof(*mi), n) != n) return 0;
 	
 	if (swap)
 		for (i = 0; i < n; i++)
 			matcen_info_swap(&mi[i], swap);
+	return 1;
 }
 
 void matcen_info_write(matcen_info *mi, short version, PHYSFS_file *fp)

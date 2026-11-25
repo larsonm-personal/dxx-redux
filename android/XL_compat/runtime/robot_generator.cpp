@@ -29,6 +29,8 @@ namespace
 {
 std::uint32_t implicit_flags = 0;
 std::uint32_t ready_mask = 0;
+constexpr int ready_bits = std::numeric_limits<decltype(ready_mask)>::digits;
+static_assert(MAX_ROBOT_CENTERS <= ready_bits);
 std::array<matcen_info, MAX_ROBOT_CENTERS> authored{};
 int authored_count = 0;
 
@@ -117,7 +119,8 @@ nlohmann::json xl_compat::robot_generator_snapshot()
 }
 extern "C" int xl_robot_generator_restore_ready(std::uint32_t mask, int apply)
 {
-	if (Num_robot_centers < 0 || Num_robot_centers > MAX_ROBOT_CENTERS || (mask >> Num_robot_centers)) return 0;
+	if (Num_robot_centers < 0 || Num_robot_centers > MAX_ROBOT_CENTERS ||
+	    (Num_robot_centers < ready_bits && (mask >> Num_robot_centers))) return 0;
 	for (int i = 0; i < Num_robot_centers; ++i)
 		if ((mask & (std::uint32_t(1) << i)) && (RobotCenters[i].robot_flags[0] || RobotCenters[i].robot_flags[1])) return 0;
 	if (apply) ready_mask = mask;

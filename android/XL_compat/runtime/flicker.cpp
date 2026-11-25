@@ -35,8 +35,8 @@ void xl_flicker_bind(const xl_compat::Inventory *source)
 	std::vector<xl_flicker_state> next;
 	next.reserve(source->flicker_lights.size());
 	for (const auto &row : source->flicker_lights) {
-		if (row[0] < 0 || row[0] >= Num_segments || row[1] < 0 || row[1] >= 6 || row[4] < 0)
-			throw std::runtime_error("XL flicker target or delay is invalid");
+		if (row[0] < 0 || row[0] >= Num_segments || row[1] < 0 || row[1] >= 6)
+			throw std::runtime_error("XL flicker target is invalid");
 		next.push_back({ row[0], row[1], row[4], row[3], static_cast<uint32_t>(row[2]) });
 	}
 	std::vector<std::size_t> indices(next.size());
@@ -79,18 +79,27 @@ extern "C" int xl_flicker_has_source(int segment, int side)
 extern "C" int xl_flicker_step(xl_flicker_state *state, int elapsed, int visible, int emitting)
 {
 	if (!state || state->timer == INT32_MIN || elapsed < 0) return -1;
-	if (!visible || !emitting || state->delay <= 0) {
+	if (!visible || !emitting || !state->delay) {
 		state->timer = INT32_MIN;
 		return -1;
 	}
-	const int64_t timer = int64_t(state->timer) - elapsed;
+	constexpr int64_t timer_range = int64_t(1) << 32;
+	int64_t timer = int64_t(state->timer) - elapsed;
+	if (state->delay < 0 && timer < INT32_MIN) timer += timer_range;
 	if (timer >= 0) {
 		state->timer = static_cast<int>(timer);
 		return -1;
 	}
 	// Match the source's catch-up clock and single rotation without an unbounded loop
-	const int64_t intervals = (-timer + state->delay - 1) / state->delay;
-	state->timer = static_cast<int>(timer + intervals * state->delay);
+	if (state->delay > 0) {
+		const int64_t intervals = (-timer + state->delay - 1) / state->delay;
+		state->timer = static_cast<int>(timer + intervals * state->delay);
+	} else {
+		// A negative delay first exits the source loop by wrapping below INT32_MIN.
+		const int64_t step = -int64_t(state->delay);
+		const int64_t intervals = (timer - INT32_MIN) / step + 1;
+		state->timer = static_cast<int>(timer - intervals * step + timer_range);
+	}
 	state->mask = (state->mask >> 1) | (state->mask << 31);
 	return static_cast<int>(state->mask & 1);
 }
@@ -123,7 +132,7 @@ extern "C" int xl_flicker_restore(const xl_flicker_state *states, int count, int
 		const auto &state = states[i];
 		const auto &original = authored->flicker_lights[i];
 		if (state.segment != original[0] || state.side != original[1] || state.delay != original[4]) return 0;
-		const int maximum_timer = (std::max) (0, (std::max) (original[3], original[4] - 1));
+		const int maximum_timer = original[4] < 0 ? INT32_MAX : (std::max) (0, (std::max) (original[3], original[4] - 1));
 		if (state.timer > maximum_timer) return 0;
 		uint32_t rotated = static_cast<uint32_t>(original[2]);
 		bool reachable = false;

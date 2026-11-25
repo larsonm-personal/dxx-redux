@@ -1622,7 +1622,7 @@ XL_ENVIRONMENT_SCHEMA = {
     "fluid_scrape_elapsed": METADATA_I64,
     "repair_elapsed": METADATA_I64,
     "countdown": (range(0, 65536 * 25 // 1000 + 1), range(0, 25), range(0, 65536)),
-    "flickers": [(METADATA_I32, range(0, 6), range(0, 2**31), METADATA_I32, METADATA_U32)],
+    "flickers": [(METADATA_I32, range(0, 6), METADATA_I32, METADATA_I32, METADATA_U32)],
 }
 XL_NATIVE_SCHEMA = integer_fields(
     "version omega_charge wiggle_phase",

@@ -84,7 +84,7 @@ typedef struct d1_save_translate_world_state {
 	int control_center_destroyed;
 	int countdown_seconds_left;
 	int num_robot_centers;
-	matcen_info robot_centers[MAX_ROBOT_CENTERS];
+	matcen_info robot_centers[DXX_CLASSIC_MAX_ROBOT_CENTERS];
 	control_center_triggers control_center_triggers;
 	int num_fuelcenters;
 	FuelCenter stations[MAX_NUM_FUELCENS];
@@ -1390,7 +1390,7 @@ static int d1_save_translate_read_d1_world_state(
 	    !d1_save_translate_read_s32(reader, &state->countdown_seconds_left) ||
 	    !d1_save_translate_read_s32(reader, &state->num_robot_centers) ||
 	    state->num_robot_centers < 0 ||
-	    state->num_robot_centers > MAX_ROBOT_CENTERS)
+	    state->num_robot_centers > DXX_CLASSIC_MAX_ROBOT_CENTERS)
 		return 0;
 	for (i = 0; i < state->num_robot_centers; i++)
 		if (!d1_save_translate_read_d1_matcen(reader,

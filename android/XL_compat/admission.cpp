@@ -288,7 +288,7 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 	};
 	for (std::size_t i = 0; i < level.triggers.size(); ++i) texture_action(level.triggers[i], int(i), "trigger texture");
 	for (std::size_t i = 0; i < level.object_trigger_records.size(); ++i) texture_action(level.object_trigger_records[i].action, int(i), "object trigger texture");
-	limit(level.matcens.size() > 20, "generator capacity", "more than 20 robot centers");
+	limit(level.matcens.size() > DXX_XL_MAX_ROBOT_CENTERS, "generator capacity", "robot center count exceeds the 32-bit XL readiness mask");
 	limit(level.equipment.size() > 128, "equipment capacity", "more than 128 equipment makers");
 	limit(!level.equipment.empty() && !equipment_layout(level), "equipment layout", "equipment makers require an audited profile");
 	const auto producers = producer_layout(level);
@@ -300,8 +300,6 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 		if ((function >= 1 && function <= 4) || equipment_segment(level, level.segments[i])) ++stations;
 	}
 	limit(stations > 128, "generator assignment", "special-segment station links exceed the native signed-byte range");
-	for (std::size_t i = 0; i < level.flicker_lights.size(); ++i)
-		if (level.flicker_lights[i][4] < 0) result.push_back({ "flicker delay", static_cast<int>(i), "negative delay cannot advance the authored flicker clock" });
 	limit(level.object_triggers < 0 || static_cast<std::size_t>(level.object_triggers) != level.object_trigger_records.size(), "object triggers", "declared records and inspected owners differ");
 	limit(level.object_trigger_records.size() > DXX_XL_MAX_TRIGGERS, "object trigger capacity", "more than 254 object-attached actions");
 	for (std::size_t i = 0; i < level.object_trigger_records.size(); ++i) {
