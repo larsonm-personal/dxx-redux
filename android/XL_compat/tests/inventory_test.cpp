@@ -1983,13 +1983,25 @@ int main(int argc, char **argv)
 			check(xl_compat::runtime_blockers(team_rooms).empty(), "Valid legacy team owner and group were rejected");
 			team_rooms.segments[0].owner = 3;
 			check(!xl_compat::runtime_blockers(team_rooms).empty(), "Undefined legacy team owner was admitted");
-			auto modern_team = xl_compat::inspect_level(fixture(23, 0, 1, 8));
-			modern_team.segments[0].owner = 2;
-			modern_team.segments[0].group = 54;
-			modern_team.unknown.push_back({ "segment_owner_group", 0, "2/54" });
-			check(xl_compat::runtime_blockers(modern_team).empty(), "Valid 23/40 team ownership was rejected");
-			modern_team.segments[0].group = -2;
-			check(!xl_compat::runtime_blockers(modern_team).empty(), "Undefined team group was admitted");
+			for (int version : { 21, 22, 23, 25, 26, 27 }) {
+				auto modern_team = xl_compat::inspect_level(fixture(23, 0, 1, 8));
+				modern_team.level_version = version;
+				modern_team.fog_settings.resize(version == 27 ? 4 : 0);
+				modern_team.segments[0].owner = 2;
+				modern_team.segments[0].group = 54;
+				modern_team.unknown.push_back({ "segment_owner_group", 0, "2/54" });
+				check(xl_compat::runtime_blockers(modern_team).empty(), "Valid modern team ownership was rejected");
+				modern_team.segments[0].group = -2;
+				check(!xl_compat::runtime_blockers(modern_team).empty(), "Undefined team group was admitted");
+			}
+			auto legacy_maker = xl_compat::inspect_level(fixture(23, 0, 1, 0));
+			legacy_maker.level_version = 19;
+			legacy_maker.segments[0].function = 15;
+			legacy_maker.unsupported.push_back({ "segment_function", 0, "15" });
+			legacy_maker.equipment.push_back({ 1 << 2, 0, 0, 0, 0, 0 });
+			check(xl_compat::runtime_blockers(legacy_maker).empty(), "Legacy game-40 equipment maker was rejected");
+			legacy_maker.equipment.clear();
+			check(xl_compat::blocker_message(xl_compat::runtime_blockers(legacy_maker)).find("equipment assignment") != std::string::npos, "Legacy maker without an authored row was admitted");
 		}
 		{
 			const auto translated_skybox = xl_compat::prepare_gameplay_probe(fixture(23, 0, 1, 10));

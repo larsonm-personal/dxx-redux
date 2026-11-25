@@ -282,7 +282,12 @@ xl_compat::Bytes read_extended_level(const char *filename)
 	return bytes;
 }
 
-// Experimental fluid profile selected by detected requirements, never mission identity
+static bool legacy_water_with_actors_layout(const xl_compat::Inventory &level)
+{
+	return level.level_version == 19 && level.game_version == 40;
+}
+
+// Pre-split geometry upgrades legacy type 7 to an ordinary function plus water.
 bool water_profile(const xl_compat::Bytes &bytes, bool multiplayer, bool water_enabled)
 {
 	const auto level = xl_compat::inspect_mission_level(bytes);
@@ -290,11 +295,12 @@ bool water_profile(const xl_compat::Bytes &bytes, bool multiplayer, bool water_e
 		return (xl_compat::segment_property_bits(level.level_version, segment) & xl_compat::segment_water) != 0;
 	});
 	if (!water) return false;
-	if (level.level_version < 21 && !water_enabled)
-		throw std::runtime_error("water physics: the experimental fluid profile is not enabled; Android and presentation qualification is incomplete");
+	const bool with_actors = legacy_water_with_actors_layout(level);
 	if (multiplayer) throw std::runtime_error("water physics multiplayer synchronization is unqualified");
-	if (level.level_version < 21 && (!level.matcens.empty() || std::any_of(level.objects.begin(), level.objects.end(), [](const xl_compat::Object &object) { return object.type == OBJ_ROBOT || (object.contains_count > 0 && object.contains_type == OBJ_ROBOT); })))
+	if (level.level_version < 21 && !with_actors && xl_compat::legacy_water_has_actors(level))
 		throw std::runtime_error("water with robots: AI combat and robot generation in fluids remain unqualified");
+	if (level.level_version < 21 && !water_enabled && !xl_compat::default_legacy_water_profile(level))
+		throw std::runtime_error("water physics: the experimental fluid profile is not enabled; Android and presentation qualification is incomplete");
 	return true;
 }
 
@@ -1165,10 +1171,10 @@ extern "C" int xl_preview_load_level_at(const char *filename, int ordinal)
 		xl_object_trigger_load(*source);
 		xl_robot_generator_load();
 		xl_equipment_load(*source);
-		admitted_water_arena = arena && source->level_version < 21;
+		admitted_water_arena = arena && source->level_version < 21 && !legacy_water_with_actors_layout(*source);
 		admitted_pilot = original && !admitted_water_arena;
 		rebuild_xl_ambient();
-		con_printf(CON_NORMAL, admitted_water_arena ? "XL water physics: detected experimental profile, visual parity unqualified\n" : "XL active: detected level requirements and asset dependencies supported\n");
+		con_printf(CON_NORMAL, admitted_water_arena ? "XL water physics: legacy arena profile, visual parity unqualified\n" : "XL active: detected level requirements and asset dependencies supported\n");
 		return result;
 	} catch (const std::exception &error) {
 		loading_object_capacity = 0;
@@ -1719,11 +1725,12 @@ extern "C" int xl_preview_trigger_activated(int index)
 
 extern "C" int xl_door_is_free(int segment_index, int side)
 {
-	if (!source || !xl_compat::modern_runtime_layout(*source) || (Game_mode & GM_MULTI)) return -1;
+	if (!source || source->game_version != 40 || (Game_mode & GM_MULTI)) return -1;
 	if (segment_index < 0 || segment_index >= Num_segments || side < 0 || side >= 6) return 0;
 	auto &front = Segments[segment_index];
 	const int child = front.children[side], wall = front.sides[side].wall_num;
 	if (child < 0 || child >= Num_segments || wall < 0 || std::size_t(wall) >= source->walls.size()) return 0;
+	if (!xl_compat::modern_runtime_layout(*source) && !(source->walls[wall].flags & 256)) return -1;
 	const int connected = find_connect_side(&front, &Segments[child]);
 	if (connected < 0 || connected >= 6) return 0;
 	struct World {
@@ -2131,6 +2138,19 @@ extern "C" int xl_preview_wall_is_doorway(int segment_index, int side)
 	return doorway >= 0 ? doorway : stock;
 }
 
+static int water_boundary_function(int level_version, int function)
+{
+	if (level_version >= 21 || function < 7) return function;
+	switch (function) {
+		case 9: return 7;
+		case 10: return 8;
+		case 11: return 9;
+		case 14: return 10;
+		case 15: return 11;
+		default: return 0;
+	}
+}
+
 extern "C" void xl_preview_begin_face(int segment_number, int side)
 {
 	face_alpha = -1;
@@ -2139,15 +2159,15 @@ extern "C" void xl_preview_begin_face(int segment_number, int side)
 	flat_wall_palette = -1;
 	if (!source || option("-xl-preview-stock-materials") || segment_number < 0 || segment_number >= Num_segments || side < 0 || side >= 6) return;
 	const int index = Segments[segment_number].sides[side].wall_num;
-	if (source->level_version >= 21 && !xl_fog_active()) {
+	if (!xl_fog_active()) {
 		xl_compat::WaterFace face;
 		const auto &original = source->segments[segment_number];
 		const int child = Segments[segment_number].children[side];
 		face.water = xl_preview_water_segment(segment_number) != 0;
 		face.has_child = child >= 0 && child < Num_segments;
 		face.child_water = face.has_child && xl_preview_water_segment(child);
-		face.function = original.function;
-		face.child_function = face.has_child ? source->segments[child].function : 0;
+		face.function = water_boundary_function(source->level_version, original.function);
+		face.child_function = face.has_child ? water_boundary_function(source->level_version, source->segments[child].function) : 0;
 		face.has_wall = index >= 0 && index < Num_walls;
 		// Match XL HasTexture, including its child-or-wall condition
 		if (face.has_child || face.has_wall) {
@@ -2177,7 +2197,7 @@ extern "C" void xl_preview_end_face(void)
 
 extern "C" int xl_preview_water_portal(int segment_number, int side, int32_t points[4][3], float colors[4][4])
 {
-	if (!source || source->level_version < 21 || Game_mode & GM_MULTI || segment_number < 0 || segment_number >= Num_segments || side < 0 || side >= 6) return 0;
+	if (!source || Game_mode & GM_MULTI || segment_number < 0 || segment_number >= Num_segments || side < 0 || side >= 6) return 0;
 	const auto &segment = Segments[segment_number];
 	const auto &face = segment.sides[side];
 	// Wall-backed faces keep their normal visibility/material dispatch

@@ -167,7 +167,9 @@ inline bool legacy_team_room_layout(const Inventory &level)
 
 inline bool qualified_team_ownership(const Inventory &level, const Segment &segment)
 {
-	const bool layout = legacy_team_room_layout(level) || (level.level_version == 23 && level.game_version == 40);
+	// The pinned geometry reader uses the same signed owner/group bytes in
+	// modern layouts. Consumers of ownership run only in Entropy multiplayer.
+	const bool layout = legacy_team_room_layout(level) || modern_runtime_layout(level);
 	return layout && (segment.owner == 1 || segment.owner == 2) && segment.group >= -1;
 }
 

@@ -6,6 +6,7 @@
 #include "hog.h"
 #include "fog.h"
 #include "countdown.h"
+#include "producer_layout.h"
 #include "../app/src/main/cpp/shared/mission_descriptor_safe.h"
 #include <algorithm>
 #include <cctype>
@@ -68,7 +69,7 @@ std::vector<CountedFeature> counted_features()
 		{ "speed_boosts", "Wall speed boosts", "XL movement actions unsupported", "blocked", "Wall-trigger speed boosts change a ship's motion. Their direction, activation and release rules matter for traversing the mine. This count excludes object-attached actions." },
 		{ "cameras", "Wall camera triggers", "Source wall viewers and trigger bookkeeping implemented", "supported", "Wall cameras create monitor views at level setup. Activation retains source trigger scheduling and flags without moving the viewer. This count excludes object-attached cameras." },
 		{ "master_triggers", "Wall master triggers", "XL event chains unsupported", "blocked", "Wall master triggers activate linked triggers, allowing chains of actions. Order and saved event state can matter. This count excludes object-attached actions." },
-		{ "water_segments", "Water segments", "Experimental hash-pinned arena pilot only; other levels unqualified", "partial", "Water fills a whole segment, not just a watery-looking wall. With fluid physics enabled and normal speed settings, motion runs at 75% speed, including weapons and other moving objects. Player ships experience mild turbulence; ordinary robot updates skip that contact path. Submerged movement has different sound behavior from touching a waterfall. XL can give the volume a translucent blue appearance. Water itself does not inflict fluid damage; lava does.", "Experimental Robotech Arena pilot only: water motion, boundary/collision behavior and native save/replay are validated. Sound distinctions have logic checks; audible playback and full visual parity remain unqualified. Other levels are not qualified" },
+		{ "water_segments", "Water segments", "Default singleplayer water for 19/40 and robotless 15/33 levels", "partial", "Water fills a whole segment, not just a watery-looking wall. With fluid physics enabled and normal speed settings, motion runs at 75% speed, including weapons and other moving objects. Player ships experience mild turbulence; ordinary robot updates skip that contact path. Submerged movement has different sound behavior from touching a waterfall. XL can give the volume a translucent blue appearance. Water itself does not inflict fluid damage; lava does.", "Robotech Arena water motion, boundary/collision behavior and native save/replay are validated. Sound distinctions have logic checks; audible playback and full visual parity remain unqualified. Other legacy formats retain their separate admission requirements" },
 		{ "lava_segments", "Lava segments", "XL segment lava semantics unqualified", "blocked", "Lava is a whole-volume fluid property that can inflict damage and alter motion with fluid physics enabled. It is distinct from a lava-looking wall texture." },
 		{ "blocked_segments", "Blocked segments", "XL movement restrictions unsupported", "blocked", "Blocked segment properties restrict movement through a volume. The precise object and collision rules need qualification; a count alone does not establish them." },
 		{ "no_damage_segments", "No-damage segments", "Singleplayer damage/firing gates, boundary behavior and save restoration implemented; multiplayer and optional persistent-debris policy unsupported", "supported", "Protected segments suppress damage and some firing or direct-contact behavior. They are not simply force-free zones: blast knockback can still occur." },
@@ -173,14 +174,14 @@ void count_features(std::vector<CountedFeature> &features, const Inventory &v)
 	features[10].count = static_cast<int>(std::count_if(v.vertex_colors.begin(), v.vertex_colors.end(), [](const Color &c) { return c.rgb[0] != c.rgb[1] || c.rgb[1] != c.rgb[2]; }));
 	// A count is evidence only after all action records and owner references decode
 	if (std::none_of(v.unknown.begin(), v.unknown.end(), [](const Issue &i) { return i.feature.find("object_trigger") == 0; })) features[11].count = v.object_triggers;
-	const auto object_blockers = runtime_blockers(v);
+	const auto object_blockers = runtime_blockers(v, default_legacy_water_profile(v));
 	const bool blocked_objects = std::any_of(object_blockers.begin(), object_blockers.end(), [](const Issue &issue) { return issue.feature.find("object") == 0; });
 	features[11].present_status = blocked_objects ? "blocked" : "partial";
 	features[11].support = "Nonplayer leaf events, immediate/delayed masters, boss spawning, authored player spawn points and owned messages have controlled activation and disk/rewind checks";
 	features[11].limitations = "Delayed descendants retain event context and original actor identity; geometry work survives owner removal, while motion requires the original live actor. Boss object teleports retain owned destinations. Other extended actions/flags and player owners remain gated. Derived controls do not qualify an original mission";
 	// Game 33 has no separate equipment-generator section
 	features[12].count = 0;
-	features[12].present_status = modern_runtime_layout(v) ? "partial" : "blocked";
+	features[12].present_status = equipment_layout(v) ? "partial" : "blocked";
 	for (const auto &section : v.sections)
 		if (section.name == "equipment") features[12].count = section.count;
 }
@@ -222,7 +223,7 @@ std::string compatibility_json(const std::string &name, const Bytes &bytes)
 			try {
 				const auto v = inspect_level(bytes);
 				count_features(features, v);
-				const auto blockers = runtime_blockers(v);
+				const auto blockers = runtime_blockers(v, default_legacy_water_profile(v));
 				status = blockers.empty() ? "eligible" : "blocked";
 				summary = blockers.empty() ? "Detected features supported by OpenGL builds; assets checked on load, campaign unverified" : blocker_message(blockers);
 				rows[1].status = blockers.empty() ? "eligible" : "blocked";

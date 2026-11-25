@@ -180,7 +180,7 @@ static GameplayProbe prepare_probe(const Bytes &original, bool water_segments, i
 		// Modern team rooms, speedboost, skybox and equipment keep their original
 		// functions in the XL inventory. None creates a classic fuel center
 		const bool modern_xl_function = modern_layout && function >= 7 && function <= 11;
-		const bool legacy_xl_function = v.level_version < 21 && ((water_segments && function == 7) || (function >= 11 && function <= 13));
+		const bool legacy_xl_function = v.level_version < 21 && ((water_segments && function == 7) || (function >= 11 && function <= 13) || equipment_segment(v, seg));
 		const bool legacy_team_room = legacy_team_room_layout(v) && (function == 9 || function == 10);
 		put(out, modern_xl_function || legacy_xl_function || legacy_team_room ? 0 : function, 1);
 		// Wide authored fields stay in the owned source. Only robot assignment enters

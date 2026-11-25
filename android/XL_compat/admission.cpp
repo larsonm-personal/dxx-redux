@@ -30,6 +30,19 @@ bool classic_effect_layout(const Inventory &level)
 	       std::any_of(level.objects.begin(), level.objects.end(), classic_effect_shape);
 }
 
+bool legacy_water_has_actors(const Inventory &level)
+{
+	return !level.matcens.empty() || std::any_of(level.objects.begin(), level.objects.end(), [](const Object &object) {
+		return object.type == 2 || (object.contains_count > 0 && object.contains_type == 2);
+	});
+}
+
+bool default_legacy_water_profile(const Inventory &level)
+{
+	return (level.level_version == 19 && level.game_version == 40) ||
+	       (level.level_version == 15 && level.game_version == 33 && !legacy_water_has_actors(level));
+}
+
 std::vector<int> object_chain_targets(const Inventory &level, const Trigger &master)
 {
 	std::vector<int> result;
@@ -133,7 +146,7 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 		if (issue.feature == "object_trigger_type" && issue.record >= 0 && std::size_t(issue.record) < level.object_trigger_records.size() && qualified_camera_binding(level, level.object_trigger_records[issue.record])) continue;
 		if (modern_runtime_layout(level) && issue.feature == "segment_damage") continue;
 		// Wide flags stay source-owned; modern doors consume bit 8, higher bits are reserved
-		if (modern_runtime_layout(level) && issue.feature == "wall_flags") continue;
+		if (level.game_version == 40 && issue.feature == "wall_flags") continue;
 		if (colored_walls && issue.feature == "wall_type" && issue.record >= 0 &&
 		    std::size_t(issue.record) < level.walls.size() && level.walls[issue.record].type == colored_wall_type) continue;
 		if (issue.feature == "effect_particles") continue;
@@ -147,6 +160,7 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 		if (modern_runtime_layout(level) && issue.feature == "segment_function_v21" && issue.detail == "2") continue;
 		if (modern_runtime_layout(level) && issue.feature == "segment_function_v21" && (issue.detail == "7" || issue.detail == "8")) continue;
 		if (modern_runtime_layout(level) && issue.feature == "segment_function_v21" && issue.detail == "11") continue;
+		if (equipment_layout(level) && issue.feature == "segment_function" && issue.detail == "15") continue;
 		if (issue.feature == "segment_function" && (issue.detail == "11" || issue.detail == "12")) continue;
 		if (issue.feature == "segment_function_v21" && issue.detail == "9") continue;
 		if (modern_runtime_layout(level) && issue.feature == "segment_function_v21" && issue.detail == "10") continue;
@@ -274,14 +288,14 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 	for (std::size_t i = 0; i < level.object_trigger_records.size(); ++i) texture_action(level.object_trigger_records[i].action, int(i), "object trigger texture");
 	limit(level.matcens.size() > 20, "generator capacity", "more than 20 robot centers");
 	limit(level.equipment.size() > 128, "equipment capacity", "more than 128 equipment makers");
-	limit(!level.equipment.empty() && !modern_runtime_layout(level), "equipment layout", "equipment makers require an audited modern 21/40, 23/40, 25/40, 26/40 or 27/40 profile");
+	limit(!level.equipment.empty() && !equipment_layout(level), "equipment layout", "equipment makers require an audited game-40 profile");
 	const auto producers = producer_layout(level);
 	limit(producers.robots.size() > level.matcens.size(), "generator assignment", "robotmaker segment has no disk row after source initialization");
 	limit(producers.equipment.size() != level.equipment.size(), "equipment assignment", "equipment segments and disk rows differ after source initialization");
 	int stations = 0;
 	for (std::size_t i = 0; i < level.segments.size(); ++i) {
 		const int function = producer_function(level.segments[i]);
-		if ((function >= 1 && function <= 4) || (modern_runtime_layout(level) && function == 11)) ++stations;
+		if ((function >= 1 && function <= 4) || equipment_segment(level, level.segments[i])) ++stations;
 	}
 	limit(stations > 128, "generator assignment", "special-segment station links exceed the native signed-byte range");
 	for (std::size_t i = 0; i < level.flicker_lights.size(); ++i)
