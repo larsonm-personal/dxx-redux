@@ -1,0 +1,13 @@
+# Paste-ready XL level loading kickoff
+
+```text
+/goal Work in C:/local/dxx-redux. Read AGENTS.md, .github/copilot-instructions.md, android/ai tool plans/xl_level_loading_execution_20261125.md, and the prior November 24 report. Fetch only the personal fork for your own changes, then inspect the checkout, worktrees, open PRs and live stack #766 before changing files. The prior final production head was 9be6936bb7e3de8a683d473640f96aa81a00b16e. Use the actual current stack tip after fetching.
+
+Keep the frozen 1,654 advertised entries. The last full result was 1,620/1,654 entered gameplay and 1,616/1,654 survived 120 frames. Track entering gameplay separately from surviving 120 frames. Use one local gameplay worker. Keep Hotshot, seed 1, 120 frames at 60 Hz and unchanged idle inputs. Keep desktop runs windowed and preserve device settings. Keep game files, profiles, saves, screenshots and raw logs local. Use hosted Linux for routine public validation.
+
+The first unresolved entry is difFusion in levelpack.7z, mission missions/danwentz/dffusion.mn2, level 1. Its selected ownership scope lacks dffusion.rl2. Keep all confirmed absent and broken inputs in the denominator. Start the loader investigation with The Forest, levelpack.7z, missions/diedel/forest.mn2 level 1. Its original executable completes the idle run and the selected package lacks declared custom robot and texture companions. The publisher pack includes separate 1,442-segment editions. Seek a companion for the frozen 633-segment edition and keep the existing resource ownership controls. Check the archival FFYL.rar independently using the report receipts. It supplies all 27 advertised members under the same descriptor bytes. Use FV24B as the old 10/31 control and keep its separate 17/36 re-export as a regression control.
+
+Verify new first failures and preserve retry evidence. Rerun the two complete frozen catalogs on the final production runtime change and compare individual case IDs for gains and regressions. Commit locally tested coherent layers, push only to larsonm-personal/dxx-redux, and open non-draft PRs based on their immediate predecessors. Link the PRs to stack #766. Verify the predecessor's early and late public replay admission and that both replay backends have been selected before opening its dependent PR. Check every pushed head and verify actual test execution. Leave the PRs open for review.
+
+Commit a dated report with the two separate entry and survival counts for each catalog and their combination, the remaining failure groups and denominators, the first unresolved package and level, the next loading tasks, and a new paste-ready prompt.
+```
