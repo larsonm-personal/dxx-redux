@@ -1,70 +1,38 @@
-# Next Pumo and D2X-XL tranche
+# Get every cataloged D2X-XL level into flight
 
-Start with the S21 or the reporting phone and ordinary kit 32333. Use the
-current checkpoint manifest in [the playtest directions](../XL_compat/PUMO_PLAYTEST.md).
-The first reporter-path manual action is the Rookie touch missile shot near
-Crauphel room 129. The S21 operator already fired and repeated a Concussion
-shot from a separately restored fixed-view pose; that chosen white octagonal
-wall aim and responsive steering are recorded in the
-[touch receipt](../XL_compat/evidence/pumo-s21-touch-32333-20261124.json).
-The reporter's own approach, missile and aim remain unknown. Use another slot
-for the approach and keep the original issue save.
-Record whether the shot works, whether steering still responds and whether
-load followed by the same shot changes the outcome. Include the kit, phone,
-Android version, difficulty, input method, episode, checkpoint, last successful
-action, missile and aim. Record the briefing page's first words or a screenshot
-if the low contrast reappears.
+## Where we stand on November 24
 
-1. The ordinary S21 32333 cold hub selection to first briefing took about
-   9–10 seconds with a moving bar and visible **CHECKING LEVEL RESOURCES AND
-   GRAPHICS** then **PREPARING FIRST PAGE** labels. A separate direct level-2
-   start timed the final **CRAUPHEL SCILAB; INFESTATION: LOW** briefing
-   dismissal to flight at about 5–6 seconds: **LOADING LEVEL**, **VERIFYING
-   MISSION ARCHIVE** and resource identifiers appeared, the gold bar moved,
-   then disappeared. A separate ordinary-app S21 32333 hub score advance to
-   the first Crauphel story page took about 8.4-8.6 seconds after a declared
-   fixed-pose hub exit assist and scripted laser/thrust. **CHECKING LEVEL
-   RESOURCES AND GRAPHICS** changed to **PREPARING FIRST PAGE**; the moving
-   gold bar disappeared on the page. Repeat the score and final-dismissal
-   timings on the reporter's continuous manual route. Keep **Show progress
-   bars** and **Mission zip** music enabled. Record the label, motion and elapsed time
-   for each. Use the same original archive and matching kit checkpoint. Check
-   a genuine load and a same-mission repeat before choosing the next wait to
-   reduce. Verify a changed source still invalidates cached preparation.
-2. Alien Frontier's complete byte-count table now admits the fourteen
-   previously blocked ordinals, while packed ordinal 6 remains packed. The
-   full cluster starts in Redux; trigger 18 and the matching trigger 16 pass
-   the native runtime check. The pinned original's packed traversal remains
-   out of range. Preserve the bounded action audit and the distinction
-   between pinned D2X-XL starts, pre-fix Redux starts and authored actions.
-   [Alien Frontier qualification](../XL_compat/evidence/gameplay-alien-frontier-byte-count-20261124.json)
-3. Take the next independent runnable-original case from the new census.
-   The exact rerun is 1,595/1,654 with 59 still open: 34 advertised files
-   missing, four idle-pilot deaths, four fluid, four non-hexahedral geometry,
-   three unsupported formats, two each in custom bases, robots, waypoints and
-   lightning, one generator-capacity case and one timeout. Twenty-three of
-   the 59 started in the pinned original.
-   Amalthea's authored robot generator count and negative flicker delay are
-   candidates; compare the same distribution, ordinal and input with the
-   running original, then repeat the affected cluster. Keep mission rejection,
-   missing member, start, authored action and traversal evidence separate.
-   The zero-lifetime lightning owner already clears admission there.
-   [Amalthea and Prophecy receipts](../XL_compat/evidence/gameplay-prophecy-dormant-lightning-20261124.json)
-4. Pair the remaining presentation difference on Android and the local
-   original. Lock the actual viewpoint, viewport, accepted texture filter,
-   brightness and effect settings. Match animation phase by decoded texture
-   fingerprint. Check wall and transparent layers separately from the HUD.
-   Use Crauphel room 105 with **XL Wall Light Glow** off and on. The matched
-   enabled view now uses the original glare image and wall corners. Compare
-   the remaining glow around the signs from an oblique angle and a second
-   distance. Capture depth near the glow fringe and a wall partly occluded by
-   a door. Use the same qualified glare image and preserve the default view.
-   [Authored wall glare comparison](../XL_compat/evidence/pumo-crauphel-authored-wall-glare-20261124.json)
-5. Keep private inputs and raw evidence on the build machine. Use one local
-   gameplay worker and hosted Linux for routine cross-platform validation.
-   Open each locally tested layer as a non-draft PR to the personal fork with
-   its immediate predecessor as base. Confirm the predecessor's public replay
-   admission before opening the next PR. Verify actual selected tests and every
-   exact head's admission receipts. Leave the stack open for review.
+The last complete Windows run started **1,595 of 1,654 advertised levels (96.4%)** and ran each for 120 frames at 60 Hz on Hotshot, with seed 1 and no player input, death or level change. The pinned catalog passed 1,070/1,111 and the local catalog passed 525/543. A catalog entry identifies the distribution, mission and advertised level number. Copies in different distributions count separately.
 
-[Dated execution evidence](xl_pumo_gameplay_execution_20261124.md)
+Track two milestones for each entry: first, the requested level actually enters gameplay; second, it passes the existing 120-frame test. Four idle ships died after loading, so **at least 1,599/1,654 entered gameplay**. Check the individual runtime records before assigning the remaining entries a load result. A timeout alone does not tell us how far the engine got.
+
+[Full census and the 59 case IDs](../XL_compat/evidence/gameplay-census-alien-frontier-20261124.json)
+
+| First problem recorded | Entries still short of 120 frames |
+| --- | ---: |
+| Level file named by the mission could not be found | 34 |
+| Water or other fluid behavior | 4 |
+| Rooms with geometry the Redux loader rejects | 4 |
+| Idle pilot killed by robots | 4 |
+| Unsupported level format | 3 |
+| Custom base definitions, robot definitions, lightning, waypoint controllers | 2 each |
+| Robot generator capacity | 1 |
+| Timeout | 1 |
+| **Total** | **59** |
+
+The original D2X-XL started 23 of those 59, rejected 31 missions, could not find the advertised file in three cases, and has no verified simulation result for two. These observations describe the same 59 entries. The first-problem labels come from the prior register. Recheck the current error before changing code.
+
+## Work order
+
+1. **Start with Kalisto, level 1.** Use the local catalog entry `levels/kalisto.zip/kalisto/kalisto.mn2:1`. Reproduce the failure with the normal readiness runner. Inspect the rejected room shape and compare how pinned D2X-XL loads those same bytes. Fix the format handling in its existing owner. Repeat level 1 of Kalisto, Temple of Helix, Code Yena XL and Coordination XL, plus an already passing ordinary room as a control. Count each result independently. If a second problem appears after the first fix, record it against that entry.
+2. **Audit the 34 missing-file entries.** Match each advertised filename against the exact mission package, including nested archives, paths and case. Check how the original resolves it. Fix reproducible lookup failures where the file exists. Record the exact missing member for incomplete packages, keep them in the denominator, and track any corrected distribution separately. Do not substitute another level.
+3. **Clear the remaining loader failures by shared cause.** Start with the four fluid cases, then unsupported formats, definitions, effects, waypoints and generator capacity. Prefer changes that open multiple real levels and cases that already start in the original. Reorder when the receipts identify a larger shared cause. Timebox the single timeout by recording the last completed loading stage. Keep the four idle deaths in the post-load queue and preserve ordinary game rules.
+4. **Rerun both complete catalogs on the final runtime change.** Compare by case ID against the frozen baseline. Report newly loaded levels, new 120-frame passes, regressions and the first remaining failure per entry. Keep targeted results provisional until the full comparison finishes. Report actual counts even if an archive is incomplete.
+
+## How to test and ship
+
+Use [the census runner](../tests/xl_readiness_full.py) with the matching inventory, engine, resources and archive hashes. Select a single ID with `--case`, repeat the flag for a cluster, and omit case filters for the full inventory. Keep one local gameplay worker and read its per-case receipts. Use the same level number, inputs and test settings in windowed D2X-XL and Redux. Verify a representative newly loading level through the ordinary Android launcher. Keep device display settings, private game inputs, profiles, saves, screenshots and raw logs local. Use hosted Linux for routine cross-platform tests.
+
+Publish coherent, locally tested layers as ready-for-review PRs only in `larsonm-personal/dxx-redux`. Fetch and inspect the live stack before branching. Base each layer on its immediate predecessor, verify the predecessor's public replay admission before opening the dependent PR, and register it in the active stack. Verify the pushed commit and the tests that ran. Inspect admission logs for skips, retain retry evidence and fix material failures. Leave PRs open for review.
+
+End each run with a dated report, updated counts and failure groups, the next specific level to try, and a replacement prompt. The next run can begin on the build machine without a phone playtest from the user.
