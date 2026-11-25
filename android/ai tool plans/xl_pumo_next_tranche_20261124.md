@@ -23,6 +23,11 @@ if the low contrast reappears.
    between pinned D2X-XL starts, pre-fix Redux starts and authored actions.
    [Alien Frontier qualification](../XL_compat/evidence/gameplay-alien-frontier-byte-count-20261124.json)
 3. Take the next independent runnable-original case from the new census.
+   The exact rerun is 1,595/1,654 with 59 still open: 34 advertised files
+   missing, four idle-pilot deaths, four fluid, four non-hexahedral geometry,
+   three unsupported formats, two each in custom bases, robots, waypoints and
+   lightning, one generator-capacity case and one timeout. Twenty-three of
+   the 59 started in the pinned original.
    Amalthea's authored robot generator count and negative flicker delay are
    candidates; compare the same distribution, ordinal and input with the
    running original, then repeat the affected cluster. Keep mission rejection,

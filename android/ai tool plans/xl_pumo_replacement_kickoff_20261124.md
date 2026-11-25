@@ -36,9 +36,12 @@ qualified byte-count action and original idle starts are separately
 labeled. Android diagnostic version 32530 and a windowed local D2X-XL index
 audit captured the same ordinal 9 opening chamber. See
 `android/XL_compat/evidence/gameplay-alien-frontier-byte-count-20261124.json`.
-The full Windows census is being rerun; the previous 1,580/1,654 snapshot
-plus Pyromaniac-D2 and fourteen Alien Frontier starts implies 1,595/1,654,
-with 59 remaining and 23 observed original starts, pending the full result.
+The full Windows rerun passed 1,070/1,111 pinned and 525/543 local entries,
+for **1,595/1,654** with zero regressions. Fifteen starts were gained:
+fourteen Alien Frontier ordinals and Pyromaniac-D2. The 59 remaining include
+23 observed original starts, 31 original mission rejections, three absent
+advertised members and two unverified original simulations. See
+`android/XL_compat/evidence/gameplay-census-alien-frontier-20261124.json`.
 
 Choose the next runnable-original case from the refreshed census. Amalthea's
 robot generator capacity and negative flicker delay are candidates. Use the

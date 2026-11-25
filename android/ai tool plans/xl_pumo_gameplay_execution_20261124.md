@@ -295,13 +295,20 @@ spawn, not a gameplay parity claim. The images and raw runs stay local.
 
 The focused source comparator, inventory contract and native 15/34 runtime
 checks passed 3/3 after formatting. The Windows D2 build and the isolated
-Android diagnostic APK built. The full exact-source Windows census is running
-to replace the previous 1,580/1,654 snapshot; the targeted Pyromaniac and
-Alien Frontier gains imply 1,595/1,654 and 59 remaining if all prior passes
-hold. Of that tracked remainder, 23 had observed starts in the pinned
-original. These are provisional denominators until the complete run ends.
+Android diagnostic APK built. The rebuilt Windows engine
+`5c8bc1e6000e80397c9bbb111ccf646e269422d28721bdc44910ebd95e7d75bf`
+at runtime source commit `b52ad2429` completed the fixed 1,654-case census:
+**1,070/1,111 pinned** and **525/543 local**, for **1,595/1,654**. All prior
+passing cases still pass. The fifteen gains are fourteen pinned Alien
+Frontier ordinals and local Pyromaniac-D2. The 59 remaining include 23 with
+observed starts in the pinned original. The local 543-case run kept the same
+frozen catalog hash and case order but reset its extraction cache after each
+archive to keep C: above the workspace target. The interrupted first attempt
+and cleanup preview remain local; the completed per-archive receipts make the
+final aggregate auditable.
+[Complete census and remaining register](../XL_compat/evidence/gameplay-census-alien-frontier-20261124.json).
 
-| First blocker after the two targeted gains | Tracked cases out of 59 |
+| Tracked first blocker after the full rerun  | Cases out of 59 |
 | ------------------------------------------ | ----------------------: |
 | Advertised level file missing              |                      34 |
 | Robot fire killed the idle pilot           |                       4 |
@@ -317,6 +324,23 @@ original. These are provisional denominators until the complete run ends.
 
 The 59 comprise 31 original mission rejections, three empty advertised-member
 lookups, 23 observed original starts and two original simulations not verified.
+
+The first #764 Linux script run failed because its private-policy fixture still
+expected the old 15/34 rejection. The fixture now requires the byte-count
+observation and rejects missing or malformed evidence; all 56 private-policy
+tests passed locally and in hosted Linux on the corrected source. Earlier
+trusted controller runs refused to publish after the candidate head moved;
+their provenance failures are retained. The final source head `a5f6ac5e2`
+passed the trusted exact-head result: 113 required tests, 16 format witnesses,
+three modern source comparisons, 8/8 sampled levels and 64/64 expanded
+levels. The manually dispatched exact-head XL contract workflow also passed.
+The non-tip automatic public replay checks skipped as designed after #765
+opened. A manual public workflow on `a5f6ac5e2` completed admission, save
+integrity and 34/34 native headed replay runs. Its report labels full
+simulation qualification incomplete; this is the established public replay
+scope. [Exact-head public replay](https://github.com/larsonm-personal/dxx-redux/actions/runs/45480690713),
+[trusted XL result](https://github.com/larsonm-personal/dxx-redux/actions/runs/45480343935),
+[manual XL contracts](https://github.com/larsonm-personal/dxx-redux/actions/runs/45480773466).
 
 The S21 ordinary 32333 kit remains installed on the SM-G996U with Android 15.
 The user is not available to perform manual testing now. The original Rookie
