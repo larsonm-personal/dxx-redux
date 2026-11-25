@@ -1,0 +1,391 @@
+{
+  "schema": 1,
+  "date": "2026-11-24",
+  "distribution": "Pinned levelpack Alien Frontier",
+  "source_build_pair_sha256": "25cfed77be8463df2155bae63a85159044bea75fbd8947fbdec0d0b1992f26bd",
+  "source_revision": "2576a98b5de310e3ac7c9777df2677d1627b8bae",
+  "windows_runtime_source": "75f356db49e7696bc06e3fb62b5a008345b7b956",
+  "windows_runtime_sha256": "dcd1edd271dc832dc6c4b932d35175899b09ac11fe0bae3964aca061b656bada",
+  "qualification": "120 unassisted frames at Hotshot; no engine code changes for the Windows diagnostic",
+  "windows_authored": {
+    "starts": 1,
+    "ordinals": 15,
+    "only_start": 6,
+    "receipt_sha256": "045d53ea56b4aa31e171a23926d563d52d2ae526f01d0e60128d930dfb160996"
+  },
+  "windows_repacked_diagnostic": {
+    "starts": 15,
+    "ordinals": 15,
+    "reencoded_rows": 608,
+    "receipt_sha256": "cc6f4b725b3d24fe36d0d71c856c2488361156b14545989195370a6fef4c4541",
+    "ordinal_6_member_unchanged": true,
+    "new_blockers_within_120_frames": 0
+  },
+  "layout": [
+    {
+      "ordinal": 1,
+      "level": "sdg22.rl2",
+      "indices": 33,
+      "deltas": 1803,
+      "covered_byte_count_deltas": 1803,
+      "overlapping_delta_slots": 0,
+      "invalid_classic_rows": 0,
+      "zero_count_rows": 0,
+      "exact_byte_count_partition": true,
+      "invalid_packed_rows": 28,
+      "exact_packed_partition": false
+    },
+    {
+      "ordinal": 2,
+      "level": "esonapri.rl2",
+      "indices": 11,
+      "deltas": 109,
+      "covered_byte_count_deltas": 109,
+      "overlapping_delta_slots": 0,
+      "invalid_classic_rows": 0,
+      "zero_count_rows": 0,
+      "exact_byte_count_partition": true,
+      "invalid_packed_rows": 11,
+      "exact_packed_partition": false
+    },
+    {
+      "ordinal": 3,
+      "level": "serduta.rl2",
+      "indices": 95,
+      "deltas": 4771,
+      "covered_byte_count_deltas": 4771,
+      "overlapping_delta_slots": 0,
+      "invalid_classic_rows": 0,
+      "zero_count_rows": 0,
+      "exact_byte_count_partition": true,
+      "invalid_packed_rows": 27,
+      "exact_packed_partition": false
+    },
+    {
+      "ordinal": 4,
+      "level": "chacshir.rl2",
+      "indices": 27,
+      "deltas": 1103,
+      "covered_byte_count_deltas": 1103,
+      "overlapping_delta_slots": 0,
+      "invalid_classic_rows": 0,
+      "zero_count_rows": 0,
+      "exact_byte_count_partition": true,
+      "invalid_packed_rows": 24,
+      "exact_packed_partition": false
+    },
+    {
+      "ordinal": 5,
+      "level": "tefoleg.rl2",
+      "indices": 33,
+      "deltas": 2997,
+      "covered_byte_count_deltas": 2997,
+      "overlapping_delta_slots": 0,
+      "invalid_classic_rows": 0,
+      "zero_count_rows": 0,
+      "exact_byte_count_partition": true,
+      "invalid_packed_rows": 33,
+      "exact_packed_partition": false
+    },
+    {
+      "ordinal": 6,
+      "level": "alarlof.rl2",
+      "indices": 68,
+      "deltas": 5083,
+      "covered_byte_count_deltas": 12,
+      "overlapping_delta_slots": 0,
+      "invalid_classic_rows": 59,
+      "zero_count_rows": 0,
+      "exact_byte_count_partition": false,
+      "invalid_packed_rows": 0,
+      "exact_packed_partition": true
+    },
+    {
+      "ordinal": 7,
+      "level": "cefispar.rl2",
+      "indices": 74,
+      "deltas": 2995,
+      "covered_byte_count_deltas": 2995,
+      "overlapping_delta_slots": 0,
+      "invalid_classic_rows": 0,
+      "zero_count_rows": 0,
+      "exact_byte_count_partition": true,
+      "invalid_packed_rows": 34,
+      "exact_packed_partition": false
+    },
+    {
+      "ordinal": 8,
+      "level": "ganeshd.rl2",
+      "indices": 68,
+      "deltas": 3297,
+      "covered_byte_count_deltas": 3297,
+      "overlapping_delta_slots": 0,
+      "invalid_classic_rows": 0,
+      "zero_count_rows": 0,
+      "exact_byte_count_partition": true,
+      "invalid_packed_rows": 32,
+      "exact_packed_partition": false
+    },
+    {
+      "ordinal": 9,
+      "level": "lakshmid.rl2",
+      "indices": 57,
+      "deltas": 3860,
+      "covered_byte_count_deltas": 3860,
+      "overlapping_delta_slots": 0,
+      "invalid_classic_rows": 0,
+      "zero_count_rows": 0,
+      "exact_byte_count_partition": true,
+      "invalid_packed_rows": 28,
+      "exact_packed_partition": false
+    },
+    {
+      "ordinal": 10,
+      "level": "fbasin.rl2",
+      "indices": 20,
+      "deltas": 1284,
+      "covered_byte_count_deltas": 1284,
+      "overlapping_delta_slots": 0,
+      "invalid_classic_rows": 0,
+      "zero_count_rows": 0,
+      "exact_byte_count_partition": true,
+      "invalid_packed_rows": 18,
+      "exact_packed_partition": false
+    },
+    {
+      "ordinal": 11,
+      "level": "aurabyss.rl2",
+      "indices": 21,
+      "deltas": 836,
+      "covered_byte_count_deltas": 836,
+      "overlapping_delta_slots": 0,
+      "invalid_classic_rows": 0,
+      "zero_count_rows": 0,
+      "exact_byte_count_partition": true,
+      "invalid_packed_rows": 11,
+      "exact_packed_partition": false
+    },
+    {
+      "ordinal": 12,
+      "level": "ursula.rl2",
+      "indices": 44,
+      "deltas": 2269,
+      "covered_byte_count_deltas": 2269,
+      "overlapping_delta_slots": 0,
+      "invalid_classic_rows": 0,
+      "zero_count_rows": 0,
+      "exact_byte_count_partition": true,
+      "invalid_packed_rows": 21,
+      "exact_packed_partition": false
+    },
+    {
+      "ordinal": 13,
+      "level": "lvoxonbt.rl2",
+      "indices": 79,
+      "deltas": 4706,
+      "covered_byte_count_deltas": 4706,
+      "overlapping_delta_slots": 0,
+      "invalid_classic_rows": 0,
+      "zero_count_rows": 0,
+      "exact_byte_count_partition": true,
+      "invalid_packed_rows": 27,
+      "exact_packed_partition": false
+    },
+    {
+      "ordinal": 14,
+      "level": "laradhes.rl2",
+      "indices": 40,
+      "deltas": 2705,
+      "covered_byte_count_deltas": 2705,
+      "overlapping_delta_slots": 0,
+      "invalid_classic_rows": 0,
+      "zero_count_rows": 0,
+      "exact_byte_count_partition": true,
+      "invalid_packed_rows": 31,
+      "exact_packed_partition": false
+    },
+    {
+      "ordinal": 15,
+      "level": "thorium.rl2",
+      "indices": 6,
+      "deltas": 423,
+      "covered_byte_count_deltas": 423,
+      "overlapping_delta_slots": 0,
+      "invalid_classic_rows": 0,
+      "zero_count_rows": 0,
+      "exact_byte_count_partition": true,
+      "invalid_packed_rows": 6,
+      "exact_packed_partition": false
+    }
+  ],
+  "lighting_action": {
+    "ordinal": 9,
+    "level_file": "lakshmid.rl2",
+    "light_off": [
+      18,
+      691,
+      2
+    ],
+    "light_on": [
+      16,
+      734,
+      0
+    ],
+    "scope": "Fixed action dispatch within a bounds-checked copy of pinned D2X-XL",
+    "variants": [
+      {
+        "reader": "bounded-original-packed",
+        "lighting_mode": 0,
+        "deltas": 3860,
+        "geometry_hashes": {
+          "before": "9aca62506a6b9fab",
+          "off": "7414e32aed42400b",
+          "on": "bae845707d90580b"
+        },
+        "off_declared": 18944,
+        "off_applied": 2798,
+        "trace_sha256": "982d1209822fdb7de587d17955f71758e7204f240050581751559b15bfcdb6ed",
+        "frame_count": 120,
+        "same_physical_display": true,
+        "sources": [
+          {
+            "segment": 692,
+            "side": 1,
+            "first": 2991,
+            "declared": 5696,
+            "applied": 869
+          },
+          {
+            "segment": 743,
+            "side": 4,
+            "first": 3251,
+            "declared": 5312,
+            "applied": 609
+          },
+          {
+            "segment": 743,
+            "side": 5,
+            "first": 3417,
+            "declared": 5312,
+            "applied": 443
+          },
+          {
+            "segment": 730,
+            "side": 5,
+            "first": 3175,
+            "declared": 2432,
+            "applied": 685
+          },
+          {
+            "segment": 729,
+            "side": 4,
+            "first": 3169,
+            "declared": 192,
+            "applied": 192
+          }
+        ]
+      },
+      {
+        "reader": "qualified-byte-count",
+        "lighting_mode": 0,
+        "deltas": 3860,
+        "geometry_hashes": {
+          "before": "9aca62506a6b9fab",
+          "off": "c2d5d9d4f5c9873b",
+          "on": "8029f242692f073b"
+        },
+        "off_declared": 592,
+        "off_applied": 592,
+        "trace_sha256": "5191d7d2dc0f4010fc1625b42bb7a90bd5d44213c429f73861c862eb4e7bd6f1",
+        "frame_count": 120,
+        "same_physical_display": true,
+        "sources": [
+          {
+            "segment": 692,
+            "side": 1,
+            "first": 2991,
+            "declared": 178,
+            "applied": 178
+          },
+          {
+            "segment": 743,
+            "side": 4,
+            "first": 3251,
+            "declared": 166,
+            "applied": 166
+          },
+          {
+            "segment": 743,
+            "side": 5,
+            "first": 3417,
+            "declared": 166,
+            "applied": 166
+          },
+          {
+            "segment": 730,
+            "side": 5,
+            "first": 3175,
+            "declared": 76,
+            "applied": 76
+          },
+          {
+            "segment": 729,
+            "side": 4,
+            "first": 3169,
+            "declared": 6,
+            "applied": 6
+          }
+        ]
+      }
+    ]
+  },
+  "current_runs": {
+    "original_unchanged": {
+      "ordinal_count": 15,
+      "starts": 15,
+      "difficulty": "Hotshot (2)",
+      "frames_each": 120,
+      "display_preserved": true,
+      "ordinal_9_advertised": "lakshmid.rl2",
+      "engine_sha256": "298734d63e3ef1e6321947ae901b32a779ed3af73aaa9a4f29f6d9aa4e6a8428"
+    },
+    "redux": {
+      "ordinal_count": 15,
+      "starts": 15,
+      "frames_each": 120,
+      "criterion": "Requested original level loads and executes 120 unassisted simulation frames at 60 Hz without death or level transition",
+      "engine_sha256": "86dabfad3edde5d6737d1b27c6b455e3bfdce79390cc8827aa1f56edeaf5eb5e",
+      "receipt_sha256": "5f66cbb09c79c48b2410d91862bcb00edb54514a8bf1a017f03871145115a47d",
+      "new_blockers_within_120_frames": 0
+    },
+    "presentation": {
+      "original": {
+        "ordinal": 9,
+        "level": "lakshmid.rl2",
+        "screenshot_sha256": "58cc004e11335fec663a6e6f8e8f5c424b765ae96422bad400062ba07bf4a82b",
+        "window": "640x480"
+      },
+      "android": {
+        "diagnostic_version_code": 32530,
+        "package": "com.dxxredux.app.nsdtest",
+        "level_name": "Lakshmi Dungeon",
+        "source_level_version": 15,
+        "source_game_version": 34,
+        "light_sources": 57,
+        "in_game": true,
+        "difficulty": 2,
+        "spawn_segment": 2,
+        "automation_steps": "10/10",
+        "screenshot_sha256": "9cfd728136a496ccb1edcc4d14767b692dc13a7def4803aeb76e13ee8ac86b85"
+      },
+      "comparison": "Matching ordinal-9 opening chamber from the same unchanged source member; presentation capture, not authored-action parity"
+    },
+    "focused_tests": {
+      "xl_light_index_reference": "passed",
+      "xl_inventory_contract": "passed",
+      "xl_format34_native": "passed",
+      "native_light_action": "trigger 18 darkens five source masks and trigger 16 restores them after original data load"
+    },
+    "limitations": "Original packed-count dispatch is shown only in a bounded instrumented local copy because the live source ranges exceed the declared delta table. Runtime qualification uses complete byte/count partitions and never traverses the original out-of-range count. Android image is local; no private inputs, screenshots, profiles, saves or raw logs are committed."
+  }
+}

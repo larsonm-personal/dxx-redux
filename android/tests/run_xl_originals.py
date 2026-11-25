@@ -387,12 +387,14 @@ def format_results(inspect, stage, work, data):
                 raise ValueError("Audited XL format failed inspection")
         elif pair == (15, 34):
             if (
-                run.returncode != 1
-                or inventory["status"] != "rejected"
-                or inventory["reason"]
-                != "invalid packed light index 2 in 15/34: segment=63 side=0 count=2592 first=37 available=1284"
+                run.returncode
+                or inventory["status"] != "inspection_only"
+                or (inventory["level_version"], inventory["game_version"]) != pair
+                or not any(
+                    item.get("feature") == "byte_count_light_indices" for item in inventory.get("observations", [])
+                )
             ):
-                raise ValueError("Original 15/34 packed-light rejection changed")
+                raise ValueError("Original 15/34 byte-count layout changed")
         elif (
             run.returncode != 1
             or inventory["status"] != "rejected"

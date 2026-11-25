@@ -661,12 +661,38 @@ static Inventory read_level_inventory(const Bytes &bytes, bool allow_classic)
 	}
 	if (indices.count) {
 		auto r = section_reader(bytes, out, indices, 6);
+		std::vector<std::array<int, 4>> raw_indices;
+		raw_indices.reserve(indices.count);
+		for (int i = 0; i < indices.count; ++i) raw_indices.push_back({ r.s16(), r.u8(), r.u8(), r.u16() });
+		bool byte_count_partition = out.level_version == 15 && out.game_version == 34 && deltas.count > 0;
+		if (byte_count_partition) {
+			std::vector<unsigned char> covered(static_cast<std::size_t>(deltas.count));
+			for (const auto &row : raw_indices) {
+				const int first = row[3], count = row[2];
+				if (row[0] < 0 || row[0] >= segment_count || row[1] >= 6 || count == 0 ||
+				    first > deltas.count || count > deltas.count - first) {
+					byte_count_partition = false;
+					break;
+				}
+				for (int j = first; j < first + count; ++j) {
+					if (covered[static_cast<std::size_t>(j)]) byte_count_partition = false;
+					covered[static_cast<std::size_t>(j)] = 1;
+				}
+			}
+			if (byte_count_partition)
+				byte_count_partition = std::all_of(covered.begin(), covered.end(), [](unsigned char count) { return count == 1; });
+			if (byte_count_partition)
+				byte_count_partition = std::any_of(raw_indices.begin(), raw_indices.end(), [&](const auto &row) {
+					const int count = (row[2] << 5) | (row[1] >> 3);
+					return (row[1] & 7) >= 6 || row[3] > deltas.count || count > deltas.count - row[3];
+				});
+		}
 		const bool allows_inert_light_indices = out.game_version == 40 &&
 		                                        (out.level_version == 22 || out.level_version == 23 || out.level_version == 27);
 		const auto targets = allows_inert_light_indices ? authored_light_targets(out) : LightFaces{};
 		for (int i = 0; i < indices.count; ++i) {
-			std::array<int, 4> values{ r.s16(), r.u8(), r.u8(), r.u16() };
-			if (out.game_version >= 34) {
+			std::array<int, 4> values = raw_indices[static_cast<std::size_t>(i)];
+			if (out.game_version >= 34 && !byte_count_partition) {
 				// Encoded side/count use 3/13 unsigned bits. The pinned reader's
 				// signed-byte promotion anomaly is recorded in format-15-34.md
 				values[2] = (values[2] << 5) | (values[1] >> 3);
@@ -682,6 +708,8 @@ static Inventory read_level_inventory(const Bytes &bytes, bool allow_classic)
 			}
 			out.light_indices.push_back(values);
 		}
+		if (byte_count_partition)
+			issue(out.observations, "byte_count_light_indices", -1, "complete nonoverlapping 15/34 delta table");
 	}
 	if (deltas.count) {
 		auto r = section_reader(bytes, out, deltas, 8);
