@@ -13,6 +13,7 @@
   "setup": "Original pmines_v11.7z and eight raw XL addons were imported through the ordinary launcher. A separate, earlier fixed-view room 129 save was copied to pilot manual slot 4, loaded through the UI, and quicksaved to pilot quick slot 3 before firing. This did not recreate the reporter's manual route, original missile aim, or issue save.",
   "fixed_view_source_save_sha256": "e66a2adf21db39cccc1c88caa6342169c0f8867bce6a76684ba3a04f8ab54666",
   "separate_pre_shot_quicksave_sha256": "887a5434be95fbadb8d0e16e4aa7e0db8ae4ab808be02a180d74bd1d10205ce0",
+  "separate_hub_source_save_sha256": "22acebbb373dd2e313f9d0285493583163916dd06d133185259001f3433884ef",
   "checkpoint": "room 129 fixed-view pose, bright white octagonal wall panel",
   "last_successful_action": "touch steering after the repeated missile shot",
   "missile": "Concussion",
@@ -41,7 +42,14 @@
     {
       "interval": "hub score screen to Crauphel briefing",
       "version": 32333,
-      "status": "not measured; direct level-2 selection is a separate route"
+      "input_method": "scripted native laser and thrust to reach the score screen, then ADB touch on NEXT",
+      "route": "The codex24 hub level-1 quicksave was installed in separate manual slot 0 and restored in the ordinary app. Touch flight reached blue forcefield segment 127 but not the exit. A declared face_view assist placed the pilot at original hub segment 44 side 2. Scripted ordinary laser and thrust crossed the authored exit to the Level 1 Complete / Temporal Hub Destroyed score screen; ADB touch advanced NEXT. This is an assisted setup and scripted navigation, not a continuous manual flight from the hub spawn.",
+      "seconds_approx": "8.4-8.6 from 0.1-second video frames: score still visible at t=1.6 s, loading by t=1.8 s, first story text by t=10.2 s",
+      "labels": ["CHECKING LEVEL RESOURCES AND GRAPHICS", "PREPARING FIRST PAGE"],
+      "bar": "gold bar moved during resource checks and first-page preparation, then disappeared as the first story page appeared",
+      "score_screen": "LEVEL 1 COMPLETE / TEMPORAL HUB DESTROYED; total score 600",
+      "first_briefing_words": "OUR STORY BEGINS IN FAR AWAY PLACE IN OUR GALAXY",
+      "status": "measured on ordinary S21 32333 with fixed-pose assisted hub exit; reporter's continuous manual route remains unverified"
     },
     {
       "interval": "final Crauphel briefing dismissal to flight",
@@ -62,6 +70,7 @@
     "repeat_shot_image_sha256": "c98dccc401f75eb3cc0c15d5b34e0f40606679303a41976ec80c1df3dd3db17c",
     "repeat_steer_image_sha256": "4a89fd486c3dea92549c310dd6a34da1995f2c0cc33eff7f70c68a4cb48099c8",
     "green_page_image_sha256": "86ce7ab4eb03238269a0b4f0af2eb4784e21b3fcf3e025aeb88f32dffbc1bf5e",
-    "direct_level2_final_dismissal_video_sha256": "903f048ca9f53f4eb4671f382efaa79c0d8dc4a25a2f2f618276841a7da16a81"
+    "direct_level2_final_dismissal_video_sha256": "903f048ca9f53f4eb4671f382efaa79c0d8dc4a25a2f2f618276841a7da16a81",
+    "hub_score_to_crauphel_video_sha256": "58e3fca40f932d445ac4d0c4e6ce45b8a71cf3aa5f3b160462255d637bd0412d"
   }
 }

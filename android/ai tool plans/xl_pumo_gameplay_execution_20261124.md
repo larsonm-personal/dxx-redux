@@ -57,7 +57,17 @@ advanced every story page and timed dismissal of the final **CRAUPHEL SCILAB;
 INFESTATION: LOW** page to flight at about 5–6 seconds on 32333. The gold bar
 moved through **LOADING LEVEL**, **VERIFYING MISSION ARCHIVE** and resource
 identifiers, then disappeared on the cockpit. This direct start did not measure
-the hub score-to-Crauphel briefing interval.
+the hub score-to-Crauphel briefing interval. A separate ordinary-app S21 run
+restored the codex24 hub save in manual slot 0. Touch flight reached blue
+forcefield segment 127 without exiting. A declared `face_view` assist then
+placed the pilot at original hub segment 44 side 2; scripted ordinary laser
+and thrust reached **Level 1 Complete / Temporal Hub Destroyed**, score 600.
+ADB touch advanced the score screen. The first Crauphel story page began
+**OUR STORY BEGINS IN FAR AWAY PLACE IN OUR GALAXY** about 8.4-8.6 seconds
+later in the S21 video. **CHECKING LEVEL RESOURCES AND GRAPHICS** changed to
+**PREPARING FIRST PAGE** over a moving gold bar, which disappeared on the
+page. This is an ordinary 32333 app timing with assisted setup and scripted
+navigation, distinct from a continuous manual flight from the hub spawn.
 [Touch shot and loading receipt](../XL_compat/evidence/pumo-s21-touch-32333-20261124.json)
 
 Earlier protected S21 runs verified that the native loading bar stayed visible

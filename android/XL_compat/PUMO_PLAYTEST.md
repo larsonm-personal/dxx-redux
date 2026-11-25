@@ -19,8 +19,15 @@ OF THE LATEST TOP OF THE LINE TECH**. It did not traverse the hub score screen.
 On a separate direct level-2 start, the final **CRAUPHEL SCILAB; INFESTATION:
 LOW** page was dismissed without **SKIP**. Flight appeared about 5–6 seconds
 later. The moving gold bar showed **LOADING LEVEL**, **VERIFYING MISSION
-ARCHIVE** and resource identifiers, then disappeared. The hub score-to-Crauphel
-briefing timing remains open; repeat the dismissal timing on that route.
+ARCHIVE** and resource identifiers, then disappeared. On the ordinary S21
+32333 app, a separately restored hub save and declared fixed-pose segment 44
+assist reached the **Level 1 Complete / Temporal Hub Destroyed** score screen
+through scripted laser and thrust. Touch advance to the first Crauphel story
+page took about 8.4-8.6 seconds. **CHECKING LEVEL RESOURCES AND GRAPHICS**
+changed to **PREPARING FIRST PAGE**; the gold bar moved and disappeared as
+the page beginning **OUR STORY BEGINS IN FAR AWAY PLACE IN OUR GALAXY**
+appeared. This was not a continuous manual flight from the hub spawn. Repeat
+both later timings on the reporter's own route when it becomes available.
 
 Use [ordinary 32333 and its checked manifest](../../temp/xl-pumo-phone-s21-20261124-32333/README.md)
 for the next manual session. The kit installs `com.dxxredux.app` alongside
@@ -50,8 +57,9 @@ the visible labels and whether the bar moved or disappeared.
 
 1. From choosing difficulty on a fresh Mineral Valley start to the first briefing.
    Watch for **CHECKING LEVEL RESOURCES AND GRAPHICS**.
-2. From advancing the hub score screen to the Crauphel briefing. Record when
-   the next label appears.
+2. From advancing the hub score screen to the Crauphel briefing on your own
+   continuous route. Compare the result with the 8.4-8.6 second assisted
+   S21 observation and record the next visible label.
 3. From dismissing the final briefing page to flight. Watch for **CACHING LEVEL
    TEXTURES** and **STARTING LEVEL MUSIC**.
 
