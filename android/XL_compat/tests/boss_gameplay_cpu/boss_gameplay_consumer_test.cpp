@@ -4756,6 +4756,17 @@ int Newdemo_state = 0;
 control_info Controls;
 int Highest_vertex_index = 0;
 #include "side_table.h"
+// This standalone fixture owns only classic, four-corner synthetic segments.
+int get_side_verts(int *vertices, int segment, int side)
+{
+	for (int corner = 0; corner < 4; ++corner)
+		vertices[corner] = Segments[segment].verts[Side_to_verts_int[side][corner]];
+	return 4;
+}
+unsigned xl_level_geometry_vertex_mask(int)
+{
+	return 0xff;
+}
 wall Walls[MAX_WALLS];
 int Num_walls;
 
