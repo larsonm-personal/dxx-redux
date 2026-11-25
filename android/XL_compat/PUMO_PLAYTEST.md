@@ -2,6 +2,12 @@
 
 ## November 24 ordinary phone kit
 
+The ordinary kit is still on the SM-G996U with Android 15. Manual play is
+paused because the user is not testing at the moment. No human touch-shot or
+three-transition timing result was collected in the later November 24
+session. The existing fixed-view and scripted checks below are the last
+observations; the original issue save remains untouched.
+
 Use [ordinary 32333 and its checked manifest](../../temp/xl-pumo-phone-s21-20261124-32333/README.md)
 for the next manual session. The kit installs `com.dxxredux.app` alongside
 the Play internal build. Its manifest includes the APK SHA-256 and digests

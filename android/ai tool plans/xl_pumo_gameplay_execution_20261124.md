@@ -250,6 +250,78 @@ remainder is 73, including 37 with observed starts in the original. The flag
 layer has a 16-case comparison, and the Prophecy snapshot is the latest full
 census. [Later targeted result](../XL_compat/evidence/gameplay-pmanic-d2-segment-flags-20261124.json)
 
+## Alien Frontier light layout, later November 24 session
+
+The personal fork was fetched again. The local `cmake` tip was
+`2fe3b82ab`; all prior stack PRs through #763 had merged, and there were no
+open fork PRs. The #763 public headed replay admission and Linux tests passed
+on its final head. The new branch starts from that `cmake` tip. Workspace
+cleanup was previewed and run through `android/clean-workspace.ps1` with the
+active runs and authentic assets excluded, restoring more than 50 GiB free.
+
+The pinned Alien Frontier HOG was unchanged. Its fifteen 15/34 members have
+676 light indices. Fourteen members divide their delta tables exactly once
+when the third record byte is read as the count; the fifteenth, Alarlof,
+has a valid packed table and fails the separate-byte test. Redux requires
+valid faces, nonzero bounded ranges, exact coverage and no overlaps before
+using the alternate interpretation. It continues to reject malformed
+tables that fail those conditions.
+
+An unmodified pinned D2X-XL run started ordinal 6 only. A locally
+instrumented copy that records invalid packed indices started all fifteen
+at Hotshot for 120 unassisted frames. A separate bounded action copy kept
+lighting method 0 and dispatched ordinal 9 light-off trigger 18 from
+segment 691, side 2. It changed face lighting, but the packed source at
+segment 692, side 1 declared 5,696 deltas from offset 2,991 in a 3,860
+entry table; only 869 fit. The five targeted packed sources declared
+18,944 entries and the bounded audit applied 2,798. The complete byte-count
+diagnostic applied all 592 declared deltas and also changed face lighting.
+No unbounded original traversal was attempted.
+
+Redux loaded and ticked all fifteen advertised ordinals at the same Hotshot
+input, 120 frames, 60 Hz and seed 1. The native original-data check loaded
+ordinal 9 with 57 sources and 3,860 deltas, then trigger 18 darkened the
+five source masks and trigger 16 restored them. No new blocker appeared
+within those 120 frames; full authored traversal remains unmeasured.
+The Android diagnostic version 32530 loaded the same unchanged ordinal 9
+member as a derived single-level mission and captured its opening chamber
+on emulator-5588. The matching local D2X-XL windowed capture shows the same
+central rock, side panels and lower blue object. This is presentation at
+spawn, not a gameplay parity claim. The images and raw runs stay local.
+[Byte-count audit and bounded action receipt](../XL_compat/evidence/gameplay-alien-frontier-byte-count-20261124.json).
+
+The focused source comparator, inventory contract and native 15/34 runtime
+checks passed 3/3 after formatting. The Windows D2 build and the isolated
+Android diagnostic APK built. The full exact-source Windows census is running
+to replace the previous 1,580/1,654 snapshot; the targeted Pyromaniac and
+Alien Frontier gains imply 1,595/1,654 and 59 remaining if all prior passes
+hold. Of that tracked remainder, 23 had observed starts in the pinned
+original. These are provisional denominators until the complete run ends.
+
+| First blocker after the two targeted gains | Tracked cases out of 59 |
+| ------------------------------------------ | ----------------------: |
+| Advertised level file missing              |                      34 |
+| Robot fire killed the idle pilot           |                       4 |
+| Fluid behavior                             |                       4 |
+| Non-hexahedral geometry                    |                       4 |
+| Unsupported level format                   |                       3 |
+| Custom base definitions                    |                       2 |
+| Robot definitions                          |                       2 |
+| Waypoint controllers                       |                       2 |
+| Lightning effects                          |                       2 |
+| Robot generator capacity                   |                       1 |
+| Timeout                                    |                       1 |
+
+The 59 comprise 31 original mission rejections, three empty advertised-member
+lookups, 23 observed original starts and two original simulations not verified.
+
+The S21 ordinary 32333 kit remains installed on the SM-G996U with Android 15.
+The user is not available to perform manual testing now. The original Rookie
+touch missile, aim landmark and saved-approach repeat therefore remain open,
+as do the three human-visible loading intervals. Earlier fixed-camera and
+scripted results above retain their distinct scope. The original issue save
+was not touched in this session.
+
 The Redux readiness harness starts at Hotshot. The first reference runs
 inherited their runner's Rookie default. All 15 were repeated at Hotshot
 with no steering or firing and reached
@@ -276,8 +348,10 @@ captures in all 15. The two engine harnesses record their own clocks.
 
 ## Fork review stack
 
-The ready-for-review PRs target `larsonm-personal/dxx-redux`, each based on
-its immediate predecessor, and remain open in [stack #746](https://github.com/larsonm-personal/dxx-redux/stack/746).
+The prior ready-for-review PRs targeted `larsonm-personal/dxx-redux`, each
+based on its immediate predecessor in [stack #746](https://github.com/larsonm-personal/dxx-redux/stack/746).
+All through #763 have since merged into `cmake`; the current Alien Frontier
+layer begins a new review branch on that tip.
 
 | Layer                                           | Fork PR                                                        | Verified head                              | Passed | Skipped |
 | ----------------------------------------------- | -------------------------------------------------------------- | ------------------------------------------ | -----: | ------: |

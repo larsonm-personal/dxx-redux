@@ -1,46 +1,59 @@
 # Paste-ready Pumo and D2X-XL kickoff
 
 Work in `C:/local/dxx-redux`. Read `AGENTS.md`,
-`.github/copilot-instructions.md`, `android/XL_compat/PUMO_PLAYTEST.md`, and
-`xl_pumo_gameplay_execution_20261124.md` and `xl_pumo_next_tranche_20261124.md`
-in `android/ai tool plans/`. Fetch the personal fork and inspect
-the checkout, worktrees, open PRs and stack #746 before changing files. Use
-roughly ten hours with room for active play and CI.
+`.github/copilot-instructions.md`, `android/XL_compat/PUMO_PLAYTEST.md`,
+`android/ai tool plans/xl_pumo_gameplay_execution_20261124.md` and
+`android/ai tool plans/xl_pumo_next_tranche_20261124.md`. Fetch the personal
+fork, inspect the checkout, worktrees, open PRs and stack #746 before edits.
+Reserve time for live play and exact-head CI. Prior PRs through #763 merged
+into `cmake` before the Alien Frontier branch was created.
 
-Start with ordinary Pumo kit 32333 on the S21 or reporting phone. The first
-unresolved action is the Rookie touch missile shot near room 129 in Crauphel
-Scilab, Mineral Valley level 2, followed by loading the saved approach and
-repeating the same shot. Preserve the original issue save. Keep the kit version
-with the phone, Android version, difficulty, input method, episode, checkpoint,
-last successful action, missile, aim and save/load result. If text is hard to
-read on a briefing page, record its first words or capture the page. Keep
-manual play, fixed-camera checks and scripted navigation distinct.
+Ordinary Pumo kit 32333 remains on the SM-G996U, Android 15. The user was
+unavailable for manual testing on November 24. When available, start with
+Rookie touch in Crauphel Scilab, Mineral Valley level 2 near room 129. Save
+the approach to a separate slot, fire the reported missile toward the same
+landmark, check steering and any exit, load the approach and repeat. Preserve
+the original issue save. Record phone, Android and kit versions, difficulty,
+input, episode, checkpoint, last successful action, missile, aim, save/load
+result and any hard-to-read briefing page's first words or image. Treat the
+previous fixed-camera and scripted checks as separate observations.
 
-Keep Show progress bars and Mission zip music on. Time difficulty selection
-to the first briefing, the hub score screen to the Crauphel briefing, and
-final briefing dismissal to flight. Report the visible label and whether the
-bar moved or disappeared. Keep the app version with each timing.
+Leave **Show progress bars** and **Mission zip** enabled. Time difficulty
+selection to the first briefing, hub score advance to the Crauphel briefing,
+and final briefing dismissal to flight. Keep the app version, visible label,
+bar motion or disappearance and duration with each interval. Do not infer
+these human-visible results from native phase timers.
 
-While waiting for human feedback, pick one runnable-original case from the
-remaining census. The latest full Windows run started 1,580/1,654 and left
-74 entries. The subsequent Pyromaniac-D2 repeat resolved one of those entries.
-Of the 73 tracked entries still open, 37 had observed starts in pinned D2X-XL.
-Use the same distribution, advertised ordinal and inputs.
-Repeat its full affected cluster and record each newly exposed blocker. Follow
-with one matching presentation capture on Android and the local D2X-XL install.
-For Alien Frontier, start with light-off trigger 18 on segment 691, side 2,
-in pinned ordinal 9. Verify the original lighting mode and observed behavior
-for its live out-of-range source. Keep the bounds-checked audit alongside the
-runtime result.
-Keep the desktop windowed, preserve device display and stay-awake settings,
-and keep private game inputs, screenshots, profiles, saves and raw logs local.
+The Alien Frontier 15/34 cluster is now admitted by a complete byte-count
+partition rule: Redux started all fifteen advertised ordinals at Hotshot for
+120 unassisted frames; native trigger 18 darkened its five sources and trigger
+16 restored them. The unmodified pinned D2X-XL started only ordinal 6;
+ordinal 9's packed live source is out of range. The bounded reference action,
+qualified byte-count action and instrumented original starts are separately
+labeled. Android diagnostic version 32530 and a windowed local D2X-XL index
+audit captured the same ordinal 9 opening chamber. See
+`android/XL_compat/evidence/gameplay-alien-frontier-byte-count-20261124.json`.
+The full Windows census is being rerun; the previous 1,580/1,654 snapshot
+plus Pyromaniac-D2 and fourteen Alien Frontier starts implies 1,595/1,654,
+with 59 remaining and 23 observed original starts, pending the full result.
 
-Use one local gameplay worker and read its progress from receipts. Validate
-routine cross-platform work on hosted Linux. Commit and push coherent locally
-tested layers, open ready-for-review PRs only to `larsonm-personal/dxx-redux`,
-base each on its immediate predecessor and register it in stack #746. Verify
-the predecessor's public replay admission before opening its dependent PR.
-Verify all exact-head CI and actual test execution. Diagnose skips from admission
-logs, fix material failures and preserve evidence for retries. Leave the PRs
-open for review. Commit an updated dated report, remaining categories and
-denominators, next plan, replacement kickoff and phone directions.
+Choose the next runnable-original case from the refreshed census. Amalthea's
+robot generator capacity and negative flicker delay are candidates. Use the
+same distribution, advertised ordinal and input in the local original and
+Redux, repeat its affected cluster and record each first blocker. Keep
+mission rejection, absent member, successful start, authored action and full
+traversal evidence separate. For presentation, continue Crauphel room 105's
+remaining sign glow comparison with matched viewpoint, rendering settings
+and animation phase.
+
+Use one local gameplay worker, read receipts, keep desktop play windowed and
+preserve device display and stay-awake settings. Keep private game inputs,
+screenshots, profiles, saves and raw logs local. Use hosted Linux CI for
+routine cross-platform work. Commit and push locally tested layers to
+`larsonm-personal/dxx-redux` only, open ready-for-review PRs with the
+immediate predecessor as base, and register them in stack #746. Confirm the
+predecessor's public replay admission before a dependent PR. Verify each
+exact head's CI and actual test execution, inspect admission logs for skips,
+fix material failures, retain retry evidence and leave PRs open for review.
+Update the dated report, remaining categories, next plan, kickoff and phone
+directions.
