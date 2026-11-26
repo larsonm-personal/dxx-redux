@@ -1424,6 +1424,43 @@ class XlPrivateTests(unittest.TestCase):
                             with self.assertRaises(ValueError):
                                 runner.format_results(Path("inspect"), work, work, {"format_witnesses": [witness]})
 
+    def test_early_format_witnesses_require_their_original_tables(self):
+        crown = {
+            "segments": [None] * 321,
+            "vertex_colors": [0] * 776,
+            "side_colors": [0] * 1926,
+            "texture_colors": [0] * 910,
+        }
+        pumo = {
+            "segments": [{"function": 14}] * 32 + [{"function": 0}] * 736,
+            "equipment": [[], []],
+            "object_trigger_records": [{"object": 92, "type": 16}],
+        }
+        with tempfile.TemporaryDirectory() as temporary:
+            work = Path(temporary)
+            for pair, tables in [((11, 31), crown), ((17, 35), pumo)]:
+                identity = {"level_version": pair[0], "game_version": pair[1]}
+                manifest = {"format_witnesses": [{**identity, "hog_member": "fixture.rl2"}]}
+                for field in (None, *tables):
+                    inventory = {**identity, **tables, "status": "inspection_only"}
+                    if field:
+                        inventory[field] = inventory[field][1:]
+                    receipt = {"playable": False, "levels": [{"inventory": inventory}]}
+
+                    def inspect(command, **kwargs):
+                        Path(command[2]).write_text(json.dumps(receipt))
+                        return subprocess.CompletedProcess(command, 0)
+
+                    with (
+                        self.subTest(pair=pair, field=field),
+                        patch.object(runner.subprocess, "run", side_effect=inspect),
+                    ):
+                        if field:
+                            with self.assertRaises(ValueError):
+                                runner.format_results(Path("inspect"), work, work, manifest)
+                        else:
+                            self.assertEqual(runner.format_results(Path("inspect"), work, work, manifest), 1)
+
     def test_format34_requires_complete_byte_count_observation(self):
         with tempfile.TemporaryDirectory() as temporary:
             work = Path(temporary)

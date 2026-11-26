@@ -378,13 +378,34 @@ def format_results(inspect, stage, work, data):
             raise ValueError("XL format receipt is incomplete")
         inventory = result["levels"][0]["inventory"]
         pair = (row["level_version"], row["game_version"])
-        if pair in ((15, 33), (17, 36), (18, 36), (19, 40), (21, 40), (23, 40)):
+        if pair in ((11, 31), (15, 33), (17, 35), (17, 36), (18, 36), (19, 40), (21, 40), (23, 40)):
             if (
                 run.returncode
                 or inventory["status"] != "inspection_only"
                 or (inventory["level_version"], inventory["game_version"]) != pair
             ):
                 raise ValueError("Audited XL format failed inspection")
+            if pair == (11, 31) and any(
+                len(inventory.get(table, [])) != count
+                for table, count in (
+                    ("segments", 321),
+                    ("vertex_colors", 776),
+                    ("side_colors", 1926),
+                    ("texture_colors", 910),
+                )
+            ):
+                raise ValueError("Original Crown geometry or color tables differ")
+            if pair == (17, 35):
+                cameras = [
+                    (action.get("object"), action.get("type")) for action in inventory.get("object_trigger_records", [])
+                ]
+                if (
+                    len(inventory.get("segments", [])) != 768
+                    or sum(room.get("function") == 14 for room in inventory["segments"]) != 32
+                    or len(inventory.get("equipment", [])) != 2
+                    or cameras != [(92, 16)]
+                ):
+                    raise ValueError("Original Pumo Mines skyboxes, generators or camera binding differ")
         elif pair == (15, 34):
             if (
                 run.returncode
