@@ -564,18 +564,26 @@ void collect_dependencies(const xl_compat::Inventory &level, bool multiplayer, b
 	for (std::size_t i = 0; i < level.object_trigger_records.size(); ++i) texture_action(level.object_trigger_records[i].action, int(i), "object texture action");
 }
 
-// The original Subspace D3 release declares custom robots without an HXM,
-// but its only level has no robot producers and only named-sound actions.
-// Keep companion validation for other single-level packages, including an
-// incomplete Water Arena package whose HXM was removed.
 bool robotless_single_level(const Mission *mission, const xl_compat::Inventory &level)
 {
-	return mission && mission->last_level == 1 && mission->n_secret_levels == 0 && !level.triggers.empty() && level.matcens.empty() &&
-	       level.object_trigger_records.empty() &&
-	       std::none_of(level.objects.begin(), level.objects.end(), [](const auto &object) {
-		       return object.type == OBJ_ROBOT || (object.contains_count > 0 && object.contains_type == OBJ_ROBOT);
-	       }) &&
-	       std::none_of(level.segments.begin(), level.segments.end(), [](const auto &segment) { return xl_compat::producer_function(segment) == 4; }) && std::all_of(level.triggers.begin(), level.triggers.end(), [](const auto &action) { return action.type == 30; });
+	if (!mission || mission->last_level != 1 || mission->n_secret_levels || level.triggers.empty() || !level.object_trigger_records.empty())
+		return false;
+	if (std::any_of(level.objects.begin(), level.objects.end(), [](const auto &object) {
+		    return object.type == OBJ_ROBOT || (object.contains_count > 0 && object.contains_type == OBJ_ROBOT);
+	    }))
+		return false;
+
+	// The Forest's 23/40 releases have only an exit. Centers start disabled
+	// and an exit cannot activate one. The normal dependency walk still
+	// checks the robot types in every assigned center
+	if (level.level_version == 23 && level.game_version == 40 && level.triggers.size() == 1 &&
+	    level.triggers.front().type == TT_EXIT && level.triggers.front().targets.empty())
+		return true;
+
+	// Subspace D3 has only named-sound actions and no producers
+	return level.matcens.empty() &&
+	       std::none_of(level.segments.begin(), level.segments.end(), [](const auto &segment) { return xl_compat::producer_function(segment) == 4; }) &&
+	       std::all_of(level.triggers.begin(), level.triggers.end(), [](const auto &action) { return action.type == 30; });
 }
 
 void validate_requirements(const xl_compat::Inventory &level, bool multiplayer, bool water_pilot, xl_assets::ObjectDependencies &graph,
