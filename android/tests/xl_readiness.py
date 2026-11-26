@@ -279,23 +279,31 @@ def level_file_matches(proof, case, staged_level_sha256=None):
     )
 
 
+def entered_gameplay(proof, case, staged_level_sha256=None):
+    return (
+        proof.get("schema") == "dxx-xl-load-tick-v1"
+        and proof.get("phase") in ("loaded", "simulation_failed", "loaded_ticked")
+        and isinstance(proof.get("mission"), str)
+        and proof["mission"].lower() == case["mission"].lower()
+        and proof.get("level") == case["level"]
+        and level_file_matches(proof, case, staged_level_sha256)
+        and proof.get("segments", 0) > 0
+        and proof.get("fixed_hz") == 60
+        and proof.get("seed") == 1
+        and proof.get("assisted") is False
+    )
+
+
 def classify(returncode, proof, log, case, staged_level_sha256=None):
     if returncode is not None and returncode < 0:
         return "crash"
     if returncode is None:
         return "timeout"
-    if returncode == 0 and (
-        proof.get("schema") == "dxx-xl-load-tick-v1"
+    if (
+        returncode == 0
         and proof.get("phase") == "loaded_ticked"
-        and isinstance(proof.get("mission"), str)
-        and proof["mission"].lower() == case["mission"].lower()
-        and proof.get("level") == case["level"]
-        and level_file_matches(proof, case, staged_level_sha256)
         and proof.get("frames") == 120
-        and proof.get("segments", 0) > 0
-        and proof.get("fixed_hz") == 60
-        and proof.get("seed") == 1
-        and proof.get("assisted") is False
+        and entered_gameplay(proof, case, staged_level_sha256)
     ):
         return "loaded_ticked"
     if not proof or proof.get("phase") == "initializing":
