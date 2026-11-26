@@ -20,6 +20,7 @@ FAMILIES = {
     "Absent trigger section": ("no trigger section to inspect",),
     "Robot contents": ("unknown contained object dependency",),
     "Robot definitions": ("missing robot definition", "mission declares custom robots", "hxm definitions"),
+    "Declared custom textures missing": ("mission declares custom textures, but no level pog",),
     "Light index bounds": ("invalid packed light index", "invalid light index"),
     "Texture IDs": ("texture_id at",),
     "Classic level in XL mission": ("stock-format levels",),
@@ -98,14 +99,19 @@ def summarize(work, catalog_path, *, require_full_inventory=False, expected_targ
     if result["summary"] != summary or failures != read(work / "failures.json"):
         raise ValueError("Survey summary or failure list differs from measured rows")
     reported = []
+    entered = 0
     for index, row in enumerate(rows):
         directory = work / str(index)
         if row != read(directory / "result.json"):
             raise ValueError(f"Case receipt differs at index {index}")
         proof_path = directory / "load.json"
         proof = read(proof_path) if proof_path.exists() else {}
+        case = cases[row["id"]]
+        staged_hash = row.get("staged_level_sha256")
+        confirmed_entry = readiness.entered_gameplay(proof, case, staged_hash)
+        entered += confirmed_entry
         if row["outcome"] == "loaded_ticked":
-            if readiness.classify(0, proof, "", cases[row["id"]], row.get("staged_level_sha256")) != "loaded_ticked":
+            if readiness.classify(0, proof, "", case, staged_hash) != "loaded_ticked":
                 raise ValueError(f"Missing 120-frame proof at index {index}")
             continue
         path = directory / "engine.log"
@@ -115,6 +121,7 @@ def summarize(work, catalog_path, *, require_full_inventory=False, expected_targ
                 "id": row["id"],
                 "level_file": row["level_file"],
                 "outcome": row["outcome"],
+                "entered_gameplay": confirmed_entry,
                 "frames": row["frames"],
                 "first_blocker": first_blocker(row, proof, log),
             }
@@ -124,6 +131,11 @@ def summarize(work, catalog_path, *, require_full_inventory=False, expected_targ
         "engine_sha256": identity["engine_sha256"],
         "inventory_sha256": identity["inventory_sha256"],
         "summary": summary,
+        "milestones": {
+            "denominator": len(rows),
+            "entered_gameplay": entered,
+            "survived_120_frames": summary["passed"],
+        },
         "groups": dict(Counter(row["first_blocker"] for row in reported).most_common()),
         "failures": reported,
     }

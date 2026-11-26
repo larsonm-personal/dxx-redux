@@ -58,6 +58,8 @@ class ExpandedReadinessTests(unittest.TestCase):
 
             grouped = full_report.summarize(args.work, args.catalog)
             self.assertEqual(grouped["groups"], {"infrastructure_error": 1})
+            self.assertEqual(grouped["milestones"], {"denominator": 1, "entered_gameplay": 0, "survived_120_frames": 0})
+            self.assertFalse(grouped["failures"][0]["entered_gameplay"])
             self.assertEqual(grouped["failures"][0]["id"], selected)
             with self.assertRaisesRegex(ValueError, "complete inventory"):
                 full_report.summarize(args.work, args.catalog, require_full_inventory=True)
@@ -87,6 +89,41 @@ class ExpandedReadinessTests(unittest.TestCase):
             full_report.first_blocker(row, stopped, damage + "-13.1\n"), "Robot fire killed the idle pilot"
         )
         self.assertEqual(full_report.first_blocker(row, stopped, damage + "13.1\n"), "Simulation stopped")
+
+    def test_requested_level_entry_survives_an_interrupted_probe(self):
+        case = {"mission": "control", "level": -1, "level_file": "hidden.rl2"}
+        proof = {
+            **case,
+            "schema": "dxx-xl-load-tick-v1",
+            "phase": "loaded",
+            "segments": 1,
+            "seed": 1,
+            "assisted": False,
+            "fixed_hz": 60,
+            "frames": 0,
+        }
+        for phase, frames, code, outcome in (
+            ("loaded", 0, None, "timeout"),
+            ("simulation_failed", 82, 1, "simulation_failed"),
+            ("loaded_ticked", 120, 0, "loaded_ticked"),
+        ):
+            with self.subTest(phase=phase):
+                receipt = {**proof, "phase": phase, "frames": frames}
+                self.assertTrue(readiness.entered_gameplay(receipt, case))
+                self.assertEqual(readiness.classify(code, receipt, "", case), outcome)
+        for change in (
+            {"phase": "level_load"},
+            {"mission": "other"},
+            {"level": 1},
+            {"segments": 0},
+            {"assisted": True},
+        ):
+            with self.subTest(change=change):
+                self.assertFalse(readiness.entered_gameplay({**proof, **change}, case))
+        loose = {**proof, "level_file": "missions/HIDDEN.RL2", "level_source_sha256": "a" * 64}
+        self.assertFalse(readiness.entered_gameplay(loose, case))
+        self.assertFalse(readiness.entered_gameplay(loose, case, "b" * 64))
+        self.assertTrue(readiness.entered_gameplay(loose, case, "a" * 64))
 
     def staged_fixture(self, root):
         archive = root / "fixture.zip"
