@@ -78,6 +78,103 @@ class RenderedReadinessTests(unittest.TestCase):
             "loaded_ticked",
         )
 
+    def test_windowed_entry_requires_the_requested_identity_even_when_the_pilot_dies(self):
+        from xl_rendered_readiness import entered, passed
+
+        proof = dict(
+            schema="dxx-xl-rendered-load-tick-v1",
+            phase="simulation_failed",
+            mission="Pyro",
+            level=1,
+            level_file="pyro.rl2",
+            frames=104,
+            rendered_frames=104,
+            difficulty=2,
+            fixed_hz=60,
+            seed=1,
+            segments=80,
+            renderer="Mesa",
+            xl_active=False,
+            assisted=False,
+            stop={"frame": 105, "player_dead": True},
+        )
+        self.assertTrue(entered(proof, "pyro", 1, "pyro.rl2"))
+        display_error = {**proof, "phase": "rendering_failed", "gl_error": 1280}
+        self.assertTrue(entered(display_error, "pyro", 1, "pyro.rl2"))
+        self.assertFalse(passed(1, display_error, "pyro", 1, "pyro.rl2"))
+        self.assertFalse(passed(1, proof, "pyro", 1, "pyro.rl2"))
+        self.assertFalse(entered({**proof, "difficulty": 1}, "pyro", 1, "pyro.rl2"))
+        loose = {**proof, "level_file": "missions/pyro.rl2", "level_source_sha256": "a" * 64}
+        self.assertFalse(entered(loose, "pyro", 1, "pyro.rl2"))
+        self.assertTrue(entered(loose, "pyro", 1, "pyro.rl2", "a" * 64))
+        self.assertFalse(entered(loose, "pyro", 2, "pyro.rl2", "a" * 64))
+
+    def test_windowed_catalog_keeps_unloaded_and_post_entry_cases_in_its_counts(self):
+        import argparse
+        import xl_rendered_readiness_catalog as catalog_probe
+
+        with tempfile.TemporaryDirectory() as scratch:
+            root = Path(scratch)
+            engine = root / "engine"
+            engine.write_bytes(b"fixture executable identity")
+            catalog = root / "inventory.json"
+            cases = [
+                {
+                    "id": f"mission:{i}",
+                    "archive": "mission.zip",
+                    "mission": "mine",
+                    "level": i,
+                    "level_file": f"lev{i}.rl2",
+                }
+                for i in (1, 2, 3)
+            ]
+            catalog.write_text(
+                json.dumps(
+                    {
+                        "schema": "dxx-xl-local-inventory-v1",
+                        "asset_commit": None,
+                        "archives": [{"path": "mission.zip"}],
+                        "cases": cases,
+                    }
+                )
+            )
+            args = argparse.Namespace(
+                engine=engine,
+                data=root,
+                assets=root,
+                catalog=catalog,
+                work=root / "run",
+                seven_zip=None,
+                target_sha="fixture",
+                timeout=45,
+                archive=None,
+                case=None,
+            )
+
+            def probe(engine, data, extra, work, mission, level, level_file, engine_sha256, **options):
+                work.mkdir()
+                completed = level == 1
+                return {
+                    "proof": {
+                        "phase": "loaded_ticked" if completed else "simulation_failed",
+                        "frames": 120 if completed else 82,
+                    },
+                    "entered_gameplay": True,
+                    "passed": completed,
+                    "exit_code": 0 if completed else 1,
+                }
+
+            with (
+                patch.object(catalog_probe, "stage_case", side_effect=[root, root, ValueError("missing source")]),
+                patch.object(catalog_probe, "verify_resources", return_value={}),
+                patch.object(catalog_probe, "run_probe", side_effect=probe),
+            ):
+                self.assertEqual(catalog_probe.measure(args), 1)
+            result = json.loads((args.work / "results.json").read_text())
+            self.assertEqual(result["selected"], [c["id"] for c in cases])
+            self.assertEqual(result["summary"], {"measured": 3, "entered_gameplay": 2, "survived_120_frames": 1})
+            self.assertEqual(result["rows"][2]["measurement_error"], "missing source")
+
 
 class XlPrivateTests(unittest.TestCase):
     @staticmethod

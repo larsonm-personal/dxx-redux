@@ -10,8 +10,8 @@ import xl_readiness as readiness
 from xl_readiness_report import validate, validate_rows
 
 
-def measure(args):
-    catalog = json.loads(args.catalog.read_text())
+def select_catalog_cases(path, archive=None, case_ids=None):
+    catalog = json.loads(path.read_text())
     local = catalog.get("schema") == "dxx-xl-local-inventory-v1"
     if local:
         if catalog["asset_commit"] is not None:
@@ -19,15 +19,21 @@ def measure(args):
     elif catalog["asset_commit"] != readiness.ASSET_COMMIT:
         raise ValueError("Unexpected pinned inventory revision")
     cases = catalog["cases"]
-    if args.archive:
-        cases = [row for row in cases if Path(row["archive"]).name == args.archive]
-    if args.case is not None:
-        requested = set(args.case)
+    if archive:
+        cases = [row for row in cases if Path(row["archive"]).name == archive]
+    if case_ids is not None:
+        requested = set(case_ids)
         cases = [row for row in cases if row["id"] in requested]
         if len(cases) != len(requested):
             raise ValueError("Unknown survey case")
     if not cases or len({row["id"] for row in cases}) != len(cases):
         raise ValueError("Empty or duplicate survey selection")
+    return catalog, cases
+
+
+def measure(args):
+    catalog, cases = select_catalog_cases(args.catalog, args.archive, args.case)
+    local = catalog.get("schema") == "dxx-xl-local-inventory-v1"
     identity = {
         "schema": "dxx-xl-full-survey-v1",
         "target_sha": args.target_sha,
