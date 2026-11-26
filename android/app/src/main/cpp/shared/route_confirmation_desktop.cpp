@@ -30,6 +30,7 @@
 #include "preview.h"
 #include "particle_objects.h"
 #include "particle_resources.h"
+#include "route_confirmation_level_identity.h"
 #include "resource_validation.h"
 #endif
 
@@ -159,6 +160,8 @@ int rendered_readiness(const char *path, nlohmann::ordered_json &proof)
 	proof["level_file"] = Gamesave_current_filename;
 	proof["segments"] = Num_segments;
 #ifdef DXX_XL_RUNTIME
+	const auto source_hash = readiness_level_source_sha256(Gamesave_current_filename);
+	if (!source_hash.empty()) proof["level_source_sha256"] = source_hash;
 	proof["xl_active"] = xl_level_extensions_active() != 0;
 	proof["level_version"] = xl_source_level_version();
 #else
