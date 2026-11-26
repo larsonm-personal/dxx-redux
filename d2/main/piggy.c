@@ -2136,12 +2136,56 @@ void free_bitmap_replacements()
 	}
 }
 
+struct classic_pog_entry {
+	ushort index;
+	piggy_bank_bitmap bitmap;
+};
+
+// A POG can contain more rows than bitmap slots. Each row owns its own offset.
+static int read_classic_pog_directory(PHYSFS_file *file, struct classic_pog_entry **result, int *count, int *data_size)
+{
+	const PHYSFS_sint64 length = PHYSFS_fileLength(file);
+	PHYSFS_sint64 data_start;
+	struct classic_pog_entry *entries = NULL;
+	int i;
+	if (length < 12 || length > INT_MAX || PHYSFSX_readInt(file) != MAKE_SIG('G','O','P','D') || PHYSFSX_readInt(file) != 1)
+		return 0;
+	*count = PHYSFSX_readInt(file);
+	data_start = 12 + (PHYSFS_sint64)*count * (2 + (int)sizeof(DiskBitmapHeader));
+	if (*count < 0 || (unsigned)*count > UINT_MAX / sizeof(*entries) || data_start > length)
+		return 0;
+	*data_size = (int)(length - data_start);
+	if (*count) {
+		MALLOC(entries, struct classic_pog_entry, *count);
+		if (!entries) return 0;
+	}
+	for (i = 0; i < *count; ++i) {
+		entries[i].index = (ushort)PHYSFSX_readShort(file);
+		if (entries[i].index >= MAX_BITMAP_FILES)
+			goto invalid;
+	}
+	for (i = 0; i < *count; ++i) {
+		DiskBitmapHeader header;
+		piggy_bank_bitmap *record = &entries[i].bitmap;
+		DiskBitmapHeader_read(&header, file);
+		if (!bitmap_bank_record(&header, 0, record) || record->offset >= *data_size ||
+		    ((record->flags & BM_FLAG_RLE) ? 4 : record->size) > *data_size - record->offset)
+			goto invalid;
+	}
+	*result = entries;
+	return 1;
+invalid:
+	d_free(entries);
+	return 0;
+}
+
 /* Read semantic flags without changing the renderer, paging, or POG ownership */
 int piggy_read_level_bitmap_flags(const char *level_name, int *flags, int capacity)
 {
 	PHYSFS_file *file;
 	char name[FILENAME_LEN];
-	int count, i, indices[MAX_BITMAP_FILES];
+	int count, i, data_size;
+	struct classic_pog_entry *entries = NULL;
 	PHYSFS_sint64 length, data_start;
 	DiskBitmapHeader header;
 	if (!flags || !level_name || strlen(level_name) >= sizeof(name) || capacity < MAX_BITMAP_FILES)
@@ -2197,27 +2241,17 @@ int piggy_read_level_bitmap_flags(const char *level_name, int *flags, int capaci
 		return 1;
 	}
 #endif
-	length = PHYSFS_fileLength(file);
-	if (length < 12 || PHYSFSX_readInt(file) != MAKE_SIG('G','O','P','D') || PHYSFSX_readInt(file) != 1)
-		goto invalid_flags;
-	count = PHYSFSX_readInt(file);
-	data_start = 12 + (PHYSFS_sint64) count * (2 + sizeof(DiskBitmapHeader));
-	if (count < 0 || count > MAX_BITMAP_FILES || data_start > length)
+	if (!read_classic_pog_directory(file, &entries, &count, &data_size))
 		goto invalid_flags;
 	for (i = 0; i < count; ++i) {
-		indices[i] = (ushort) PHYSFSX_readShort(file);
-		if (indices[i] <= 0 || indices[i] >= MAX_BITMAP_FILES)
-			goto invalid_flags;
+		if (!entries[i].index) goto invalid_flags;
+		flags[entries[i].index] = entries[i].bitmap.flags;
 	}
-	for (i = 0; i < count; ++i) {
-		DiskBitmapHeader_read(&header, file);
-		if (header.offset < 0 || data_start + header.offset >= length)
-			goto invalid_flags;
-		flags[indices[i]] = header.flags & BM_FLAGS_TO_COPY;
-	}
+	d_free(entries);
 	PHYSFS_close(file);
 	return 1;
 invalid_flags:
+	d_free(entries);
 	PHYSFS_close(file);
 	return 0;
 }
@@ -2243,64 +2277,48 @@ void load_bitmap_replacements(char *level_name)
 	ifile = PHYSFSX_openReadBuffered(ifile_name);
 
 	if (ifile) {
-		int id,version,n_bitmaps;
-		int bitmap_data_size;
-		ushort *indices;
-
-		id = PHYSFSX_readInt(ifile);
-		version = PHYSFSX_readInt(ifile);
-
-		if (id != MAKE_SIG('G','O','P','D') || version != 1) {
-			PHYSFS_close(ifile);
-			return;
+		struct classic_pog_entry *entries = NULL;
+		ubyte *pixels = NULL;
+		int count, data_size;
+		if (!read_classic_pog_directory(ifile, &entries, &count, &data_size) || !count)
+			goto done;
+		MALLOC(pixels, ubyte, data_size);
+		if (!pixels || PHYSFS_readBytes(ifile, pixels, data_size) != data_size)
+			goto done;
+		for (i = 0; i < count; ++i) {
+			const piggy_bank_bitmap *record = &entries[i].bitmap;
+			if (entries[i].index >= Num_bitmap_files)
+				goto done;
+			if (record->flags & BM_FLAG_RLE) {
+				int size;
+				memcpy(&size, pixels + record->offset, 4);
+				size = INTEL_INT(size);
+				if (size < 4 || size > data_size - record->offset)
+					goto done;
+			}
 		}
 
-		n_bitmaps = PHYSFSX_readInt(ifile);
-
-		MALLOC( indices, ushort, n_bitmaps );
-
-		for (i = 0; i < n_bitmaps; i++)
-			indices[i] = PHYSFSX_readShort(ifile);
-
-		bitmap_data_size = PHYSFS_fileLength(ifile) - PHYSFS_tell(ifile) - sizeof(DiskBitmapHeader) * n_bitmaps;
-		MALLOC( Bitmap_replacement_data, ubyte, bitmap_data_size );
+		Bitmap_replacement_data = pixels;
+		pixels = NULL;
 #ifdef __ANDROID__
-		Bitmap_replacement_data_size = bitmap_data_size;
+		Bitmap_replacement_data_size = data_size;
 #endif
-
-		for (i=0;i<n_bitmaps;i++) {
-			DiskBitmapHeader bmh;
-			grs_bitmap *bm = &GameBitmaps[indices[i]];
-			int width;
-
-			DiskBitmapHeader_read(&bmh, ifile);
-
-			width = bmh.width + ((short) (bmh.wh_extra & 0x0f) << 8);
+		// Install in directory order so the last replacement for a slot wins
+		for (i = 0; i < count; ++i) {
+			const piggy_bank_bitmap *record = &entries[i].bitmap;
+			grs_bitmap *bm = &GameBitmaps[entries[i].index];
 			gr_set_bitmap_data(bm, NULL);	// free ogl texture
-			gr_init_bitmap(bm, 0, 0, 0, width, bmh.height + ((short) (bmh.wh_extra & 0xf0) << 4), width, NULL);
-			bm->avg_color = bmh.avg_color;
-			bm->bm_data = (ubyte *) (size_t)bmh.offset;
-
-			gr_set_bitmap_flags(bm, bmh.flags & BM_FLAGS_TO_COPY);
-
-			GameBitmapOffset[indices[i]] = 0; // don't try to read bitmap from current pigfile
+			gr_init_bitmap(bm, 0, 0, 0, record->width, record->height, record->width, Bitmap_replacement_data + record->offset);
+			bm->avg_color = record->average_index;
+			gr_set_bitmap_flags(bm, record->flags);
+			GameBitmapOffset[entries[i].index] = 0;
 		}
-
-		PHYSFS_read(ifile,Bitmap_replacement_data,1,bitmap_data_size);
-
-		for (i = 0; i < n_bitmaps; i++)
-		{
-			grs_bitmap *bm = &GameBitmaps[indices[i]];
-			gr_set_bitmap_data(bm, Bitmap_replacement_data + (size_t) bm->bm_data);
-		}
-
-		d_free(indices);
-
+		last_palette_loaded_pig[0] = 0;  // force pig reload
+		texmerge_flush();
+done:
+		d_free(pixels);
+		d_free(entries);
 		PHYSFS_close(ifile);
-
-		last_palette_loaded_pig[0]= 0;  //force pig re-load
-
-		texmerge_flush();       //for re-merging with new textures
 	}
 }
 
