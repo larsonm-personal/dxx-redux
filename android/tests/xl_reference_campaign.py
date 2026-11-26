@@ -55,6 +55,17 @@ def classify(code, events, descriptor, advertised, ordinal, frames=120):
     )
 
 
+def texture_quality_observation(events, requested):
+    quality = [row[1:] for row in events if row[0] == "texture_quality"]
+    fields = {}
+    if len(quality) == 1 and len(quality[0]) == 2:
+        fields["texture_quality"], fields["maximum_texture_quality"] = map(int, quality[0])
+    if requested is not None:
+        fields["requested_texture_quality"] = requested
+        fields["texture_quality_verified"] = fields.get("texture_quality") == requested
+    return fields
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--engine", required=True, type=Path)
@@ -185,14 +196,12 @@ def main():
         }
     if args.hires_textures:
         result["hires_textures_requested"] = True
-    quality = [row[1:] for row in events if row[0] == "texture_quality"]
-    if len(quality) == 1:
-        result["texture_quality"], result["maximum_texture_quality"] = map(int, quality[0])
-    if args.texture_quality is not None and result.get("texture_quality") != args.texture_quality:
-        result["observation"] = "requested_texture_quality_unverified"
-        outcome = result["observation"]
+    result.update(texture_quality_observation(events, args.texture_quality))
     (work / "result.json").write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
     print(outcome)
+    if result.get("texture_quality_verified") is False:
+        print("Requested texture quality was unverified")
+        return 1
     return 0 if outcome in ("started_and_ran", "mission_opened") and (not bitmap or complete) else 1
 
 
