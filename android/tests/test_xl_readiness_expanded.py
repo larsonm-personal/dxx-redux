@@ -13,6 +13,7 @@ from unittest.mock import patch
 import xl_readiness as readiness
 import xl_readiness_expanded as expanded
 import xl_readiness_full as full
+import xl_readiness_full_report as report
 import xl_readiness_local_inventory as local
 
 
@@ -116,6 +117,7 @@ class ExpandedReadinessTests(unittest.TestCase):
             {"mission": "other"},
             {"level": 1},
             {"segments": 0},
+            {"difficulty": 3},
             {"assisted": True},
         ):
             with self.subTest(change=change):
@@ -124,6 +126,20 @@ class ExpandedReadinessTests(unittest.TestCase):
         self.assertFalse(readiness.entered_gameplay(loose, case))
         self.assertFalse(readiness.entered_gameplay(loose, case, "b" * 64))
         self.assertTrue(readiness.entered_gameplay(loose, case, "a" * 64))
+
+    def test_stopped_frame_distinguishes_death_and_level_transition(self):
+        row = {"outcome": "simulation_failed", "level": 5, "level_file": "forest.rl2"}
+        proof = {"phase": "simulation_failed", "frames": 82}
+        log = "You took 10.0 damage from a robot's weapon blast, shields now -1.0\n"
+        self.assertEqual(report.first_blocker(row, proof, log), "Robot fire killed the idle pilot")
+        stop = {"frame": 83, "level": 5, "player_dead": True, "endlevel_sequence": False}
+        proof["stop"] = stop
+        self.assertEqual(report.first_blocker(row, proof, ""), "Pilot died during fixed test")
+        self.assertEqual(report.first_blocker(row, proof, log), "Robot fire killed the idle pilot")
+        stop.update(player_dead=False, level=6)
+        self.assertEqual(report.first_blocker(row, proof, log), "Requested level changed during fixed test")
+        stop.update(level=5, endlevel_sequence=True)
+        self.assertEqual(report.first_blocker(row, proof, ""), "Level exit sequence started during fixed test")
 
     def staged_fixture(self, root):
         archive = root / "fixture.zip"

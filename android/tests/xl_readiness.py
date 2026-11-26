@@ -290,6 +290,7 @@ def entered_gameplay(proof, case, staged_level_sha256=None):
         and proof.get("segments", 0) > 0
         and proof.get("fixed_hz") == 60
         and proof.get("seed") == 1
+        and proof.get("difficulty", 2) == 2
         and proof.get("assisted") is False
     )
 

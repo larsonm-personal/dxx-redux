@@ -372,6 +372,7 @@ int main(int argc, char *argv[])
 		readiness["xl_active"] = false;
 #endif
 		readiness["frames"] = 0;
+		readiness["difficulty"] = Difficulty_level;
 		readiness["fixed_hz"] = 60;
 		readiness["seed"] = ROUTE_CONFIRMATION_CANONICAL_SEED;
 		readiness["assisted"] = false;
@@ -384,6 +385,7 @@ int main(int argc, char *argv[])
 			calc_game_time();
 			GameProcessFrame();
 			if (Current_level_num != level || Player_is_dead || Endlevel_sequence) {
+				readiness["stop"] = { { "frame", frame + 1 }, { "level", Current_level_num }, { "player_dead", Player_is_dead != 0 }, { "endlevel_sequence", Endlevel_sequence != 0 } };
 				readiness_phase("simulation_failed");
 				return 1;
 			}
