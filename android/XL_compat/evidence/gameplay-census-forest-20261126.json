@@ -1,0 +1,1721 @@
+{
+    "schema": 2,
+    "date": "2026-11-26",
+    "source_head": "f00211e38247bf1cf198df3b73e7d0e2eb3cd2cb",
+    "engine_sha256": "76a9da84be2bb532a34f2ab69da37d925dbbb98d0b67ded5ed9bc632a6f369f5",
+    "protocol": {
+        "difficulty": "Hotshot",
+        "seed": 1,
+        "inputs": "idle",
+        "fixed_hz": 60,
+        "required_survival_frames": 120
+    },
+    "catalogs": {
+        "pinned": {
+            "advertised": 1111,
+            "entered_gameplay": 1079,
+            "survived_120_frames": 1077,
+            "inventory_sha256": "bf4356a7a5fbe64832a40d7065ea02d8b81276ebd8bbba6874012f7851fa0cf8",
+            "results_sha256": "a7afb8a9220ca02ed737110f04131b046389bd54bbb7ca65121342dbddc8e82f"
+        },
+        "local": {
+            "advertised": 543,
+            "entered_gameplay": 541,
+            "survived_120_frames": 539,
+            "inventory_sha256": "e7d480aa401522d37f6ec75da01f6cec7c314c901728f1b291131e52a62818df",
+            "results_sha256": "63d312f3702146d2d6820eacddf9fe5cdcf1ed213f039be9aaeca03c0293a6ad"
+        },
+        "combined": {
+            "advertised": 1654,
+            "entered_gameplay": 1620,
+            "survived_120_frames": 1616
+        }
+    },
+    "comparison_by_case": {
+        "november_25": {
+            "pinned": {
+                "baseline_entered": 1079,
+                "baseline_survived": 1077,
+                "new_entered": [],
+                "new_survived": [],
+                "regressions_entered": [],
+                "regressions_survived": []
+            },
+            "local": {
+                "baseline_entered": 541,
+                "baseline_survived": 539,
+                "new_entered": [],
+                "new_survived": [],
+                "regressions_entered": [],
+                "regressions_survived": []
+            }
+        },
+        "november_24": {
+            "pinned": {
+                "baseline_entered": 1074,
+                "baseline_survived": 1072,
+                "new_entered": [
+                    "levelpack.7z/missions/darkflamewolf/acat-xl.mn2:1",
+                    "levelpack.7z/missions/diedel/speed.mn2:1",
+                    "levelpack.7z/missions/diedel/steel-xl.mn2:1",
+                    "levelpack.7z/missions/single/pmlev1.mn2:1",
+                    "levelpack.7z/missions/single/sphere.mn2:1"
+                ],
+                "new_survived": [
+                    "levelpack.7z/missions/darkflamewolf/acat-xl.mn2:1",
+                    "levelpack.7z/missions/diedel/speed.mn2:1",
+                    "levelpack.7z/missions/diedel/steel-xl.mn2:1",
+                    "levelpack.7z/missions/single/pmlev1.mn2:1",
+                    "levelpack.7z/missions/single/sphere.mn2:1"
+                ],
+                "regressions_entered": [],
+                "regressions_survived": []
+            },
+            "local": {
+                "baseline_entered": 536,
+                "baseline_survived": 533,
+                "new_entered": [
+                    "levels/amalthea.zip/amalthea/Amalthea.mn2:1",
+                    "levels_multiplayer/acat-xl.7z/missions/acat-xl.mn2:1",
+                    "levels_multiplayer/firsteel.7z/steel-xl.mn2:1",
+                    "levels_multiplayer/fv24b.zip/fv24b.mn2:1",
+                    "levels_multiplayer/speed.7z/missions/diedel/d3/speed.mn2:1"
+                ],
+                "new_survived": [
+                    "levels/amalthea.zip/amalthea/Amalthea.mn2:1",
+                    "levels_multiplayer/acat-xl.7z/missions/acat-xl.mn2:1",
+                    "levels_multiplayer/firsteel.7z/steel-xl.mn2:1",
+                    "levels_multiplayer/fv24b.zip/fv24b.mn2:1",
+                    "levels_multiplayer/speed.7z/missions/diedel/d3/speed.mn2:1",
+                    "levels_multiplayer/zugzwang.7z/zugzwang.mn2:1"
+                ],
+                "regressions_entered": [],
+                "regressions_survived": []
+            }
+        },
+        "initial": {
+            "pinned": {
+                "baseline_entered": 1072,
+                "baseline_survived": 1070,
+                "new_entered": [
+                    "levelpack.7z/missions/darkflamewolf/acat-xl.mn2:1",
+                    "levelpack.7z/missions/diedel/speed.mn2:1",
+                    "levelpack.7z/missions/diedel/steel-xl.mn2:1",
+                    "levelpack.7z/missions/single/pmlev1.mn2:1",
+                    "levelpack.7z/missions/single/sphere.mn2:1",
+                    "levelpack.7z/missions/spotlight/crownx.mn2:1",
+                    "levelpack.7z/missions/spotlight/rtarena.mn2:1"
+                ],
+                "new_survived": [
+                    "levelpack.7z/missions/darkflamewolf/acat-xl.mn2:1",
+                    "levelpack.7z/missions/diedel/speed.mn2:1",
+                    "levelpack.7z/missions/diedel/steel-xl.mn2:1",
+                    "levelpack.7z/missions/single/pmlev1.mn2:1",
+                    "levelpack.7z/missions/single/sphere.mn2:1",
+                    "levelpack.7z/missions/spotlight/crownx.mn2:1",
+                    "levelpack.7z/missions/spotlight/rtarena.mn2:1"
+                ],
+                "regressions_entered": [],
+                "regressions_survived": []
+            },
+            "local": {
+                "baseline_entered": 528,
+                "baseline_survived": 525,
+                "new_entered": [
+                    "levels/amalthea.zip/amalthea/Amalthea.mn2:1",
+                    "levels/elitehunt.zip/elitehnt.mn2:1",
+                    "levels/kalisto.zip/kalisto/kalisto.mn2:1",
+                    "levels_multiplayer/acat-xl.7z/missions/acat-xl.mn2:1",
+                    "levels_multiplayer/code-yena-xl.7z/cdeyena2.mn2:1",
+                    "levels_multiplayer/coordination-xl.7z/crdntion.mn2:1",
+                    "levels_multiplayer/firsteel.7z/steel-xl.mn2:1",
+                    "levels_multiplayer/fv24b.zip/fv24b.mn2:1",
+                    "levels_multiplayer/nocturnl.zip/d1nctrlnl.msn:1",
+                    "levels_multiplayer/rtarena.zip/RTARENA.MN2:1",
+                    "levels_multiplayer/speed.7z/missions/diedel/d3/speed.mn2:1",
+                    "levels_multiplayer/Temple Of Helix.zip/missions/tohelix.mn2:1",
+                    "prophxl131beta.zip/missions/sapphire wolf sp/PROPHXL.MN2:1"
+                ],
+                "new_survived": [
+                    "levels/amalthea.zip/amalthea/Amalthea.mn2:1",
+                    "levels/elitehunt.zip/elitehnt.mn2:1",
+                    "levels/kalisto.zip/kalisto/kalisto.mn2:1",
+                    "levels_multiplayer/acat-xl.7z/missions/acat-xl.mn2:1",
+                    "levels_multiplayer/code-yena-xl.7z/cdeyena2.mn2:1",
+                    "levels_multiplayer/coordination-xl.7z/crdntion.mn2:1",
+                    "levels_multiplayer/firsteel.7z/steel-xl.mn2:1",
+                    "levels_multiplayer/fv24b.zip/fv24b.mn2:1",
+                    "levels_multiplayer/nocturnl.zip/d1nctrlnl.msn:1",
+                    "levels_multiplayer/rtarena.zip/RTARENA.MN2:1",
+                    "levels_multiplayer/speed.7z/missions/diedel/d3/speed.mn2:1",
+                    "levels_multiplayer/Temple Of Helix.zip/missions/tohelix.mn2:1",
+                    "levels_multiplayer/zugzwang.7z/zugzwang.mn2:1",
+                    "prophxl131beta.zip/missions/sapphire wolf sp/PROPHXL.MN2:1"
+                ],
+                "regressions_entered": [],
+                "regressions_survived": []
+            }
+        },
+        "forest_runtime": {
+            "pinned": {
+                "baseline_entered": 1079,
+                "baseline_survived": 1077,
+                "new_entered": [],
+                "new_survived": [],
+                "regressions_entered": [],
+                "regressions_survived": []
+            },
+            "local": {
+                "baseline_entered": 541,
+                "baseline_survived": 539,
+                "new_entered": [],
+                "new_survived": [],
+                "regressions_entered": [],
+                "regressions_survived": []
+            }
+        }
+    },
+    "remaining_first_blockers": {
+        "pinned": {
+            "Advertised level file missing": 31,
+            "Robot fire killed the idle pilot": 2,
+            "Declared custom textures missing": 1
+        },
+        "local": {
+            "Advertised level file missing": 2,
+            "Robot fire killed the idle pilot": 2
+        },
+        "combined": {
+            "Advertised level file missing": 33,
+            "Robot fire killed the idle pilot": 4,
+            "Declared custom textures missing": 1
+        }
+    },
+    "remaining_cases": [
+        {
+            "catalog": "pinned",
+            "case": "levelpack.7z/missions/danwentz/dffusion.mn2:1",
+            "advertised_member": "dffusion.rl2",
+            "entered_gameplay": false,
+            "survived_120_frames": false,
+            "first_blocker": "Advertised level file missing",
+            "completed_frames": 0
+        },
+        {
+            "catalog": "pinned",
+            "case": "levelpack.7z/missions/darkflamewolf/wolfpak3.mn2:6",
+            "advertised_member": "wolf0006.rl2",
+            "entered_gameplay": true,
+            "survived_120_frames": false,
+            "first_blocker": "Robot fire killed the idle pilot",
+            "completed_frames": 82,
+            "stopping_frame": 83,
+            "pilot_dead_at_stop": true
+        },
+        {
+            "catalog": "pinned",
+            "case": "levelpack.7z/missions/diedel/forest.mn2:1",
+            "advertised_member": "forest.rl2",
+            "entered_gameplay": false,
+            "survived_120_frames": false,
+            "first_blocker": "Declared custom textures missing",
+            "completed_frames": 0
+        },
+        {
+            "catalog": "pinned",
+            "case": "levelpack.7z/missions/diedel/pyrotech.mn2:1",
+            "advertised_member": "pyrotech.rl2",
+            "entered_gameplay": true,
+            "survived_120_frames": false,
+            "first_blocker": "Robot fire killed the idle pilot",
+            "completed_frames": 104,
+            "stopping_frame": 105,
+            "pilot_dead_at_stop": true
+        },
+        {
+            "catalog": "pinned",
+            "case": "levelpack.7z/missions/diedel/wfc.mn2:1",
+            "advertised_member": "wfc.rl2",
+            "entered_gameplay": false,
+            "survived_120_frames": false,
+            "first_blocker": "Advertised level file missing",
+            "completed_frames": 0
+        },
+        {
+            "catalog": "pinned",
+            "case": "levelpack.7z/missions/sidewinder/picasso.mn2:1",
+            "advertised_member": "picasso.rl2",
+            "entered_gameplay": false,
+            "survived_120_frames": false,
+            "first_blocker": "Advertised level file missing",
+            "completed_frames": 0
+        },
+        {
+            "catalog": "pinned",
+            "case": "levelpack.7z/missions/single/ffyl.mn2:1",
+            "advertised_member": "pdl8.rl2",
+            "entered_gameplay": false,
+            "survived_120_frames": false,
+            "first_blocker": "Advertised level file missing",
+            "completed_frames": 0
+        },
+        {
+            "catalog": "pinned",
+            "case": "levelpack.7z/missions/single/ffyl.mn2:2",
+            "advertised_member": "pdl9.rl2",
+            "entered_gameplay": false,
+            "survived_120_frames": false,
+            "first_blocker": "Advertised level file missing",
+            "completed_frames": 0
+        },
+        {
+            "catalog": "pinned",
+            "case": "levelpack.7z/missions/single/ffyl.mn2:3",
+            "advertised_member": "pdl10.rl2",
+            "entered_gameplay": false,
+            "survived_120_frames": false,
+            "first_blocker": "Advertised level file missing",
+            "completed_frames": 0
+        },
+        {
+            "catalog": "pinned",
+            "case": "levelpack.7z/missions/single/ffyl.mn2:4",
+            "advertised_member": "pdl11.rl2",
+            "entered_gameplay": false,
+            "survived_120_frames": false,
+            "first_blocker": "Advertised level file missing",
+            "completed_frames": 0
+        },
+        {
+            "catalog": "pinned",
+            "case": "levelpack.7z/missions/single/ffyl.mn2:5",
+            "advertised_member": "pdl12.rl2",
+            "entered_gameplay": false,
+            "survived_120_frames": false,
+            "first_blocker": "Advertised level file missing",
+            "completed_frames": 0
+        },
+        {
+            "catalog": "pinned",
+            "case": "levelpack.7z/missions/single/ffyl.mn2:6",
+            "advertised_member": "pdl13.rl2",
+            "entered_gameplay": false,
+            "survived_120_frames": false,
+            "first_blocker": "Advertised level file missing",
+            "completed_frames": 0
+        },
+        {
+            "catalog": "pinned",
+            "case": "levelpack.7z/missions/single/ffyl.mn2:7",
+            "advertised_member": "pdl14.rl2",
+            "entered_gameplay": false,
+            "survived_120_frames": false,
+            "first_blocker": "Advertised level file missing",
+            "completed_frames": 0
+        },
+        {
+            "catalog": "pinned",
+            "case": "levelpack.7z/missions/single/ffyl.mn2:8",
+            "advertised_member": "pdl15.rl2",
+            "entered_gameplay": false,
+            "survived_120_frames": false,
+            "first_blocker": "Advertised level file missing",
+            "completed_frames": 0
+        },
+        {
+            "catalog": "pinned",
+            "case": "levelpack.7z/missions/single/ffyl.mn2:9",
+            "advertised_member": "pdl16.rl2",
+            "entered_gameplay": false,
+            "survived_120_frames": false,
+            "first_blocker": "Advertised level file missing",
+            "completed_frames": 0
+        },
+        {
+            "catalog": "pinned",
+            "case": "levelpack.7z/missions/single/ffyl.mn2:10",
+            "advertised_member": "pdl17.rl2",
+            "entered_gameplay": false,
+            "survived_120_frames": false,
+            "first_blocker": "Advertised level file missing",
+            "completed_frames": 0
+        },
+        {
+            "catalog": "pinned",
+            "case": "levelpack.7z/missions/single/ffyl.mn2:11",
+            "advertised_member": "pdl18.rl2",
+            "entered_gameplay": false,
+            "survived_120_frames": false,
+            "first_blocker": "Advertised level file missing",
+            "completed_frames": 0
+        },
+        {
+            "catalog": "pinned",
+            "case": "levelpack.7z/missions/single/ffyl.mn2:12",
+            "advertised_member": "pdl19.rl2",
+            "entered_gameplay": false,
+            "survived_120_frames": false,
+            "first_blocker": "Advertised level file missing",
+            "completed_frames": 0
+        },
+        {
+            "catalog": "pinned",
+            "case": "levelpack.7z/missions/single/ffyl.mn2:13",
+            "advertised_member": "pdl20.rl2",
+            "entered_gameplay": false,
+            "survived_120_frames": false,
+            "first_blocker": "Advertised level file missing",
+            "completed_frames": 0
+        },
+        {
+            "catalog": "pinned",
+            "case": "levelpack.7z/missions/single/ffyl.mn2:14",
+            "advertised_member": "pdl21.rl2",
+            "entered_gameplay": false,
+            "survived_120_frames": false,
+            "first_blocker": "Advertised level file missing",
+            "completed_frames": 0
+        },
+        {
+            "catalog": "pinned",
+            "case": "levelpack.7z/missions/single/ffyl.mn2:15",
+            "advertised_member": "pdl22.rl2",
+            "entered_gameplay": false,
+            "survived_120_frames": false,
+            "first_blocker": "Advertised level file missing",
+            "completed_frames": 0
+        },
+        {
+            "catalog": "pinned",
+            "case": "levelpack.7z/missions/single/ffyl.mn2:16",
+            "advertised_member": "pdl23.rl2",
+            "entered_gameplay": false,
+            "survived_120_frames": false,
+            "first_blocker": "Advertised level file missing",
+            "completed_frames": 0
+        },
+        {
+            "catalog": "pinned",
+            "case": "levelpack.7z/missions/single/ffyl.mn2:17",
+            "advertised_member": "pdl24.rl2",
+            "entered_gameplay": false,
+            "survived_120_frames": false,
+            "first_blocker": "Advertised level file missing",
+            "completed_frames": 0
+        },
+        {
+            "catalog": "pinned",
+            "case": "levelpack.7z/missions/single/ffyl.mn2:18",
+            "advertised_member": "aquaphnx.rl2",
+            "entered_gameplay": false,
+            "survived_120_frames": false,
+            "first_blocker": "Advertised level file missing",
+            "completed_frames": 0
+        },
+        {
+            "catalog": "pinned",
+            "case": "levelpack.7z/missions/single/ffyl.mn2:19",
+            "advertised_member": "pdl25-1.rl2",
+            "entered_gameplay": false,
+            "survived_120_frames": false,
+            "first_blocker": "Advertised level file missing",
+            "completed_frames": 0
+        },
+        {
+            "catalog": "pinned",
+            "case": "levelpack.7z/missions/single/ffyl.mn2:20",
+            "advertised_member": "pdl25-2.rl2",
+            "entered_gameplay": false,
+            "survived_120_frames": false,
+            "first_blocker": "Advertised level file missing",
+            "completed_frames": 0
+        },
+        {
+            "catalog": "pinned",
+            "case": "levelpack.7z/missions/single/ffyl.mn2:21",
+            "advertised_member": "pdl26.rl2",
+            "entered_gameplay": false,
+            "survived_120_frames": false,
+            "first_blocker": "Advertised level file missing",
+            "completed_frames": 0
+        },
+        {
+            "catalog": "pinned",
+            "case": "levelpack.7z/missions/single/ffyl.mn2:22",
+            "advertised_member": "pdl27.rl2",
+            "entered_gameplay": false,
+            "survived_120_frames": false,
+            "first_blocker": "Advertised level file missing",
+            "completed_frames": 0
+        },
+        {
+            "catalog": "pinned",
+            "case": "levelpack.7z/missions/single/ffyl.mn2:23",
+            "advertised_member": "pdl28.rl2",
+            "entered_gameplay": false,
+            "survived_120_frames": false,
+            "first_blocker": "Advertised level file missing",
+            "completed_frames": 0
+        },
+        {
+            "catalog": "pinned",
+            "case": "levelpack.7z/missions/single/ffyl.mn2:24",
+            "advertised_member": "pdl29.rl2",
+            "entered_gameplay": false,
+            "survived_120_frames": false,
+            "first_blocker": "Advertised level file missing",
+            "completed_frames": 0
+        },
+        {
+            "catalog": "pinned",
+            "case": "levelpack.7z/missions/single/ffyl.mn2:25",
+            "advertised_member": "pdl30.rl2",
+            "entered_gameplay": false,
+            "survived_120_frames": false,
+            "first_blocker": "Advertised level file missing",
+            "completed_frames": 0
+        },
+        {
+            "catalog": "pinned",
+            "case": "levelpack.7z/missions/single/ffyl.mn2:26",
+            "advertised_member": "pdl31.rl2",
+            "entered_gameplay": false,
+            "survived_120_frames": false,
+            "first_blocker": "Advertised level file missing",
+            "completed_frames": 0
+        },
+        {
+            "catalog": "pinned",
+            "case": "levelpack.7z/missions/single/ffyl.mn2:27",
+            "advertised_member": "pdl32.rl2",
+            "entered_gameplay": false,
+            "survived_120_frames": false,
+            "first_blocker": "Advertised level file missing",
+            "completed_frames": 0
+        },
+        {
+            "catalog": "pinned",
+            "case": "levelpack.7z/missions/single/reflux.mn2:1",
+            "advertised_member": "reflux.rl2",
+            "entered_gameplay": false,
+            "survived_120_frames": false,
+            "first_blocker": "Advertised level file missing",
+            "completed_frames": 0
+        },
+        {
+            "catalog": "local",
+            "case": "levels_multiplayer/dmentia2.zip/DMENTIA2.MN2:2",
+            "advertised_member": "dmentia5.rl2",
+            "entered_gameplay": false,
+            "survived_120_frames": false,
+            "first_blocker": "Advertised level file missing",
+            "completed_frames": 0
+        },
+        {
+            "catalog": "local",
+            "case": "levels_multiplayer/picasso.zip/Picasso.mn2:1",
+            "advertised_member": "picasso.rl2",
+            "entered_gameplay": false,
+            "survived_120_frames": false,
+            "first_blocker": "Advertised level file missing",
+            "completed_frames": 0
+        },
+        {
+            "catalog": "local",
+            "case": "levels_multiplayer/pyrotech.7z/missions/diedel/pyrotech.mn2:1",
+            "advertised_member": "pyrotech.rl2",
+            "entered_gameplay": true,
+            "survived_120_frames": false,
+            "first_blocker": "Robot fire killed the idle pilot",
+            "completed_frames": 104,
+            "stopping_frame": 105,
+            "pilot_dead_at_stop": true
+        },
+        {
+            "catalog": "local",
+            "case": "levels_multiplayer/pyrotech.7z/pyrotech.mn2:1",
+            "advertised_member": "pyrotech.rl2",
+            "entered_gameplay": true,
+            "survived_120_frames": false,
+            "first_blocker": "Robot fire killed the idle pilot",
+            "completed_frames": 104,
+            "stopping_frame": 105,
+            "pilot_dead_at_stop": true
+        }
+    ],
+    "first_unresolved": "levelpack.7z/missions/danwentz/dffusion.mn2:1",
+    "supplemental_windowed_catalog": {
+        "source_head": "1ad83c568a1963ce911ed7ae0b720060dcabb0ec",
+        "engine_sha256": "370062763c84afa773067c46416fc09f9e61d17b804d335d3036b2f4d1100683",
+        "selection": "Advertised members whose owning HOG includes a matching level texture bank with repeated bitmap slots",
+        "catalogs": {
+            "pinned": {
+                "measured": 41,
+                "entered_gameplay": 41,
+                "survived_120_frames": 40
+            },
+            "local": {
+                "measured": 13,
+                "entered_gameplay": 13,
+                "survived_120_frames": 11
+            },
+            "combined": {
+                "measured": 54,
+                "entered_gameplay": 54,
+                "survived_120_frames": 51
+            }
+        },
+        "cases": [
+            {
+                "catalog": "local",
+                "case": "levels_multiplayer/pyrotech.7z/missions/diedel/pyrotech.mn2:1",
+                "source_level_version": 7,
+                "texture_bank_sha256": "92e5fbc9a498e44d470700d17ecdf40294326a3db67708a716ae1fdc85770e85",
+                "entered_gameplay": true,
+                "survived_120_frames": false,
+                "completed_frames": 104,
+                "phase": "simulation_failed",
+                "stop": {
+                    "endlevel_sequence": false,
+                    "frame": 105,
+                    "level": 1,
+                    "paused": false,
+                    "player_dead": true
+                },
+                "verified_native_bitmap_slots": 55
+            },
+            {
+                "catalog": "local",
+                "case": "levels_multiplayer/pyrotech.7z/pyrotech.mn2:1",
+                "source_level_version": 7,
+                "texture_bank_sha256": "92e5fbc9a498e44d470700d17ecdf40294326a3db67708a716ae1fdc85770e85",
+                "entered_gameplay": true,
+                "survived_120_frames": false,
+                "completed_frames": 104,
+                "phase": "simulation_failed",
+                "stop": {
+                    "endlevel_sequence": false,
+                    "frame": 105,
+                    "level": 1,
+                    "paused": false,
+                    "player_dead": true
+                },
+                "verified_native_bitmap_slots": 55
+            },
+            {
+                "catalog": "pinned",
+                "case": "levelpack.7z/missions/diedel/pyrotech.mn2:1",
+                "source_level_version": 7,
+                "texture_bank_sha256": "92e5fbc9a498e44d470700d17ecdf40294326a3db67708a716ae1fdc85770e85",
+                "entered_gameplay": true,
+                "survived_120_frames": false,
+                "completed_frames": 104,
+                "phase": "simulation_failed",
+                "stop": {
+                    "endlevel_sequence": false,
+                    "frame": 105,
+                    "level": 1,
+                    "paused": false,
+                    "player_dead": true
+                },
+                "verified_native_bitmap_slots": 55
+            },
+            {
+                "catalog": "local",
+                "case": "levels_multiplayer/firsteel.7z/firsteel.mn2:1",
+                "source_level_version": 7,
+                "texture_bank_sha256": "25f9aecd1d9cbb9f186663261cbf50bfc1d6f5d0b8810323b880f012cf1a22a0",
+                "entered_gameplay": true,
+                "survived_120_frames": true,
+                "completed_frames": 120,
+                "phase": "loaded_ticked",
+                "verified_native_bitmap_slots": 57
+            },
+            {
+                "catalog": "pinned",
+                "case": "levelpack.7z/missions/diedel/firsteel.mn2:1",
+                "source_level_version": 7,
+                "texture_bank_sha256": "25f9aecd1d9cbb9f186663261cbf50bfc1d6f5d0b8810323b880f012cf1a22a0",
+                "entered_gameplay": true,
+                "survived_120_frames": true,
+                "completed_frames": 120,
+                "phase": "loaded_ticked",
+                "verified_native_bitmap_slots": 57
+            },
+            {
+                "catalog": "local",
+                "case": "enemywithin.7z/missions/single/ewithin.mn2:23",
+                "source_level_version": 7,
+                "texture_bank_sha256": "0cd3a8351805522d40cdfffdae38adff9a8ed3aa5b11c860b40bc8be0230a2e9",
+                "entered_gameplay": true,
+                "survived_120_frames": true,
+                "completed_frames": 120,
+                "phase": "loaded_ticked",
+                "verified_native_bitmap_slots": 146
+            },
+            {
+                "catalog": "local",
+                "case": "levels_multiplayer/acat-xl.7z/missions/acat-xl.mn2:1",
+                "source_level_version": 23,
+                "texture_bank_sha256": "46be7c46a484a867ca46f61cc4564ff8f2b1d0892b3a62056e17f7dd669b777b",
+                "entered_gameplay": true,
+                "survived_120_frames": true,
+                "completed_frames": 120,
+                "phase": "loaded_ticked"
+            },
+            {
+                "catalog": "local",
+                "case": "levels_multiplayer/firsteel.7z/steel-xl.mn2:1",
+                "source_level_version": 23,
+                "texture_bank_sha256": "10325e573fc15d8ec44570e4f964aa9368804c0e3e7e874112e22235832359cb",
+                "entered_gameplay": true,
+                "survived_120_frames": true,
+                "completed_frames": 120,
+                "phase": "loaded_ticked"
+            },
+            {
+                "catalog": "local",
+                "case": "levels_multiplayer/pmaniac.7z/missions/diedel/xl/pmanicxl.mn2:1",
+                "source_level_version": 23,
+                "texture_bank_sha256": "8822ef72c264e201372265d5cf08334823e01610be32fe539149da81bd4bfab4",
+                "entered_gameplay": true,
+                "survived_120_frames": true,
+                "completed_frames": 120,
+                "phase": "loaded_ticked"
+            },
+            {
+                "catalog": "local",
+                "case": "levels_multiplayer/pyrotech.7z/missions/diedel/xl/ptech-xl.mn2:1",
+                "source_level_version": 23,
+                "texture_bank_sha256": "92e5fbc9a498e44d470700d17ecdf40294326a3db67708a716ae1fdc85770e85",
+                "entered_gameplay": true,
+                "survived_120_frames": true,
+                "completed_frames": 120,
+                "phase": "loaded_ticked"
+            },
+            {
+                "catalog": "local",
+                "case": "levels_multiplayer/pyrotech.7z/ptech-xl.mn2:1",
+                "source_level_version": 23,
+                "texture_bank_sha256": "92e5fbc9a498e44d470700d17ecdf40294326a3db67708a716ae1fdc85770e85",
+                "entered_gameplay": true,
+                "survived_120_frames": true,
+                "completed_frames": 120,
+                "phase": "loaded_ticked"
+            },
+            {
+                "catalog": "local",
+                "case": "levels_multiplayer/styx.7z/missions/diedel/XL/styx.mn2:1",
+                "source_level_version": 23,
+                "texture_bank_sha256": "e57f7067bdad8fc625aa5c72cf86636d1e6c99aa4483b5d2adf9897b1aae87be",
+                "entered_gameplay": true,
+                "survived_120_frames": true,
+                "completed_frames": 120,
+                "phase": "loaded_ticked"
+            },
+            {
+                "catalog": "local",
+                "case": "levels_multiplayer/tombz.7z/missions/diedel/XL/tombz.mn2:1",
+                "source_level_version": 27,
+                "texture_bank_sha256": "1b85165c0285e2ab2f38417f52ae7b8e81bcf02c4e06b638f36e6e74e5c2d020",
+                "entered_gameplay": true,
+                "survived_120_frames": true,
+                "completed_frames": 120,
+                "phase": "loaded_ticked"
+            },
+            {
+                "catalog": "local",
+                "case": "levels_multiplayer/toxic.7z/missions/diedel/XL/qtoxic.mn2:1",
+                "source_level_version": 23,
+                "texture_bank_sha256": "703ade2074168227e40734aa83c8fc529952b62820126e6c8ad85a5d8eeaae7f",
+                "entered_gameplay": true,
+                "survived_120_frames": true,
+                "completed_frames": 120,
+                "phase": "loaded_ticked"
+            },
+            {
+                "catalog": "local",
+                "case": "levels_multiplayer/wfc.7z/missions/diedel/wfc.mn2:1",
+                "source_level_version": 7,
+                "texture_bank_sha256": "a41cb93b980afbe736fd9fa5bb6d68243e006a70190e621301081ff7c98172de",
+                "entered_gameplay": true,
+                "survived_120_frames": true,
+                "completed_frames": 120,
+                "phase": "loaded_ticked",
+                "verified_native_bitmap_slots": 56
+            },
+            {
+                "catalog": "pinned",
+                "case": "levelpack.7z/missions/aus-red/mb-arena.mn2:1",
+                "source_level_version": 23,
+                "texture_bank_sha256": "954cd2f8cfbbd7b2258e094d46cc5d3951a25b4c674b70a5576576bd471ecd6a",
+                "entered_gameplay": true,
+                "survived_120_frames": true,
+                "completed_frames": 120,
+                "phase": "loaded_ticked"
+            },
+            {
+                "catalog": "pinned",
+                "case": "levelpack.7z/missions/darkflamewolf/acat-xl.mn2:1",
+                "source_level_version": 23,
+                "texture_bank_sha256": "46be7c46a484a867ca46f61cc4564ff8f2b1d0892b3a62056e17f7dd669b777b",
+                "entered_gameplay": true,
+                "survived_120_frames": true,
+                "completed_frames": 120,
+                "phase": "loaded_ticked"
+            },
+            {
+                "catalog": "pinned",
+                "case": "levelpack.7z/missions/darkflamewolf/hivewolf.mn2:1",
+                "source_level_version": 7,
+                "texture_bank_sha256": "fa0a520a2e30f73abd8800ac88317a017f1dbeefa307b218777a659ab7f75332",
+                "entered_gameplay": true,
+                "survived_120_frames": true,
+                "completed_frames": 120,
+                "phase": "loaded_ticked",
+                "verified_native_bitmap_slots": 39
+            },
+            {
+                "catalog": "pinned",
+                "case": "levelpack.7z/missions/diedel/1999mg.mn2:1",
+                "source_level_version": 7,
+                "texture_bank_sha256": "c350029f9ffa0ec2262850c6e0049fa8116e34993ac249c91678c5a67252209b",
+                "entered_gameplay": true,
+                "survived_120_frames": true,
+                "completed_frames": 120,
+                "phase": "loaded_ticked",
+                "verified_native_bitmap_slots": 82
+            },
+            {
+                "catalog": "pinned",
+                "case": "levelpack.7z/missions/diedel/biohzrd.mn2:1",
+                "source_level_version": 23,
+                "texture_bank_sha256": "d7c3b1aae4f653646689dd3f666099a45c112b341829bfb07484c4217cf0fb52",
+                "entered_gameplay": true,
+                "survived_120_frames": true,
+                "completed_frames": 120,
+                "phase": "loaded_ticked"
+            },
+            {
+                "catalog": "pinned",
+                "case": "levelpack.7z/missions/diedel/bttlheat.mn2:1",
+                "source_level_version": 23,
+                "texture_bank_sha256": "5cc11550f300703433ee1e7cb042180e614d2a0b01e7cc8c24bdd223557cf793",
+                "entered_gameplay": true,
+                "survived_120_frames": true,
+                "completed_frames": 120,
+                "phase": "loaded_ticked"
+            },
+            {
+                "catalog": "pinned",
+                "case": "levelpack.7z/missions/diedel/bttlhtur.mn2:1",
+                "source_level_version": 23,
+                "texture_bank_sha256": "e22ed1fe0d430eb02adca0d844df44740fe1a455ec94d60728a0f5a76ae6bd25",
+                "entered_gameplay": true,
+                "survived_120_frames": true,
+                "completed_frames": 120,
+                "phase": "loaded_ticked"
+            },
+            {
+                "catalog": "pinned",
+                "case": "levelpack.7z/missions/diedel/dogfight.mn2:1",
+                "source_level_version": 23,
+                "texture_bank_sha256": "c7e5f7cb6e5756862330cbd1e8929175b6a66e651d22ee066a3c6dc48ef361bc",
+                "entered_gameplay": true,
+                "survived_120_frames": true,
+                "completed_frames": 120,
+                "phase": "loaded_ticked"
+            },
+            {
+                "catalog": "pinned",
+                "case": "levelpack.7z/missions/diedel/emtombz.mn2:1",
+                "source_level_version": 23,
+                "texture_bank_sha256": "c09d9b463d3aef30bffe9389fc17c076866a849fbfbd840dc042d3f4a20a9268",
+                "entered_gameplay": true,
+                "survived_120_frames": true,
+                "completed_frames": 120,
+                "phase": "loaded_ticked"
+            },
+            {
+                "catalog": "pinned",
+                "case": "levelpack.7z/missions/diedel/etombz.mn2:1",
+                "source_level_version": 23,
+                "texture_bank_sha256": "8a0c3661ab2183001abda969263e99ea78825c0ac4440cedee885d467e89fa8d",
+                "entered_gameplay": true,
+                "survived_120_frames": true,
+                "completed_frames": 120,
+                "phase": "loaded_ticked"
+            },
+            {
+                "catalog": "pinned",
+                "case": "levelpack.7z/missions/diedel/hod.mn2:1",
+                "source_level_version": 7,
+                "texture_bank_sha256": "1ba6e6786ae5c95fbfe9b6d73f786cda3b7115fb249bf5ecf6e00e02947dbc41",
+                "entered_gameplay": true,
+                "survived_120_frames": true,
+                "completed_frames": 120,
+                "phase": "loaded_ticked",
+                "verified_native_bitmap_slots": 45
+            },
+            {
+                "catalog": "pinned",
+                "case": "levelpack.7z/missions/diedel/pmanicd2.mn2:1",
+                "source_level_version": 23,
+                "texture_bank_sha256": "8822ef72c264e201372265d5cf08334823e01610be32fe539149da81bd4bfab4",
+                "entered_gameplay": true,
+                "survived_120_frames": true,
+                "completed_frames": 120,
+                "phase": "loaded_ticked"
+            },
+            {
+                "catalog": "pinned",
+                "case": "levelpack.7z/missions/diedel/ptech-xl.mn2:1",
+                "source_level_version": 23,
+                "texture_bank_sha256": "92e5fbc9a498e44d470700d17ecdf40294326a3db67708a716ae1fdc85770e85",
+                "entered_gameplay": true,
+                "survived_120_frames": true,
+                "completed_frames": 120,
+                "phase": "loaded_ticked"
+            },
+            {
+                "catalog": "pinned",
+                "case": "levelpack.7z/missions/diedel/pyrodrom.mn2:1",
+                "source_level_version": 7,
+                "texture_bank_sha256": "b53c78fa535b1c3725d6e0ad18db00e9246dd5378065d9b6a7d84f9aa414d2bc",
+                "entered_gameplay": true,
+                "survived_120_frames": true,
+                "completed_frames": 120,
+                "phase": "loaded_ticked",
+                "verified_native_bitmap_slots": 51
+            },
+            {
+                "catalog": "pinned",
+                "case": "levelpack.7z/missions/diedel/qhunt.mn2:1",
+                "source_level_version": 7,
+                "texture_bank_sha256": "675a53232ea7f24f4d5489b52a89f77a96f2d2dbe685a13541ad0b4c2a9f2407",
+                "entered_gameplay": true,
+                "survived_120_frames": true,
+                "completed_frames": 120,
+                "phase": "loaded_ticked",
+                "verified_native_bitmap_slots": 61
+            },
+            {
+                "catalog": "pinned",
+                "case": "levelpack.7z/missions/diedel/qhunt1o1.mn2:1",
+                "source_level_version": 7,
+                "texture_bank_sha256": "ac0aa75cbeb78cbe1ac4a0150a886c56603393be9ff6a265d87fdbc9e8cb8fca",
+                "entered_gameplay": true,
+                "survived_120_frames": true,
+                "completed_frames": 120,
+                "phase": "loaded_ticked",
+                "verified_native_bitmap_slots": 60
+            },
+            {
+                "catalog": "pinned",
+                "case": "levelpack.7z/missions/diedel/qtox1on1.mn2:1",
+                "source_level_version": 7,
+                "texture_bank_sha256": "cd4e85b1051011b7524d25cb94da21f0ee033d902d7d013f305b71afab9d2b44",
+                "entered_gameplay": true,
+                "survived_120_frames": true,
+                "completed_frames": 120,
+                "phase": "loaded_ticked",
+                "verified_native_bitmap_slots": 55
+            },
+            {
+                "catalog": "pinned",
+                "case": "levelpack.7z/missions/diedel/qtoxic.mn2:1",
+                "source_level_version": 23,
+                "texture_bank_sha256": "703ade2074168227e40734aa83c8fc529952b62820126e6c8ad85a5d8eeaae7f",
+                "entered_gameplay": true,
+                "survived_120_frames": true,
+                "completed_frames": 120,
+                "phase": "loaded_ticked"
+            },
+            {
+                "catalog": "pinned",
+                "case": "levelpack.7z/missions/diedel/speed.mn2:1",
+                "source_level_version": 23,
+                "texture_bank_sha256": "fd4b4f447e69e309f7616206f624735c0faf075d576ec10b881e0a54a4c05625",
+                "entered_gameplay": true,
+                "survived_120_frames": true,
+                "completed_frames": 120,
+                "phase": "loaded_ticked"
+            },
+            {
+                "catalog": "pinned",
+                "case": "levelpack.7z/missions/diedel/steel-xl.mn2:1",
+                "source_level_version": 23,
+                "texture_bank_sha256": "10325e573fc15d8ec44570e4f964aa9368804c0e3e7e874112e22235832359cb",
+                "entered_gameplay": true,
+                "survived_120_frames": true,
+                "completed_frames": 120,
+                "phase": "loaded_ticked"
+            },
+            {
+                "catalog": "pinned",
+                "case": "levelpack.7z/missions/diedel/styx-d3.mn2:1",
+                "source_level_version": 23,
+                "texture_bank_sha256": "3a00798505e1fb5f4c6228703ce8dd1b3fa2b9d09ad32a44fc6ebc2c553018d4",
+                "entered_gameplay": true,
+                "survived_120_frames": true,
+                "completed_frames": 120,
+                "phase": "loaded_ticked"
+            },
+            {
+                "catalog": "pinned",
+                "case": "levelpack.7z/missions/diedel/styx.mn2:1",
+                "source_level_version": 23,
+                "texture_bank_sha256": "e57f7067bdad8fc625aa5c72cf86636d1e6c99aa4483b5d2adf9897b1aae87be",
+                "entered_gameplay": true,
+                "survived_120_frames": true,
+                "completed_frames": 120,
+                "phase": "loaded_ticked"
+            },
+            {
+                "catalog": "pinned",
+                "case": "levelpack.7z/missions/diedel/tankboy.mn2:1",
+                "source_level_version": 23,
+                "texture_bank_sha256": "ca4bfd473eaf162a8a1961262f238e8b3e5879adef85364f143b8982814fd3ee",
+                "entered_gameplay": true,
+                "survived_120_frames": true,
+                "completed_frames": 120,
+                "phase": "loaded_ticked"
+            },
+            {
+                "catalog": "pinned",
+                "case": "levelpack.7z/missions/diedel/tombz-d3.mn2:1",
+                "source_level_version": 23,
+                "texture_bank_sha256": "975baeb926e31060496d79b35c5be8e9542b89f3f56745a3acc5d9909611d841",
+                "entered_gameplay": true,
+                "survived_120_frames": true,
+                "completed_frames": 120,
+                "phase": "loaded_ticked"
+            },
+            {
+                "catalog": "pinned",
+                "case": "levelpack.7z/missions/diedel/tombz.mn2:1",
+                "source_level_version": 23,
+                "texture_bank_sha256": "1b85165c0285e2ab2f38417f52ae7b8e81bcf02c4e06b638f36e6e74e5c2d020",
+                "entered_gameplay": true,
+                "survived_120_frames": true,
+                "completed_frames": 120,
+                "phase": "loaded_ticked"
+            },
+            {
+                "catalog": "pinned",
+                "case": "levelpack.7z/missions/diedel/toxic-d3.mn2:1",
+                "source_level_version": 23,
+                "texture_bank_sha256": "854811d126b97b2750839d1a557c72cfa6b6707dc7f36ce2db9ff07c8077b561",
+                "entered_gameplay": true,
+                "survived_120_frames": true,
+                "completed_frames": 120,
+                "phase": "loaded_ticked"
+            },
+            {
+                "catalog": "pinned",
+                "case": "levelpack.7z/missions/diedel/unreald2.mn2:1",
+                "source_level_version": 7,
+                "texture_bank_sha256": "9467d386a6c9c1d7574e0ed60b61cab34054f6bf1c751a9f3e52396343403d38",
+                "entered_gameplay": true,
+                "survived_120_frames": true,
+                "completed_frames": 120,
+                "phase": "loaded_ticked",
+                "verified_native_bitmap_slots": 111
+            },
+            {
+                "catalog": "pinned",
+                "case": "levelpack.7z/missions/diedel/wfc20.mn2:1",
+                "source_level_version": 23,
+                "texture_bank_sha256": "c5feb60f567e62e2dffd23f5176873c4625f58e0147434e3a490b94ffdc22d40",
+                "entered_gameplay": true,
+                "survived_120_frames": true,
+                "completed_frames": 120,
+                "phase": "loaded_ticked"
+            },
+            {
+                "catalog": "pinned",
+                "case": "levelpack.7z/missions/kruel/kak-xl.mn2:1",
+                "source_level_version": 21,
+                "texture_bank_sha256": "4ea3da6147444848b0908f4df39893459a114a7ff45f6eeca66d3f29bea6134f",
+                "entered_gameplay": true,
+                "survived_120_frames": true,
+                "completed_frames": 120,
+                "phase": "loaded_ticked"
+            },
+            {
+                "catalog": "pinned",
+                "case": "levelpack.7z/missions/single/ewithin.mn2:23",
+                "source_level_version": 7,
+                "texture_bank_sha256": "13a56c6a54ffcd599b272d54f8eac294df656321c5ec1f849c9579d072e31fb7",
+                "entered_gameplay": true,
+                "survived_120_frames": true,
+                "completed_frames": 120,
+                "phase": "loaded_ticked",
+                "verified_native_bitmap_slots": 146
+            },
+            {
+                "catalog": "pinned",
+                "case": "levelpack.7z/missions/single/wshock20.mn2:1",
+                "source_level_version": 23,
+                "texture_bank_sha256": "6d4bda126a41874d881d0a45ed7501c0d1a5538e5a62904c6ece7a99c5761cfd",
+                "entered_gameplay": true,
+                "survived_120_frames": true,
+                "completed_frames": 120,
+                "phase": "loaded_ticked"
+            },
+            {
+                "catalog": "pinned",
+                "case": "levelpack.7z/missions/single/wshock20.mn2:2",
+                "source_level_version": 23,
+                "texture_bank_sha256": "b5344c46b8f119bce97389542f48f6e6c7e263bb90f91d52cb88ef56e97f00f1",
+                "entered_gameplay": true,
+                "survived_120_frames": true,
+                "completed_frames": 120,
+                "phase": "loaded_ticked"
+            },
+            {
+                "catalog": "pinned",
+                "case": "levelpack.7z/missions/single/wshock20.mn2:3",
+                "source_level_version": 23,
+                "texture_bank_sha256": "ac45aa1b9a56d933896b7b83ba1ea4f2771e38971e76f0af033b39c5e5d60b11",
+                "entered_gameplay": true,
+                "survived_120_frames": true,
+                "completed_frames": 120,
+                "phase": "loaded_ticked"
+            },
+            {
+                "catalog": "pinned",
+                "case": "levelpack.7z/missions/single/wshock20.mn2:4",
+                "source_level_version": 23,
+                "texture_bank_sha256": "9c2eea4625b53adb8e73badc96384d7d20cb4de236b0382aac18212e331d9a94",
+                "entered_gameplay": true,
+                "survived_120_frames": true,
+                "completed_frames": 120,
+                "phase": "loaded_ticked"
+            },
+            {
+                "catalog": "pinned",
+                "case": "levelpack.7z/missions/single/wshock20.mn2:5",
+                "source_level_version": 23,
+                "texture_bank_sha256": "39467185c1da59d662fddcfb69bc26bae1236dbba1d54dcbeaef6de88920e4b4",
+                "entered_gameplay": true,
+                "survived_120_frames": true,
+                "completed_frames": 120,
+                "phase": "loaded_ticked"
+            },
+            {
+                "catalog": "pinned",
+                "case": "levelpack.7z/missions/single/wshock20.mn2:6",
+                "source_level_version": 23,
+                "texture_bank_sha256": "0546007c1d48fb8b40a6d9071ff121caed87c0bb9889954a6255f4daed555925",
+                "entered_gameplay": true,
+                "survived_120_frames": true,
+                "completed_frames": 120,
+                "phase": "loaded_ticked"
+            },
+            {
+                "catalog": "pinned",
+                "case": "levelpack.7z/missions/single/wshock20.mn2:-1",
+                "source_level_version": 23,
+                "texture_bank_sha256": "740912f77d7858a71f9c8ffdc81ed7d29a04be249b5caba7c7b536cbb1b5d310",
+                "entered_gameplay": true,
+                "survived_120_frames": true,
+                "completed_frames": 120,
+                "phase": "loaded_ticked"
+            },
+            {
+                "catalog": "pinned",
+                "case": "levelpack.7z/missions/spotlight/jail_brk.mn2:1",
+                "source_level_version": 7,
+                "texture_bank_sha256": "20a552b3cefe18595ead7531e0ddcff2f364957a97ddcad4c15d5fefc105ef31",
+                "entered_gameplay": true,
+                "survived_120_frames": true,
+                "completed_frames": 120,
+                "phase": "loaded_ticked",
+                "verified_native_bitmap_slots": 196
+            },
+            {
+                "catalog": "pinned",
+                "case": "levelpack.7z/missions/spotlight/jailbrkn.mn2:1",
+                "source_level_version": 7,
+                "texture_bank_sha256": "039dbcc6643274bf5a1715aa01a41a34414927acd957124ff6f11cb5d8d72b69",
+                "entered_gameplay": true,
+                "survived_120_frames": true,
+                "completed_frames": 120,
+                "phase": "loaded_ticked",
+                "verified_native_bitmap_slots": 287
+            }
+        ]
+    },
+    "supplemental_forest_android": [
+        {
+            "edition": "16p",
+            "segments": 1442,
+            "owner": "mod/forest-16player-final-level-loading.zip",
+            "level_title": "The Forest",
+            "steps": 15
+        },
+        {
+            "edition": "recovered",
+            "segments": 633,
+            "owner": "mod/forest-633-recovered-final-level-loading.zip",
+            "level_title": "Dimentional Intersect",
+            "steps": 17
+        }
+    ],
+    "supplemental_classic_android": {
+        "steel": {
+            "member": "firsteel",
+            "level": 1,
+            "difficulty": 2,
+            "entered_gameplay": true,
+            "ordinary_launcher_assertions_passed": 15,
+            "apk_sha256": "8d5522eb3f9ddda27bba5bbc602ff528e610e6b8861cb2b076a92a4fc4c92994",
+            "archive_sha256": "8ffd87f5997b7b0623d953f2527416c809a0a92d06d061282c6dc9ef1bf10014",
+            "display_settings_preserved": true
+        },
+        "pyro": {
+            "member": "pyrotech",
+            "level": 1,
+            "difficulty": 2,
+            "entered_gameplay": true,
+            "ordinary_launcher_assertions_passed": 15,
+            "apk_sha256": "8d5522eb3f9ddda27bba5bbc602ff528e610e6b8861cb2b076a92a4fc4c92994",
+            "archive_sha256": "1563d6cc6ffd638872d6f44a6e5735c63490f3919cfd617eeafb7214583d099a",
+            "display_settings_preserved": true
+        }
+    },
+    "supplemental_recovered_cavern_action": {
+        "level_sha256": "3686536e2e4999d3d41778aa563e1d37ad4d3fb62c27f611c664de9071320996",
+        "level": 10,
+        "assisted": true,
+        "owner_robot_type": 76,
+        "owner_slot": 296,
+        "first_action_tick": 181,
+        "binding_operated": true,
+        "qualified_robot_created": false,
+        "robot_count_before": 140,
+        "robot_count_after": 140,
+        "status": "no qualified production spawn",
+        "traced_placement": {
+            "assisted": true,
+            "level_sha256": "3686536e2e4999d3d41778aa563e1d37ad4d3fb62c27f611c664de9071320996",
+            "owner_robot_type": 76,
+            "owner_slot": 296,
+            "observations": [
+                {
+                    "tick": 181,
+                    "candidate_robot": 54,
+                    "selected_generator_room": 10,
+                    "placement_room": 649,
+                    "gate_timer_elapsed": true,
+                    "failed_position_tests": 5
+                },
+                {
+                    "tick": 226,
+                    "candidate_robot": 54,
+                    "selected_generator_room": 10,
+                    "placement_room": 649,
+                    "gate_timer_elapsed": true,
+                    "failed_position_tests": 5
+                },
+                {
+                    "tick": 271,
+                    "candidate_robot": 60,
+                    "selected_generator_room": 10,
+                    "placement_room": 649,
+                    "gate_timer_elapsed": true,
+                    "failed_position_tests": 5
+                },
+                {
+                    "tick": 316,
+                    "candidate_robot": 54,
+                    "selected_generator_room": 10,
+                    "placement_room": 649,
+                    "gate_timer_elapsed": true,
+                    "failed_position_tests": 5
+                },
+                {
+                    "tick": 361,
+                    "candidate_robot": 60,
+                    "selected_generator_room": 10,
+                    "placement_room": 649,
+                    "gate_timer_elapsed": true,
+                    "failed_position_tests": 5
+                },
+                {
+                    "tick": 406,
+                    "candidate_robot": 54,
+                    "selected_generator_room": 10,
+                    "placement_room": 649,
+                    "gate_timer_elapsed": true,
+                    "failed_position_tests": 5
+                }
+            ],
+            "result": "All six damage-triggered placements exhausted the original five-position limit in the boss room"
+        },
+        "placement_repeats": {
+            "early": {
+                "first_damage_tick": 181,
+                "actions": 6,
+                "ticks": [181, 226, 271, 316, 361, 406],
+                "candidates": {
+                    "54": 4,
+                    "60": 2
+                },
+                "gate_results": {
+                    "placement": 6
+                },
+                "status": "no qualified production spawn",
+                "stop_tick": null,
+                "first_blocking_objects": [
+                    {
+                        "slot": 296,
+                        "kind": 2,
+                        "id": 76,
+                        "collisions": 30
+                    }
+                ],
+                "room_bounds": [
+                    {
+                        "room": 649,
+                        "candidate_type": 54,
+                        "collider_slot": 296,
+                        "tested_actions": 4,
+                        "guaranteed_collisions_in_pose": 0,
+                        "max_displacement_from_center": 1437973
+                    },
+                    {
+                        "room": 649,
+                        "candidate_type": 60,
+                        "collider_slot": 296,
+                        "tested_actions": 2,
+                        "guaranteed_collisions_in_pose": 0,
+                        "max_displacement_from_center": 1437973
+                    }
+                ],
+                "radius_sums_by_candidate": {
+                    "54": [1282696],
+                    "60": [1255901]
+                }
+            },
+            "late": {
+                "first_damage_tick": 1201,
+                "actions": 1,
+                "ticks": [1201],
+                "candidates": {
+                    "54": 1
+                },
+                "gate_results": {
+                    "created": 1
+                },
+                "status": "owned generator selected an authored robot",
+                "stop_tick": null,
+                "first_blocking_objects": [
+                    {
+                        "slot": 296,
+                        "kind": 2,
+                        "id": 76,
+                        "collisions": 1
+                    }
+                ],
+                "room_bounds": [
+                    {
+                        "room": 649,
+                        "candidate_type": 54,
+                        "collider_slot": 296,
+                        "tested_actions": 1,
+                        "guaranteed_collisions_in_pose": 0,
+                        "max_displacement_from_center": 1437973
+                    }
+                ],
+                "radius_sums_by_candidate": {
+                    "54": [1282696]
+                }
+            },
+            "late_created": [
+                {
+                    "slot": 390,
+                    "type": 54,
+                    "room": 649,
+                    "creator": -1,
+                    "signature": 1593
+                }
+            ],
+            "original_source_revision": "2576a98b5de310e3ac7c9777df2677d1627b8bae",
+            "original_functions": [
+                "CObject::BossSpewRobot",
+                "CObject::CreateGatedRobot",
+                "CheckObjectObjectIntersection",
+                "CSegment::RandomPoint"
+            ],
+            "original_runtime_observation": "requested_texture_quality_unverified"
+        }
+    },
+    "supplemental_packages": {
+        "unchanged_frozen_Forest_level_sha256": "5958c735b5d4185c49b705a46847fe60dcfaa76442062abdf091a4f02039a9ef",
+        "recovered_633_zip_sha256": "95e57d8a5a50f5487051fb549b9bfcffcb51f1672d3df3ca6f02c05a18d44cb5",
+        "recovered_forest_pog_sha256": "12f6fc1ee3efc13a60098e610314895a2c524653e509ee750a37bc7e999a8408",
+        "previous_distributions_measured": 30,
+        "previous_distributions_survived": 30,
+        "author_polylevel_unchanged": {
+            "measured": 11,
+            "entered_gameplay": 10,
+            "survived_120_frames": 10,
+            "first_rejection": "dinter_multilevel-2.0.7z/missions/single/dinterx.mn2:10"
+        }
+    },
+    "geometry_controls": [
+        {
+            "case": "levels/kalisto.zip/kalisto/kalisto.mn2:1",
+            "archive_sha256": "5914ac765aadcf7e7616621fce52e2a553bf7ab8596b2a2be0ca96c1fbf413e0",
+            "descriptor_sha256": "a45b61821876a59c9c5fde9c5bc03943f0403ba5877daa1a05b2acf951087333",
+            "advertised_member": "kalisto.rl2",
+            "reference_hog_member_sha256": "d08f99744dfef0df7e6250f423d2889809a6fd343dda4727af68047bc33e6e05",
+            "member_size": 1494199,
+            "final_windowed_opened_level_sha256": "d08f99744dfef0df7e6250f423d2889809a6fd343dda4727af68047bc33e6e05",
+            "redux_headless_frames": 120,
+            "redux_rendered_frames": 120,
+            "segments": 4518,
+            "pinned_original_revision": "2576a98b5de310e3ac7c9777df2677d1627b8bae",
+            "pinned_original_observation": "started_and_ran",
+            "pinned_original_receipt_sha256": "c29e49f7dfec2a3e8e16bf1ac3c5bbecbaacebb5cf82f919be322d77e25b6e0d"
+        },
+        {
+            "case": "levels_multiplayer/Temple Of Helix.zip/missions/tohelix.mn2:1",
+            "archive_sha256": "2a7b6c54575c0b69730753b603b0196ed0fe0a2222d0f91e9c544cb9e0721b66",
+            "descriptor_sha256": "bbc7fedaf7d4961e42710e90ec7ab7fd885e03a59e91332b1c8d7e8f9ab36633",
+            "advertised_member": "tohelix.rl2",
+            "reference_hog_member_sha256": "4fda09f535c781da253ba8cadb26fde207887ae45ef46f13f18730af066f63b1",
+            "member_size": 117575,
+            "final_windowed_opened_level_sha256": "4fda09f535c781da253ba8cadb26fde207887ae45ef46f13f18730af066f63b1",
+            "redux_headless_frames": 120,
+            "redux_rendered_frames": 120,
+            "segments": 285,
+            "pinned_original_revision": "2576a98b5de310e3ac7c9777df2677d1627b8bae",
+            "pinned_original_observation": "started_and_ran",
+            "pinned_original_receipt_sha256": "f591252ad01394f2396862a79c79dede9d9268e80663514b7ae2a6e11cf19b3e"
+        },
+        {
+            "case": "levels_multiplayer/code-yena-xl.7z/cdeyena2.mn2:1",
+            "archive_sha256": "be0bf549082e025e7d1c2df3323a438740d8c7189d495306f30b82a2234e3b33",
+            "descriptor_sha256": "ceb15095b7cb4bfcda799fa26633bb7eb112e0cac614fa2449a3a1908f1eee76",
+            "advertised_member": "cdeyena2.rl2",
+            "reference_hog_member_sha256": "9acd316824db46c51ebb99ddf3bb42c592478012d9c3d1cdb3d294c013cdf32d",
+            "member_size": 326491,
+            "final_windowed_opened_level_sha256": "9acd316824db46c51ebb99ddf3bb42c592478012d9c3d1cdb3d294c013cdf32d",
+            "redux_headless_frames": 120,
+            "redux_rendered_frames": 120,
+            "segments": 1021,
+            "pinned_original_revision": "2576a98b5de310e3ac7c9777df2677d1627b8bae",
+            "pinned_original_observation": "started_and_ran",
+            "pinned_original_receipt_sha256": "98ca1d309e0db38c801d4783d46d83c13f700ce2f066c2ee96ca56415872027a"
+        },
+        {
+            "case": "levels_multiplayer/coordination-xl.7z/crdntion.mn2:1",
+            "archive_sha256": "d342807bffc338bc5f9f8c5c3ff111bc602beb1efc1a0032bc3701655e414c5e",
+            "descriptor_sha256": "657bfbd3df7fc97ba3b0f312502220ff808831261faf55a8f02c9fef6af06764",
+            "advertised_member": "crdntion.rl2",
+            "reference_hog_member_sha256": "0a31d45a7f926bdb9efed58514f84fc4745538ab767a4447ef2b8582154619b8",
+            "member_size": 331488,
+            "final_windowed_opened_level_sha256": "0a31d45a7f926bdb9efed58514f84fc4745538ab767a4447ef2b8582154619b8",
+            "redux_headless_frames": 120,
+            "redux_rendered_frames": 120,
+            "segments": 983,
+            "pinned_original_revision": "2576a98b5de310e3ac7c9777df2677d1627b8bae",
+            "pinned_original_observation": "started_and_ran",
+            "pinned_original_receipt_sha256": "68d0d2bf0d1fbff8e7045993d2f8f07503973d0459a8d8b2ec98cbe2fad44bbd"
+        }
+    ],
+    "broader_windowed_catalog": {
+        "official_source_head": "f00211e38247bf1cf198df3b73e7d0e2eb3cd2cb",
+        "windowed_measurement_head": "f00211e38247bf1cf198df3b73e7d0e2eb3cd2cb",
+        "windowed_engine_sha256": "d3d8291a7c34fa2b85065a63382f6a9e15ca9bbae53ee1a08a563a695d72324d",
+        "catalogs": {
+            "pinned": {
+                "advertised": 1111,
+                "measured": 762,
+                "entered_gameplay": 730,
+                "survived_120_frames": 728,
+                "matched_level_bytes": 730,
+                "discrepancies": 0
+            },
+            "local": {
+                "advertised": 543,
+                "measured": 543,
+                "entered_gameplay": 541,
+                "survived_120_frames": 539,
+                "matched_level_bytes": 541,
+                "discrepancies": 0
+            },
+            "combined": {
+                "advertised": 1654,
+                "measured": 1305,
+                "entered_gameplay": 1271,
+                "survived_120_frames": 1267,
+                "matched_level_bytes": 1271,
+                "discrepancies": 0
+            }
+        },
+        "discrepancies": [],
+        "measurement_errors": [],
+        "phases": {
+            "pinned": {
+                "simulation_failed": 2,
+                "loaded_ticked": 728,
+                "level_load": 32
+            },
+            "local": {
+                "loaded_ticked": 539,
+                "level_load": 2,
+                "simulation_failed": 2
+            }
+        },
+        "first_unmeasured_by_catalog": {
+            "pinned": "levelpack.7z/missions/single/lostlvls.mn2:15",
+            "local": null
+        },
+        "case_result_table_sha256": "d6ca4f236cf7f5750436e58044b5c7c45c281aa26b36d72e20f4d60715fbd3e4",
+        "matching_blocker_receipts": {
+            "pinned": {
+                "Robot fire killed the idle pilot": 2,
+                "Advertised level file missing": 31,
+                "Declared custom textures missing": 1
+            },
+            "local": {
+                "Advertised level file missing": 2,
+                "Robot fire killed the idle pilot": 2
+            },
+            "combined": {
+                "Robot fire killed the idle pilot": 4,
+                "Advertised level file missing": 33,
+                "Declared custom textures missing": 1
+            }
+        }
+    },
+    "supplemental_idle_clock": {
+        "wolf": {
+            "reference_revision": "2576a98b5de310e3ac7c9777df2677d1627b8bae",
+            "descriptor_sha256": "288052b2ba7be0c85c514c7ef622f63756a7268ba93decaa9edb5b085dbc22f2",
+            "advertised_file": "wolf0006.rl2",
+            "ordinal": 6,
+            "reference_updates": 82,
+            "previous_reference_updates": 82,
+            "redux_updates": 83,
+            "compared_updates": 82,
+            "matching_delta_updates": 82,
+            "matching_accumulated_clock_updates": 82,
+            "first_delta_mismatch": null,
+            "first_accumulated_clock_mismatch": null,
+            "applied_clock_calls": 82,
+            "reference_frame_deltas": {
+                "1092": 61,
+                "1093": 21
+            },
+            "reference_first_weapon": [24, 22, 69, 0],
+            "redux_first_weapon": [29, 22, 69, 0],
+            "reference_first_shield_loss": [63, 6553600, 5378294],
+            "redux_first_shield_loss": [72, 6553600, 6094848]
+        },
+        "pyro-pinned": {
+            "reference_revision": "2576a98b5de310e3ac7c9777df2677d1627b8bae",
+            "descriptor_sha256": "40791b493de9ac79e3cc5d050ac1c97028ad90b016dc741f21932ea5ce21d6c7",
+            "advertised_file": "pyrotech.rl2",
+            "ordinal": 1,
+            "reference_updates": 88,
+            "previous_reference_updates": 90,
+            "redux_updates": 105,
+            "compared_updates": 88,
+            "matching_delta_updates": 88,
+            "matching_accumulated_clock_updates": 88,
+            "first_delta_mismatch": null,
+            "first_accumulated_clock_mismatch": null,
+            "applied_clock_calls": 88,
+            "reference_frame_deltas": {
+                "1092": 65,
+                "1093": 23
+            },
+            "reference_first_weapon": [21, 21, 107, 124],
+            "redux_first_weapon": [23, 21, 107, 124],
+            "reference_first_shield_loss": [55, 6553600, 5248807],
+            "redux_first_shield_loss": [59, 6553600, 5409308]
+        },
+        "pyro-nested": {
+            "reference_revision": "2576a98b5de310e3ac7c9777df2677d1627b8bae",
+            "descriptor_sha256": "40791b493de9ac79e3cc5d050ac1c97028ad90b016dc741f21932ea5ce21d6c7",
+            "advertised_file": "pyrotech.rl2",
+            "ordinal": 1,
+            "reference_updates": 88,
+            "previous_reference_updates": 90,
+            "redux_updates": 105,
+            "compared_updates": 88,
+            "matching_delta_updates": 88,
+            "matching_accumulated_clock_updates": 88,
+            "first_delta_mismatch": null,
+            "first_accumulated_clock_mismatch": null,
+            "applied_clock_calls": 88,
+            "reference_frame_deltas": {
+                "1092": 65,
+                "1093": 23
+            },
+            "reference_first_weapon": [21, 21, 107, 124],
+            "redux_first_weapon": [23, 21, 107, 124],
+            "reference_first_shield_loss": [55, 6553600, 5248807],
+            "redux_first_shield_loss": [59, 6553600, 5409308]
+        },
+        "pyro-root": {
+            "reference_revision": "2576a98b5de310e3ac7c9777df2677d1627b8bae",
+            "descriptor_sha256": "40791b493de9ac79e3cc5d050ac1c97028ad90b016dc741f21932ea5ce21d6c7",
+            "advertised_file": "pyrotech.rl2",
+            "ordinal": 1,
+            "reference_updates": 88,
+            "previous_reference_updates": 90,
+            "redux_updates": 105,
+            "compared_updates": 88,
+            "matching_delta_updates": 88,
+            "matching_accumulated_clock_updates": 88,
+            "first_delta_mismatch": null,
+            "first_accumulated_clock_mismatch": null,
+            "applied_clock_calls": 88,
+            "reference_frame_deltas": {
+                "1092": 65,
+                "1093": 23
+            },
+            "reference_first_weapon": [21, 21, 107, 124],
+            "redux_first_weapon": [23, 21, 107, 124],
+            "reference_first_shield_loss": [55, 6553600, 5248807],
+            "redux_first_shield_loss": [59, 6553600, 5409308]
+        }
+    },
+    "supplemental_idle_object_motion": {
+        "wolf": {
+            "shooter": {
+                "slot": 69,
+                "object_type": 2,
+                "reference_id": 48,
+                "redux_id": 48,
+                "same_start_position": true,
+                "same_start_room": true,
+                "first_position_difference_tick": 23,
+                "first_room_difference_tick": null,
+                "reference_first_movement_tick": 23,
+                "redux_first_movement_tick": 24
+            },
+            "pilot": {
+                "slot": 0,
+                "object_type": 4,
+                "reference_id": 0,
+                "redux_id": 0,
+                "same_start_position": false,
+                "same_start_room": true,
+                "first_position_difference_tick": 1,
+                "first_room_difference_tick": null,
+                "reference_first_movement_tick": 3,
+                "redux_first_movement_tick": 2
+            }
+        },
+        "pyro-pinned": {
+            "shooter": {
+                "slot": 107,
+                "object_type": 2,
+                "reference_id": 47,
+                "redux_id": 47,
+                "same_start_position": true,
+                "same_start_room": true,
+                "first_position_difference_tick": 21,
+                "first_room_difference_tick": 33,
+                "reference_first_movement_tick": 21,
+                "redux_first_movement_tick": 23
+            },
+            "pilot": {
+                "slot": 0,
+                "object_type": 4,
+                "reference_id": 0,
+                "redux_id": 0,
+                "same_start_position": false,
+                "same_start_room": true,
+                "first_position_difference_tick": 1,
+                "first_room_difference_tick": null,
+                "reference_first_movement_tick": 3,
+                "redux_first_movement_tick": 2
+            }
+        },
+        "pyro-nested": {
+            "shooter": {
+                "slot": 107,
+                "object_type": 2,
+                "reference_id": 47,
+                "redux_id": 47,
+                "same_start_position": true,
+                "same_start_room": true,
+                "first_position_difference_tick": 21,
+                "first_room_difference_tick": 33,
+                "reference_first_movement_tick": 21,
+                "redux_first_movement_tick": 23
+            },
+            "pilot": {
+                "slot": 0,
+                "object_type": 4,
+                "reference_id": 0,
+                "redux_id": 0,
+                "same_start_position": false,
+                "same_start_room": true,
+                "first_position_difference_tick": 1,
+                "first_room_difference_tick": null,
+                "reference_first_movement_tick": 3,
+                "redux_first_movement_tick": 2
+            }
+        },
+        "pyro-root": {
+            "shooter": {
+                "slot": 107,
+                "object_type": 2,
+                "reference_id": 47,
+                "redux_id": 47,
+                "same_start_position": true,
+                "same_start_room": true,
+                "first_position_difference_tick": 21,
+                "first_room_difference_tick": 33,
+                "reference_first_movement_tick": 21,
+                "redux_first_movement_tick": 23
+            },
+            "pilot": {
+                "slot": 0,
+                "object_type": 4,
+                "reference_id": 0,
+                "redux_id": 0,
+                "same_start_position": false,
+                "same_start_room": true,
+                "first_position_difference_tick": 1,
+                "first_room_difference_tick": null,
+                "reference_first_movement_tick": 3,
+                "redux_first_movement_tick": 2
+            }
+        }
+    },
+    "classic_runtime_full_repeat": {
+        "source_head": "1ad83c568a1963ce911ed7ae0b720060dcabb0ec",
+        "engine_sha256": "471416a8ea3b0bde6972daa75ee2cf97647758c0fb3105a70e999d499fadda94",
+        "catalogs": {
+            "pinned": {
+                "advertised": 1111,
+                "entered_gameplay": 1079,
+                "survived_120_frames": 1077,
+                "inventory_sha256": "bf4356a7a5fbe64832a40d7065ea02d8b81276ebd8bbba6874012f7851fa0cf8",
+                "results_sha256": "24321ff231d7b4b4270e65af45d92f14088fa80fb2feae38ccbbddd26f50cd33"
+            },
+            "local": {
+                "advertised": 543,
+                "entered_gameplay": 541,
+                "survived_120_frames": 539,
+                "inventory_sha256": "e7d480aa401522d37f6ec75da01f6cec7c314c901728f1b291131e52a62818df",
+                "results_sha256": "3fbf6bd7d4858fe99578779cc85cd255f2d2a1aa7d2a87e7793a03484ff2fc05"
+            },
+            "combined": {
+                "advertised": 1654,
+                "entered_gameplay": 1620,
+                "survived_120_frames": 1616
+            }
+        }
+    }
+}
