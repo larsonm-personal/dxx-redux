@@ -1,7 +1,7 @@
 import unittest
 from pathlib import Path
 
-from xl_reference_campaign import classify
+from xl_reference_campaign import classify, texture_quality_observation
 
 
 class ReferenceCampaignTests(unittest.TestCase):
@@ -30,3 +30,24 @@ class ReferenceCampaignTests(unittest.TestCase):
         self.assertNotEqual(self.result(0, extended), "started_and_ran")
         ran[-1] = ["frames", "120", "1", "0"]
         self.assertNotEqual(self.result(0, ran), "started_and_ran")
+
+    def test_unobserved_texture_quality_keeps_the_gameplay_observation(self):
+        rejected = self.events + [["mission", "0"]]
+        result = {"observation": self.result(21, rejected)}
+        result.update(texture_quality_observation(rejected, 2))
+        self.assertEqual(
+            result,
+            {"observation": "mission_rejected", "requested_texture_quality": 2, "texture_quality_verified": False},
+        )
+        measured = [["texture_quality", "2", "3"]]
+        self.assertEqual(
+            texture_quality_observation(measured, 2),
+            {
+                "texture_quality": 2,
+                "maximum_texture_quality": 3,
+                "requested_texture_quality": 2,
+                "texture_quality_verified": True,
+            },
+        )
+        self.assertFalse(texture_quality_observation(measured, 1)["texture_quality_verified"])
+        self.assertNotIn("texture_quality_verified", texture_quality_observation(measured, None))
