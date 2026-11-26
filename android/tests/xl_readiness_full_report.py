@@ -54,10 +54,18 @@ def first_blocker(row, proof, log):
             if str(proof.get("level_file", "")).casefold() != row["level_file"].casefold():
                 return "Resolved level filename differs"
             return "Completed frames with invalid readiness proof"
-        if proof.get("phase") == "simulation_failed" and re.search(
-            r"^You took [\d.]+ damage from a robot's weapon blast, shields now -[\d.]+\s*\Z", log, re.MULTILINE
-        ):
-            return "Robot fire killed the idle pilot"
+        if proof.get("phase") == "simulation_failed":
+            stop = proof.get("stop", {})
+            if (not stop or stop.get("player_dead") is True) and re.search(
+                r"^You took [\d.]+ damage from a robot's weapon blast, shields now -[\d.]+\s*\Z", log, re.MULTILINE
+            ):
+                return "Robot fire killed the idle pilot"
+            if stop.get("player_dead") is True:
+                return "Pilot died during fixed test"
+            if "level" in stop and stop["level"] != row["level"]:
+                return "Requested level changed during fixed test"
+            if stop.get("endlevel_sequence") is True:
+                return "Level exit sequence started during fixed test"
         return "Simulation stopped"
     if outcome in ("timeout", "crash", "infrastructure_error", "untested"):
         return outcome
@@ -123,6 +131,7 @@ def summarize(work, catalog_path, *, require_full_inventory=False, expected_targ
                 "outcome": row["outcome"],
                 "entered_gameplay": confirmed_entry,
                 "frames": row["frames"],
+                **({"stop": proof["stop"]} if proof.get("phase") == "simulation_failed" and "stop" in proof else {}),
                 "first_blocker": first_blocker(row, proof, log),
             }
         )

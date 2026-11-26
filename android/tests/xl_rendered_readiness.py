@@ -14,6 +14,7 @@ def passed(code, proof, mission, level, level_file):
         and isinstance(proof, dict)
         and proof.get("schema") == "dxx-xl-rendered-load-tick-v1"
         and proof.get("phase") == "loaded_ticked"
+        and proof.get("difficulty", 2) == 2
         and proof.get("mission") == mission
         and type(proof.get("level")) is int
         and proof["level"] == level

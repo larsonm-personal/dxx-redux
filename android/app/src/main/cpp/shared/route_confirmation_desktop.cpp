@@ -165,6 +165,7 @@ int rendered_readiness(const char *path, nlohmann::ordered_json &proof)
 	proof["xl_active"] = false;
 #endif
 	proof["frames"] = 0;
+	proof["difficulty"] = Difficulty_level;
 	proof["rendered_frames"] = 0;
 	proof["fixed_hz"] = ROUTE_CONFIRMATION_FIXED_HZ;
 	proof["seed"] = ROUTE_CONFIRMATION_CANONICAL_SEED;
@@ -184,6 +185,7 @@ int rendered_readiness(const char *path, nlohmann::ordered_json &proof)
 		calc_game_time();
 		GameProcessFrame();
 		if (Current_level_num != State.level || Player_is_dead || Endlevel_sequence || game_is_time_paused()) {
+			proof["stop"] = { { "frame", frame + 1 }, { "level", Current_level_num }, { "player_dead", Player_is_dead != 0 }, { "endlevel_sequence", Endlevel_sequence != 0 }, { "paused", game_is_time_paused() != 0 } };
 			write_readiness(path, proof, "simulation_failed");
 			return 1;
 		}
