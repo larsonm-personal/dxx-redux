@@ -124,6 +124,7 @@ object MissionZip {
                 file.length(),
                 file.name.substringBeforeLast('.'),
                 archive.format,
+                requiresExtraction = archive.requiresExtraction,
             )
         }
     }
@@ -348,6 +349,7 @@ object MissionZip {
         archiveFormat: String,
         onRejectedMission: (String) -> Unit = {},
         includeIncompleteMissions: Boolean = false,
+        requiresExtraction: Boolean = archiveFormat != "zip",
     ): ScanResult? {
         val sortedConstituents = sortedConstituents(constituents)
         val missionSets =
@@ -377,7 +379,7 @@ object MissionZip {
             totalSizeBytes = totalSizeBytes,
             importMode =
                 if (shouldStoreArchive(
-                        archiveFormat,
+                        requiresExtraction,
                         totalSizeBytes,
                         sortedConstituents,
                     )
@@ -392,11 +394,11 @@ object MissionZip {
     }
 
     private fun shouldStoreArchive(
-        archiveFormat: String,
+        requiresExtraction: Boolean,
         totalSizeBytes: Long,
         constituents: List<Constituent>,
     ): Boolean {
-        if (archiveFormat != "zip") return false
+        if (requiresExtraction) return false
         if (totalSizeBytes > DURABLE_EXTRACT_THRESHOLD_BYTES) return false
         return constituents.none {
             it.role in

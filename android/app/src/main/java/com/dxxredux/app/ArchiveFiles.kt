@@ -12,6 +12,9 @@ import net.sf.sevenzipjbinding.SevenZipNativeInitializationException
 import net.sf.sevenzipjbinding.impl.RandomAccessFileInStream
 import org.apache.commons.compress.archivers.sevenz.SevenZArchiveEntry
 import org.apache.commons.compress.archivers.sevenz.SevenZFile
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry
+import org.apache.commons.compress.archivers.zip.ZipMethod
+import org.apache.commons.io.input.ChecksumInputStream
 import java.io.Closeable
 import java.io.File
 import java.io.FileOutputStream
@@ -22,8 +25,11 @@ import java.nio.ByteBuffer
 import java.nio.channels.SeekableByteChannel
 import java.text.Normalizer
 import java.util.Locale
+import java.util.zip.CRC32
 import java.util.zip.ZipEntry
+import java.util.zip.ZipException
 import java.util.zip.ZipFile
+import org.apache.commons.compress.archivers.zip.ZipFile as CommonsZipFile
 
 internal data class ArchiveFileEntry(
     val path: String,
@@ -38,6 +44,7 @@ internal data class ArchiveFileEntry(
 
 internal interface ReadableArchiveFile : Closeable {
     val format: String
+    val requiresExtraction: Boolean get() = format != "zip"
     val entries: List<ArchiveFileEntry>
 
     fun openInputStream(entry: ArchiveFileEntry): InputStream
@@ -75,6 +82,7 @@ internal object ArchiveFiles {
             try {
                 SevenZReadableArchive(file)
             } catch (_: Exception) {
+                if (zipError is ZipException) return Deflate64ReadableArchive(file, zipError)
                 throw zipError
             }
         }
@@ -166,6 +174,25 @@ internal fun canonicalArchiveRelativePath(path: String): String? {
 private fun archiveOutputKey(path: String): String =
     Normalizer.normalize(path, Normalizer.Form.NFC).lowercase(Locale.ROOT)
 
+private fun zipFileEntry(
+    entry: ZipEntry,
+    budget: ExtractionBudget,
+): ArchiveFileEntry {
+    budget.registerEntry(
+        if (entry.isDirectory) 0 else entry.size.coerceAtLeast(0),
+        if (entry.isDirectory) 0 else entry.compressedSize.coerceAtLeast(0),
+        entry.name,
+    )
+    return ArchiveFileEntry(
+        path = entry.name,
+        isDirectory = entry.isDirectory,
+        sizeBytes = entry.size.coerceAtLeast(0),
+        compressedSizeBytes = entry.compressedSize.takeIf { it >= 0 },
+        handle = entry,
+        modifiedDate = ArchiveEntryDates.zip(entry),
+    )
+}
+
 private class ZipReadableArchive(
     file: File,
 ) : ReadableArchiveFile {
@@ -177,22 +204,8 @@ private class ZipReadableArchive(
                 zip
                     .entries()
                     .asSequence()
-                    .map { entry ->
-                        ArchiveFileEntry(
-                            path = entry.name,
-                            isDirectory = entry.isDirectory,
-                            sizeBytes = entry.size.coerceAtLeast(0),
-                            compressedSizeBytes = entry.compressedSize.takeIf { it >= 0 },
-                            handle = entry,
-                            modifiedDate = ArchiveEntryDates.zip(entry),
-                        ).also {
-                            budget.registerEntry(
-                                if (it.isDirectory) 0 else it.sizeBytes,
-                                if (it.isDirectory) 0 else it.compressedSizeBytes ?: 0,
-                                it.path,
-                            )
-                        }
-                    }.toList()
+                    .map { entry -> zipFileEntry(entry, budget) }
+                    .toList()
             }
         } catch (error: Exception) {
             zip.close()
@@ -200,6 +213,59 @@ private class ZipReadableArchive(
         }
 
     override fun openInputStream(entry: ArchiveFileEntry): InputStream = zip.getInputStream(entry.handle as ZipEntry)
+
+    override fun close() = zip.close()
+}
+
+private class Deflate64ReadableArchive(
+    file: File,
+    originalError: ZipException,
+) : ReadableArchiveFile {
+    private val zip =
+        try {
+            CommonsZipFile.builder().setFile(file).get()
+        } catch (_: IOException) {
+            throw originalError
+        }
+    override val format: String = "zip"
+    override val requiresExtraction: Boolean = true
+    override val entries: List<ArchiveFileEntry> =
+        try {
+            val budget = ExtractionBudget()
+            var hasDeflate64 = false
+            val catalog =
+                zip.entries
+                    .asSequence()
+                    .map { entry ->
+                        when (entry.method) {
+                            ZipMethod.ENHANCED_DEFLATED.code -> hasDeflate64 = true
+                            ZipEntry.DEFLATED, ZipEntry.STORED -> Unit
+                            else -> throw originalError
+                        }
+                        if (!zip.canReadEntryData(entry) || entry.isUnixSymlink ||
+                            entry.size < 0 || entry.compressedSize < 0
+                        ) {
+                            throw originalError
+                        }
+                        zipFileEntry(entry, budget)
+                    }.toList()
+            if (!hasDeflate64) throw originalError
+            catalog
+        } catch (error: Exception) {
+            zip.close()
+            throw error
+        }
+
+    override fun openInputStream(entry: ArchiveFileEntry): InputStream {
+        val member = entry.handle as ZipArchiveEntry
+        return ChecksumInputStream
+            .builder()
+            .setInputStream(zip.getInputStream(member))
+            .setChecksum(CRC32())
+            .setCountThreshold(member.size)
+            .setExpectedChecksumValue(member.crc)
+            .get()
+    }
 
     override fun close() = zip.close()
 }

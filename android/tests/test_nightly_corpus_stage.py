@@ -13,6 +13,8 @@ import zipfile
 import nightly_corpus_stage as stage
 import nightly_regression_catalog as catalog
 
+SEVEN_ZIP = shutil.which("7zz") or shutil.which("7z")
+
 
 class CorpusStageTests(unittest.TestCase):
     def setUp(self):
@@ -219,16 +221,37 @@ class CorpusStageTests(unittest.TestCase):
         )
         self.assertNotEqual(rejected.returncode, 0)
 
-    @unittest.skipUnless(shutil.which("7zz"), "Standalone 7-Zip unavailable")
+    @unittest.skipUnless(SEVEN_ZIP, "7-Zip unavailable")
     def test_real_seven_zip_round_trip(self):
         source = self.root / "input"
         source.mkdir()
         (source / "M.MN2").write_bytes(b"name=fixture")
         (source / "M.HOG").write_bytes(b"payload")
         archive = self.root / "fixture.7z"
-        subprocess.run(["7zz", "a", str(archive), "."], cwd=source, capture_output=True, check=True, timeout=30)
+        subprocess.run([SEVEN_ZIP, "a", str(archive), "."], cwd=source, capture_output=True, check=True, timeout=30)
         target = stage.stage_route(archive, {"mission_filename": "m.mn2"}, self.root / "stage")
         self.assertEqual((target / "missions/m.hog").read_bytes(), b"payload")
+
+    @unittest.skipUnless(SEVEN_ZIP, "7-Zip unavailable")
+    def test_deflate64_zip_retains_descriptor_and_hog(self):
+        source = self.root / "input"
+        source.mkdir()
+        descriptor = b"name=fixture\n" * 100
+        (source / "Mine.mn2").write_bytes(descriptor)
+        archive = self.root / "fixture.zip"
+        subprocess.run(
+            [SEVEN_ZIP, "a", "-tzip", "-mm=Deflate64", str(archive), "Mine.mn2"],
+            cwd=source,
+            capture_output=True,
+            check=True,
+            timeout=30,
+        )
+        with zipfile.ZipFile(archive, "a", compression=zipfile.ZIP_DEFLATED) as stream:
+            self.assertEqual(stream.getinfo("Mine.mn2").compress_type, 9)
+            stream.writestr("Mine.hog", b"original payload")
+        target = stage.stage_route(archive, {"mission_filename": "Mine.mn2"}, self.root / "stage", SEVEN_ZIP)
+        self.assertEqual((target / "missions/mine.mn2").read_bytes(), descriptor)
+        self.assertEqual((target / "missions/mine.hog").read_bytes(), b"original payload")
 
     def test_catalog_preserves_missing_and_vertigo_contract(self):
         self.assertTrue(catalog.unavailable_level({"problems": "Level file is missing"}))
