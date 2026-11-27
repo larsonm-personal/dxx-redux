@@ -6,12 +6,11 @@ retains the original 633-segment level and appends the publisher's forest.pog.
 
 import argparse
 import hashlib
-import io
 from pathlib import Path
 import struct
-import zipfile
 
 from dos_midi_capture import extract_member
+from recovered_mission_zip import write_mission_zip
 
 FOREST_DESCRIPTOR = "7ab68e2f4db7a45eb09834b661c4ebe50a5f03a85c76267e02d9c58cb724b985"
 FOREST_HOG = "640bb5e72e100350db10e06fdcad1e1ce70a14dd656ec05fd12c4851975ec1ed"
@@ -76,22 +75,7 @@ def recover(missions, output):
     verify(forest, FOREST_POG, "Recovered forest.pog")
     repaired = hog + struct.pack("<13si", b"forest.pog", len(forest)) + forest
 
-    buffer = io.BytesIO()
-    with zipfile.ZipFile(buffer, "w") as archive:
-        for filename, content in (("forest.mn2", descriptor), ("forest.hog", repaired)):
-            # Fixed metadata also makes repeated private builds comparable.
-            info = zipfile.ZipInfo(filename)
-            info.create_system = 3
-            info.external_attr = 0o100644 << 16
-            archive.writestr(info, content, compress_type=zipfile.ZIP_DEFLATED)
-    with output.open("xb") as stream:
-        try:
-            stream.write(buffer.getbuffer())
-            stream.flush()
-        except BaseException:
-            stream.close()
-            output.unlink()
-            raise
+    write_mission_zip(output, (("forest.mn2", descriptor), ("forest.hog", repaired)))
 
 
 if __name__ == "__main__":
