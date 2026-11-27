@@ -2179,6 +2179,10 @@ invalid:
 	return 0;
 }
 
+#ifdef DXX_XL_RUNTIME
+#include "pog_install.h"
+#endif
+
 /* Read semantic flags without changing the renderer, paging, or POG ownership */
 int piggy_read_level_bitmap_flags(const char *level_name, int *flags, int capacity)
 {
@@ -2235,7 +2239,7 @@ int piggy_read_level_bitmap_flags(const char *level_name, int *flags, int capaci
 		if (!resources) return 0;
 		for (i = 0; i < xl_pog_count(resources); ++i) {
 			const struct xl_pog_bitmap *entry = xl_pog_entry(resources, i);
-			flags[entry->index] = entry->flags;
+			flags[entry->index] = entry->rgba ? entry->flags : xl_pog_indexed_bitmap_flags(entry);
 		}
 		xl_pog_free(resources);
 		return 1;
@@ -2255,10 +2259,6 @@ invalid_flags:
 	PHYSFS_close(file);
 	return 0;
 }
-
-#ifdef DXX_XL_RUNTIME
-#include "pog_install.h"
-#endif
 
 void load_bitmap_replacements(char *level_name)
 {
