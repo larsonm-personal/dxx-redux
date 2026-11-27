@@ -342,9 +342,20 @@ static void incoming(const std::filesystem::path &root)
 		auto image = solid(unclocked, 255);
 		image.height = 2;
 		image.pixels.resize(8);
-		write_bytes(source.string().c_str(), fixture({ image }));
+		auto superseded = image;
+		superseded.pixels[0] = 19;
+		image.pixels[0] = 41;
+		write_bytes(source.string().c_str(), fixture({ superseded, image }));
 		XlPreparedResources incoming(std::move(target));
 		incoming.prepare_banks(Current_level_palette);
+		auto bound = pog_control::prepare("incoming.pog");
+		xl_pog_bind_animation(*bound, incoming.dependencies(), Num_bitmap_files);
+		const auto *selected = xl_pog_entry(bound.get(), 0);
+		size_t bytes = 0;
+		const auto *pixels = xl_pog_pixels(bound.get(), &bytes);
+		require(xl_pog_count(bound.get()) == 1 && selected && selected->index == unsigned(unclocked) && selected->effect_clock &&
+		            selected->offset < bytes && pixels[selected->offset] == image.pixels[0],
+		        "A superseded POG strip survived its effect binding or displaced the last bitmap");
 		prepare(incoming);
 		XlPreparedResources moved(std::move(incoming));
 		require(moved.effect_frame_counts().at(0) == 2, "Incoming save validation lost the packed effect strip");

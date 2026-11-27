@@ -480,9 +480,12 @@ std::vector<xl_compat::ScopedTextureDoor> xl_pog_bind_animation(xl_pog_resources
 		if (row.second) resources.entries.push_back(alias.second);
 		else resources.entries[row.first->second] = alias.second;
 	}
-	// Earlier rows targeting a door alias are replaced by the selected strip.
+	// The selected effect or door strip replaces earlier POG rows at each bound bitmap
 	resources.entries.erase(std::remove_if(resources.entries.begin(), resources.entries.end(),
-	                                       [&](const xl_pog_bitmap &entry) { return !entry.side_frames && wall_aliases.count(entry.index); }),
+	                                       [&](const xl_pog_bitmap &entry) {
+		                                       return (!entry.effect_clock && owners.count(entry.index)) ||
+		                                              (!entry.side_frames && wall_aliases.count(entry.index));
+	                                       }),
 	                        resources.entries.end());
 	resources.effect_definitions.assign(tables.effect_data, tables.effect_data + tables.effect_count);
 	resources.clip_definitions.assign(tables.clip_data, tables.clip_data + tables.clip_count);
