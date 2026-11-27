@@ -490,10 +490,15 @@ static int pog_test(int argc, char **argv)
 		last.pixels = { 11, 22, 33, 255 };
 		write_bytes((root / "control.pog").string().c_str(), fixture({ rgba, indexed, last }));
 		auto mixed = prepare("control.pog");
+		std::vector<int> metadata_flags(MAX_BITMAP_FILES);
+		require(piggy_read_level_bitmap_flags("control.rl2", metadata_flags.data(), MAX_BITMAP_FILES) &&
+		            metadata_flags[indexed.index] == BM_FLAG_SUPER_TRANSPARENT,
+		        "Read-only indexed wall flags must reflect palette key 254 and the absence of key 255");
 		write_bytes((root / "control.pog").string().c_str(), { 'B', 'A', 'D' });
 		for (int attempt = 0; attempt < 2; ++attempt) {
 			require(xl_pog_install(mixed.get()), "Cannot reinstall owned mixed POG");
 			const auto &a = GameBitmaps[rgba.index], &b = GameBitmaps[indexed.index];
+			require(b.bm_flags == metadata_flags[indexed.index], "Installed and read-only indexed wall flags differ");
 			require(a.bm_type == BM_RGBA && a.bm_data[0] == 11 && a.bm_data[3] == 255 &&
 			            b.bm_type == BM_LINEAR && b.bm_data[0] == 254 && b.bm_flags == BM_FLAG_SUPER_TRANSPARENT,
 			        "Mixed formats, duplicate ordering or immutable preparation failed");

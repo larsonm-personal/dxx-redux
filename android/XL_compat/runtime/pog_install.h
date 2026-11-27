@@ -23,6 +23,20 @@ static struct {
 static struct xl_pog_clip xl_pog_live_clips[VCLIP_MAXNUM];
 static int xl_pog_live_doors[MAX_WALL_ANIMS];
 
+/* XL SetPalette recounts ordinary transparency for all indexed replacements.
+ * SetSuperTransparent recounts the second palette key only for wall bitmaps. */
+static int xl_pog_indexed_bitmap_flags(const struct xl_pog_bitmap *entry)
+{
+	unsigned mask = BM_FLAG_TRANSPARENT;
+	int texture;
+	for (texture = 0; texture < NumTextures; ++texture)
+		if (Textures[texture].index == entry->index) {
+			mask |= BM_FLAG_SUPER_TRANSPARENT;
+			break;
+		}
+	return (entry->flags & ~mask) | (entry->palette_flags & mask);
+}
+
 static void xl_pog_bank_will_change(void)
 {
 	int i;
@@ -123,20 +137,8 @@ int xl_pog_install_prepared(struct xl_pog_resources *resources)
 		gr_set_bitmap_flags(bitmap, entry->flags);
 		if ((entry->scoped_texture || entry->effect_clock || entry->side_frames) && entry->frames > 1)
 			gr_set_bitmap_flags(bitmap, dxx_xl_texture_frame_flags(entry->transparent_frames, entry->super_frames, 0));
-		if (!entry->rgba) {
-			/* XL LoadReplacementBitmaps expands indexed pixels then SetPalette
-			 * recounts key colors. A stale transparent header must not queue an
-			 * opaque wall into the depth-write-disabled transparency pass. */
-			unsigned mask = BM_FLAG_TRANSPARENT;
-			int texture;
-			for (texture = 0; texture < NumTextures; ++texture)
-				if (Textures[texture].index == entry->index) {
-					/* Source SetSuperTransparent changes only wall texture bitmaps. */
-					mask |= BM_FLAG_SUPER_TRANSPARENT;
-					break;
-				}
-			gr_set_bitmap_flags(bitmap, (entry->flags & ~mask) | (entry->palette_flags & mask));
-		}
+		if (!entry->rgba)
+			gr_set_bitmap_flags(bitmap, xl_pog_indexed_bitmap_flags(entry));
 		GameBitmapOffset[entry->index] = 0;
 	}
 	for (i = 0; i < xl_pog_effect_count(resources); ++i) {

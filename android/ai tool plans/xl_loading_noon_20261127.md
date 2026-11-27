@@ -28,6 +28,22 @@ An offline inspection of 78 XL levels with same-name POGs in the frozen pack ide
 
 A second pass used the production POG reader on the frozen and October packs. The 218 level and bank occurrences represented 140 different level hashes. The geometry inspector rejected eight hashes. For the levels it could inspect, the same reference material table also identified candidate walls in ACAT XL, Tankboy, Styx and Styx D3. ACAT XL alone has 116 candidates in the frozen pack. The windowed comparison records which walls the live scanner actually evaluates, their answers, the number of candidate areas, and the identities of the reported secrets with each flag rule.
 
+### Concealed-liquid results
+
+In Sewer Rats the scanner visited room 418 side 2 and room 481 side 0. Both used overlay slot 1478. Its read-only transparency bits were 1 and its installed bits were 3. In the ordinary run the scanner classified both sides as concealed liquid. In a paired run that used the installer's indexed palette rules, it classified both sides as exposed. All five pairs opened identical level bytes and completed 120 windowed frames in both variants.
+
+| Mission and ordinal              | Distinct liquid sides evaluated | Sides with a different answer | Final secret areas in both runs |
+| -------------------------------- | ------------------------------: | ----------------------------: | ------------------------------: |
+| ACAT XL 1                        |                             116 |                           116 |                               0 |
+| Tankboy 1                        |                             128 |                             0 |                               0 |
+| Warp Shockwave 2.0, Sewer Rats 2 |                             122 |                             2 |                               0 |
+| Styx 1                           |                              25 |                             1 |                               2 |
+| Styx D3 1                        |                              29 |                             1 |                               2 |
+
+The final area identities matched in every pair. The discrepancy affects a real input to navigation classification. These flights give no evidence of a different final route or a newly discovered secret.
+
+Use one indexed-palette flag calculation for prepared XL installation and read-only metadata. Key 255 controls ordinary transparency for every indexed bitmap. Key 254 controls super-transparency for wall texture bitmaps. Exercise the read-only lookup alongside installation in the mixed POG lifecycle test, then repeat the full census and affected desktop and ordinary Android cases on the candidate.
+
 ## Additional publisher coverage
 
 The October 28 publisher pack has SHA-256 `0ae3a473c887daa934b7d262ed86afa68b2f0cec104fe8edaf5670741f614193`. The inventory read all 385 descriptors and indexed their same-directory loose levels and same-name HOGs. Of 974 advertised ordinals, 871 have a level digest already opened in the frozen census. Another 71 have owned level bytes absent from that comparison, representing 69 distinct level digests. The other 32 lack the advertised member in that scope. Fly the 71 first on headless and windowed desktop, then compare the remaining publisher cases. Verify the opened digest against the selected owner for each entry. The publisher comparisons have their own denominator.
