@@ -67,3 +67,11 @@ The helper verifies the descriptor and its sibling HOG before changing the adver
 The regenerated Picasso release entered its 379-room level and completed 120 frames in both production desktop modes. Both opened `2015b5c2428dbf7939aa3edd0ebd1e13c0639148a08331cd1d5f802d0a646f70`. The separately sourced publisher difFusion and regenerated Forest likewise completed both flights, with 483 and 633 rooms respectively.
 
 The fresh frozen headless repeat matched all 1,654 November 26 cases individually. Of the 1,111 pinned cases, 1,079 entered and 1,077 survived. Of the 543 local cases, 541 entered and 539 survived. The first unresolved frozen ID is still `levelpack.7z/missions/danwentz/dffusion.mn2:1`.
+
+## Small Pardon Collider
+
+The October publisher pack advertises two ordinals in `missions/spotlight/SPC-XL.mn2`. Its first level uses format 23/40 and owns a full `descent2.ham`. Comparing each validated table with retail located all 162 changed bytes in ten weapon records. The robot and joint tables match retail. The archive has no HXM.
+
+The 961-room first level contains eight player starts, three cooperative starts, 160 pickups and three stationary lightning objects. It has no contained objects, robot centers, equipment centers, wall actions or object actions. Its segments use only normal and fuel functions. The descriptor declares custom robots for the mission. The loader now checks whether this kind of triggerless level can use any robot resource. Other advertised ordinals undergo their own checks. The existing preparation and installation paths still validate the full HAM, POG and object dependencies.
+
+The second ordinal separately spells the level member `sp-xxl.rl2`. The HOG owns `spc-xxl.rl2`. A local descriptor copy correcting that one byte opened SHA-256 `3a770e4679d1bcd397f3d79b0ef96d6b3161fd8ea6de5ce7dfc40bdfab3b7d60` and survived 120 frames in both desktop modes. The unmodified second ordinal remains in the publisher denominator.

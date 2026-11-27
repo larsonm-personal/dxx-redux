@@ -564,9 +564,11 @@ void collect_dependencies(const xl_compat::Inventory &level, bool multiplayer, b
 	for (std::size_t i = 0; i < level.object_trigger_records.size(); ++i) texture_action(level.object_trigger_records[i].action, int(i), "object texture action");
 }
 
-bool robotless_single_level(const Mission *mission, const xl_compat::Inventory &level)
+bool level_without_robot_requirements(const Mission *mission, const xl_compat::Inventory &level)
 {
-	if (!mission || mission->last_level != 1 || mission->n_secret_levels || level.triggers.empty() || !level.object_trigger_records.empty())
+	if (!mission) return false;
+	if (level.triggers.empty()) return xl_compat::triggerless_robot_free_arena(level);
+	if (mission->last_level != 1 || mission->n_secret_levels || !level.object_trigger_records.empty())
 		return false;
 	if (std::any_of(level.objects.begin(), level.objects.end(), [](const auto &object) {
 		    return object.type == OBJ_ROBOT || (object.contains_count > 0 && object.contains_type == OBJ_ROBOT);
@@ -659,7 +661,7 @@ void validate_requirements(const xl_compat::Inventory &level, bool multiplayer, 
 			}
 			return false;
 		};
-		if (custom_robots && !mission_robot_replacements && !has_companion(".HXM") && !robotless_single_level(mission, level))
+		if (custom_robots && !mission_robot_replacements && !has_companion(".HXM") && !level_without_robot_requirements(mission, level))
 			throw std::runtime_error("mission declares custom robots, but no level HXM or validated mission robot replacements were found");
 		if (custom_textures && !has_companion(".POG") && !owned_scoped_textures)
 			throw std::runtime_error("mission declares custom textures, but no level POG or qualified scoped TGA set was found; install the complete mission package (custom PIG replacements remain unqualified)");
