@@ -1717,5 +1717,694 @@
                 "survived_120_frames": 1616
             }
         }
+    },
+    "november_26_followup": {
+        "production_runtime": "f00211e38247bf1cf198df3b73e7d0e2eb3cd2cb",
+        "headless_sha256": "76a9da84be2bb532a34f2ab69da37d925dbbb98d0b67ded5ed9bc632a6f369f5",
+        "catalogs": {
+            "pinned": {
+                "advertised": 1111,
+                "entered_gameplay": 1079,
+                "survived_120_frames": 1077,
+                "first_blockers": {
+                    "Advertised level file missing": 31,
+                    "Robot fire killed the idle pilot": 2,
+                    "Declared custom textures missing": 1
+                },
+                "inventory_sha256": "bf4356a7a5fbe64832a40d7065ea02d8b81276ebd8bbba6874012f7851fa0cf8",
+                "aggregate_sha256": "73a604eaaa4710730ebf089dac6b6c15b94b6d596b626b0a5b2ef204b89625e5"
+            },
+            "local": {
+                "advertised": 543,
+                "entered_gameplay": 541,
+                "survived_120_frames": 539,
+                "first_blockers": {
+                    "Advertised level file missing": 2,
+                    "Robot fire killed the idle pilot": 2
+                },
+                "inventory_sha256": "e7d480aa401522d37f6ec75da01f6cec7c314c901728f1b291131e52a62818df",
+                "aggregate_sha256": "b640fdf3aef4f4930af1b3c96b4765b937f9120ea45d10315bda5d759a5e3e4c"
+            },
+            "combined": {
+                "advertised": 1654,
+                "entered_gameplay": 1620,
+                "survived_120_frames": 1616
+            }
+        },
+        "individual_comparison": {
+            "november_26": {
+                "pinned": {
+                    "baseline_entered": 1079,
+                    "baseline_survived": 1077,
+                    "new_entered": 0,
+                    "new_survived": 0,
+                    "regressions_entered": 0,
+                    "regressions_survived": 0
+                },
+                "local": {
+                    "baseline_entered": 541,
+                    "baseline_survived": 539,
+                    "new_entered": 0,
+                    "new_survived": 0,
+                    "regressions_entered": 0,
+                    "regressions_survived": 0
+                }
+            },
+            "initial": {
+                "pinned": {
+                    "baseline_entered": 1072,
+                    "baseline_survived": 1070,
+                    "new_entered": 7,
+                    "new_survived": 7,
+                    "regressions_entered": 0,
+                    "regressions_survived": 0
+                },
+                "local": {
+                    "baseline_entered": 528,
+                    "baseline_survived": 525,
+                    "new_entered": 13,
+                    "new_survived": 14,
+                    "regressions_entered": 0,
+                    "regressions_survived": 0
+                }
+            }
+        },
+        "first_unresolved": "levelpack.7z/missions/danwentz/dffusion.mn2:1",
+        "private_per_case_receipt_count": 1654,
+        "private_receipt_index_sha256": "42599579393a93c97893695782e64929909be9ca930e8412307cb778b924d7ce",
+        "windowed": {
+            "runtime": "f00211e38247bf1cf198df3b73e7d0e2eb3cd2cb",
+            "engine_sha256": "d3d8291a7c34fa2b85065a63382f6a9e15ca9bbae53ee1a08a563a695d72324d",
+            "catalogs": {
+                "pinned": {
+                    "measured": 1111,
+                    "entered_gameplay": 1079,
+                    "survived_120_frames": 1077,
+                    "matched_level_sha256": 1079
+                },
+                "local": {
+                    "measured": 543,
+                    "entered_gameplay": 541,
+                    "survived_120_frames": 539,
+                    "matched_level_sha256": 541
+                },
+                "combined": {
+                    "measured": 1654,
+                    "entered_gameplay": 1620,
+                    "survived_120_frames": 1616,
+                    "matched_level_sha256": 1620
+                }
+            },
+            "prior_verified": 1305,
+            "newly_measured": 349,
+            "discrepancies": 0,
+            "table_sha256": "846f6cc772743972751cf342bc5ff9da7e4019ea12f66f9696427239460356dd"
+        },
+        "distribution_recheck": {
+            "pinned-levelpack": {
+                "archive_sha256": "b4b519dc5755b795fd49cc3786a0421b96cd099dcc8f002925ddfd7c038b2719",
+                "descriptors_and_ordinals": 32,
+                "owned_members": 1,
+                "missing_members": 31
+            },
+            "local-dmentia2": {
+                "archive_sha256": "d00c60c559128f3d885f760593ba297f5f63a4f494823db57ebd2deec8bb739e",
+                "descriptors_and_ordinals": 1,
+                "owned_members": 0,
+                "missing_members": 1
+            },
+            "local-picasso": {
+                "archive_sha256": "d0f10e5be1674597f17c814ff9dad88e397983c20e158999e09297d13559a67d",
+                "descriptors_and_ordinals": 1,
+                "owned_members": 0,
+                "missing_members": 1
+            },
+            "archived-ffyl": {
+                "archive_sha256": "6c16ae53cc9cd3a462bdb98e948121c0a133610fccf77adf4dc542735757ffa7",
+                "descriptors_and_ordinals": 27,
+                "owned_members": 27,
+                "missing_members": 0
+            }
+        },
+        "texture_slots": {
+            "1999mg": {
+                "case": "levelpack.7z/missions/diedel/1999mg.mn2:1",
+                "source_rows": 4672,
+                "slots": 82,
+                "reference_installed": 82,
+                "redux_matches_authored_pixel_storage": 82,
+                "matching_effective_reference_pixels": 82,
+                "matching_two_transparency_bits": 10,
+                "differing_two_transparency_bits": 72,
+                "reference_two_bits_match_palette_keys": 82,
+                "reference_observation": "started_and_ran",
+                "bank_sha256": "c350029f9ffa0ec2262850c6e0049fa8116e34993ac249c91678c5a67252209b"
+            },
+            "firsteel": {
+                "case": "levelpack.7z/missions/diedel/firsteel.mn2:1",
+                "source_rows": 1213,
+                "slots": 57,
+                "reference_installed": 57,
+                "redux_matches_authored_pixel_storage": 57,
+                "matching_effective_reference_pixels": 50,
+                "matching_two_transparency_bits": 14,
+                "differing_two_transparency_bits": 43,
+                "reference_two_bits_match_palette_keys": 57,
+                "reference_observation": "started_and_ran",
+                "bank_sha256": "25f9aecd1d9cbb9f186663261cbf50bfc1d6f5d0b8810323b880f012cf1a22a0"
+            },
+            "pyrotech": {
+                "case": "levelpack.7z/missions/diedel/pyrotech.mn2:1",
+                "source_rows": 72,
+                "slots": 55,
+                "reference_installed": 55,
+                "redux_matches_authored_pixel_storage": 55,
+                "matching_effective_reference_pixels": 55,
+                "matching_two_transparency_bits": 7,
+                "differing_two_transparency_bits": 48,
+                "reference_two_bits_match_palette_keys": 55,
+                "reference_observation": "simulation_stopped",
+                "bank_sha256": "92e5fbc9a498e44d470700d17ecdf40294326a3db67708a716ae1fdc85770e85"
+            },
+            "ptech-xl": {
+                "case": "levelpack.7z/missions/diedel/ptech-xl.mn2:1",
+                "source_rows": 72,
+                "slots": 55,
+                "reference_installed": 55,
+                "redux_matches_authored_pixel_storage": 55,
+                "matching_effective_reference_pixels": 55,
+                "matching_two_transparency_bits": 55,
+                "differing_two_transparency_bits": 0,
+                "reference_two_bits_match_palette_keys": 55,
+                "reference_observation": "started_and_ran",
+                "bank_sha256": "92e5fbc9a498e44d470700d17ecdf40294326a3db67708a716ae1fdc85770e85"
+            }
+        },
+        "prepared_flag_query": {
+            "bank_sha256": "92e5fbc9a498e44d470700d17ecdf40294326a3db67708a716ae1fdc85770e85",
+            "rows": 72,
+            "verified_slots": 55,
+            "query_unavailable": 0,
+            "query_differs_from_installed": 48,
+            "header_flags_adjusted": 48
+        },
+        "prepared_liquid_geometry": {
+            "segments": 301,
+            "walls": 62,
+            "enabled_illusion_walls": 22,
+            "liquid_illusion_sides": 0,
+            "changed_side_predicates": 0,
+            "unresolved_sides": 0
+        },
+        "steel_original_bitmap_extents": [
+            {
+                "slot": 241,
+                "authored": [64, 64],
+                "original": [50, 23],
+                "capacity": 4228,
+                "captured": 1150,
+                "original_stride": 50,
+                "equals_authored_byte_prefix": true,
+                "equals_authored_upper_left": false,
+                "base_bitmap": "targ03b"
+            },
+            {
+                "slot": 240,
+                "authored": [64, 64],
+                "original": [50, 23],
+                "capacity": 4228,
+                "captured": 1150,
+                "original_stride": 50,
+                "equals_authored_byte_prefix": true,
+                "equals_authored_upper_left": false,
+                "base_bitmap": "targ03b"
+            },
+            {
+                "slot": 239,
+                "authored": [64, 64],
+                "original": [62, 12],
+                "capacity": 4228,
+                "captured": 744,
+                "original_stride": 62,
+                "equals_authored_byte_prefix": true,
+                "equals_authored_upper_left": false,
+                "base_bitmap": "targ02b"
+            },
+            {
+                "slot": 238,
+                "authored": [64, 64],
+                "original": [62, 12],
+                "capacity": 4228,
+                "captured": 744,
+                "original_stride": 62,
+                "equals_authored_byte_prefix": true,
+                "equals_authored_upper_left": false,
+                "base_bitmap": "targ02b"
+            },
+            {
+                "slot": 237,
+                "authored": [64, 64],
+                "original": [62, 12],
+                "capacity": 4228,
+                "captured": 744,
+                "original_stride": 62,
+                "equals_authored_byte_prefix": true,
+                "equals_authored_upper_left": false,
+                "base_bitmap": "targ02b"
+            },
+            {
+                "slot": 236,
+                "authored": [64, 64],
+                "original": [18, 17],
+                "capacity": 4228,
+                "captured": 306,
+                "original_stride": 18,
+                "equals_authored_byte_prefix": true,
+                "equals_authored_upper_left": false,
+                "base_bitmap": "targ01b"
+            },
+            {
+                "slot": 235,
+                "authored": [64, 64],
+                "original": [18, 17],
+                "capacity": 4228,
+                "captured": 306,
+                "original_stride": 18,
+                "equals_authored_byte_prefix": true,
+                "equals_authored_upper_left": false,
+                "base_bitmap": "targ01b"
+            }
+        ],
+        "android": {
+            "settings_equal": true,
+            "editions": {
+                "forest16": {
+                    "edition": "forest16",
+                    "archive_sha256": "3c6aa782bd47832eef3144dac9079f9120fbe87587480dce39db46f873907bf3",
+                    "apk_sha256": "8d5522eb3f9ddda27bba5bbc602ff528e610e6b8861cb2b076a92a4fc4c92994",
+                    "owner": "mod/forest-16player-final-level-loading.zip",
+                    "steps": 15,
+                    "internal_name": "The Forest",
+                    "alive_at_entry": true,
+                    "dead_at_final_introspection": false,
+                    "ordinal": 1,
+                    "difficulty": 2
+                },
+                "forest633": {
+                    "edition": "forest633",
+                    "archive_sha256": "95e57d8a5a50f5487051fb549b9bfcffcb51f1672d3df3ca6f02c05a18d44cb5",
+                    "apk_sha256": "8d5522eb3f9ddda27bba5bbc602ff528e610e6b8861cb2b076a92a4fc4c92994",
+                    "owner": "mod/forest-633-recovered-final-level-loading.zip",
+                    "steps": 17,
+                    "internal_name": "Dimentional Intersect",
+                    "alive_at_entry": true,
+                    "dead_at_final_introspection": false,
+                    "ordinal": 1,
+                    "difficulty": 2
+                },
+                "pyro": {
+                    "edition": "pyro",
+                    "archive_sha256": "1563d6cc6ffd638872d6f44a6e5735c63490f3919cfd617eeafb7214583d099a",
+                    "apk_sha256": "8d5522eb3f9ddda27bba5bbc602ff528e610e6b8861cb2b076a92a4fc4c92994",
+                    "owner": "mod/pyro-classic-final-loading.7z",
+                    "steps": 15,
+                    "internal_name": "pyrotech",
+                    "alive_at_entry": true,
+                    "dead_at_final_introspection": true,
+                    "ordinal": 1,
+                    "difficulty": 2
+                },
+                "steel": {
+                    "edition": "steel",
+                    "archive_sha256": "8ffd87f5997b7b0623d953f2527416c809a0a92d06d061282c6dc9ef1bf10014",
+                    "apk_sha256": "8d5522eb3f9ddda27bba5bbc602ff528e610e6b8861cb2b076a92a4fc4c92994",
+                    "owner": "mod/steel-classic-final-loading.7z",
+                    "steps": 15,
+                    "internal_name": "firsteel",
+                    "alive_at_entry": true,
+                    "dead_at_final_introspection": false,
+                    "ordinal": 1,
+                    "difficulty": 2
+                }
+            }
+        },
+        "additional_android": {
+            "settings_equal": true,
+            "editions": {
+                "forest26": {
+                    "edition": "forest26",
+                    "archive_sha256": "56acdf828bc447f8c448f8f5bdd01059ef51c4f1250f0e9df40f62d2ecd9810c",
+                    "apk_sha256": "8d5522eb3f9ddda27bba5bbc602ff528e610e6b8861cb2b076a92a4fc4c92994",
+                    "owner": "mod/forest-publisher-26-level-loading.zip",
+                    "steps": 15,
+                    "internal_name": "Dimensional Intersect",
+                    "difficulty": 2,
+                    "ordinal": 1,
+                    "dead_at_final_introspection": false,
+                    "level_version": 26,
+                    "game_version": 40
+                },
+                "midgard": {
+                    "edition": "midgard",
+                    "archive_sha256": "b4b519dc5755b795fd49cc3786a0421b96cd099dcc8f002925ddfd7c038b2719",
+                    "apk_sha256": "8d5522eb3f9ddda27bba5bbc602ff528e610e6b8861cb2b076a92a4fc4c92994",
+                    "owner": "mod/levelpack-final-loading.7z",
+                    "steps": 15,
+                    "internal_name": "1999",
+                    "difficulty": 2,
+                    "ordinal": 1,
+                    "dead_at_final_introspection": false
+                },
+                "prepared": {
+                    "edition": "prepared",
+                    "archive_sha256": "1563d6cc6ffd638872d6f44a6e5735c63490f3919cfd617eeafb7214583d099a",
+                    "apk_sha256": "8d5522eb3f9ddda27bba5bbc602ff528e610e6b8861cb2b076a92a4fc4c92994",
+                    "owner": "mod/pyro-observed-prepared-loading.7z",
+                    "steps": 16,
+                    "internal_name": "Pyrotechnica",
+                    "difficulty": 2,
+                    "ordinal": 1,
+                    "dead_at_final_introspection": false,
+                    "level_version": 23,
+                    "game_version": 40,
+                    "matched_pinned_hog_sha256": "a262658229f54d1cbf81c26eb9ba48d9cc2f4bcf33c9c03a4f1ebf41491713f9",
+                    "matched_pinned_mn2_sha256": "737676d33a9066b7e251a54b6c06c9610320fbfa228a3b600e85ee2f85734777"
+                }
+            }
+        },
+        "initial_android_title_checks": {
+            "forest26": {
+                "completed_steps": 12,
+                "steps": 15,
+                "first_blocker": "Incorrect expected internal level name",
+                "expected": "The Forest",
+                "observed": "Dimensional Intersect",
+                "observed_owner": "mod/forest-publisher-26-level-loading.zip",
+                "entered": true
+            },
+            "midgard": {
+                "completed_steps": 12,
+                "steps": 15,
+                "first_blocker": "Incorrect expected internal level name",
+                "expected": "1999mg",
+                "observed": "1999",
+                "observed_owner": "mod/levelpack-final-loading.7z",
+                "entered": true
+            }
+        },
+        "idle_shooters": {
+            "levelpack.7z/missions/darkflamewolf/wolfpak3.mn2:6": {
+                "shooter_slot": 69,
+                "shooter_id": 48,
+                "compared_frame_clocks": 82,
+                "compared_actor_updates": 82,
+                "first_projectile": {
+                    "original": 24,
+                    "redux": 29
+                },
+                "first_decisions": {
+                    "original": {
+                        "visibility": 23,
+                        "wake-roll": null,
+                        "fire-request": 23
+                    },
+                    "redux": {
+                        "visibility": 24,
+                        "wake-roll": 3,
+                        "fire-request": 24
+                    }
+                },
+                "first_state_difference": {
+                    "pre_primary": 25,
+                    "post_primary": 24,
+                    "pre_secondary": null,
+                    "post_secondary": null,
+                    "pre_last_visibility": 24,
+                    "post_last_visibility": 23,
+                    "pre_mode": null,
+                    "post_mode": null,
+                    "pre_state": 24,
+                    "post_state": 23,
+                    "pre_goal": 24,
+                    "post_goal": 23,
+                    "pre_awareness": 24,
+                    "post_awareness": 23,
+                    "delta_rng_used": 1
+                },
+                "completed_frames": 82,
+                "descriptor_sha256": "288052b2ba7be0c85c514c7ef622f63756a7268ba93decaa9edb5b085dbc22f2",
+                "first_volley_gates": {
+                    "ref": {
+                        "first_projectile": 24,
+                        "first_fire_gate_tick": 23,
+                        "first_aim_dot": [23, 56526],
+                        "first_aim_dot_reaching_seven_eighths": [24, 58319],
+                        "first_observed_tick_by_gate": {
+                            "can-fire": 24,
+                            "direct-dispatch": 24,
+                            "direct-dot": 23,
+                            "requested-gun": 23
+                        }
+                    },
+                    "redux": {
+                        "first_projectile": 29,
+                        "first_fire_gate_tick": 24,
+                        "first_aim_dot": [24, 53837],
+                        "first_aim_dot_reaching_seven_eighths": [29, 57587],
+                        "first_observed_tick_by_gate": {
+                            "actual_fire_direct": 29,
+                            "direct-dot": 24,
+                            "gate_direct_dot_low": 24,
+                            "requested-gun": 24
+                        }
+                    }
+                }
+            },
+            "levelpack.7z/missions/diedel/pyrotech.mn2:1": {
+                "shooter_slot": 107,
+                "shooter_id": 47,
+                "compared_frame_clocks": 88,
+                "compared_actor_updates": 88,
+                "first_projectile": {
+                    "original": 21,
+                    "redux": 23
+                },
+                "first_decisions": {
+                    "original": {
+                        "visibility": 21,
+                        "wake-roll": null,
+                        "fire-request": 21
+                    },
+                    "redux": {
+                        "visibility": 23,
+                        "wake-roll": 9,
+                        "fire-request": 23
+                    }
+                },
+                "first_state_difference": {
+                    "pre_primary": 22,
+                    "post_primary": 21,
+                    "pre_secondary": null,
+                    "post_secondary": null,
+                    "pre_last_visibility": 22,
+                    "post_last_visibility": 21,
+                    "pre_mode": null,
+                    "post_mode": null,
+                    "pre_state": 22,
+                    "post_state": 21,
+                    "pre_goal": 22,
+                    "post_goal": 21,
+                    "pre_awareness": 22,
+                    "post_awareness": 21,
+                    "delta_rng_used": 1
+                },
+                "completed_frames": 104,
+                "descriptor_sha256": "40791b493de9ac79e3cc5d050ac1c97028ad90b016dc741f21932ea5ce21d6c7",
+                "first_volley_gates": {
+                    "ref": {
+                        "first_projectile": 21,
+                        "first_fire_gate_tick": 21,
+                        "first_aim_dot": [21, 62682],
+                        "first_aim_dot_reaching_seven_eighths": [21, 62682],
+                        "first_observed_tick_by_gate": {
+                            "can-fire": 21,
+                            "direct-dispatch": 21,
+                            "direct-dot": 21,
+                            "requested-gun": 21
+                        }
+                    },
+                    "redux": {
+                        "first_projectile": 23,
+                        "first_fire_gate_tick": 23,
+                        "first_aim_dot": [23, 58936],
+                        "first_aim_dot_reaching_seven_eighths": [23, 58936],
+                        "first_observed_tick_by_gate": {
+                            "actual_fire_direct": 23,
+                            "direct-dot": 23,
+                            "requested-gun": 23
+                        }
+                    }
+                }
+            },
+            "levels_multiplayer/pyrotech.7z/missions/diedel/pyrotech.mn2:1": {
+                "shooter_slot": 107,
+                "shooter_id": 47,
+                "compared_frame_clocks": 88,
+                "compared_actor_updates": 88,
+                "first_projectile": {
+                    "original": 21,
+                    "redux": 23
+                },
+                "first_decisions": {
+                    "original": {
+                        "visibility": 21,
+                        "wake-roll": null,
+                        "fire-request": 21
+                    },
+                    "redux": {
+                        "visibility": 23,
+                        "wake-roll": 9,
+                        "fire-request": 23
+                    }
+                },
+                "first_state_difference": {
+                    "pre_primary": 22,
+                    "post_primary": 21,
+                    "pre_secondary": null,
+                    "post_secondary": null,
+                    "pre_last_visibility": 22,
+                    "post_last_visibility": 21,
+                    "pre_mode": null,
+                    "post_mode": null,
+                    "pre_state": 22,
+                    "post_state": 21,
+                    "pre_goal": 22,
+                    "post_goal": 21,
+                    "pre_awareness": 22,
+                    "post_awareness": 21,
+                    "delta_rng_used": 1
+                },
+                "completed_frames": 104,
+                "descriptor_sha256": "40791b493de9ac79e3cc5d050ac1c97028ad90b016dc741f21932ea5ce21d6c7",
+                "first_volley_gates": {
+                    "ref": {
+                        "first_projectile": 21,
+                        "first_fire_gate_tick": 21,
+                        "first_aim_dot": [21, 62682],
+                        "first_aim_dot_reaching_seven_eighths": [21, 62682],
+                        "first_observed_tick_by_gate": {
+                            "can-fire": 21,
+                            "direct-dispatch": 21,
+                            "direct-dot": 21,
+                            "requested-gun": 21
+                        }
+                    },
+                    "redux": {
+                        "first_projectile": 23,
+                        "first_fire_gate_tick": 23,
+                        "first_aim_dot": [23, 58936],
+                        "first_aim_dot_reaching_seven_eighths": [23, 58936],
+                        "first_observed_tick_by_gate": {
+                            "actual_fire_direct": 23,
+                            "direct-dot": 23,
+                            "requested-gun": 23
+                        }
+                    }
+                }
+            },
+            "levels_multiplayer/pyrotech.7z/pyrotech.mn2:1": {
+                "shooter_slot": 107,
+                "shooter_id": 47,
+                "compared_frame_clocks": 88,
+                "compared_actor_updates": 88,
+                "first_projectile": {
+                    "original": 21,
+                    "redux": 23
+                },
+                "first_decisions": {
+                    "original": {
+                        "visibility": 21,
+                        "wake-roll": null,
+                        "fire-request": 21
+                    },
+                    "redux": {
+                        "visibility": 23,
+                        "wake-roll": 9,
+                        "fire-request": 23
+                    }
+                },
+                "first_state_difference": {
+                    "pre_primary": 22,
+                    "post_primary": 21,
+                    "pre_secondary": null,
+                    "post_secondary": null,
+                    "pre_last_visibility": 22,
+                    "post_last_visibility": 21,
+                    "pre_mode": null,
+                    "post_mode": null,
+                    "pre_state": 22,
+                    "post_state": 21,
+                    "pre_goal": 22,
+                    "post_goal": 21,
+                    "pre_awareness": 22,
+                    "post_awareness": 21,
+                    "delta_rng_used": 1
+                },
+                "completed_frames": 104,
+                "descriptor_sha256": "40791b493de9ac79e3cc5d050ac1c97028ad90b016dc741f21932ea5ce21d6c7",
+                "first_volley_gates": {
+                    "ref": {
+                        "first_projectile": 21,
+                        "first_fire_gate_tick": 21,
+                        "first_aim_dot": [21, 62682],
+                        "first_aim_dot_reaching_seven_eighths": [21, 62682],
+                        "first_observed_tick_by_gate": {
+                            "can-fire": 21,
+                            "direct-dispatch": 21,
+                            "direct-dot": 21,
+                            "requested-gun": 21
+                        }
+                    },
+                    "redux": {
+                        "first_projectile": 23,
+                        "first_fire_gate_tick": 23,
+                        "first_aim_dot": [23, 58936],
+                        "first_aim_dot_reaching_seven_eighths": [23, 58936],
+                        "first_observed_tick_by_gate": {
+                            "actual_fire_direct": 23,
+                            "direct-dot": 23,
+                            "requested-gun": 23
+                        }
+                    }
+                }
+            }
+        },
+        "hosted_report_head": {
+            "pr": 791,
+            "sha": "a33a4917647396bbd75f964ff1451ba0f8c8f22c",
+            "pr_workflows": 8,
+            "workflow_runs": {
+                "Engine smoke": 45879104374,
+                "Extended test suite": 45879104432,
+                "Linux shareware gameplay, saves & replays": 45879104441,
+                "Public LAN smoke": 45879104284,
+                "Server Rust checks": 45879104305,
+                "XL asset smoke request": 45879104286,
+                "XL compatibility contracts": 45879104342,
+                "scripts and ci tests": 45879104294
+            },
+            "native_job": 140127524170,
+            "headed_job": 140127524141,
+            "sweep_leaf_cases": 160,
+            "trusted_run": 45879132508,
+            "trusted_required_tests": 113,
+            "format_witnesses": 16,
+            "modern_source_comparisons": 6,
+            "legacy_counted_source_levels": 3,
+            "navigation_anchors": 4,
+            "lan_initial_status": "BLOCKED",
+            "lan_retry_status": "PASS",
+            "lan_verified_two_player_sessions": 3
+        }
     }
 }

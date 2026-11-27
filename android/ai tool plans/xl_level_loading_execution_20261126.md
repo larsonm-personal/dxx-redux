@@ -1,5 +1,7 @@
 # XL level loading for November 26, 2026
 
+The later November 26 run completed the windowed comparison across both catalogs and repeated the Android, bitmap and robot-fire checks. [Follow-up report](xl_level_loading_followthrough_20261126.md)
+
 ## Fixed-catalog results
 
 Both complete inventories ran on `f00211e382` with Hotshot, seed 1, idle inputs and 120 fixed frames at 60 Hz. Each entered receipt identifies the requested mission, ordinal and owned level member. The register preserves the individual gains, regressions and first blockers. [Case register](../XL_compat/evidence/gameplay-census-forest-20261126.json)
