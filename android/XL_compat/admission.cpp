@@ -139,6 +139,19 @@ static bool qualified_explicit_geometry(const Inventory &level)
 	return true;
 }
 
+// Format 30 retains the ordinary AI record after the wider geometry tables.
+static bool format_30_object(const Object &object)
+{
+	if (object.multiplayer) return false;
+	if (object.type == 4 || object.type == 3) return object.contains_count == 0;
+	// OBJ_ROBOT with CT_AI, MT_PHYSICS, RT_POLYOBJ and AIB_NORMAL.
+	if (object.type != 2 || object.control != 1 || object.movement != 1 || object.render != 1 || object.flags) return false;
+	if (object.control_data.size() != 16 || object.control_data.front() != 129 ||
+	    std::any_of(object.control_data.begin() + 1, object.control_data.end(), [](int field) { return field != 0; })) return false;
+	// The asset dependency graph validates the actual parent and child definitions.
+	return object.contains_count == 0 || (object.contains_count == 1 && object.contains_type == 2);
+}
+
 std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_water, bool explicit_geometry)
 {
 	std::vector<Issue> result;
@@ -152,9 +165,9 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 			    return segment.function || segment.properties || segment.damage[0] || segment.damage[1];
 		    }) ||
 		    std::any_of(level.objects.begin(), level.objects.end(), [](const auto &object) {
-			    return (object.type != 4 && object.type != 3) || object.contains_count || object.multiplayer;
+			    return !format_30_object(object);
 		    }))
-			result.push_back({ "format_30_gameplay", -1, "requires normal rooms, player starts and hostages without triggers or producers" });
+			result.push_back({ "format_30_gameplay", -1, "requires normal rooms and qualified player, hostage or ordinary robot records without triggers or producers" });
 	}
 	const bool classic_effect = classic_effect_layout(level);
 	const bool colored_walls = early_colored_wall_layout(level) || modern_runtime_layout(level) || (level.level_version == 18 && level.game_version == 36);
