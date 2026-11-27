@@ -1,0 +1,200 @@
+{
+    "schema": 1,
+    "date": "2026-11-27",
+    "parameters": {
+        "seed": 1,
+        "difficulty": 2,
+        "fixed_hz": 60,
+        "input": "idle",
+        "updates": 120
+    },
+    "frozen": {
+        "runtime": {
+            "source_head": "3ab7fdeeb4399b02b30b6ff8d391bd0556d7e17c",
+            "headless_sha256": "4d28b26ef952eba045023a7ec65f6345f53be6c78db724e729a9be460912021e",
+            "desktop_sha256": "1b8d66fcc8ca2e48cc37b7f39fc832a2b8672844ec30421dae896f62c07460fd",
+            "apk_sha256": "91158c8b38d4f6eb4dffc831d583936b5645de36f3180edd952bbb3b0b1217d5"
+        },
+        "inventories": {
+            "pinned": {
+                "advertised": 1111,
+                "headless_entered": 1079,
+                "headless_live_120": 1077,
+                "windowed_entered": 1079,
+                "windowed_live_120": 1077,
+                "inventory_sha256": "bf4356a7a5fbe64832a40d7065ea02d8b81276ebd8bbba6874012f7851fa0cf8"
+            },
+            "local": {
+                "advertised": 543,
+                "headless_entered": 541,
+                "headless_live_120": 539,
+                "windowed_entered": 541,
+                "windowed_live_120": 539,
+                "inventory_sha256": "e7d480aa401522d37f6ec75da01f6cec7c314c901728f1b291131e52a62818df"
+            }
+        },
+        "combined": {
+            "advertised": 1654,
+            "headless_entered": 1620,
+            "headless_live_120": 1616,
+            "windowed_entered": 1620,
+            "windowed_live_120": 1616
+        },
+        "baseline_differences": {},
+        "compared_per_catalog": {
+            "november_26": {
+                "pinned": {
+                    "baseline_entered": 1079,
+                    "baseline_survived": 1077,
+                    "new_entered": [],
+                    "new_survived": [],
+                    "regressions_entered": [],
+                    "regressions_survived": []
+                },
+                "local": {
+                    "baseline_entered": 541,
+                    "baseline_survived": 539,
+                    "new_entered": [],
+                    "new_survived": [],
+                    "regressions_entered": [],
+                    "regressions_survived": []
+                }
+            },
+            "initial": {
+                "pinned": {
+                    "baseline_entered": 1072,
+                    "baseline_survived": 1070,
+                    "new_entered": [
+                        "levelpack.7z/missions/darkflamewolf/acat-xl.mn2:1",
+                        "levelpack.7z/missions/diedel/speed.mn2:1",
+                        "levelpack.7z/missions/diedel/steel-xl.mn2:1",
+                        "levelpack.7z/missions/single/pmlev1.mn2:1",
+                        "levelpack.7z/missions/single/sphere.mn2:1",
+                        "levelpack.7z/missions/spotlight/crownx.mn2:1",
+                        "levelpack.7z/missions/spotlight/rtarena.mn2:1"
+                    ],
+                    "new_survived": [
+                        "levelpack.7z/missions/darkflamewolf/acat-xl.mn2:1",
+                        "levelpack.7z/missions/diedel/speed.mn2:1",
+                        "levelpack.7z/missions/diedel/steel-xl.mn2:1",
+                        "levelpack.7z/missions/single/pmlev1.mn2:1",
+                        "levelpack.7z/missions/single/sphere.mn2:1",
+                        "levelpack.7z/missions/spotlight/crownx.mn2:1",
+                        "levelpack.7z/missions/spotlight/rtarena.mn2:1"
+                    ],
+                    "regressions_entered": [],
+                    "regressions_survived": []
+                },
+                "local": {
+                    "baseline_entered": 528,
+                    "baseline_survived": 525,
+                    "new_entered": [
+                        "levels/amalthea.zip/amalthea/Amalthea.mn2:1",
+                        "levels/elitehunt.zip/elitehnt.mn2:1",
+                        "levels/kalisto.zip/kalisto/kalisto.mn2:1",
+                        "levels_multiplayer/acat-xl.7z/missions/acat-xl.mn2:1",
+                        "levels_multiplayer/code-yena-xl.7z/cdeyena2.mn2:1",
+                        "levels_multiplayer/coordination-xl.7z/crdntion.mn2:1",
+                        "levels_multiplayer/firsteel.7z/steel-xl.mn2:1",
+                        "levels_multiplayer/fv24b.zip/fv24b.mn2:1",
+                        "levels_multiplayer/nocturnl.zip/d1nctrlnl.msn:1",
+                        "levels_multiplayer/rtarena.zip/RTARENA.MN2:1",
+                        "levels_multiplayer/speed.7z/missions/diedel/d3/speed.mn2:1",
+                        "levels_multiplayer/Temple Of Helix.zip/missions/tohelix.mn2:1",
+                        "prophxl131beta.zip/missions/sapphire wolf sp/PROPHXL.MN2:1"
+                    ],
+                    "new_survived": [
+                        "levels/amalthea.zip/amalthea/Amalthea.mn2:1",
+                        "levels/elitehunt.zip/elitehnt.mn2:1",
+                        "levels/kalisto.zip/kalisto/kalisto.mn2:1",
+                        "levels_multiplayer/acat-xl.7z/missions/acat-xl.mn2:1",
+                        "levels_multiplayer/code-yena-xl.7z/cdeyena2.mn2:1",
+                        "levels_multiplayer/coordination-xl.7z/crdntion.mn2:1",
+                        "levels_multiplayer/firsteel.7z/steel-xl.mn2:1",
+                        "levels_multiplayer/fv24b.zip/fv24b.mn2:1",
+                        "levels_multiplayer/nocturnl.zip/d1nctrlnl.msn:1",
+                        "levels_multiplayer/rtarena.zip/RTARENA.MN2:1",
+                        "levels_multiplayer/speed.7z/missions/diedel/d3/speed.mn2:1",
+                        "levels_multiplayer/Temple Of Helix.zip/missions/tohelix.mn2:1",
+                        "levels_multiplayer/zugzwang.7z/zugzwang.mn2:1",
+                        "prophxl131beta.zip/missions/sapphire wolf sp/PROPHXL.MN2:1"
+                    ],
+                    "regressions_entered": [],
+                    "regressions_survived": []
+                }
+            }
+        },
+        "first_unresolved": "levelpack.7z/missions/danwentz/dffusion.mn2:1",
+        "blockers": {
+            "Advertised level file missing": 33,
+            "Robot fire killed the idle pilot": 4,
+            "Declared custom textures missing": 1
+        },
+        "index": "loading-frozen-cases-20261127.jsonl",
+        "index_sha256": "7594ef3b72e218a8dfab4e918b5b4c2c9dfea0057495693182f0f023a04f57be"
+    },
+    "publisher": {
+        "archive_sha256": "0ae3a473c887daa934b7d262ed86afa68b2f0cec104fe8edaf5670741f614193",
+        "counts": {
+            "advertised": 71,
+            "headless_entered": 55,
+            "headless_live_120": 55,
+            "windowed_entered": 55,
+            "windowed_live_120": 55
+        },
+        "distinct_from_frozen": {
+            "advertised": 71,
+            "headless_entered": 55,
+            "headless_live_120": 55,
+            "windowed_entered": 55,
+            "windowed_live_120": 55
+        },
+        "remaining": {
+            "advertised": 0,
+            "headless_entered": 0,
+            "headless_live_120": 0,
+            "windowed_entered": 0,
+            "windowed_live_120": 0
+        },
+        "new_entries_in_distinct_cohort": [
+            {
+                "descriptor": "missions/spotlight/SPC-XL.mn2",
+                "ordinal": 1,
+                "member": "spc-xl.rl2"
+            },
+            {
+                "descriptor": "missions/test/dark.mn2",
+                "ordinal": 1,
+                "member": "bottest.rl2"
+            },
+            {
+                "descriptor": "missions/test/rngtest2.mn2",
+                "ordinal": 1,
+                "member": "rngtest1.rl2"
+            },
+            {
+                "descriptor": "missions/test/shrapnel.mn2",
+                "ordinal": 1,
+                "member": "bottest.rl2"
+            },
+            {
+                "descriptor": "missions/XL-16players/acat-xl.mn2",
+                "ordinal": 1,
+                "member": "acat-xl.rl2"
+            }
+        ],
+        "blockers": {
+            "unsupported format 28": 1,
+            "format_30_gameplay": 5,
+            "segment_ambient_light": 6,
+            "declared custom textures missing": 1,
+            "unsupported format 31": 2,
+            "missing owned OOF skin": 1
+        },
+        "index": "loading-publisher-cases-20261127.jsonl",
+        "index_sha256": "6fea9373da443746a70dc8ecab9027e3b0dc67e1e8a5d7e99f14e09e18a77034",
+        "scope": "All 71 October publisher ordinals with owned bytes absent from frozen entries",
+        "pack_advertised": 974,
+        "supplemental_repeat_advertised": 903
+    }
+}
