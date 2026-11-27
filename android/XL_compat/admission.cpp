@@ -142,6 +142,20 @@ static bool qualified_explicit_geometry(const Inventory &level)
 std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_water, bool explicit_geometry)
 {
 	std::vector<Issue> result;
+	if (level.level_version == 30) {
+		if (std::any_of(level.segments.begin(), level.segments.end(), [](const auto &segment) { return segment.ambient_light[0] != 0; }))
+			result.push_back({ "segment_ambient_light", -1, "format 30 segment light requires the authored intensity and color" });
+		if (std::any_of(level.objects.begin(), level.objects.end(), [](const auto &object) { return object.render == 13 && object.sound_interval[0] != 0; }))
+			result.push_back({ "random_sound_interval", -1, "format 30 random sound scheduling is not qualified" });
+		if (!level.triggers.empty() || !level.object_trigger_records.empty() || !level.matcens.empty() || !level.equipment.empty() || !level.reactor_targets.empty() ||
+		    std::any_of(level.segments.begin(), level.segments.end(), [](const auto &segment) {
+			    return segment.function || segment.properties || segment.damage[0] || segment.damage[1];
+		    }) ||
+		    std::any_of(level.objects.begin(), level.objects.end(), [](const auto &object) {
+			    return (object.type != 4 && object.type != 3) || object.contains_count || object.multiplayer;
+		    }))
+			result.push_back({ "format_30_gameplay", -1, "requires normal rooms, player starts and hostages without triggers or producers" });
+	}
 	const bool classic_effect = classic_effect_layout(level);
 	const bool colored_walls = early_colored_wall_layout(level) || modern_runtime_layout(level) || (level.level_version == 18 && level.game_version == 36);
 	const bool legacy_repair_centers = (level.level_version == 17 && level.game_version == 36) || (level.level_version == 19 && level.game_version == 40);

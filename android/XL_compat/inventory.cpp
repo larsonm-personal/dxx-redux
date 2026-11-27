@@ -322,7 +322,11 @@ static Inventory read_level_inventory(const Bytes &bytes, bool allow_classic)
 	Reader mine(bytes, out.mine_offset, out.game_offset);
 	const int compiled_version = mine.u8();
 	if (compiled_version != 0) issue(out.unknown, "compiled_mine_version", -1, std::to_string(compiled_version));
-	const int vertex_count = mine.s16(), segment_count = mine.s16();
+	const bool wide_vertices = out.level_version == 30;
+	const int vertex_count = wide_vertices ? mine.s32() : mine.s16();
+	const int segment_count = wide_vertices ? mine.u16() : mine.s16();
+	// The native mine and its translated vertex and child tables use signed shorts
+	if (wide_vertices) require(vertex_count <= 32767 && segment_count <= 32767, "format 30 geometry exceeds native signed index capacity");
 	require(vertex_count > 0 && segment_count > 0, "invalid geometry counts");
 	require(out.secret_return_segment >= 0 && out.secret_return_segment < segment_count, "invalid secret return segment");
 	for (const auto &f : out.flicker_lights) require(f[0] >= 0 && f[0] < segment_count && f[1] >= 0 && f[1] < 6, "invalid flicker target");
@@ -340,7 +344,12 @@ static Inventory read_level_inventory(const Bytes &bytes, bool allow_classic)
 			require(seg.children[side] >= -2 && seg.children[side] < segment_count, "invalid child at segment " + std::to_string(i));
 		}
 		for (auto &v : seg.vertices) {
-			v = mine.u16();
+			if (wide_vertices) {
+				const auto index = mine.unsigned_value(4);
+				// Normalize only the eight reserved 32-bit deleted-slot encodings
+				require(index < static_cast<unsigned>(vertex_count) || index >= 0xfffffff8u, "invalid wide vertex at segment " + std::to_string(i));
+				v = int(index & 0xffffu);
+			} else v = mine.u16();
 			require(v < vertex_count || (out.level_version >= 25 && v >= 0xfff8), "invalid vertex at segment " + std::to_string(i));
 		}
 		if (std::any_of(seg.vertices.begin(), seg.vertices.end(), [](int vertex) { return vertex >= 0xfff8; }))
@@ -403,6 +412,8 @@ static Inventory read_level_inventory(const Bytes &bytes, bool allow_classic)
 			if (seg.damage[0] || seg.damage[1]) issue(out.unsupported, "segment_damage", i, std::to_string(seg.damage[0]) + "/" + std::to_string(seg.damage[1]));
 		}
 		seg.light = mine.s32();
+		if (out.level_version == 30)
+			for (auto &component : seg.ambient_light) component = mine.u8();
 		if (seg.function == 2 || seg.function > 6) issue(out.unsupported, out.level_version >= 21 ? "segment_function_v21" : "segment_function", i, std::to_string(seg.function));
 		if (seg.flags & ~3) {
 			// Pinned source consumes only ambient bits 0/1 in these audited profiles
@@ -614,6 +625,7 @@ static Inventory read_level_inventory(const Bytes &bytes, bool allow_classic)
 					for (int j = 0; j < 40; ++j) o.render_data.push_back(r.u8());
 					o.render_data.push_back(r.s32()); // Serialized volume, before float scaling
 					o.render_data.push_back(out.level_version < 19 ? 1 : r.u8());
+					if (out.level_version == 30) o.sound_interval = { r.s8(), r.s32(), r.s32() };
 					o.reader_id = 2;
 					++effect_renders[o.render];
 					break;
@@ -807,6 +819,10 @@ std::string inventory_json(const Inventory &v)
 			s << ", \"properties\": " << x.properties << ", \"damage\": ";
 			array_json(s, x.damage);
 		}
+		if (v.level_version == 30) {
+			s << ", \"ambient_light\": ";
+			array_json(s, x.ambient_light);
+		}
 		s << ", \"children\": ";
 		array_json(s, x.children);
 		s << ", \"vertices\": ";
@@ -903,6 +919,10 @@ std::string inventory_json(const Inventory &v)
 				}
 				if (ascii) s << ", \"sound_filename_ascii\": " << json_string(filename);
 				s << ", \"sound_volume_raw\": " << o.render_data[40] << ", \"effect_enabled\": " << o.render_data[41];
+				if (v.level_version == 30) {
+					s << ", \"sound_interval\": ";
+					array_json(s, o.sound_interval);
+				}
 			}
 		}
 		const std::pair<const char *, const std::vector<int> *> payloads[] = { { "movement_data", &o.movement_data }, { "control_data", &o.control_data }, { "render_data", &o.render_data } };

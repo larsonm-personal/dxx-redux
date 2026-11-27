@@ -42,7 +42,7 @@ inline LayoutFixture layout_fixture(int version, int shape = 0, int producer = -
 	result.mine = b.size();
 	layout_patch(b, 8, static_cast<std::uint32_t>(result.mine));
 	put(0, 1);
-	put(8, 2);
+	put(8, version == 30 ? 4 : 2);
 	put(1, 2);
 	for (int i = 0; i < 24; ++i) put(i * 65536, 4);
 	if (!classic) {
@@ -52,7 +52,7 @@ inline LayoutFixture layout_fixture(int version, int shape = 0, int producer = -
 	put(1 << 5, 1);
 	put(0, 2);
 	result.vertices = b.size();
-	for (int i = 0; i < 8; ++i) put(shape == 2 && i == 2 ? 0xfff8 : i, 2);
+	for (int i = 0; i < 8; ++i) put(shape == 2 && i == 2 ? (version == 30 ? 0xfffffff8u : 0xfff8u) : i, version == 30 ? 4 : 2);
 	put(1, 1);
 	put(0, classic ? 1 : 2);
 	for (int side = 0; side < 6; ++side) {
@@ -86,6 +86,8 @@ inline LayoutFixture layout_fixture(int version, int shape = 0, int producer = -
 		put(32767, 2);
 	}
 	put(65536, 4);
+	if (version == 30)
+		for (int value : { 37, 52, 105, 218 }) put(value, 1);
 	result.colors = b.size();
 	for (int i = 0; !classic && i < 8 + 6 + 910; ++i) {
 		put(1, 1);

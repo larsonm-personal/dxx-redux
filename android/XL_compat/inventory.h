@@ -48,6 +48,8 @@ struct Segment {
 	int function, producer, value, flags, light;
 	int properties = 0;
 	std::array<int, 2> damage{};
+	// DLE 1.13.4 stores intensity and RGB after static light in format 30
+	std::array<int, 4> ambient_light{ 0, 255, 255, 255 };
 };
 
 enum SegmentProperty {
@@ -110,6 +112,8 @@ struct Object {
 	int reader_id = -1, reader_render = -1;
 	int reader_type = -1;
 	int multiplayer = 0;
+	// Sound mode and the two interval fields following the enabled byte
+	std::array<int, 3> sound_interval{ 0, 150, 50 };
 	std::size_t source_offset = 0, source_end = 0;
 	std::array<int, 3> position, last_position;
 	std::array<int, 9> orientation;
@@ -153,7 +157,7 @@ struct Inventory {
 // Audited modern record layouts; individual geometry, feature and asset gates remain
 inline bool modern_level_version(int version)
 {
-	return (version >= 21 && version <= 23) || (version >= 25 && version <= 27);
+	return (version >= 21 && version <= 23) || (version >= 25 && version <= 27) || version == 30;
 }
 inline bool modern_runtime_layout(const Inventory &level)
 {

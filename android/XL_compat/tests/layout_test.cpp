@@ -64,6 +64,38 @@ void contract()
 		rejects_robot_exemption([](auto &v) { v.object_trigger_records.resize(1); });
 		rejects_robot_exemption([](auto &v) { v.level_version = 27; });
 	}
+	{
+		auto wide = xl_test::layout_fixture(30, 2);
+		const auto level = xl_compat::inspect_level(wide.bytes);
+		check(level.level_version == 30 && level.vertices.size() == 8 && level.segments.size() == 1 &&
+		          level.segments[0].vertices[2] == 0xfff8 && level.segments[0].ambient_light == std::array<int, 4>{ 37, 52, 105, 218 } &&
+		          level.fog_settings.size() == 4 && level.level_name == "Layout control",
+		      "Wide geometry, ambient light or following tables lost alignment");
+		check(issue(xl_compat::runtime_blockers(level), "segment_ambient_light"), "Authored format 30 light was silently discarded");
+		auto neutral = level;
+		neutral.segments.front().ambient_light[0] = 0;
+		neutral.segments.front().function = neutral.segments.front().properties = 0;
+		neutral.segments.front().damage = {};
+		neutral.triggers.clear();
+		neutral.reactor_targets.clear();
+		neutral.objects = { {}, {} };
+		neutral.objects.front().type = 4;
+		neutral.objects.back().type = 3;
+		const auto normal = xl_compat::runtime_blockers(neutral);
+		check(!issue(normal, "segment_ambient_light") && !issue(normal, "format_30_gameplay"), "Neutral format 30 player and hostage profile was rejected");
+		neutral.objects.back().contains_count = 1;
+		check(issue(xl_compat::runtime_blockers(neutral), "format_30_gameplay"), "Unqualified contained object passed format 30 admission");
+		neutral.objects.back().contains_count = 0;
+		neutral.objects.back().type = 20;
+		neutral.objects.back().render = 13;
+		neutral.objects.back().sound_interval[0] = 1;
+		const auto sounds = xl_compat::runtime_blockers(neutral);
+		check(issue(sounds, "random_sound_interval") && issue(sounds, "format_30_gameplay"), "Random sound lost its format 30 blocker");
+		xl_test::layout_patch(wide.bytes, wide.vertices + 8, 0x10007u);
+		rejects(wide.bytes, "invalid wide vertex");
+		xl_test::layout_patch(wide.bytes, wide.mine + 1, 65536);
+		rejects(wide.bytes, "signed index capacity");
+	}
 	auto classic = xl_test::layout_fixture(7);
 	rejects(classic.bytes, "unsupported level version");
 	const auto native = xl_compat::inspect_mission_level(classic.bytes);
