@@ -37,6 +37,19 @@ bool legacy_water_has_actors(const Inventory &level)
 	});
 }
 
+// A mission-wide custom robot declaration can be unused by an individual arena.
+// The selected level must still pass the normal object and resource checks
+bool triggerless_robot_free_arena(const Inventory &level)
+{
+	if (level.level_version != 23 || level.game_version != 40 || !level.triggers.empty() || !level.object_trigger_records.empty() ||
+	    !level.matcens.empty() || !level.equipment.empty()) return false;
+	// Only normal and fuel segments, player/co-op starts, pickups and authored lightning
+	return std::all_of(level.segments.begin(), level.segments.end(), [](const auto &segment) { return segment.function == 0 || segment.function == 1; }) &&
+	       std::all_of(level.objects.begin(), level.objects.end(), [](const auto &object) {
+		       return !object.contains_count && (object.type == 4 || object.type == 14 || object.type == 7 || authored_lightning_shape(object));
+	       });
+}
+
 bool default_legacy_water_profile(const Inventory &level)
 {
 	return (level.level_version == 19 && level.game_version == 40) ||

@@ -6,6 +6,7 @@ namespace xl_compat
 bool classic_effect_layout(const Inventory &level);
 bool default_legacy_water_profile(const Inventory &level);
 bool legacy_water_has_actors(const Inventory &level);
+bool triggerless_robot_free_arena(const Inventory &level);
 // Format/feature eligibility only; the engine must also validate mounted assets
 std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_water = false, bool explicit_geometry = true);
 bool has_explicit_geometry(const Inventory &level);

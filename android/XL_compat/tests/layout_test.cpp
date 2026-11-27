@@ -33,6 +33,37 @@ bool issue(const std::vector<xl_compat::Issue> &issues, const char *feature)
 }
 void contract()
 {
+	{
+		xl_compat::Inventory arena{};
+		arena.level_version = 23;
+		arena.game_version = 40;
+		arena.segments.resize(2);
+		arena.segments.back().function = 1;
+		for (const auto type : { 4, 14, 7, 20 }) {
+			xl_compat::Object object{};
+			object.type = type;
+			if (type == 20) {
+				object.reader_id = 1;
+				object.render = object.reader_render = 12;
+			}
+			arena.objects.push_back(object);
+		}
+		check(xl_compat::triggerless_robot_free_arena(arena), "Triggerless pickup arena unexpectedly requires robot assets");
+		auto rejects_robot_exemption = [&](const auto &mutate) {
+			auto changed = arena;
+			mutate(changed);
+			check(!xl_compat::triggerless_robot_free_arena(changed), "Unqualified level bypassed its robot declaration");
+		};
+		rejects_robot_exemption([](auto &v) { v.objects.back().type = 2; });
+		rejects_robot_exemption([](auto &v) { v.objects.front().contains_type = 2; v.objects.front().contains_count = 1; });
+		rejects_robot_exemption([](auto &v) { v.objects.back().reader_id = 3; });
+		rejects_robot_exemption([](auto &v) { v.segments.back().function = 4; });
+		rejects_robot_exemption([](auto &v) { v.matcens.resize(1); });
+		rejects_robot_exemption([](auto &v) { v.equipment.resize(1); });
+		rejects_robot_exemption([](auto &v) { v.triggers.resize(1); });
+		rejects_robot_exemption([](auto &v) { v.object_trigger_records.resize(1); });
+		rejects_robot_exemption([](auto &v) { v.level_version = 27; });
+	}
 	auto classic = xl_test::layout_fixture(7);
 	rejects(classic.bytes, "unsupported level version");
 	const auto native = xl_compat::inspect_mission_level(classic.bytes);
