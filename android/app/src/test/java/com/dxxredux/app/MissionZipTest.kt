@@ -2,6 +2,9 @@ package com.dxxredux.app
 
 import org.apache.commons.compress.archivers.sevenz.SevenZArchiveEntry
 import org.apache.commons.compress.archivers.sevenz.SevenZOutputFile
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry
+import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream
+import org.apache.commons.compress.archivers.zip.ZipMethod
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -16,6 +19,58 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
 class MissionZipTest {
+    @Test
+    fun extractsDeflate64DescriptorWithItsOwnedLevel() {
+        val directory =
+            java.nio.file.Files
+                .createTempDirectory("mission-deflate64")
+                .toFile()
+        try {
+            val archive = File(directory, "legacy.zip")
+            val descriptor = "name = Legacy\nnum_levels = 1\nlegacy.rl2\n".toByteArray()
+            val hog = hogBytes("legacy.rl2")
+            ZipArchiveOutputStream(archive).use { zip ->
+                val size = descriptor.size
+                // A final uncompressed block is valid in both Deflate encodings
+                val raw = byteArrayOf(1, size.toByte(), 0, size.inv().toByte(), -1) + descriptor
+                val entry =
+                    ZipArchiveEntry("legacy.mn2").apply {
+                        method = ZipMethod.ENHANCED_DEFLATED.code
+                        this.size = size.toLong()
+                        compressedSize = raw.size.toLong()
+                        crc = CRC32().apply { update(descriptor) }.value
+                    }
+                zip.addRawArchiveEntry(entry, raw.inputStream())
+                zip.putArchiveEntry(ZipArchiveEntry("legacy.hog"))
+                zip.write(hog)
+                zip.closeArchiveEntry()
+            }
+            val scan = requireNotNull(MissionZip.inspect(archive))
+            assertEquals("Legacy", scan.mission.displayName)
+            assertEquals("zip", scan.archiveFormat)
+            assertEquals("extracted_bundle", scan.importMode)
+            val record = MissionZipExtractionStore(directory).ensureExtracted(archive.name, archive, scan)
+            for ((name, expected) in mapOf("legacy.mn2" to descriptor, "legacy.hog" to hog)) {
+                val extracted = record.files.single { it.entryPath == name }
+                assertTrue(File(record.rootDir, extracted.relativePath).readBytes().contentEquals(expected))
+            }
+            val bytes = archive.readBytes()
+            val offset =
+                (0..bytes.size - descriptor.size).single { start ->
+                    descriptor.indices.all { bytes[start + it] == descriptor[it] }
+                }
+            bytes[offset] = 'N'.code.toByte()
+            val damaged = File(directory, "damaged.zip").apply { writeBytes(bytes) }
+            org.junit.Assert.assertThrows(java.io.IOException::class.java) {
+                ArchiveFiles.open(damaged).use { zip ->
+                    zip.openInputStream(requireNotNull(zip.findEntry("legacy.mn2"))).use { it.readBytes() }
+                }
+            }
+        } finally {
+            directory.deleteRecursively()
+        }
+    }
+
     @Test
     fun secretOriginAdmissionPreservesRegisteredOwner() {
         File("build").mkdirs()

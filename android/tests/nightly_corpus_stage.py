@@ -116,7 +116,9 @@ def extract_archive(archive, destination, seven_zip=None):
         raise StageUnavailable("Unsafe corpus extraction destination or archive")
     destination.mkdir(parents=True)
     try:
-        if archive.suffix.casefold() == ".zip":
+        suffix = archive.suffix.casefold()
+        use_seven_zip = suffix in (".7z", ".rar")
+        if suffix == ".zip":
             with zipfile.ZipFile(archive) as source:
                 entries = source.infolist()
                 validate_entries([(e.filename, e.file_size, e.is_dir()) for e in entries])
@@ -124,14 +126,20 @@ def extract_archive(archive, destination, seven_zip=None):
                     mode = entry.external_attr >> 16
                     if stat.S_IFMT(mode) not in (0, stat.S_IFREG, stat.S_IFDIR) or entry.flag_bits & 1:
                         raise StageUnavailable("Corpus archive links or encrypted entries are unsupported")
-                    target = destination / member_path(entry.filename)
-                    if entry.is_dir():
-                        target.mkdir(parents=True, exist_ok=True)
-                    else:
-                        target.parent.mkdir(parents=True, exist_ok=True)
-                        with source.open(entry) as incoming, target.open("xb") as outgoing:
-                            shutil.copyfileobj(incoming, outgoing, 1024**2)
-        elif archive.suffix.casefold() in (".7z", ".rar"):
+                # Some historical mission ZIPs mix Deflate64 (method 9) and standard Deflate
+                use_seven_zip = any(entry.compress_type == 9 for entry in entries)
+                if not use_seven_zip:
+                    for entry in entries:
+                        target = destination / member_path(entry.filename)
+                        if entry.is_dir():
+                            target.mkdir(parents=True, exist_ok=True)
+                        else:
+                            target.parent.mkdir(parents=True, exist_ok=True)
+                            with source.open(entry) as incoming, target.open("xb") as outgoing:
+                                shutil.copyfileobj(incoming, outgoing, 1024**2)
+        elif not use_seven_zip:
+            raise StageUnavailable("Corpus archive format requires reviewed extraction support")
+        if use_seven_zip:
             tool = seven_zip or next((shutil.which(n) for n in ("7zz", "7z", "7za") if shutil.which(n)), None)
             if not tool:
                 raise StageUnavailable("7-Zip prerequisite unavailable")
@@ -159,8 +167,6 @@ def extract_archive(archive, destination, seven_zip=None):
                     entries.append((fields["Path"], int(fields.get("Size", "0")), directory))
                 validate_entries(entries)
                 bounded_tool([tool, "x", "-y", "-o" + str(destination), "--", str(archive)], Path(temp) / "extract")
-        else:
-            raise StageUnavailable("Corpus archive format requires reviewed extraction support")
         files = list(destination.rglob("*"))
         if any(p.is_symlink() or not (p.is_file() or p.is_dir()) for p in files):
             raise StageUnavailable("Corpus extraction produced a linked or special file")
