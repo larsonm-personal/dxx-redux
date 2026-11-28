@@ -1,0 +1,1525 @@
+{
+    "publisher_wfc_vertex": [
+        {
+            "edition": "wfc20-2010-original",
+            "observed_sha256": "d17e07ffff0ac621be11cebc65c69120cce362adeb5e799907f58959dbc59dc5",
+            "configured_hog": "missions/noon/wfc20-2010-original/wfc20-2010-original.hog",
+            "room_count": 900,
+            "simulation_returns": 120,
+            "lightmap_bake": {
+                "lights": 0,
+                "checkpoints": [],
+                "finishes": 0
+            }
+        },
+        {
+            "edition": "wfc20-2010-packed",
+            "observed_sha256": "ca8b8bc960eb72621048af58da0f2c912500fcff0dc61fa3770572a136bb42ee",
+            "configured_hog": "missions/noon/wfc20-2010-packed/wfc20-2010-packed.hog",
+            "room_count": 900,
+            "simulation_returns": 120,
+            "lightmap_bake": {
+                "lights": 0,
+                "checkpoints": [],
+                "finishes": 0
+            }
+        }
+    ],
+    "ordinary_first_contacts": [
+        {
+            "case": "wolf",
+            "backend": "ref",
+            "tick": 63,
+            "clock": 68812,
+            "weapon_id": 22,
+            "damage_radius": 2621440,
+            "shield_damage": 1175306,
+            "contact_position": [-3788231, 34076, 2349451],
+            "projectile_velocity_at_contact": [-1994129, -36899, 3388748]
+        },
+        {
+            "case": "pyro-pinned",
+            "backend": "ref",
+            "tick": 55,
+            "clock": 60074,
+            "weapon_id": 21,
+            "damage_radius": 2621440,
+            "shield_damage": 1304793,
+            "contact_position": [2259676, -9581220, 5851900],
+            "projectile_velocity_at_contact": [243515, 3815920, -915328]
+        },
+        {
+            "case": "pyro-nested",
+            "backend": "ref",
+            "tick": 55,
+            "clock": 60074,
+            "weapon_id": 21,
+            "damage_radius": 2621440,
+            "shield_damage": 1304793,
+            "contact_position": [2259676, -9581220, 5851900],
+            "projectile_velocity_at_contact": [243515, 3815920, -915328]
+        },
+        {
+            "case": "pyro-root",
+            "backend": "ref",
+            "tick": 55,
+            "clock": 60074,
+            "weapon_id": 21,
+            "damage_radius": 2621440,
+            "shield_damage": 1304793,
+            "contact_position": [2259676, -9581220, 5851900],
+            "projectile_velocity_at_contact": [243515, 3815920, -915328]
+        },
+        {
+            "case": "wolf",
+            "backend": "redux",
+            "tick": 67,
+            "clock": 73181,
+            "weapon_id": 22,
+            "damage_radius": 2621440,
+            "shield_damage": 1031891,
+            "contact_position": [-3783860, 29248, 2348730],
+            "projectile_velocity_at_contact": [-1887051, -41998, 3216620]
+        },
+        {
+            "case": "pyro-pinned",
+            "backend": "redux",
+            "tick": 57,
+            "clock": 62259,
+            "weapon_id": 21,
+            "damage_radius": 2621440,
+            "shield_damage": 1144568,
+            "contact_position": [2262375, -9586584, 5852469],
+            "projectile_velocity_at_contact": [240351, 3569090, -847709]
+        },
+        {
+            "case": "pyro-nested",
+            "backend": "redux",
+            "tick": 57,
+            "clock": 62259,
+            "weapon_id": 21,
+            "damage_radius": 2621440,
+            "shield_damage": 1144568,
+            "contact_position": [2262375, -9586584, 5852469],
+            "projectile_velocity_at_contact": [240351, 3569090, -847709]
+        },
+        {
+            "case": "pyro-root",
+            "backend": "redux",
+            "tick": 57,
+            "clock": 62259,
+            "weapon_id": 21,
+            "damage_radius": 2621440,
+            "shield_damage": 1144568,
+            "contact_position": [2262375, -9586584, 5852469],
+            "projectile_velocity_at_contact": [240351, 3569090, -847709]
+        }
+    ],
+    "redux_overlay_samples": [
+        {
+            "case": "firsteel",
+            "slot": 1505,
+            "update": 1,
+            "selected": 16,
+            "authored_alpha": 255,
+            "keyed_alpha": 0,
+            "filters": [9728, 9728],
+            "size": [64, 64]
+        },
+        {
+            "case": "firsteel",
+            "slot": 1505,
+            "update": 30,
+            "selected": 5,
+            "authored_alpha": 255,
+            "keyed_alpha": 0,
+            "filters": [9728, 9728],
+            "size": [64, 64]
+        },
+        {
+            "case": "firsteel",
+            "slot": 1505,
+            "update": 60,
+            "selected": 14,
+            "authored_alpha": 255,
+            "keyed_alpha": 0,
+            "filters": [9728, 9728],
+            "size": [64, 64]
+        },
+        {
+            "case": "pyrotech",
+            "slot": 1507,
+            "update": 1,
+            "selected": 391,
+            "authored_alpha": 255,
+            "keyed_alpha": 0,
+            "filters": [9728, 9728],
+            "size": [64, 64]
+        },
+        {
+            "case": "pyrotech",
+            "slot": 1507,
+            "update": 30,
+            "selected": 541,
+            "authored_alpha": 255,
+            "keyed_alpha": 0,
+            "filters": [9728, 9728],
+            "size": [64, 64]
+        },
+        {
+            "case": "pyrotech",
+            "slot": 1507,
+            "update": 60,
+            "selected": 530,
+            "authored_alpha": 255,
+            "keyed_alpha": 0,
+            "filters": [9728, 9728],
+            "size": [64, 64]
+        },
+        {
+            "case": "pyrotech",
+            "slot": 1555,
+            "update": 1,
+            "selected": 878,
+            "authored_alpha": 255,
+            "keyed_alpha": 0,
+            "filters": [9728, 9728],
+            "size": [64, 64]
+        },
+        {
+            "case": "pyrotech",
+            "slot": 1555,
+            "update": 30,
+            "selected": 451,
+            "authored_alpha": 255,
+            "keyed_alpha": 0,
+            "filters": [9728, 9728],
+            "size": [64, 64]
+        },
+        {
+            "case": "pyrotech",
+            "slot": 1555,
+            "update": 60,
+            "selected": 788,
+            "authored_alpha": 255,
+            "keyed_alpha": 0,
+            "filters": [9728, 9728],
+            "size": [64, 64]
+        }
+    ],
+    "reference_midgard_depth": [
+        {
+            "clock": 1092,
+            "mode": "ordinary",
+            "selected_pixels": 7384,
+            "changed_in_draw": 0,
+            "changed_depth": 0,
+            "depth_range": [0.944514811038971, 0.994888424873352],
+            "final_matches_authored": 7384,
+            "final_matches_original": 0,
+            "final_rgb_changes": 0
+        },
+        {
+            "clock": 1092,
+            "mode": "no-depth",
+            "selected_pixels": 7384,
+            "changed_in_draw": 714,
+            "changed_depth": 0,
+            "depth_range": [0.944514811038971, 0.994888424873352],
+            "final_matches_authored": 6670,
+            "final_matches_original": 32,
+            "final_rgb_changes": 12467
+        },
+        {
+            "clock": 32768,
+            "mode": "ordinary",
+            "selected_pixels": 6139,
+            "changed_in_draw": 0,
+            "changed_depth": 0,
+            "depth_range": [0.9445142149925232, 0.994888424873352],
+            "final_matches_authored": 6139,
+            "final_matches_original": 0,
+            "final_rgb_changes": 0
+        },
+        {
+            "clock": 32768,
+            "mode": "no-depth",
+            "selected_pixels": 6139,
+            "changed_in_draw": 1029,
+            "changed_depth": 0,
+            "depth_range": [0.9445142149925232, 0.994888424873352],
+            "final_matches_authored": 5110,
+            "final_matches_original": 47,
+            "final_rgb_changes": 11454
+        },
+        {
+            "clock": 65536,
+            "mode": "ordinary",
+            "selected_pixels": 5346,
+            "changed_in_draw": 0,
+            "changed_depth": 0,
+            "depth_range": [0.9445143342018127, 0.994888424873352],
+            "final_matches_authored": 5346,
+            "final_matches_original": 0,
+            "final_rgb_changes": 0
+        },
+        {
+            "clock": 65536,
+            "mode": "no-depth",
+            "selected_pixels": 5346,
+            "changed_in_draw": 683,
+            "changed_depth": 0,
+            "depth_range": [0.9445143342018127, 0.994888424873352],
+            "final_matches_authored": 4663,
+            "final_matches_original": 60,
+            "final_rgb_changes": 11460
+        }
+    ],
+    "historical_receipts": {
+        "2010": {
+            "archive_sha256": "8e2936faf198d524146789c5e2199ec5d455739a7643dfff715e9b8ca48c1ee3",
+            "runtime": "3ab7fdeeb4399b02b30b6ff8d391bd0556d7e17c",
+            "advertised": 41,
+            "backends": {
+                "headless": [33, 32],
+                "windowed": [33, 32]
+            }
+        },
+        "2015": {
+            "archive_sha256": "66e9857f2e076717725d39853175b168109884605d3a4460cadb1de81196debf",
+            "runtime": "3ab7fdeeb4399b02b30b6ff8d391bd0556d7e17c",
+            "advertised": 48,
+            "backends": {
+                "headless": [48, 47],
+                "windowed": [48, 47]
+            }
+        }
+    },
+    "mission_owners": [
+        {
+            "owner": "danwentz",
+            "headless_entry": false,
+            "headless_live": false,
+            "headless_frames": null,
+            "windowed_entry": false,
+            "windowed_live": false,
+            "windowed_frames": null,
+            "level_sha256": null,
+            "outcome": "load_failed"
+        },
+        {
+            "owner": "darkhorse",
+            "headless_entry": true,
+            "headless_live": true,
+            "headless_frames": 120,
+            "windowed_entry": true,
+            "windowed_live": true,
+            "windowed_frames": 120,
+            "level_sha256": "14f8bec7d08e83eddecd2c41389f9fea3c21076adb7305418d735545a50453db",
+            "outcome": "loaded_ticked"
+        },
+        {
+            "owner": "standalone",
+            "headless_entry": true,
+            "headless_live": true,
+            "headless_frames": 120,
+            "windowed_entry": true,
+            "windowed_live": true,
+            "windowed_frames": 120,
+            "level_sha256": "fb80847ff9b3d299eb82397040a080b89f6e13f6192a426e278476a88347b065",
+            "outcome": "loaded_ticked"
+        }
+    ],
+    "reference_gpu_textures": [
+        {
+            "owner": "firsteel-1505",
+            "tick": 1,
+            "samples": 16,
+            "trials": [
+                {
+                    "trial": "firsteel-1505",
+                    "changed_rgb": 0,
+                    "face_omission_pixels": 287,
+                    "changed_on_face_omission_pixels": 0,
+                    "units": [
+                        {
+                            "unit": 0,
+                            "width": 64,
+                            "height": 64,
+                            "min_filter": 9987,
+                            "mag_filter": 9729,
+                            "program": 16,
+                            "face_transparent": 0,
+                            "rgba_sha256": "995fe3e2df3ead93426ee0de2ba8340cac86848f296f0b82d0bcc15df6dbaf5a",
+                            "level_zero_alpha": {
+                                "255": 16
+                            }
+                        },
+                        {
+                            "unit": 1,
+                            "width": 64,
+                            "height": 64,
+                            "min_filter": 9987,
+                            "mag_filter": 9729,
+                            "program": 16,
+                            "face_transparent": 0,
+                            "rgba_sha256": "e904aad8f1aedcfde1bb1bd6ab9c936ec82f9753f20c951dcac62824919e95df",
+                            "level_zero_alpha": {
+                                "0": 16
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "owner": "firsteel-1505",
+            "tick": 30,
+            "samples": 5,
+            "trials": [
+                {
+                    "trial": "firsteel-1505",
+                    "changed_rgb": 0,
+                    "face_omission_pixels": 160,
+                    "changed_on_face_omission_pixels": 0,
+                    "units": [
+                        {
+                            "unit": 0,
+                            "width": 64,
+                            "height": 64,
+                            "min_filter": 9987,
+                            "mag_filter": 9729,
+                            "program": 16,
+                            "face_transparent": 0,
+                            "rgba_sha256": "995fe3e2df3ead93426ee0de2ba8340cac86848f296f0b82d0bcc15df6dbaf5a",
+                            "level_zero_alpha": {
+                                "255": 5
+                            }
+                        },
+                        {
+                            "unit": 1,
+                            "width": 64,
+                            "height": 64,
+                            "min_filter": 9987,
+                            "mag_filter": 9729,
+                            "program": 16,
+                            "face_transparent": 0,
+                            "rgba_sha256": "e904aad8f1aedcfde1bb1bd6ab9c936ec82f9753f20c951dcac62824919e95df",
+                            "level_zero_alpha": {
+                                "0": 5
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "owner": "firsteel-1505",
+            "tick": 60,
+            "samples": 14,
+            "trials": [
+                {
+                    "trial": "firsteel-1505",
+                    "changed_rgb": 0,
+                    "face_omission_pixels": 219,
+                    "changed_on_face_omission_pixels": 0,
+                    "units": [
+                        {
+                            "unit": 0,
+                            "width": 64,
+                            "height": 64,
+                            "min_filter": 9987,
+                            "mag_filter": 9729,
+                            "program": 16,
+                            "face_transparent": 0,
+                            "rgba_sha256": "995fe3e2df3ead93426ee0de2ba8340cac86848f296f0b82d0bcc15df6dbaf5a",
+                            "level_zero_alpha": {
+                                "255": 14
+                            }
+                        },
+                        {
+                            "unit": 1,
+                            "width": 64,
+                            "height": 64,
+                            "min_filter": 9987,
+                            "mag_filter": 9729,
+                            "program": 16,
+                            "face_transparent": 0,
+                            "rgba_sha256": "e904aad8f1aedcfde1bb1bd6ab9c936ec82f9753f20c951dcac62824919e95df",
+                            "level_zero_alpha": {
+                                "0": 14
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "owner": "pyrotech-1507",
+            "tick": 1,
+            "samples": 391,
+            "trials": [
+                {
+                    "trial": "pyrotech-1507",
+                    "changed_rgb": 0,
+                    "face_omission_pixels": 8438,
+                    "changed_on_face_omission_pixels": 0,
+                    "units": [
+                        {
+                            "unit": 0,
+                            "width": 64,
+                            "height": 64,
+                            "min_filter": 9987,
+                            "mag_filter": 9729,
+                            "program": 16,
+                            "face_transparent": 0,
+                            "rgba_sha256": "8092f8a524e955d53086bfc693ea2982071dc3d1019d747b7857ebf6dd8329cc",
+                            "level_zero_alpha": {
+                                "255": 391
+                            }
+                        },
+                        {
+                            "unit": 1,
+                            "width": 64,
+                            "height": 64,
+                            "min_filter": 9987,
+                            "mag_filter": 9729,
+                            "program": 16,
+                            "face_transparent": 0,
+                            "rgba_sha256": "de1cfec60bb2d6064d1e39e7bf3db0d13d4bcd070c3654e40b0c73d6e55de32f",
+                            "level_zero_alpha": {
+                                "0": 391
+                            }
+                        }
+                    ]
+                },
+                {
+                    "trial": "pyrotech-1507-repeat",
+                    "changed_rgb": 0,
+                    "face_omission_pixels": 8438,
+                    "changed_on_face_omission_pixels": 0,
+                    "units": [
+                        {
+                            "unit": 0,
+                            "width": 64,
+                            "height": 64,
+                            "min_filter": 9987,
+                            "mag_filter": 9729,
+                            "program": 16,
+                            "face_transparent": 0,
+                            "rgba_sha256": "8092f8a524e955d53086bfc693ea2982071dc3d1019d747b7857ebf6dd8329cc",
+                            "level_zero_alpha": {
+                                "255": 391
+                            }
+                        },
+                        {
+                            "unit": 1,
+                            "width": 64,
+                            "height": 64,
+                            "min_filter": 9987,
+                            "mag_filter": 9729,
+                            "program": 16,
+                            "face_transparent": 0,
+                            "rgba_sha256": "de1cfec60bb2d6064d1e39e7bf3db0d13d4bcd070c3654e40b0c73d6e55de32f",
+                            "level_zero_alpha": {
+                                "0": 391
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "owner": "pyrotech-1507",
+            "tick": 30,
+            "samples": 541,
+            "trials": [
+                {
+                    "trial": "pyrotech-1507",
+                    "changed_rgb": 673,
+                    "face_omission_pixels": 70911,
+                    "changed_on_face_omission_pixels": 234,
+                    "units": [
+                        {
+                            "unit": 0,
+                            "width": 64,
+                            "height": 64,
+                            "min_filter": 9987,
+                            "mag_filter": 9729,
+                            "program": 16,
+                            "face_transparent": 0,
+                            "rgba_sha256": "8092f8a524e955d53086bfc693ea2982071dc3d1019d747b7857ebf6dd8329cc",
+                            "level_zero_alpha": {
+                                "255": 541
+                            }
+                        },
+                        {
+                            "unit": 1,
+                            "width": 64,
+                            "height": 64,
+                            "min_filter": 9987,
+                            "mag_filter": 9729,
+                            "program": 16,
+                            "face_transparent": 0,
+                            "rgba_sha256": "de1cfec60bb2d6064d1e39e7bf3db0d13d4bcd070c3654e40b0c73d6e55de32f",
+                            "level_zero_alpha": {
+                                "0": 541
+                            }
+                        }
+                    ]
+                },
+                {
+                    "trial": "pyrotech-1507-repeat",
+                    "changed_rgb": 21990,
+                    "face_omission_pixels": 70911,
+                    "changed_on_face_omission_pixels": 386,
+                    "units": [
+                        {
+                            "unit": 0,
+                            "width": 64,
+                            "height": 64,
+                            "min_filter": 9987,
+                            "mag_filter": 9729,
+                            "program": 16,
+                            "face_transparent": 0,
+                            "rgba_sha256": "8092f8a524e955d53086bfc693ea2982071dc3d1019d747b7857ebf6dd8329cc",
+                            "level_zero_alpha": {
+                                "255": 541
+                            }
+                        },
+                        {
+                            "unit": 1,
+                            "width": 64,
+                            "height": 64,
+                            "min_filter": 9987,
+                            "mag_filter": 9729,
+                            "program": 16,
+                            "face_transparent": 0,
+                            "rgba_sha256": "de1cfec60bb2d6064d1e39e7bf3db0d13d4bcd070c3654e40b0c73d6e55de32f",
+                            "level_zero_alpha": {
+                                "0": 541
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "owner": "pyrotech-1507",
+            "tick": 60,
+            "samples": 530,
+            "trials": [
+                {
+                    "trial": "pyrotech-1507",
+                    "changed_rgb": 908812,
+                    "face_omission_pixels": 375009,
+                    "changed_on_face_omission_pixels": 362026,
+                    "units": [
+                        {
+                            "unit": 0,
+                            "width": 64,
+                            "height": 64,
+                            "min_filter": 9987,
+                            "mag_filter": 9729,
+                            "program": 16,
+                            "face_transparent": 0,
+                            "rgba_sha256": "8092f8a524e955d53086bfc693ea2982071dc3d1019d747b7857ebf6dd8329cc",
+                            "level_zero_alpha": {
+                                "255": 530
+                            }
+                        },
+                        {
+                            "unit": 1,
+                            "width": 64,
+                            "height": 64,
+                            "min_filter": 9987,
+                            "mag_filter": 9729,
+                            "program": 16,
+                            "face_transparent": 0,
+                            "rgba_sha256": "de1cfec60bb2d6064d1e39e7bf3db0d13d4bcd070c3654e40b0c73d6e55de32f",
+                            "level_zero_alpha": {
+                                "0": 530
+                            }
+                        }
+                    ]
+                },
+                {
+                    "trial": "pyrotech-1507-repeat",
+                    "changed_rgb": 1880197,
+                    "face_omission_pixels": 375009,
+                    "changed_on_face_omission_pixels": 365114,
+                    "units": [
+                        {
+                            "unit": 0,
+                            "width": 64,
+                            "height": 64,
+                            "min_filter": 9987,
+                            "mag_filter": 9729,
+                            "program": 16,
+                            "face_transparent": 0,
+                            "rgba_sha256": "8092f8a524e955d53086bfc693ea2982071dc3d1019d747b7857ebf6dd8329cc",
+                            "level_zero_alpha": {
+                                "255": 530
+                            }
+                        },
+                        {
+                            "unit": 1,
+                            "width": 64,
+                            "height": 64,
+                            "min_filter": 9987,
+                            "mag_filter": 9729,
+                            "program": 16,
+                            "face_transparent": 0,
+                            "rgba_sha256": "de1cfec60bb2d6064d1e39e7bf3db0d13d4bcd070c3654e40b0c73d6e55de32f",
+                            "level_zero_alpha": {
+                                "0": 530
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "owner": "pyrotech-1555",
+            "tick": 1,
+            "samples": 878,
+            "trials": [
+                {
+                    "trial": "pyrotech-1555-repeat",
+                    "changed_rgb": 0,
+                    "face_omission_pixels": 13270,
+                    "changed_on_face_omission_pixels": 0,
+                    "units": [
+                        {
+                            "unit": 0,
+                            "width": 64,
+                            "height": 64,
+                            "min_filter": 9987,
+                            "mag_filter": 9729,
+                            "program": 16,
+                            "face_transparent": 0,
+                            "rgba_sha256": "d00cb02493eb931083ec61386c9ec3fd601daaddb874e88c6c0a1a1cd94cccb1",
+                            "level_zero_alpha": {
+                                "255": 878
+                            }
+                        },
+                        {
+                            "unit": 1,
+                            "width": 64,
+                            "height": 64,
+                            "min_filter": 9987,
+                            "mag_filter": 9729,
+                            "program": 16,
+                            "face_transparent": 0,
+                            "rgba_sha256": "c4fbd75c7b3faf1b8cf3f413fab203a62693fca6648cc943e103f5438d86d8b7",
+                            "level_zero_alpha": {
+                                "0": 878
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "owner": "pyrotech-1555",
+            "tick": 30,
+            "samples": 451,
+            "trials": [
+                {
+                    "trial": "pyrotech-1555-repeat",
+                    "changed_rgb": 50881,
+                    "face_omission_pixels": 158764,
+                    "changed_on_face_omission_pixels": 50881,
+                    "units": [
+                        {
+                            "unit": 0,
+                            "width": 64,
+                            "height": 64,
+                            "min_filter": 9987,
+                            "mag_filter": 9729,
+                            "program": 16,
+                            "face_transparent": 0,
+                            "rgba_sha256": "d00cb02493eb931083ec61386c9ec3fd601daaddb874e88c6c0a1a1cd94cccb1",
+                            "level_zero_alpha": {
+                                "255": 451
+                            }
+                        },
+                        {
+                            "unit": 1,
+                            "width": 64,
+                            "height": 64,
+                            "min_filter": 9987,
+                            "mag_filter": 9729,
+                            "program": 16,
+                            "face_transparent": 0,
+                            "rgba_sha256": "c4fbd75c7b3faf1b8cf3f413fab203a62693fca6648cc943e103f5438d86d8b7",
+                            "level_zero_alpha": {
+                                "0": 451
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "owner": "pyrotech-1555",
+            "tick": 60,
+            "samples": 788,
+            "trials": [
+                {
+                    "trial": "pyrotech-1555-repeat",
+                    "changed_rgb": 830253,
+                    "face_omission_pixels": 1545224,
+                    "changed_on_face_omission_pixels": 830253,
+                    "units": [
+                        {
+                            "unit": 0,
+                            "width": 64,
+                            "height": 64,
+                            "min_filter": 9987,
+                            "mag_filter": 9729,
+                            "program": 16,
+                            "face_transparent": 0,
+                            "rgba_sha256": "d00cb02493eb931083ec61386c9ec3fd601daaddb874e88c6c0a1a1cd94cccb1",
+                            "level_zero_alpha": {
+                                "255": 788
+                            }
+                        },
+                        {
+                            "unit": 1,
+                            "width": 64,
+                            "height": 64,
+                            "min_filter": 9987,
+                            "mag_filter": 9729,
+                            "program": 16,
+                            "face_transparent": 0,
+                            "rgba_sha256": "c4fbd75c7b3faf1b8cf3f413fab203a62693fca6648cc943e103f5438d86d8b7",
+                            "level_zero_alpha": {
+                                "0": 788
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "reference_mip_footprints": [
+        {
+            "case": "firsteel-1505",
+            "tick": 1,
+            "samples": 16,
+            "fragment_source_sha256": "4010cadde28a8275933d6b20e53fe9b822ebdaf9103ac4e4d3f2d9d4d6a29b13",
+            "mips": [
+                {
+                    "level": 0,
+                    "size": 64,
+                    "wholly_transparent_footprints": 16,
+                    "wholly_opaque_footprints": 0,
+                    "other_footprints": 0,
+                    "sha256": "e904aad8f1aedcfde1bb1bd6ab9c936ec82f9753f20c951dcac62824919e95df"
+                },
+                {
+                    "level": 1,
+                    "size": 32,
+                    "wholly_transparent_footprints": 16,
+                    "wholly_opaque_footprints": 0,
+                    "other_footprints": 0,
+                    "sha256": "157351f41f6a0c38bd2321505e31c14baff6ab2bece05cb2e8012591f95566dc"
+                },
+                {
+                    "level": 2,
+                    "size": 16,
+                    "wholly_transparent_footprints": 16,
+                    "wholly_opaque_footprints": 0,
+                    "other_footprints": 0,
+                    "sha256": "5961850fb3d9fa90a8f93d22692551683175fbca2b674aeccf44176df638618b"
+                },
+                {
+                    "level": 3,
+                    "size": 8,
+                    "wholly_transparent_footprints": 15,
+                    "wholly_opaque_footprints": 0,
+                    "other_footprints": 1,
+                    "sha256": "94ccc02a24b78b874b2bb201a804b749f7d825f4412cb4b7779f7a9554614dce"
+                },
+                {
+                    "level": 4,
+                    "size": 4,
+                    "wholly_transparent_footprints": 7,
+                    "wholly_opaque_footprints": 0,
+                    "other_footprints": 9,
+                    "sha256": "60ac5ddbda9114fc8d24034f3e8a1fa879b87f1c49c473c7296d8f782294f2ef"
+                },
+                {
+                    "level": 5,
+                    "size": 2,
+                    "wholly_transparent_footprints": 0,
+                    "wholly_opaque_footprints": 0,
+                    "other_footprints": 16,
+                    "sha256": "704c732681c70c24dcb8935f268e58d99c4c0a2582bb4dbf80926281873709bb"
+                },
+                {
+                    "level": 6,
+                    "size": 1,
+                    "wholly_transparent_footprints": 0,
+                    "wholly_opaque_footprints": 0,
+                    "other_footprints": 16,
+                    "sha256": "553d511ab6b4cc1580e4d3871dc3682f11d43de2ba24c274e4592a0a6348510c"
+                }
+            ]
+        },
+        {
+            "case": "firsteel-1505",
+            "tick": 30,
+            "samples": 5,
+            "fragment_source_sha256": "4010cadde28a8275933d6b20e53fe9b822ebdaf9103ac4e4d3f2d9d4d6a29b13",
+            "mips": [
+                {
+                    "level": 0,
+                    "size": 64,
+                    "wholly_transparent_footprints": 5,
+                    "wholly_opaque_footprints": 0,
+                    "other_footprints": 0,
+                    "sha256": "e904aad8f1aedcfde1bb1bd6ab9c936ec82f9753f20c951dcac62824919e95df"
+                },
+                {
+                    "level": 1,
+                    "size": 32,
+                    "wholly_transparent_footprints": 5,
+                    "wholly_opaque_footprints": 0,
+                    "other_footprints": 0,
+                    "sha256": "157351f41f6a0c38bd2321505e31c14baff6ab2bece05cb2e8012591f95566dc"
+                },
+                {
+                    "level": 2,
+                    "size": 16,
+                    "wholly_transparent_footprints": 5,
+                    "wholly_opaque_footprints": 0,
+                    "other_footprints": 0,
+                    "sha256": "5961850fb3d9fa90a8f93d22692551683175fbca2b674aeccf44176df638618b"
+                },
+                {
+                    "level": 3,
+                    "size": 8,
+                    "wholly_transparent_footprints": 5,
+                    "wholly_opaque_footprints": 0,
+                    "other_footprints": 0,
+                    "sha256": "94ccc02a24b78b874b2bb201a804b749f7d825f4412cb4b7779f7a9554614dce"
+                },
+                {
+                    "level": 4,
+                    "size": 4,
+                    "wholly_transparent_footprints": 2,
+                    "wholly_opaque_footprints": 0,
+                    "other_footprints": 3,
+                    "sha256": "60ac5ddbda9114fc8d24034f3e8a1fa879b87f1c49c473c7296d8f782294f2ef"
+                },
+                {
+                    "level": 5,
+                    "size": 2,
+                    "wholly_transparent_footprints": 0,
+                    "wholly_opaque_footprints": 0,
+                    "other_footprints": 5,
+                    "sha256": "704c732681c70c24dcb8935f268e58d99c4c0a2582bb4dbf80926281873709bb"
+                },
+                {
+                    "level": 6,
+                    "size": 1,
+                    "wholly_transparent_footprints": 0,
+                    "wholly_opaque_footprints": 0,
+                    "other_footprints": 5,
+                    "sha256": "553d511ab6b4cc1580e4d3871dc3682f11d43de2ba24c274e4592a0a6348510c"
+                }
+            ]
+        },
+        {
+            "case": "firsteel-1505",
+            "tick": 60,
+            "samples": 14,
+            "fragment_source_sha256": "4010cadde28a8275933d6b20e53fe9b822ebdaf9103ac4e4d3f2d9d4d6a29b13",
+            "mips": [
+                {
+                    "level": 0,
+                    "size": 64,
+                    "wholly_transparent_footprints": 14,
+                    "wholly_opaque_footprints": 0,
+                    "other_footprints": 0,
+                    "sha256": "e904aad8f1aedcfde1bb1bd6ab9c936ec82f9753f20c951dcac62824919e95df"
+                },
+                {
+                    "level": 1,
+                    "size": 32,
+                    "wholly_transparent_footprints": 14,
+                    "wholly_opaque_footprints": 0,
+                    "other_footprints": 0,
+                    "sha256": "157351f41f6a0c38bd2321505e31c14baff6ab2bece05cb2e8012591f95566dc"
+                },
+                {
+                    "level": 2,
+                    "size": 16,
+                    "wholly_transparent_footprints": 14,
+                    "wholly_opaque_footprints": 0,
+                    "other_footprints": 0,
+                    "sha256": "5961850fb3d9fa90a8f93d22692551683175fbca2b674aeccf44176df638618b"
+                },
+                {
+                    "level": 3,
+                    "size": 8,
+                    "wholly_transparent_footprints": 14,
+                    "wholly_opaque_footprints": 0,
+                    "other_footprints": 0,
+                    "sha256": "94ccc02a24b78b874b2bb201a804b749f7d825f4412cb4b7779f7a9554614dce"
+                },
+                {
+                    "level": 4,
+                    "size": 4,
+                    "wholly_transparent_footprints": 7,
+                    "wholly_opaque_footprints": 0,
+                    "other_footprints": 7,
+                    "sha256": "60ac5ddbda9114fc8d24034f3e8a1fa879b87f1c49c473c7296d8f782294f2ef"
+                },
+                {
+                    "level": 5,
+                    "size": 2,
+                    "wholly_transparent_footprints": 0,
+                    "wholly_opaque_footprints": 0,
+                    "other_footprints": 14,
+                    "sha256": "704c732681c70c24dcb8935f268e58d99c4c0a2582bb4dbf80926281873709bb"
+                },
+                {
+                    "level": 6,
+                    "size": 1,
+                    "wholly_transparent_footprints": 0,
+                    "wholly_opaque_footprints": 0,
+                    "other_footprints": 14,
+                    "sha256": "553d511ab6b4cc1580e4d3871dc3682f11d43de2ba24c274e4592a0a6348510c"
+                }
+            ]
+        },
+        {
+            "case": "pyrotech-1507",
+            "tick": 1,
+            "samples": 391,
+            "fragment_source_sha256": "4010cadde28a8275933d6b20e53fe9b822ebdaf9103ac4e4d3f2d9d4d6a29b13",
+            "mips": [
+                {
+                    "level": 0,
+                    "size": 64,
+                    "wholly_transparent_footprints": 362,
+                    "wholly_opaque_footprints": 0,
+                    "other_footprints": 29,
+                    "sha256": "de1cfec60bb2d6064d1e39e7bf3db0d13d4bcd070c3654e40b0c73d6e55de32f"
+                },
+                {
+                    "level": 1,
+                    "size": 32,
+                    "wholly_transparent_footprints": 362,
+                    "wholly_opaque_footprints": 0,
+                    "other_footprints": 29,
+                    "sha256": "c1b4101f56a1545e41ca630040ec79b45487ff8853dc65fe37cdfc6860ad4663"
+                },
+                {
+                    "level": 2,
+                    "size": 16,
+                    "wholly_transparent_footprints": 346,
+                    "wholly_opaque_footprints": 0,
+                    "other_footprints": 45,
+                    "sha256": "d0b3670268fcce43a77a4a9aec5c2022e5c57d576eea5e5f3b03845a1acd69dd"
+                },
+                {
+                    "level": 3,
+                    "size": 8,
+                    "wholly_transparent_footprints": 293,
+                    "wholly_opaque_footprints": 0,
+                    "other_footprints": 98,
+                    "sha256": "acf8b02393062a8374a4dd7a5636206b489123b9e2a274e569140fe7b6bae74c"
+                },
+                {
+                    "level": 4,
+                    "size": 4,
+                    "wholly_transparent_footprints": 67,
+                    "wholly_opaque_footprints": 0,
+                    "other_footprints": 324,
+                    "sha256": "5edb31f8c883ca42d119ab1012bedeaf345761c10d3d3c56e16e43d4bbadf246"
+                },
+                {
+                    "level": 5,
+                    "size": 2,
+                    "wholly_transparent_footprints": 0,
+                    "wholly_opaque_footprints": 0,
+                    "other_footprints": 391,
+                    "sha256": "111b80c3434797b14fa574ea71e507727b49aa7d6989b4d2c72f9f8484e0ea37"
+                },
+                {
+                    "level": 6,
+                    "size": 1,
+                    "wholly_transparent_footprints": 0,
+                    "wholly_opaque_footprints": 0,
+                    "other_footprints": 391,
+                    "sha256": "5f2105e7869ed8e1bfd292aad8c23d33a3642a3944f1159f03968e88b080cc32"
+                }
+            ]
+        },
+        {
+            "case": "pyrotech-1507",
+            "tick": 30,
+            "samples": 541,
+            "fragment_source_sha256": "4010cadde28a8275933d6b20e53fe9b822ebdaf9103ac4e4d3f2d9d4d6a29b13",
+            "mips": [
+                {
+                    "level": 0,
+                    "size": 64,
+                    "wholly_transparent_footprints": 502,
+                    "wholly_opaque_footprints": 0,
+                    "other_footprints": 39,
+                    "sha256": "de1cfec60bb2d6064d1e39e7bf3db0d13d4bcd070c3654e40b0c73d6e55de32f"
+                },
+                {
+                    "level": 1,
+                    "size": 32,
+                    "wholly_transparent_footprints": 502,
+                    "wholly_opaque_footprints": 0,
+                    "other_footprints": 39,
+                    "sha256": "c1b4101f56a1545e41ca630040ec79b45487ff8853dc65fe37cdfc6860ad4663"
+                },
+                {
+                    "level": 2,
+                    "size": 16,
+                    "wholly_transparent_footprints": 481,
+                    "wholly_opaque_footprints": 0,
+                    "other_footprints": 60,
+                    "sha256": "d0b3670268fcce43a77a4a9aec5c2022e5c57d576eea5e5f3b03845a1acd69dd"
+                },
+                {
+                    "level": 3,
+                    "size": 8,
+                    "wholly_transparent_footprints": 415,
+                    "wholly_opaque_footprints": 0,
+                    "other_footprints": 126,
+                    "sha256": "acf8b02393062a8374a4dd7a5636206b489123b9e2a274e569140fe7b6bae74c"
+                },
+                {
+                    "level": 4,
+                    "size": 4,
+                    "wholly_transparent_footprints": 88,
+                    "wholly_opaque_footprints": 0,
+                    "other_footprints": 453,
+                    "sha256": "5edb31f8c883ca42d119ab1012bedeaf345761c10d3d3c56e16e43d4bbadf246"
+                },
+                {
+                    "level": 5,
+                    "size": 2,
+                    "wholly_transparent_footprints": 0,
+                    "wholly_opaque_footprints": 0,
+                    "other_footprints": 541,
+                    "sha256": "111b80c3434797b14fa574ea71e507727b49aa7d6989b4d2c72f9f8484e0ea37"
+                },
+                {
+                    "level": 6,
+                    "size": 1,
+                    "wholly_transparent_footprints": 0,
+                    "wholly_opaque_footprints": 0,
+                    "other_footprints": 541,
+                    "sha256": "5f2105e7869ed8e1bfd292aad8c23d33a3642a3944f1159f03968e88b080cc32"
+                }
+            ]
+        },
+        {
+            "case": "pyrotech-1507",
+            "tick": 60,
+            "samples": 530,
+            "fragment_source_sha256": "4010cadde28a8275933d6b20e53fe9b822ebdaf9103ac4e4d3f2d9d4d6a29b13",
+            "mips": [
+                {
+                    "level": 0,
+                    "size": 64,
+                    "wholly_transparent_footprints": 508,
+                    "wholly_opaque_footprints": 0,
+                    "other_footprints": 22,
+                    "sha256": "de1cfec60bb2d6064d1e39e7bf3db0d13d4bcd070c3654e40b0c73d6e55de32f"
+                },
+                {
+                    "level": 1,
+                    "size": 32,
+                    "wholly_transparent_footprints": 508,
+                    "wholly_opaque_footprints": 0,
+                    "other_footprints": 22,
+                    "sha256": "c1b4101f56a1545e41ca630040ec79b45487ff8853dc65fe37cdfc6860ad4663"
+                },
+                {
+                    "level": 2,
+                    "size": 16,
+                    "wholly_transparent_footprints": 467,
+                    "wholly_opaque_footprints": 0,
+                    "other_footprints": 63,
+                    "sha256": "d0b3670268fcce43a77a4a9aec5c2022e5c57d576eea5e5f3b03845a1acd69dd"
+                },
+                {
+                    "level": 3,
+                    "size": 8,
+                    "wholly_transparent_footprints": 400,
+                    "wholly_opaque_footprints": 0,
+                    "other_footprints": 130,
+                    "sha256": "acf8b02393062a8374a4dd7a5636206b489123b9e2a274e569140fe7b6bae74c"
+                },
+                {
+                    "level": 4,
+                    "size": 4,
+                    "wholly_transparent_footprints": 85,
+                    "wholly_opaque_footprints": 0,
+                    "other_footprints": 445,
+                    "sha256": "5edb31f8c883ca42d119ab1012bedeaf345761c10d3d3c56e16e43d4bbadf246"
+                },
+                {
+                    "level": 5,
+                    "size": 2,
+                    "wholly_transparent_footprints": 0,
+                    "wholly_opaque_footprints": 0,
+                    "other_footprints": 530,
+                    "sha256": "111b80c3434797b14fa574ea71e507727b49aa7d6989b4d2c72f9f8484e0ea37"
+                },
+                {
+                    "level": 6,
+                    "size": 1,
+                    "wholly_transparent_footprints": 0,
+                    "wholly_opaque_footprints": 0,
+                    "other_footprints": 530,
+                    "sha256": "5f2105e7869ed8e1bfd292aad8c23d33a3642a3944f1159f03968e88b080cc32"
+                }
+            ]
+        },
+        {
+            "case": "pyrotech-1555",
+            "tick": 1,
+            "samples": 878,
+            "fragment_source_sha256": "4010cadde28a8275933d6b20e53fe9b822ebdaf9103ac4e4d3f2d9d4d6a29b13",
+            "mips": [
+                {
+                    "level": 0,
+                    "size": 64,
+                    "wholly_transparent_footprints": 799,
+                    "wholly_opaque_footprints": 0,
+                    "other_footprints": 79,
+                    "sha256": "c4fbd75c7b3faf1b8cf3f413fab203a62693fca6648cc943e103f5438d86d8b7"
+                },
+                {
+                    "level": 1,
+                    "size": 32,
+                    "wholly_transparent_footprints": 799,
+                    "wholly_opaque_footprints": 0,
+                    "other_footprints": 79,
+                    "sha256": "e74c236146fb6d195ea83b0b1b530c11a147075a6538e8468da4e577dfe1d439"
+                },
+                {
+                    "level": 2,
+                    "size": 16,
+                    "wholly_transparent_footprints": 724,
+                    "wholly_opaque_footprints": 0,
+                    "other_footprints": 154,
+                    "sha256": "0ff5edea9b48b3dc0c19d65b22e9d657570e6f56f93278d4212332092061ddf4"
+                },
+                {
+                    "level": 3,
+                    "size": 8,
+                    "wholly_transparent_footprints": 583,
+                    "wholly_opaque_footprints": 0,
+                    "other_footprints": 295,
+                    "sha256": "0b32c459bea3c3384d738bcbff001f1ca7adc0e688e101b7cc8100ec4b087f5a"
+                },
+                {
+                    "level": 4,
+                    "size": 4,
+                    "wholly_transparent_footprints": 340,
+                    "wholly_opaque_footprints": 0,
+                    "other_footprints": 538,
+                    "sha256": "95d3912271655c83c4e75bace0bd3f37397f2ae4e150932f9ff16c63a09c48a5"
+                },
+                {
+                    "level": 5,
+                    "size": 2,
+                    "wholly_transparent_footprints": 0,
+                    "wholly_opaque_footprints": 0,
+                    "other_footprints": 878,
+                    "sha256": "59978a25bc5ac344f238cea79658a8a0f86ce794d213e1ae3db79a8580178441"
+                },
+                {
+                    "level": 6,
+                    "size": 1,
+                    "wholly_transparent_footprints": 0,
+                    "wholly_opaque_footprints": 0,
+                    "other_footprints": 878,
+                    "sha256": "1adec3d4d00290c9322545b2bf021cd893c0d5f448b0419b7dd170bd67d94d13"
+                }
+            ]
+        },
+        {
+            "case": "pyrotech-1555",
+            "tick": 30,
+            "samples": 451,
+            "fragment_source_sha256": "4010cadde28a8275933d6b20e53fe9b822ebdaf9103ac4e4d3f2d9d4d6a29b13",
+            "mips": [
+                {
+                    "level": 0,
+                    "size": 64,
+                    "wholly_transparent_footprints": 406,
+                    "wholly_opaque_footprints": 0,
+                    "other_footprints": 45,
+                    "sha256": "c4fbd75c7b3faf1b8cf3f413fab203a62693fca6648cc943e103f5438d86d8b7"
+                },
+                {
+                    "level": 1,
+                    "size": 32,
+                    "wholly_transparent_footprints": 406,
+                    "wholly_opaque_footprints": 0,
+                    "other_footprints": 45,
+                    "sha256": "e74c236146fb6d195ea83b0b1b530c11a147075a6538e8468da4e577dfe1d439"
+                },
+                {
+                    "level": 2,
+                    "size": 16,
+                    "wholly_transparent_footprints": 365,
+                    "wholly_opaque_footprints": 0,
+                    "other_footprints": 86,
+                    "sha256": "0ff5edea9b48b3dc0c19d65b22e9d657570e6f56f93278d4212332092061ddf4"
+                },
+                {
+                    "level": 3,
+                    "size": 8,
+                    "wholly_transparent_footprints": 288,
+                    "wholly_opaque_footprints": 0,
+                    "other_footprints": 163,
+                    "sha256": "0b32c459bea3c3384d738bcbff001f1ca7adc0e688e101b7cc8100ec4b087f5a"
+                },
+                {
+                    "level": 4,
+                    "size": 4,
+                    "wholly_transparent_footprints": 160,
+                    "wholly_opaque_footprints": 0,
+                    "other_footprints": 291,
+                    "sha256": "95d3912271655c83c4e75bace0bd3f37397f2ae4e150932f9ff16c63a09c48a5"
+                },
+                {
+                    "level": 5,
+                    "size": 2,
+                    "wholly_transparent_footprints": 0,
+                    "wholly_opaque_footprints": 0,
+                    "other_footprints": 451,
+                    "sha256": "59978a25bc5ac344f238cea79658a8a0f86ce794d213e1ae3db79a8580178441"
+                },
+                {
+                    "level": 6,
+                    "size": 1,
+                    "wholly_transparent_footprints": 0,
+                    "wholly_opaque_footprints": 0,
+                    "other_footprints": 451,
+                    "sha256": "1adec3d4d00290c9322545b2bf021cd893c0d5f448b0419b7dd170bd67d94d13"
+                }
+            ]
+        },
+        {
+            "case": "pyrotech-1555",
+            "tick": 60,
+            "samples": 788,
+            "fragment_source_sha256": "4010cadde28a8275933d6b20e53fe9b822ebdaf9103ac4e4d3f2d9d4d6a29b13",
+            "mips": [
+                {
+                    "level": 0,
+                    "size": 64,
+                    "wholly_transparent_footprints": 719,
+                    "wholly_opaque_footprints": 0,
+                    "other_footprints": 69,
+                    "sha256": "c4fbd75c7b3faf1b8cf3f413fab203a62693fca6648cc943e103f5438d86d8b7"
+                },
+                {
+                    "level": 1,
+                    "size": 32,
+                    "wholly_transparent_footprints": 719,
+                    "wholly_opaque_footprints": 0,
+                    "other_footprints": 69,
+                    "sha256": "e74c236146fb6d195ea83b0b1b530c11a147075a6538e8468da4e577dfe1d439"
+                },
+                {
+                    "level": 2,
+                    "size": 16,
+                    "wholly_transparent_footprints": 653,
+                    "wholly_opaque_footprints": 0,
+                    "other_footprints": 135,
+                    "sha256": "0ff5edea9b48b3dc0c19d65b22e9d657570e6f56f93278d4212332092061ddf4"
+                },
+                {
+                    "level": 3,
+                    "size": 8,
+                    "wholly_transparent_footprints": 531,
+                    "wholly_opaque_footprints": 0,
+                    "other_footprints": 257,
+                    "sha256": "0b32c459bea3c3384d738bcbff001f1ca7adc0e688e101b7cc8100ec4b087f5a"
+                },
+                {
+                    "level": 4,
+                    "size": 4,
+                    "wholly_transparent_footprints": 319,
+                    "wholly_opaque_footprints": 0,
+                    "other_footprints": 469,
+                    "sha256": "95d3912271655c83c4e75bace0bd3f37397f2ae4e150932f9ff16c63a09c48a5"
+                },
+                {
+                    "level": 5,
+                    "size": 2,
+                    "wholly_transparent_footprints": 0,
+                    "wholly_opaque_footprints": 0,
+                    "other_footprints": 788,
+                    "sha256": "59978a25bc5ac344f238cea79658a8a0f86ce794d213e1ae3db79a8580178441"
+                },
+                {
+                    "level": 6,
+                    "size": 1,
+                    "wholly_transparent_footprints": 0,
+                    "wholly_opaque_footprints": 0,
+                    "other_footprints": 788,
+                    "sha256": "1adec3d4d00290c9322545b2bf021cd893c0d5f448b0419b7dd170bd67d94d13"
+                }
+            ]
+        }
+    ],
+    "midpoint_headless_milestones": {
+        "November 26": {
+            "source_head": "f00211e38247bf1cf198df3b73e7d0e2eb3cd2cb",
+            "compared": 1654,
+            "changed": []
+        },
+        "November 27 opening": {
+            "source_head": "f00211e38247bf1cf198df3b73e7d0e2eb3cd2cb",
+            "compared": 1654,
+            "changed": []
+        },
+        "November 27 final": {
+            "source_head": "3ab7fdeeb4399b02b30b6ff8d391bd0556d7e17c",
+            "compared": 1654,
+            "changed": []
+        }
+    },
+    "lor_android": {
+        "archive_sha256": "e4c78ef18fdcd052e32fe9275490da2037d57aa115683c512ce81f7d2849d48d",
+        "apk_sha256": "edc4cbe57c07dbdbb9c98f53b4a52f4d595ad5454137b27fa309586b29143b03",
+        "entered": false,
+        "imported_file": "lor-owned-png-publisher.zip",
+        "selected_logs_sha256": "63715e7517c0da1f939d0107396a9873cea57ebcf7acaa57ee929b9363c0393c",
+        "manifest_sha256": "f4c75212068c5cfbda5dcc3c9b2cd94a34ad4d71debfa6b630cb850d6faa690d",
+        "display_restored": true,
+        "first_requirements": ["segment_ambient_light", "format_30_gameplay"]
+    },
+    "first_radial_damage": [
+        {
+            "owner": "wolf",
+            "engine": "ref",
+            "tick": 63,
+            "distance": 9649,
+            "maximum_damage": 1179648,
+            "radius": 2621440,
+            "shield_damage": 1175306,
+            "blast_center": [-3927647, 31767, 2612911],
+            "pilot_center": [-3932160, 31693, 2621440],
+            "geometric_distance_floor": 9649,
+            "quick_distance": 10234,
+            "matching_distance_measure": "geometric_distance_floor"
+        },
+        {
+            "owner": "pyro-pinned",
+            "engine": "ref",
+            "tick": 55,
+            "distance": 11854,
+            "maximum_damage": 1310720,
+            "radius": 2621440,
+            "shield_damage": 1304793,
+            "blast_center": [2282368, -9297052, 5783716],
+            "pilot_center": [2283285, -9285559, 5780959],
+            "geometric_distance_floor": 11854,
+            "quick_distance": 12697,
+            "matching_distance_measure": "geometric_distance_floor"
+        },
+        {
+            "owner": "pyro-nested",
+            "engine": "ref",
+            "tick": 55,
+            "distance": 11854,
+            "maximum_damage": 1310720,
+            "radius": 2621440,
+            "shield_damage": 1304793,
+            "blast_center": [2282368, -9297052, 5783716],
+            "pilot_center": [2283285, -9285559, 5780959],
+            "geometric_distance_floor": 11854,
+            "quick_distance": 12697,
+            "matching_distance_measure": "geometric_distance_floor"
+        },
+        {
+            "owner": "pyro-root",
+            "engine": "ref",
+            "tick": 55,
+            "distance": 11854,
+            "maximum_damage": 1310720,
+            "radius": 2621440,
+            "shield_damage": 1304793,
+            "blast_center": [2282368, -9297052, 5783716],
+            "pilot_center": [2283285, -9285559, 5780959],
+            "geometric_distance_floor": 11854,
+            "quick_distance": 12697,
+            "matching_distance_measure": "geometric_distance_floor"
+        },
+        {
+            "owner": "wolf",
+            "engine": "redux",
+            "tick": 67,
+            "distance": 328350,
+            "maximum_damage": 1179648,
+            "radius": 2621440,
+            "shield_damage": 1031891,
+            "blast_center": [-3783910, 29247, 2348822],
+            "pilot_center": [-3932160, 28498, 2621440],
+            "geometric_distance_floor": 310321,
+            "quick_distance": 328350,
+            "matching_distance_measure": "quick_distance"
+        },
+        {
+            "owner": "pyro-pinned",
+            "engine": "redux",
+            "tick": 57,
+            "distance": 332304,
+            "maximum_damage": 1310720,
+            "radius": 2621440,
+            "shield_damage": 1144568,
+            "blast_center": [2262375, -9586593, 5852471],
+            "pilot_center": [2286130, -9285559, 5780959],
+            "geometric_distance_floor": 310321,
+            "quick_distance": 332304,
+            "matching_distance_measure": "quick_distance"
+        },
+        {
+            "owner": "pyro-nested",
+            "engine": "redux",
+            "tick": 57,
+            "distance": 332304,
+            "maximum_damage": 1310720,
+            "radius": 2621440,
+            "shield_damage": 1144568,
+            "blast_center": [2262375, -9586593, 5852471],
+            "pilot_center": [2286130, -9285559, 5780959],
+            "geometric_distance_floor": 310321,
+            "quick_distance": 332304,
+            "matching_distance_measure": "quick_distance"
+        },
+        {
+            "owner": "pyro-root",
+            "engine": "redux",
+            "tick": 57,
+            "distance": 332304,
+            "maximum_damage": 1310720,
+            "radius": 2621440,
+            "shield_damage": 1144568,
+            "blast_center": [2262375, -9586593, 5852471],
+            "pilot_center": [2286130, -9285559, 5780959],
+            "geometric_distance_floor": 310321,
+            "quick_distance": 332304,
+            "matching_distance_measure": "quick_distance"
+        }
+    ]
+}

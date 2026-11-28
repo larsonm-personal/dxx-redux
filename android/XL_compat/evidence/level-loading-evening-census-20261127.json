@@ -1,0 +1,809 @@
+{
+    "parameters": {
+        "workers": 1,
+        "difficulty": "Hotshot 2",
+        "seed": 1,
+        "input": "idle",
+        "updates": 120,
+        "fixed_hz": 60
+    },
+    "runtime": {
+        "source_head": "560e6c1c3faba38b5dd137aa69cdd4052566e88d",
+        "headless_sha256": "4ef12b53e39171e535ebe6058cf4b0ffbc7aba733595aee5eb5f31acab4d704a",
+        "desktop_sha256": "b3ce4a569b54d9eea778772192e6c7833b1724323212a97c33b6a1ef24bc37eb"
+    },
+    "frozen": {
+        "counts": {
+            "pinned": {
+                "ordinals": 1111,
+                "headless_entry": 1079,
+                "headless_survival": 1077,
+                "windowed_entry": 1079,
+                "windowed_survival": 1077
+            },
+            "local": {
+                "ordinals": 543,
+                "headless_entry": 541,
+                "headless_survival": 539,
+                "windowed_entry": 541,
+                "windowed_survival": 539
+            }
+        },
+        "index": "loading-evening-frozen-20261127.jsonl",
+        "sha256": "9b196890f14282f751f6c83b8510a861cdf5f78c7de54e883c486618c3ce52ab",
+        "changes_vs_pr800": [],
+        "inventories": {
+            "pinned": {
+                "sha256": "bf4356a7a5fbe64832a40d7065ea02d8b81276ebd8bbba6874012f7851fa0cf8",
+                "advertised": 1111,
+                "verified_ordinals": 1111
+            },
+            "local": {
+                "sha256": "e7d480aa401522d37f6ec75da01f6cec7c314c901728f1b291131e52a62818df",
+                "advertised": 543,
+                "verified_ordinals": 543
+            }
+        }
+    },
+    "october": {
+        "summary": {
+            "archive_sha256": "0ae3a473c887daa934b7d262ed86afa68b2f0cec104fe8edaf5670741f614193",
+            "counts": {
+                "advertised": 974,
+                "headless_entered": 928,
+                "headless_live_120": 926,
+                "windowed_entered": 928,
+                "windowed_live_120": 926
+            },
+            "distinct_from_frozen": {
+                "advertised": 71,
+                "headless_entered": 57,
+                "headless_live_120": 57,
+                "windowed_entered": 57,
+                "windowed_live_120": 57
+            },
+            "remaining": {
+                "advertised": 903,
+                "headless_entered": 871,
+                "headless_live_120": 869,
+                "windowed_entered": 871,
+                "windowed_live_120": 869
+            },
+            "new_entries_in_distinct_cohort": [
+                {
+                    "descriptor": "missions/test/rngtest1.mn2",
+                    "ordinal": 1,
+                    "member": "rngtest1.rl2"
+                },
+                {
+                    "descriptor": "missions/test/textures.mn2",
+                    "ordinal": 1,
+                    "member": "bottest.rl2"
+                }
+            ],
+            "blockers": {
+                "unsupported format 28": 1,
+                "format_30_gameplay": 5,
+                "segment_ambient_light": 5,
+                "declared custom textures missing": 1,
+                "unsupported format 31": 2,
+                "advertised member missing": 32,
+                "pilot death during idle flight": 2
+            },
+            "index": "loading-evening-publisher-20261127.jsonl",
+            "index_sha256": "1d2971e77275489bd4dc911f0c9db8a6aae8ceb7b6b4a67bd4dd0a0ba0406a5d",
+            "windowed_blockers": {
+                "unsupported format 28": 1,
+                "format_30_gameplay": 5,
+                "segment_ambient_light": 5,
+                "declared custom textures missing": 1,
+                "unsupported format 31": 2,
+                "advertised member missing": 32,
+                "pilot death during idle flight": 2
+            }
+        },
+        "changes_vs_pr800": [
+            {
+                "owner": "missions/single/lor-xl20.mn2",
+                "ordinal": 1,
+                "changes": {
+                    "first_blocker": ["missing owned OOF skin", "segment_ambient_light"]
+                }
+            },
+            {
+                "owner": "missions/test/rngtest1.mn2",
+                "ordinal": 1,
+                "changes": {
+                    "headless_entry": [false, true],
+                    "headless_survival": [false, true],
+                    "headless_frames": [null, 120],
+                    "windowed_entry": [false, true],
+                    "windowed_survival": [false, true],
+                    "windowed_frames": [null, 120],
+                    "opened_sha256": [null, "e0f4a9210f1c2185bdade98696adbf94d4a6e5dd91dc929fcba8533097a06394"],
+                    "first_blocker": ["segment_ambient_light", null]
+                }
+            },
+            {
+                "owner": "missions/test/textures.mn2",
+                "ordinal": 1,
+                "changes": {
+                    "headless_entry": [false, true],
+                    "headless_survival": [false, true],
+                    "headless_frames": [null, 120],
+                    "windowed_entry": [false, true],
+                    "windowed_survival": [false, true],
+                    "windowed_frames": [null, 120],
+                    "opened_sha256": [null, "0019fa6a2d0f2bf7ff4f92693ac9daa038900033c0fa98634dcf5a7c4669ec5a"],
+                    "first_blocker": ["segment_ambient_light", null]
+                }
+            }
+        ]
+    },
+    "historical": {
+        "2010": {
+            "archive_sha256": "8e2936faf198d524146789c5e2199ec5d455739a7643dfff715e9b8ca48c1ee3",
+            "runtime": "3ab7fdeeb4399b02b30b6ff8d391bd0556d7e17c",
+            "advertised": 41,
+            "backends": {
+                "headless": [33, 32],
+                "windowed": [33, 32]
+            }
+        },
+        "2015": {
+            "archive_sha256": "66e9857f2e076717725d39853175b168109884605d3a4460cadb1de81196debf",
+            "runtime": "3ab7fdeeb4399b02b30b6ff8d391bd0556d7e17c",
+            "advertised": 48,
+            "backends": {
+                "headless": [48, 47],
+                "windowed": [48, 47]
+            }
+        }
+    },
+    "replay_qualification": {
+        "800": {
+            "admission": {
+                "parent": 800,
+                "sha": "f1960f2c787f50769bfd1ffc9b46c55095fa027c",
+                "branch": "xl_loading_qualified_cohorts_20261127",
+                "stack": 766,
+                "position": 36,
+                "selected": {
+                    "early": 140665507309,
+                    "late": 140674941153,
+                    "native": 140675026083,
+                    "headed": 140675026063
+                },
+                "run": 46046054592
+            },
+            "backends": [
+                {
+                    "backend": "headless",
+                    "artifact": 15224013431,
+                    "job": 140675026083,
+                    "frames": 7654,
+                    "replays": 34
+                },
+                {
+                    "backend": "graphics",
+                    "artifact": 15224559549,
+                    "job": 140675026063,
+                    "frames": 7654,
+                    "replays": 34
+                }
+            ]
+        },
+        "801": {
+            "admission": {
+                "parent": 801,
+                "sha": "aa6be3d72eaf15a2b0af62e3b5fcbaf86e721120",
+                "branch": "xl_owner_continuation_20261127",
+                "stack": 766,
+                "position": 37,
+                "selected": {
+                    "early": 140802895548,
+                    "late": 140809910928,
+                    "native": 140809943886,
+                    "headed": 140809943894
+                },
+                "run": 46088274165
+            },
+            "backends": [
+                {
+                    "backend": "headless",
+                    "artifact": 15241562752,
+                    "job": 140809943886,
+                    "frames": 7654,
+                    "replays": 34
+                },
+                {
+                    "backend": "graphics",
+                    "artifact": 15241633913,
+                    "job": 140809943894,
+                    "frames": 7654,
+                    "replays": 34
+                }
+            ]
+        },
+        "802": {
+            "admission": {
+                "parent": 802,
+                "sha": "7e341d6de85958ae9137bf5d314e5cfd919b3ba9",
+                "branch": "xl_room_ambient_trials_20261127",
+                "stack": 766,
+                "position": 38,
+                "selected": {
+                    "early": 140817861521,
+                    "late": 140824372885,
+                    "native": 140824428084,
+                    "headed": 140824428074
+                },
+                "run": 46092965436
+            },
+            "backends": [
+                {
+                    "backend": "headless",
+                    "artifact": 15243433670,
+                    "job": 140824428084,
+                    "frames": 7654,
+                    "replays": 34
+                },
+                {
+                    "backend": "graphics",
+                    "artifact": 15243643863,
+                    "job": 140824428074,
+                    "frames": 7654,
+                    "replays": 34
+                }
+            ]
+        },
+        "803": {
+            "admission": {
+                "parent": 803,
+                "sha": "b10a3e097b5e79238c0a15faa8374911e3981716",
+                "branch": "xl_owned_png_skins_20261127",
+                "stack": 766,
+                "position": 39,
+                "selected": {
+                    "early": 140834583248,
+                    "late": 140840739962,
+                    "native": 140840798678,
+                    "headed": 140840798778
+                },
+                "run": 46098264044
+            },
+            "backends": [
+                {
+                    "backend": "headless",
+                    "artifact": 15245408536,
+                    "job": 140840798678,
+                    "frames": 7654,
+                    "replays": 34
+                },
+                {
+                    "backend": "graphics",
+                    "artifact": 15246242481,
+                    "job": 140840798778,
+                    "frames": 7654,
+                    "replays": 34
+                }
+            ]
+        },
+        "804": {
+            "admission": {
+                "parent": 804,
+                "sha": "560e6c1c3faba38b5dd137aa69cdd4052566e88d",
+                "branch": "xl_headless_level_briefing_20261127",
+                "stack": 766,
+                "position": 40,
+                "selected": {
+                    "early": 140868720462,
+                    "late": 140874899506,
+                    "native": 140874958671,
+                    "headed": 140874958664
+                },
+                "run": 46109202090
+            },
+            "backends": [
+                {
+                    "backend": "headless",
+                    "artifact": 15250940174,
+                    "job": 140874958671,
+                    "frames": 7654,
+                    "replays": 34
+                },
+                {
+                    "backend": "graphics",
+                    "artifact": 15250059421,
+                    "job": 140874958664,
+                    "frames": 7654,
+                    "replays": 34
+                }
+            ]
+        }
+    },
+    "receipt_times_utc": {
+        "first_frozen_headless": "2026-11-28T04:47:13+00:00",
+        "final_frozen_summary": "2026-11-28T07:48:18+00:00",
+        "final_publisher_summary": "2026-11-28T09:29:09+00:00"
+    },
+    "predecessor_replay_scopes": {
+        "800": {
+            "headless": {
+                "job": 140675026083,
+                "artifact": 15224013431,
+                "zip_sha256": "2374fb3d547eb707ba000a2d8f86d441f83de35ff7e1a521cf5311b2912bccd0",
+                "replay_executions": 34,
+                "frames": 7654,
+                "negative_controls": 3,
+                "report_status": "pass",
+                "overall_qualification": "incomplete",
+                "paired_status": "not_run"
+            },
+            "graphics": {
+                "job": 140675026063,
+                "artifact": 15224559549,
+                "zip_sha256": "0d86b2eafe0d731e8401b37c3aa3527eb2006929394aaed277cd054ad0222faf",
+                "replay_executions": 34,
+                "frames": 7654,
+                "negative_controls": 3,
+                "report_status": "pass",
+                "overall_qualification": "incomplete",
+                "paired_status": "pass",
+                "scoped": "exact gameplay-state/SIM-RNG imported D1 flight parity",
+                "required": [
+                    {
+                        "demo": "d1-public-flight.dximdemo",
+                        "checks": {
+                            "frames": {
+                                "first_difference": null,
+                                "frames_compared": 360,
+                                "status": "pass"
+                            },
+                            "simulation_rng": {
+                                "first_difference": null,
+                                "first_value_difference": null,
+                                "simulation_events_compared": 96,
+                                "status": "pass"
+                            },
+                            "terminal_result": {
+                                "first_difference": null,
+                                "status": "pass"
+                            }
+                        },
+                        "original_relationship_status": "fail"
+                    }
+                ],
+                "unqualified_scenarios": [
+                    "d1-public-combat.dximdemo",
+                    "d1-public-door.dximdemo",
+                    "d1-public-loot.dximdemo",
+                    "d1-public-pickup.dximdemo"
+                ],
+                "unqualified_streams": ["frame.diag", "object_states", "world_states"],
+                "excluded_imported": [
+                    "d1-public-door-lifecycle.dximdemo",
+                    "d1-public-secondary-release-first.dximdemo",
+                    "d1-public-secondary-mouse-first.dximdemo"
+                ],
+                "original_exit": 1
+            }
+        },
+        "801": {
+            "headless": {
+                "job": 140809943886,
+                "artifact": 15241562752,
+                "zip_sha256": "c755c2c6a3b7f012d2b7d21485b4e6f89f25ce9db994774c31317f8fc007a320",
+                "replay_executions": 34,
+                "frames": 7654,
+                "negative_controls": 3,
+                "report_status": "pass",
+                "overall_qualification": "incomplete",
+                "paired_status": "not_run"
+            },
+            "graphics": {
+                "job": 140809943894,
+                "artifact": 15241633913,
+                "zip_sha256": "77e8c87a51aad9d81d84cffc97866f0d464bf10c6bf8847f1c7ec1f280885d6a",
+                "replay_executions": 34,
+                "frames": 7654,
+                "negative_controls": 3,
+                "report_status": "pass",
+                "overall_qualification": "incomplete",
+                "paired_status": "pass",
+                "scoped": "exact gameplay-state/SIM-RNG imported D1 flight parity",
+                "required": [
+                    {
+                        "demo": "d1-public-flight.dximdemo",
+                        "checks": {
+                            "frames": {
+                                "first_difference": null,
+                                "frames_compared": 360,
+                                "status": "pass"
+                            },
+                            "simulation_rng": {
+                                "first_difference": null,
+                                "first_value_difference": null,
+                                "simulation_events_compared": 96,
+                                "status": "pass"
+                            },
+                            "terminal_result": {
+                                "first_difference": null,
+                                "status": "pass"
+                            }
+                        },
+                        "original_relationship_status": "fail"
+                    }
+                ],
+                "unqualified_scenarios": [
+                    "d1-public-combat.dximdemo",
+                    "d1-public-door.dximdemo",
+                    "d1-public-loot.dximdemo",
+                    "d1-public-pickup.dximdemo"
+                ],
+                "unqualified_streams": ["frame.diag", "object_states", "world_states"],
+                "excluded_imported": [
+                    "d1-public-door-lifecycle.dximdemo",
+                    "d1-public-secondary-release-first.dximdemo",
+                    "d1-public-secondary-mouse-first.dximdemo"
+                ],
+                "original_exit": 1
+            }
+        },
+        "802": {
+            "headless": {
+                "job": 140824428084,
+                "artifact": 15243433670,
+                "zip_sha256": "b8464d6738924afe9c911384c5f1515cf89309fb355ba8527fecb62f66bdc93d",
+                "replay_executions": 34,
+                "frames": 7654,
+                "negative_controls": 3,
+                "report_status": "pass",
+                "overall_qualification": "incomplete",
+                "paired_status": "not_run"
+            },
+            "graphics": {
+                "job": 140824428074,
+                "artifact": 15243643863,
+                "zip_sha256": "62d60b3dd34f9034f6155c7ff638e86b087412c4cf06f685cce949488fd5b814",
+                "replay_executions": 34,
+                "frames": 7654,
+                "negative_controls": 3,
+                "report_status": "pass",
+                "overall_qualification": "incomplete",
+                "paired_status": "pass",
+                "scoped": "exact gameplay-state/SIM-RNG imported D1 flight parity",
+                "required": [
+                    {
+                        "demo": "d1-public-flight.dximdemo",
+                        "checks": {
+                            "frames": {
+                                "first_difference": null,
+                                "frames_compared": 360,
+                                "status": "pass"
+                            },
+                            "simulation_rng": {
+                                "first_difference": null,
+                                "first_value_difference": null,
+                                "simulation_events_compared": 96,
+                                "status": "pass"
+                            },
+                            "terminal_result": {
+                                "first_difference": null,
+                                "status": "pass"
+                            }
+                        },
+                        "original_relationship_status": "fail"
+                    }
+                ],
+                "unqualified_scenarios": [
+                    "d1-public-combat.dximdemo",
+                    "d1-public-door.dximdemo",
+                    "d1-public-loot.dximdemo",
+                    "d1-public-pickup.dximdemo"
+                ],
+                "unqualified_streams": ["frame.diag", "object_states", "world_states"],
+                "excluded_imported": [
+                    "d1-public-door-lifecycle.dximdemo",
+                    "d1-public-secondary-release-first.dximdemo",
+                    "d1-public-secondary-mouse-first.dximdemo"
+                ],
+                "original_exit": 1
+            }
+        },
+        "803": {
+            "headless": {
+                "job": 140840798678,
+                "artifact": 15245408536,
+                "zip_sha256": "666902d964761ba3bdce6853d37929eb74b2840e92aac66b506c257d38e83274",
+                "replay_executions": 34,
+                "frames": 7654,
+                "negative_controls": 3,
+                "report_status": "pass",
+                "overall_qualification": "incomplete",
+                "paired_status": "not_run"
+            },
+            "graphics": {
+                "job": 140840798778,
+                "artifact": 15246242481,
+                "zip_sha256": "0d6444dbc03fe7e346bdc7330136fd776231c596abae29e1326de2abb7467707",
+                "replay_executions": 34,
+                "frames": 7654,
+                "negative_controls": 3,
+                "report_status": "pass",
+                "overall_qualification": "incomplete",
+                "paired_status": "pass",
+                "scoped": "exact gameplay-state/SIM-RNG imported D1 flight parity",
+                "required": [
+                    {
+                        "demo": "d1-public-flight.dximdemo",
+                        "checks": {
+                            "frames": {
+                                "first_difference": null,
+                                "frames_compared": 360,
+                                "status": "pass"
+                            },
+                            "simulation_rng": {
+                                "first_difference": null,
+                                "first_value_difference": null,
+                                "simulation_events_compared": 96,
+                                "status": "pass"
+                            },
+                            "terminal_result": {
+                                "first_difference": null,
+                                "status": "pass"
+                            }
+                        },
+                        "original_relationship_status": "fail"
+                    }
+                ],
+                "unqualified_scenarios": [
+                    "d1-public-combat.dximdemo",
+                    "d1-public-door.dximdemo",
+                    "d1-public-loot.dximdemo",
+                    "d1-public-pickup.dximdemo"
+                ],
+                "unqualified_streams": ["frame.diag", "object_states", "world_states"],
+                "excluded_imported": [
+                    "d1-public-door-lifecycle.dximdemo",
+                    "d1-public-secondary-release-first.dximdemo",
+                    "d1-public-secondary-mouse-first.dximdemo"
+                ],
+                "original_exit": 1
+            }
+        },
+        "804": {
+            "headless": {
+                "job": 140874958671,
+                "artifact": 15250940174,
+                "zip_sha256": "e8e6e24f180576976cea8de1b8685021bdc898f87fee394ba5712e43a066d3b7",
+                "replay_executions": 34,
+                "frames": 7654,
+                "negative_controls": 3,
+                "report_status": "pass",
+                "overall_qualification": "incomplete",
+                "paired_status": "not_run"
+            },
+            "graphics": {
+                "job": 140874958664,
+                "artifact": 15250059421,
+                "zip_sha256": "0f105be055866a24b6635f66113f1ef64ac7185a91c357bdb05abb2e3eb1e88e",
+                "replay_executions": 34,
+                "frames": 7654,
+                "negative_controls": 3,
+                "report_status": "pass",
+                "overall_qualification": "incomplete",
+                "paired_status": "pass",
+                "scoped": "exact gameplay-state/SIM-RNG imported D1 flight parity",
+                "required": [
+                    {
+                        "demo": "d1-public-flight.dximdemo",
+                        "checks": {
+                            "frames": {
+                                "first_difference": null,
+                                "frames_compared": 360,
+                                "status": "pass"
+                            },
+                            "simulation_rng": {
+                                "first_difference": null,
+                                "first_value_difference": null,
+                                "simulation_events_compared": 96,
+                                "status": "pass"
+                            },
+                            "terminal_result": {
+                                "first_difference": null,
+                                "status": "pass"
+                            }
+                        },
+                        "original_relationship_status": "fail"
+                    }
+                ],
+                "unqualified_scenarios": [
+                    "d1-public-combat.dximdemo",
+                    "d1-public-door.dximdemo",
+                    "d1-public-loot.dximdemo",
+                    "d1-public-pickup.dximdemo"
+                ],
+                "unqualified_streams": ["frame.diag", "object_states", "world_states"],
+                "excluded_imported": [
+                    "d1-public-door-lifecycle.dximdemo",
+                    "d1-public-secondary-release-first.dximdemo",
+                    "d1-public-secondary-mouse-first.dximdemo"
+                ],
+                "original_exit": 1
+            }
+        }
+    },
+    "standalone_darkhorse": {
+        "owner": "standalone",
+        "headless_entry": true,
+        "headless_live": true,
+        "headless_frames": 120,
+        "windowed_entry": true,
+        "windowed_live": true,
+        "windowed_frames": 120,
+        "level_sha256": "fb80847ff9b3d299eb82397040a080b89f6e13f6192a426e278476a88347b065",
+        "outcome": "loaded_ticked",
+        "runtime": {
+            "source_head": "560e6c1c3faba38b5dd137aa69cdd4052566e88d",
+            "headless_sha256": "4ef12b53e39171e535ebe6058cf4b0ffbc7aba733595aee5eb5f31acab4d704a",
+            "desktop_sha256": "b3ce4a569b54d9eea778772192e6c7833b1724323212a97c33b6a1ef24bc37eb"
+        },
+        "headless_receipt_sha256": "36865f45ecd33fb1416ce7118112ce2681e8561fc55f4077e062b9cb3f94d1c8",
+        "windowed_receipt_sha256": "2cccbffc11ac5da4fee2f5edbd9cca6cb9c34cb935ef28ee977e55a1afc4b9b6",
+        "publisher_zip_sha256": "e480cae4a5666436f470051d8fa17d18ce555cc5ea6c3a7018dcb41cb9dccf5f",
+        "matching_local_case": "levels_multiplayer/dffusion.zip/DFFUSION.MN2:1"
+    },
+    "postflight_publisher_team_selector": [
+        {
+            "edition": "wfc20-2010-original",
+            "frames": 120,
+            "spawn_positions": 16,
+            "publisher_team_spawn_eligible": 0,
+            "observation_error": null,
+            "spawn_types_before": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            "spawn_types_after": [7, 7, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            "receipt_sha256": "4e18f81f118dd68f2c8dca89ea9a1320c384c9804c494dc829dc5e1c26d07256"
+        },
+        {
+            "edition": "wfc20-2010-packed",
+            "frames": 120,
+            "spawn_positions": 16,
+            "publisher_team_spawn_eligible": 0,
+            "observation_error": null,
+            "spawn_types_before": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            "spawn_types_after": [7, 7, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            "receipt_sha256": "7cc303f60b3001405b610505a4db244e6d55b61ec3bb738db648bd050e700386"
+        }
+    ],
+    "cavern_supply_trials": [
+        {
+            "start": 293,
+            "style": 80,
+            "track_boss": false,
+            "clock": 674,
+            "status": "pilot died",
+            "boss_damage": 0.0,
+            "entry": null,
+            "reactor_destroyed": false,
+            "end_level": 10,
+            "receipt": "dee6a7bec71072d0d4806f400dcead5f780edd4907a2322406fed7fd03841770",
+            "mega_ammo": [
+                [1, 293, 0],
+                [196, 235, 1]
+            ]
+        },
+        {
+            "start": 293,
+            "style": 80,
+            "track_boss": true,
+            "clock": 674,
+            "status": "pilot died",
+            "boss_damage": 0.0,
+            "entry": null,
+            "reactor_destroyed": false,
+            "end_level": 10,
+            "receipt": "dee6a7bec71072d0d4806f400dcead5f780edd4907a2322406fed7fd03841770",
+            "mega_ammo": [
+                [1, 293, 0],
+                [196, 235, 1]
+            ]
+        },
+        {
+            "start": 293,
+            "style": 83,
+            "track_boss": false,
+            "clock": 959,
+            "status": "pilot died",
+            "boss_damage": 9.0,
+            "entry": 854,
+            "reactor_destroyed": false,
+            "end_level": 10,
+            "receipt": "4ee28d6bb26e152f4915a98e64d734b7e45a3a23cf4474a22d80c5e7bd76d402",
+            "mega_ammo": [
+                [1, 293, 0],
+                [196, 235, 1]
+            ]
+        },
+        {
+            "start": 293,
+            "style": 83,
+            "track_boss": true,
+            "clock": 962,
+            "status": "pilot died",
+            "boss_damage": 9.0,
+            "entry": 854,
+            "reactor_destroyed": false,
+            "end_level": 10,
+            "receipt": "5f96631fddab6d6b31f07a8bc4c02ac2fdce6e459c09804ad8a44a9468d25a6b",
+            "mega_ammo": [
+                [1, 293, 0],
+                [196, 235, 1]
+            ]
+        },
+        {
+            "start": 293,
+            "style": 85,
+            "track_boss": false,
+            "clock": 722,
+            "status": "pilot died",
+            "boss_damage": 0.0,
+            "entry": null,
+            "reactor_destroyed": false,
+            "end_level": 10,
+            "receipt": "2012ccda324a1d794abc02517f53014d8576111cb373a59f5ff3f0a2302bd3a7",
+            "mega_ammo": [
+                [1, 293, 0],
+                [196, 235, 1]
+            ]
+        },
+        {
+            "start": 293,
+            "style": 85,
+            "track_boss": true,
+            "clock": 722,
+            "status": "pilot died",
+            "boss_damage": 0.0,
+            "entry": null,
+            "reactor_destroyed": false,
+            "end_level": 10,
+            "receipt": "2012ccda324a1d794abc02517f53014d8576111cb373a59f5ff3f0a2302bd3a7",
+            "mega_ammo": [
+                [1, 293, 0],
+                [196, 235, 1]
+            ]
+        },
+        {
+            "start": 293,
+            "style": 88,
+            "track_boss": false,
+            "clock": 674,
+            "status": "pilot died",
+            "boss_damage": 0.0,
+            "entry": null,
+            "reactor_destroyed": false,
+            "end_level": 10,
+            "receipt": "c7d4332a380b8061926ab0daf191b5d6cfa992002e4ec8ad9ddc827377f50249",
+            "mega_ammo": [
+                [1, 293, 0],
+                [196, 235, 1]
+            ]
+        },
+        {
+            "start": 293,
+            "style": 88,
+            "track_boss": true,
+            "clock": 674,
+            "status": "pilot died",
+            "boss_damage": 0.0,
+            "entry": null,
+            "reactor_destroyed": false,
+            "end_level": 10,
+            "receipt": "c7d4332a380b8061926ab0daf191b5d6cfa992002e4ec8ad9ddc827377f50249",
+            "mega_ammo": [
+                [1, 293, 0],
+                [196, 235, 1]
+            ]
+        }
+    ]
+}
