@@ -152,6 +152,33 @@ static bool format_30_object(const Object &object)
 	return object.contains_count == 0 || (object.contains_count == 1 && object.contains_type == 2);
 }
 
+// Zero-ambient arenas use the existing modern repair centers, particle emitters,
+// looping sounds and ordinary door actions. Other effect and action families
+// need their own qualification.
+static bool format_30_arena(const Inventory &level)
+{
+	if (!level.object_trigger_records.empty() || !level.matcens.empty() || !level.equipment.empty() || !level.reactor_targets.empty()) return false;
+	for (const auto &room : level.segments)
+		if (room.ambient_light[0] || room.function < 0 || room.function > 2 || (room.properties & ~4) || room.damage[0] || room.damage[1]) return false;
+	for (const auto &object : level.objects) {
+		if (object.flags || object.multiplayer || object.contains_count) return false;
+		if (object.type == 4 && object.control == 5 && object.movement == 1 && object.render == 1) continue;
+		if (object.type == 7 && object.control == 13 && !object.movement && object.render == 5) continue;
+		if (authored_particle_shape(object) && !object.render_data[11]) continue;
+		if (ambient_sound_shape(object) && !object.sound_interval[0]) continue;
+		return false;
+	}
+	for (const auto &trigger : level.triggers) {
+		if (trigger.type || trigger.flags || trigger.time != -1 || trigger.targets.empty()) return false;
+		for (const auto &target : trigger.targets) {
+			if (target[0] < 0 || std::size_t(target[0]) >= level.segments.size() || target[1] < 0 || target[1] >= 6) return false;
+			const int wall = level.segments[target[0]].sides[target[1]].wall;
+			if (wall < 0 || std::size_t(wall) >= level.walls.size() || level.walls[wall].type != 2) return false;
+		}
+	}
+	return true;
+}
+
 std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_water, bool explicit_geometry)
 {
 	std::vector<Issue> result;
@@ -164,14 +191,14 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 			result.push_back({ "segment_ambient_light", -1, "format 30 room ambient requires qualified surface and object lighting" });
 		if (std::any_of(level.objects.begin(), level.objects.end(), [](const auto &object) { return object.render == 13 && object.sound_interval[0] != 0; }))
 			result.push_back({ "random_sound_interval", -1, "format 30 random sound scheduling is not qualified" });
-		if (!level.triggers.empty() || !level.object_trigger_records.empty() || !level.matcens.empty() || !level.equipment.empty() || !level.reactor_targets.empty() ||
-		    std::any_of(level.segments.begin(), level.segments.end(), [](const auto &segment) {
-			    return segment.function || segment.properties || segment.damage[0] || segment.damage[1];
-		    }) ||
-		    std::any_of(level.objects.begin(), level.objects.end(), [](const auto &object) {
-			    return !format_30_object(object);
-		    }))
-			result.push_back({ "format_30_gameplay", -1, "requires normal rooms and qualified player, hostage or ordinary robot records without triggers or producers" });
+		if (!format_30_arena(level) && (!level.triggers.empty() || !level.object_trigger_records.empty() || !level.matcens.empty() || !level.equipment.empty() || !level.reactor_targets.empty() ||
+		                                std::any_of(level.segments.begin(), level.segments.end(), [](const auto &segment) {
+			                                return segment.function || segment.properties || segment.damage[0] || segment.damage[1];
+		                                }) ||
+		                                std::any_of(level.objects.begin(), level.objects.end(), [](const auto &object) {
+			                                return !format_30_object(object);
+		                                })))
+			result.push_back({ "format_30_gameplay", -1, "room, object, producer or trigger requirements exceed the qualified format 30 profiles" });
 	}
 	const bool classic_effect = classic_effect_layout(level);
 	const bool colored_walls = early_colored_wall_layout(level) || modern_runtime_layout(level) || (level.level_version == 18 && level.game_version == 36);
