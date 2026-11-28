@@ -2497,6 +2497,9 @@ void ShowLevelIntro(int level_num)
 		return;
 	}
 
+	if (GameArg.SysInputDemoNoRender)
+		return;
+
 	if (!(Game_mode & GM_MULTI)
 #ifdef __ANDROID__
 	    || coop_briefing_presenting()

@@ -40,3 +40,7 @@ LOR XL 2.0 carries nineteen 8-bit RGBA PNG skins in its own models folder. The m
 The production decoder produced the same 225,280 bytes of normalized RGBA, frame masks, flags and average colors for the nineteen PNGs and their owner-derived TGA controls. Eight of the comparison TGAs from Styx also matched the decoded result. The other eleven carry a top-origin TGA descriptor and zero y-start. The original CTGA scanline handling gives those files a different orientation. The comparison used the separate Styx files only as experimental controls.
 
 Ordinal 1 has 4,930 rooms. Of those, 227 use quarter-intensity white. Its 44 wall triggers and four object triggers remain separate gameplay requirements. [Model and image receipts](../XL_compat/evidence/lor-model-image-controls-20261127.json)
+
+## Headless level transitions
+
+When a game disables rendering, ShowLevelIntro now consumes any one-use intro skip and returns before opening the presentation. The isolated exit on the restored-generator Cavern level exercised both cases. With the ordinary trigger, both headless runs entered Nexus and survived 120 idle updates. The windowed pilot also entered Nexus and rendered 120 live updates. All three retained the same Nexus member hash throughout. This exit control begins near the exit in room 9. The uninterrupted fight from the boss chamber remains open. [Transition receipts](../XL_compat/evidence/cavern-headless-briefing-20261127.json)
