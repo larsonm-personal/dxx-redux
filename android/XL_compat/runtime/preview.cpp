@@ -165,6 +165,8 @@ uint64_t corona_classic_requested_draws = 0;
 float face_alpha = -1;
 bool face_additive = false;
 bool face_water_material = false;
+std::vector<xl_compat::Rgb> room_ambient;
+const xl_compat::Rgb *face_ambient = nullptr;
 std::vector<xl_compat::DynamicVertexLight> dynamic_vertices;
 std::vector<float> brightness;
 unsigned unresolved_emitters = 0;
@@ -989,6 +991,8 @@ extern "C" void xl_preview_clear_mission(void)
 	cloak_draws = 0;
 	drawn_cloak_alpha = 0;
 	dynamic_vertices.clear();
+	face_ambient = nullptr;
+	room_ambient.clear();
 	rebuilt_ambient.clear();
 	brightness.clear();
 	unresolved_emitters = 0;
@@ -1166,6 +1170,10 @@ extern "C" int xl_preview_load_level_at(const char *filename, int ordinal)
 			for (unsigned j = 0; j < 8; ++j)
 				if (level->segments[i].vertices[j] < 0xfff8 && level->segments[i].vertices[j] != Segments[i].verts[j])
 					throw std::runtime_error("XL source does not match loaded segment vertices");
+		if (std::any_of(level->segments.begin(), level->segments.end(), [](const auto &room) { return room.ambient_light[0] != 0; })) {
+			room_ambient.reserve(level->segments.size());
+			for (const auto &room : level->segments) room_ambient.push_back(xl_compat::segment_ambient_floor(room.ambient_light));
+		}
 		brightness = xl_compat::vertex_brightness(*level);
 		dynamic_vertices.resize(level->vertices.size());
 		xl_door_phases_bind(*level, resources->dependencies(), resources->wall_texture_playback());
@@ -2121,6 +2129,8 @@ extern "C" void xl_preview_vertex(int vertex, int32_t light, int32_t *r, int32_t
 		else if (!rebuilt_ambient.empty()) input.ambient = rebuilt_ambient.at(vertex);
 		else
 			for (unsigned i = 0; i < 3; ++i) input.ambient[i] = float(source->vertex_colors[vertex].rgb[i]);
+		if (face_ambient)
+			for (unsigned i = 0; i < 3; ++i) input.ambient[i] = (std::max) (input.ambient[i], (*face_ambient)[i]);
 		input.static_light = light;
 		const auto &dynamic = dynamic_vertices.at(vertex);
 		input.dynamic_light = dynamic.intensity;
@@ -2172,11 +2182,13 @@ static int water_boundary_function(int level_version, int function)
 
 extern "C" void xl_preview_begin_face(int segment_number, int side)
 {
+	face_ambient = nullptr;
 	face_alpha = -1;
 	face_additive = false;
 	face_water_material = false;
 	flat_wall_palette = -1;
 	if (!source || option("-xl-preview-stock-materials") || segment_number < 0 || segment_number >= Num_segments || side < 0 || side >= 6) return;
+	if (!room_ambient.empty() && source->segments[segment_number].ambient_light[0]) face_ambient = &room_ambient[segment_number];
 	const int index = Segments[segment_number].sides[side].wall_num;
 	if (!xl_fog_active()) {
 		xl_compat::WaterFace face;
@@ -2207,6 +2219,7 @@ extern "C" void xl_preview_begin_face(int segment_number, int side)
 
 extern "C" void xl_preview_end_face(void)
 {
+	face_ambient = nullptr;
 	face_alpha = -1;
 	face_additive = false;
 	face_water_material = false;

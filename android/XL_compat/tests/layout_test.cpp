@@ -71,7 +71,7 @@ void contract()
 		          level.segments[0].vertices[2] == 0xfff8 && level.segments[0].ambient_light == std::array<int, 4>{ 37, 52, 105, 218 } &&
 		          level.fog_settings.size() == 4 && level.level_name == "Layout control",
 		      "Wide geometry, ambient light or following tables lost alignment");
-		check(issue(xl_compat::runtime_blockers(level), "segment_ambient_light"), "Authored format 30 light was silently discarded");
+		check(issue(xl_compat::runtime_blockers(level), "format_30_gameplay"), "Unqualified format 30 room behavior was admitted");
 		auto neutral = level;
 		neutral.segments.front().ambient_light[0] = 0;
 		neutral.segments.front().function = neutral.segments.front().properties = 0;
@@ -83,6 +83,11 @@ void contract()
 		neutral.objects.back().type = 3;
 		const auto normal = xl_compat::runtime_blockers(neutral);
 		check(!issue(normal, "segment_ambient_light") && !issue(normal, "format_30_gameplay"), "Neutral format 30 player and hostage profile was rejected");
+		auto lit = neutral;
+		lit.segments.front().ambient_light = { 70, 255, 255, 255 };
+		check(!issue(xl_compat::runtime_blockers(lit), "segment_ambient_light"), "Room surface lighting rejected");
+		lit.objects.back().type = 2;
+		check(issue(xl_compat::runtime_blockers(lit), "segment_ambient_light"), "Unqualified robot room lighting admitted");
 		neutral.objects.back().contains_count = 1;
 		check(issue(xl_compat::runtime_blockers(neutral), "format_30_gameplay"), "Unqualified contained object passed format 30 admission");
 		auto robot_level = neutral;

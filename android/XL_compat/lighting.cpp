@@ -7,6 +7,17 @@
 
 namespace xl_compat
 {
+Rgb segment_ambient_floor(const std::array<int, 4> &record)
+{
+	Rgb floor{};
+	for (unsigned channel = 0; channel < floor.size(); ++channel) {
+		const float linear = std::clamp(float(record[0] * record[channel + 1]) / 25500.0f, 0.0f, 1.0f);
+		const float encoded = std::round(std::sqrt(linear) * 1023.0f) / 1023.0f;
+		floor[channel] = encoded * encoded;
+	}
+	return floor;
+}
+
 double geometry_vector_length(const FixedLightPoint &vector)
 {
 	const double x = vector[0], y = vector[1], z = vector[2];
