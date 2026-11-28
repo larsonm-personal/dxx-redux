@@ -156,8 +156,12 @@ std::vector<Issue> runtime_blockers(const Inventory &level, bool experimental_wa
 {
 	std::vector<Issue> result;
 	if (level.level_version == 30) {
-		if (std::any_of(level.segments.begin(), level.segments.end(), [](const auto &segment) { return segment.ambient_light[0] != 0; }))
-			result.push_back({ "segment_ambient_light", -1, "format 30 segment light requires the authored intensity and color" });
+		// The wall renderer consumes room ambient. Models and effects have separate consumers.
+		const bool surface_lighting_only = std::all_of(level.objects.begin(), level.objects.end(), [](const auto &object) { return object.type == 4 || object.type == 3; });
+		if (std::any_of(level.segments.begin(), level.segments.end(), [surface_lighting_only](const auto &room) {
+			    return room.ambient_light[0] && (!surface_lighting_only || room.ambient_light[0] > 100);
+		    }))
+			result.push_back({ "segment_ambient_light", -1, "format 30 room ambient requires qualified surface and object lighting" });
 		if (std::any_of(level.objects.begin(), level.objects.end(), [](const auto &object) { return object.render == 13 && object.sound_interval[0] != 0; }))
 			result.push_back({ "random_sound_interval", -1, "format 30 random sound scheduling is not qualified" });
 		if (!level.triggers.empty() || !level.object_trigger_records.empty() || !level.matcens.empty() || !level.equipment.empty() || !level.reactor_targets.empty() ||

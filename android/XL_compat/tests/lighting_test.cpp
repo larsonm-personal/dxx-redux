@@ -17,6 +17,12 @@ void expect(const xl_compat::VertexLighting &input, xl_compat::Rgb expected, int
 int main()
 {
 	try {
+		const auto colored_floor = xl_compat::segment_ambient_floor({ 50, 255, 224, 0 });
+		for (unsigned channel = 0; channel < 3; ++channel) {
+			const float encoded = std::array<float, 3>{ 723, 678, 0 }[channel] / 1023;
+			if (std::abs(colored_floor[channel] - encoded * encoded) > 0.000001f) throw std::runtime_error("Room ambient differs from the publisher buffer");
+		}
+		if (xl_compat::segment_ambient_floor({ 0, 255, 255, 255 }) != xl_compat::Rgb{}) throw std::runtime_error("Zero room intensity changed lighting");
 		// Reference colored-face eligibility is directional, not a camera tint
 		xl_compat::WaterFace water_face;
 		if (xl_compat::water_face_colored(water_face)) throw std::runtime_error("Dry exterior tinted");

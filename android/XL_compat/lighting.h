@@ -14,6 +14,8 @@
 namespace xl_compat
 {
 using Rgb = std::array<float, 3>;
+// Surface ambient after the publisher renderer's 10-bit square-root encoding
+Rgb segment_ambient_floor(const std::array<int, 4> &record);
 using LightPoint = std::array<float, 3>;
 using FixedLightPoint = std::array<std::int32_t, 3>;
 // Pinned default math format 2; side-normal setup uses the separate legacy path
