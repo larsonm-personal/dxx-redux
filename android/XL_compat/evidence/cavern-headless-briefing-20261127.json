@@ -1,0 +1,69 @@
+{
+    "derived_cavern_member_sha256": "3686536e2e4999d3d41778aa563e1d37ad4d3fb62c27f611c664de9071320996",
+    "prior_headless": [
+        {
+            "skip_next_briefing": false,
+            "exit_code": 3221225477,
+            "trigger": 11,
+            "trigger_clock": 20753,
+            "following_ordinal": null,
+            "following_hash": null,
+            "following_rooms": null,
+            "following_updates": null,
+            "following_pilot_dead": null,
+            "intro_request_unconsumed": null,
+            "receipt_sha256": "b4556501514194aa2c489c41dc6878fe7b5dfd55ed3191814fdcd24fee43596d"
+        },
+        {
+            "skip_next_briefing": true,
+            "exit_code": 0,
+            "trigger": 11,
+            "trigger_clock": 20753,
+            "following_ordinal": 1,
+            "following_hash": "bbddf88cb29585810a4ec253adc4cfb11eb40d9cb42404369638834cb8f5337b",
+            "following_rooms": 769,
+            "following_updates": 120,
+            "following_pilot_dead": false,
+            "intro_request_unconsumed": 0,
+            "receipt_sha256": "a6cf5fa2a162281d07611ca6fbf4921236bd3484dde6376f343a825265c1ee01"
+        }
+    ],
+    "candidate_headless": [
+        {
+            "skip_next_briefing": false,
+            "exit_code": 0,
+            "trigger": 11,
+            "trigger_clock": 20753,
+            "following_ordinal": 1,
+            "following_hash": "bbddf88cb29585810a4ec253adc4cfb11eb40d9cb42404369638834cb8f5337b",
+            "following_rooms": 769,
+            "following_updates": 120,
+            "following_pilot_dead": false,
+            "intro_request_unconsumed": 0,
+            "receipt_sha256": "e5fb6d911c096216b919b34cc9e3b710925d159c51570ad826636c7ff25eca68"
+        },
+        {
+            "skip_next_briefing": true,
+            "exit_code": 0,
+            "trigger": 11,
+            "trigger_clock": 20753,
+            "following_ordinal": 1,
+            "following_hash": "bbddf88cb29585810a4ec253adc4cfb11eb40d9cb42404369638834cb8f5337b",
+            "following_rooms": 769,
+            "following_updates": 120,
+            "following_pilot_dead": false,
+            "intro_request_unconsumed": 0,
+            "receipt_sha256": "a6cf5fa2a162281d07611ca6fbf4921236bd3484dde6376f343a825265c1ee01"
+        }
+    ],
+    "windowed": {
+        "observer_sha256": "2ed296f0efdff3b87737a7a0e9ca64d9ed42809705665a85e2152120b45e9a98",
+        "entered_nexus": true,
+        "fixed_updates": 120,
+        "live": true,
+        "member_sha256": "bbddf88cb29585810a4ec253adc4cfb11eb40d9cb42404369638834cb8f5337b",
+        "transitions": ["starting level=10 from=0", "starting level=1 from=10"],
+        "exit_triggers": ["exit trigger=11 shot=0 room=10 level=10 shield=6553600 time=20753"]
+    },
+    "controls": "The isolated room-9 exit uses the ordinary trigger and level transition. The complete boss-to-exit sequence remains unverified."
+}
