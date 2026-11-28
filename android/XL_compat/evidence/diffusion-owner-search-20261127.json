@@ -1,0 +1,240 @@
+{
+    "runtime": {
+        "source_head": "3ab7fdeeb4399b02b30b6ff8d391bd0556d7e17c",
+        "headless_sha256": "4d28b26ef952eba045023a7ec65f6345f53be6c78db724e729a9be460912021e",
+        "desktop_sha256": "1b8d66fcc8ca2e48cc37b7f39fc832a2b8672844ec30421dae896f62c07460fd"
+    },
+    "packages": {
+        "https://www.descent2.de/files/missions/3rdparty/dwentz/abyss-1.zip": {
+            "sha256": "29599f82e612553495690a7e66d8d321f582f631ff2abdd60062981d6afa17fa",
+            "files": {
+                "abyss1_1.hog": {
+                    "sha256": "59456651a85e7405bc484cc46db98faf3273c83cec6e9320687222bf8f495d47",
+                    "levels": {
+                        "abyss1_1.rl2": "1b520e00727fc6aa4269a9ef7a6820d787be162d2980e2aef084d1558cbbd1b5"
+                    }
+                },
+                "abyss1_1.mn2": {
+                    "sha256": "60f46bdb5d208b03132ea9df26ac4c3777e5c8a19a2079ef2f524ddb820f2205"
+                },
+                "abyss1_1.txt": {
+                    "sha256": "96065a244e2ab85f7c23ef9955de3a3fb3670f065e1dc84e5fb6d418979aeb2a"
+                }
+            }
+        },
+        "https://www.descent2.de/files/missions/3rdparty/dwentz/darkerside.zip": {
+            "sha256": "16b2553de0e4cb6b5565373ea0362804c0f71c7bdd4e0df1109962047545c184",
+            "files": {
+                "darker.hog": {
+                    "sha256": "7bc040d9c6d13da04d17ef3ebceccf3da01918c66ebce0035009bc6a82570688",
+                    "levels": {
+                        "darker.rl2": "09ef1cada8c982354cd2feb98203e6b57e2a55ef25fd728201a835b154089a01"
+                    }
+                },
+                "darker.mn2": {
+                    "sha256": "30497f9c58002ebdba397dd94fad6bd494f59cb189384a1d3f7edfe64d052a75"
+                },
+                "darker.txt": {
+                    "sha256": "6de79d1eac657836cb20e420ef09b03cac7dd780569fb3be8d880442954b3002"
+                },
+                "darkerxl.hog": {
+                    "sha256": "b31f9ed5ba7e79dc346423aebfb785045337d1ef4d4eef082b4138babf6ac0e4",
+                    "levels": {
+                        "darkerxl.rl2": "929bec8df94d4dfd8cdbf57328793a3d1361d77d9c4102425e3f15f131ba4d70"
+                    }
+                },
+                "darkerxl.mn2": {
+                    "sha256": "b2817dfb44f7bb8f523f6f857563b287efd1a62d4565c6d7fa74d506ede89e19"
+                }
+            }
+        },
+        "https://www.descent2.de/files/missions/3rdparty/dwentz/darkside.zip": {
+            "sha256": "566491aeddbb1b78c5356590f14ed2821cb09783a0eafe05784aeb5163c86058",
+            "files": {
+                "darkside.hog": {
+                    "sha256": "77837f562c58d4adeb5575807bab1906e39f9ca1c71336135fc9ebccd46f0522",
+                    "levels": {
+                        "darkside.rl2": "9ac841109a81d967e78102a907b5d67c629ca7a161507de24fb4690cf49cf706"
+                    }
+                },
+                "darkside.mn2": {
+                    "sha256": "ad92607d483f7db76e39aebff50f98a1b8ef37f153676c2bb3c5bbb355b9846f"
+                },
+                "darkside.txt": {
+                    "sha256": "5fa3b8f562c4698b9585ea9e24b76fe6366a6ba3d918df24de9b0a33db1ef52d"
+                }
+            }
+        },
+        "https://www.descent2.de/files/missions/3rdparty/dwentz/hive.zip": {
+            "sha256": "0a9b69d815bc2d11c8ffd66d55da1ec6554742e84574557fa73a42061c6b6f30",
+            "files": {
+                "hive.hog": {
+                    "sha256": "59e1fd781ee6c3bfbf2b2823e1bc3a9094e7fafb8d417dc5ca16c75ec856750d",
+                    "levels": {
+                        "hive.rl2": "76a859b4a0511c4ba362d670f3f889c274e004d14ba3a9bfc98343977faf59b7"
+                    }
+                },
+                "hive.mn2": {
+                    "sha256": "b4a5cf10f43a779f5d41b72a551694318417ab1b74499655a9ed0f262bcef744"
+                },
+                "hive.txt": {
+                    "sha256": "7d2a890d0a7c36a2882170ef904136ad6a65d448783cf75939c24ff8e87725fb"
+                }
+            }
+        },
+        "https://www.descent2.de/files/missions/3rdparty/dwentz/inferno.zip": {
+            "sha256": "5732df998b1c3b560d04492d8816ddf260d220cb42b01f4da6a79218a777c12e",
+            "files": {
+                "inferno.hog": {
+                    "sha256": "06586ad803e14c205845166163cf269e6ab87e1da9612f98f6537c7bd8f0fb49",
+                    "levels": {
+                        "inferno.rl2": "a1c1b6ccdcb72cc76d8de3eac21df074d6a349a8cc47b4b6af3152d0270417ab"
+                    }
+                },
+                "inferno.mn2": {
+                    "sha256": "e75a217ce9295417d5358741a7a89263e2f69399e5fd358be12c957be71f9beb"
+                }
+            }
+        },
+        "https://www.descent2.de/files/missions/3rdparty/dwentz/stadium1-3.zip": {
+            "sha256": "6434c0f84b7779e582a714b6111e5c35a5ac051ee83ee1c4f09c5a2856c78046",
+            "files": {
+                "s1pro.hog": {
+                    "sha256": "e6876b3aeeafec608a26aaec01827c2a14767224ac357ec8a460e97753a0873a",
+                    "levels": {
+                        "s1pro.rl2": "38b07284c2c8232a76c3c633c8552bd4939ef67c9f1e67630f38573116a7d7a5"
+                    }
+                },
+                "s1pro.mn2": {
+                    "sha256": "7fdf50565c010de386fc3eac512705fe3d11d0c7495b11965ac3cf11fe556971"
+                },
+                "S1PRO.TXT": {
+                    "sha256": "837252c9ec6c0ddc0306d44fa31ae7dd8c0336ab26708d28423b8fa7d97eaf08"
+                },
+                "stadi2-5.hog": {
+                    "sha256": "6114c9b533afdeccc8a058e2d8deefe87bfdd34293bfde0db284f724a92d1a3b",
+                    "levels": {
+                        "stadi2-5.rl2": "97da51a72994b9bebccaf1a81e321e4ec8907f7c86344e8f1606d8128c3cd5e9"
+                    }
+                },
+                "stadi2-5.mn2": {
+                    "sha256": "693ac6d29728ccbfef7cab52daaf4a572db7d6c831122c43a8116c3b037b3cc1"
+                },
+                "STADI2-5.TXT": {
+                    "sha256": "5bb14b4f71ce6b0aeae544c6acaff178577e1bba36c949373adf815b11afd170"
+                },
+                "stadium.hog": {
+                    "sha256": "2f7b4e5f395368167f63e6c1adadec3dd8270191189dfe6379ce9350fe93b63a",
+                    "levels": {
+                        "stadium.rl2": "bc0fe6cca3d3b2dea21551d7b8a286f51bd908766ba3757349fafa27599eb23a"
+                    }
+                },
+                "stadium.mn2": {
+                    "sha256": "16a1ade079ad082518ceec4c7f8d3e61431c0c7dbb0251ffd594dfc2a5fe39b9"
+                },
+                "STADIUM.TXT": {
+                    "sha256": "f297224f5bee97d9c381a2630c6cd301a0a73c179a50aa2e259a2e26b06b9790"
+                },
+                "stadium3.hog": {
+                    "sha256": "53a85395fbfca947dd63ce2714e2222015d590ccc13ee21126dbf187961119d4",
+                    "levels": {
+                        "stadium3.rl2": "e132ba242e1da5c0d7a8b6146ddd0e63bafa5ff1e65f39aefa6dcf77678816d4"
+                    }
+                },
+                "stadium3.mn2": {
+                    "sha256": "0780a29eb7d239e239f16707091ac505b5f4d9cbe810aa7ce23f5c65cf3a2a1c"
+                },
+                "stadium3.txt": {
+                    "sha256": "6d0cd3b5628315ae128e5bf5eb26ef066f95edd1aa20477aa3e5c346d49086e8"
+                }
+            }
+        },
+        "https://www.descent2.de/files/missions/3rdparty/dwentz/vampyro.zip": {
+            "sha256": "41cf01d805cba5231a1af64abea91bbd2c1eba725926d12359fb8f200e9bb1b1",
+            "files": {
+                "vampyro.hog": {
+                    "sha256": "9a80c0debfe49f6b8d10e7602d446ca5bf168a0d6ef7bdf46f5b30ee6d061416",
+                    "levels": {
+                        "vampyro.rl2": "8dac0ae552bfdc11beb6b86e98bfd5d21db88855d9df129b204489cf32bca164"
+                    }
+                },
+                "vampyro.mn2": {
+                    "sha256": "52a265447f5df004fd787ce43eef8f73df6e915392427ed88e89bf2eb4cb9698"
+                },
+                "vampyro.pcx": {
+                    "sha256": "efec4b49a1de2e7d9c4d96f149d0c9164e82422ed19b7abb090e4c95251e8edf"
+                },
+                "vampyro.txt": {
+                    "sha256": "d48fdf69bbbf0563c6a17c25e3b29fd02980ea40b507f821ca2f135955afd47d"
+                },
+                "vampyro2.pcx": {
+                    "sha256": "3261caedad13e1bc9ab3db11f80f834562f7224854d9574cf2d4507ab08f51a6"
+                }
+            }
+        },
+        "https://www.descent2.de/files/missions/3rdparty/darkhorse/dffusion.zip": {
+            "sha256": "e480cae4a5666436f470051d8fa17d18ce555cc5ea6c3a7018dcb41cb9dccf5f",
+            "files": {
+                "difFusion.txt": {
+                    "sha256": "fb599f557618c8affa33e78d13b2b2f973500b97761aa17724a597164a86f0cd"
+                },
+                "DFFUSION.MN2": {
+                    "sha256": "ded9dd69da60c88796c9ed5076f5a05a3248a6038d0caf0856f881a3455e09b1"
+                },
+                "dfFusion.hog": {
+                    "sha256": "c939c91289215942d41ee3d1b83c15e59f013907f1162ea696e72b2cde05b213",
+                    "levels": {
+                        "dffusion.rl2": "fb80847ff9b3d299eb82397040a080b89f6e13f6192a426e278476a88347b065"
+                    }
+                }
+            }
+        }
+    },
+    "flights": [
+        {
+            "owner": "danwentz",
+            "headless_entry": false,
+            "headless_live": false,
+            "headless_frames": null,
+            "windowed_entry": false,
+            "windowed_live": false,
+            "windowed_frames": null,
+            "level_sha256": null,
+            "outcome": "load_failed",
+            "load.json_sha256": "61df3a7f777b97b494998533256c5c29e8935aed7f7da9fbf3a05ce6f778840f",
+            "windowed_load.json_sha256": "27ddced64e0b6d0651cdbb16e20dde3f0202e66b6ea2ab6af94f0809abdfd787",
+            "descriptor_sha256": "ded9dd69da60c88796c9ed5076f5a05a3248a6038d0caf0856f881a3455e09b1",
+            "hog_sha256": null
+        },
+        {
+            "owner": "darkhorse",
+            "headless_entry": true,
+            "headless_live": true,
+            "headless_frames": 120,
+            "windowed_entry": true,
+            "windowed_live": true,
+            "windowed_frames": 120,
+            "level_sha256": "14f8bec7d08e83eddecd2c41389f9fea3c21076adb7305418d735545a50453db",
+            "outcome": "loaded_ticked",
+            "load.json_sha256": "7a8a3bef078158e02aece25b07569062ada0b763695141c1ece0fb5e0593fe43",
+            "windowed_load.json_sha256": "ffc7c4db7ed0cb60f3d86c02435f9efe8ee0f0818be9387468421132dd075615",
+            "descriptor_sha256": "ded9dd69da60c88796c9ed5076f5a05a3248a6038d0caf0856f881a3455e09b1",
+            "hog_sha256": "a4b0c8fc91514d597d96a085937b2c7c100eafe3fd21b37948d7ffa1a09888e8"
+        },
+        {
+            "owner": "standalone",
+            "headless_entry": true,
+            "headless_live": true,
+            "headless_frames": 120,
+            "windowed_entry": true,
+            "windowed_live": true,
+            "windowed_frames": 120,
+            "level_sha256": "fb80847ff9b3d299eb82397040a080b89f6e13f6192a426e278476a88347b065",
+            "outcome": "loaded_ticked",
+            "load.json_sha256": "36865f45ecd33fb1416ce7118112ce2681e8561fc55f4077e062b9cb3f94d1c8",
+            "windowed_load.json_sha256": "2cccbffc11ac5da4fee2f5edbd9cca6cb9c34cb935ef28ee977e55a1afc4b9b6",
+            "descriptor_sha256": "ded9dd69da60c88796c9ed5076f5a05a3248a6038d0caf0856f881a3455e09b1",
+            "hog_sha256": "c939c91289215942d41ee3d1b83c15e59f013907f1162ea696e72b2cde05b213"
+        }
+    ]
+}
