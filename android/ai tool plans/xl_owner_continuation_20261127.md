@@ -32,3 +32,11 @@ A private instrumented build exercised the authentic levels, both zero-intensity
 | Range Test 1 with the Subspace colors |   147060 |    144307 |    151402 |
 
 The Range Test 1 observer recorded 120 shader draws and 5,040 fixed-function draws across the flight. The old texture-merge control recorded all 5,160 draws in the fixed-function path. Textures Test recorded 6,838 shader and 27,802 fixed-function draws, or 34,640 fixed-function draws in the control. These pixel counts compare the Redux framebuffer to the corresponding Redux control. The publisher-game measurements use a different camera and viewport. [Flight and framebuffer evidence](../XL_compat/evidence/room-ambient-surfaces-20261127.json)
+
+## LOR model skins
+
+LOR XL 2.0 carries nineteen 8-bit RGBA PNG skins in its own models folder. The model reader now accepts those files in both the active level and incoming-level resource paths. It uses the existing image decoder and verifies the selected paths and source hashes on model reuse. For an extensionless model name, a TGA in the same folder keeps precedence. The lookup searches the selected model folder before the mission-wide models folder.
+
+The production decoder produced the same 225,280 bytes of normalized RGBA, frame masks, flags and average colors for the nineteen PNGs and their owner-derived TGA controls. Eight of the comparison TGAs from Styx also matched the decoded result. The other eleven carry a top-origin TGA descriptor and zero y-start. The original CTGA scanline handling gives those files a different orientation. The comparison used the separate Styx files only as experimental controls.
+
+Ordinal 1 has 4,930 rooms. Of those, 227 use quarter-intensity white. Its 44 wall triggers and four object triggers remain separate gameplay requirements. [Model and image receipts](../XL_compat/evidence/lor-model-image-controls-20261127.json)

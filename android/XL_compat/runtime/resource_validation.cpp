@@ -802,6 +802,27 @@ std::vector<uint8_t> read_model_resource(const std::string &path, mission_prepar
 	return bytes;
 }
 
+std::string owned_skin_file(const std::string &texture, const std::string &selected_folder, mission_preparation *target)
+{
+	if (texture.empty() || texture == "." || texture == ".." || texture.find_first_of("/\\:") != std::string::npos)
+		throw std::runtime_error("Invalid owned OOF skin name: " + texture);
+	const auto dot = texture.find_last_of('.');
+	const auto extension = dot == std::string::npos ? std::string{} : resource_key(texture.substr(dot));
+	const auto stem = extension == ".tga" || extension == ".png" ? texture.substr(0, dot) : texture;
+	// Keep existing TGA selections when both representations are installed.
+	const auto find = [&](const std::string &folder) {
+		const bool prefer_png = extension == ".png";
+		for (const char *suffix : { prefer_png ? ".png" : ".tga", prefer_png ? ".tga" : ".png" }) {
+			auto path = owned_mod_file("", folder + stem + suffix, target);
+			if (!path.empty()) return path;
+		}
+		return std::string{};
+	};
+	auto path = find(selected_folder);
+	if (path.empty() && selected_folder != "models/") path = find("models/");
+	return path;
+}
+
 xl_compat::OwnedModelSet prepare_owned_models(int ordinal, mission_preparation *target = nullptr)
 {
 #ifdef __ANDROID__
@@ -878,9 +899,8 @@ xl_compat::OwnedModelSet prepare_owned_models(int ordinal, mission_preparation *
 			    prior_model_hash != mission_mod_sources.end() && prior_model_hash->second == model_hash) {
 				bool same_skins = true;
 				std::map<std::string, std::string> verified_skins;
-				for (auto texture : previous->second->model.textures) {
-					if (resource_key(texture).size() < 4 || resource_key(texture).substr(texture.size() - 4) != ".tga") texture += ".tga";
-					const auto skin_path = owned_mod_file("", "models/" + texture, target);
+				for (const auto &texture : previous->second->model.textures) {
+					const auto skin_path = owned_skin_file(texture, selected_folder, target);
 					const auto prior_skin_hash = mission_mod_sources.find(skin_path);
 					if (skin_path.empty() || prior_skin_hash == mission_mod_sources.end()) {
 						same_skins = false;
@@ -924,17 +944,13 @@ xl_compat::OwnedModelSet prepare_owned_models(int ordinal, mission_preparation *
 			resource->model = xl_compat::read_oof(model_bytes);
 			resource->mesh = xl_compat::compile_oof_mesh(resource->model, mapping.flip_v, &resource->gunpoints);
 		}
-		for (auto texture : resource->model.textures) {
-			if (texture.empty() || texture == "." || texture == ".." || texture.find_first_of("/\\:") != std::string::npos)
-				throw std::runtime_error("Invalid owned OOF skin name: " + path);
-			if (resource_key(texture).size() < 4 || resource_key(texture).substr(texture.size() - 4) != ".tga") texture += ".tga";
-			auto skin_path = owned_mod_file("", selected_folder + texture, target);
-			if (skin_path.empty() && selected_folder != "models/") skin_path = owned_mod_file("", "models/" + texture, target);
+		for (const auto &texture : resource->model.textures) {
+			const auto skin_path = owned_skin_file(texture, selected_folder, target);
 			if (skin_path.empty()) throw std::runtime_error("Missing owned OOF skin: " + texture);
 			auto &skin = skins_by_path[skin_path];
 			if (!skin) {
 				const auto bytes = read_model_resource(skin_path, target);
-				skin = std::make_shared<const xl_compat::PogBitmap>(xl_compat::read_particle_image(bytes.data(), bytes.size()));
+				skin = std::make_shared<const xl_compat::PogBitmap>(xl_compat::read_owned_image(bytes, skin_path));
 				sources[skin_path] = picosha2::hash256_hex_string(bytes);
 			}
 			resource->skins.push_back(skin);

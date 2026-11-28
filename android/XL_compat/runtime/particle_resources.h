@@ -9,6 +9,7 @@
 #include <string>
 namespace xl_compat
 {
+PogBitmap read_owned_image(const std::vector<std::uint8_t> &bytes, const std::string &path);
 struct Inventory;
 class TargetSources;
 class ParticleTexture;

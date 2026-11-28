@@ -82,6 +82,17 @@ PogBitmap read_effect_png(const Bytes &bytes, const std::string &path)
 #endif
 }
 
+} // namespace
+
+PogBitmap read_owned_image(const Bytes &bytes, const std::string &path)
+{
+	if (bytes.size() >= 2 && bytes[0] == 137 && bytes[1] == 'P')
+		return read_effect_png(bytes, path);
+	return read_particle_image(bytes.data(), bytes.size());
+}
+
+namespace
+{
 bool locate(std::string &path, bool installation, const std::string &kind)
 {
 	if (PHYSFSEXT_locateCorrectCase(path.data()) != 0) return false;
@@ -144,7 +155,7 @@ std::shared_ptr<Resource> read_addon_image(const char *name, const std::string &
 	}
 	auto image = std::make_shared<Resource>();
 	image->path = std::move(selected);
-	image->bitmap = bytes[0] == 137 && bytes[1] == 'P' ? read_effect_png(bytes, image->path) : read_particle_image(bytes.data(), bytes.size());
+	image->bitmap = read_owned_image(bytes, image->path);
 	return image;
 }
 std::shared_ptr<const ParticleImageResource> prepare_addon_image(const char *name, const std::string &kind, unsigned atlas_side, bool optional = false, TargetSources *target = nullptr, bool require_soft_depth = true)
